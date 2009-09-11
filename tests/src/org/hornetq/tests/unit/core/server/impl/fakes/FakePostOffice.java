@@ -23,6 +23,7 @@ import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.SimpleString;
 
@@ -150,4 +151,12 @@ public class FakePostOffice implements PostOffice
 
    }
 
+   public void addArbitrator(Arbitrator arbitrator)
+   {
+   }
+
+   public Arbitrator getArbitrator()
+   {
+      return null;
+   }
 }

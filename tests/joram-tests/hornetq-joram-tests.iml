@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module relativePaths="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
     <output url="file://$MODULE_DIR$/output/classes" />
     <output-test url="file://$MODULE_DIR$/output" />
     <exclude-output />
@@ -14,6 +14,7 @@
     <orderEntry type="module" module-name="hornetq-tests" />
     <orderEntry type="library" name="messaging_jars" level="project" />
     <orderEntry type="library" name="messaging-joram-tests" level="project" />
+    <orderEntry type="module" module-name="hornetq-jms-tests" />
   </component>
 </module>
 

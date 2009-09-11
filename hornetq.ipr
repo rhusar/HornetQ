@@ -336,11 +336,21 @@
       <facet-type id="javaeeApplication">
         <modules>
           <module name="messaging" />
+          <module name="hornetq-javaee-examples">
+            <files>
+              <file url="file://$PROJECT_DIR$/examples/javaee/servlet-transport/config/META-INF/application.xml" />
+            </files>
+          </module>
         </modules>
       </facet-type>
       <facet-type id="web">
         <modules>
           <module name="messaging" />
+          <module name="hornetq-javaee-examples">
+            <files>
+              <file url="file://$PROJECT_DIR$/examples/javaee/servlet-transport/config/WEB-INF/web.xml" />
+            </files>
+          </module>
         </modules>
       </facet-type>
     </autodetection-disabled>
@@ -579,7 +589,7 @@
   </component>
   <component name="ProjectFileVersion" converted="true" />
   <component name="ProjectKey">
-    <option name="state" value="https://svn.jboss.org/repos/hornetq/trunk/hornetq.ipr" />
+    <option name="state" value="https://svn.jboss.org/repos/hornetq/branches/hornetq_grouping/hornetq.ipr" />
   </component>
   <component name="ProjectModuleManager">
     <modules>
@@ -592,7 +602,9 @@
       <module fileurl="file://$PROJECT_DIR$/tests/hornetq-tests.iml" filepath="$PROJECT_DIR$/tests/hornetq-tests.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-name="1.5" project-jdk-type="JavaSDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-name="1.5" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
   <component name="ResourceManagerContainer">
     <option name="myResourceBundles">
       <value>

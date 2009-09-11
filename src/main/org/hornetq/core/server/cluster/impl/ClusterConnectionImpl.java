@@ -46,6 +46,8 @@ import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteCons
 import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteConsumerRemovedMessage;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
+import org.hornetq.core.server.group.impl.Response;
+import org.hornetq.core.server.group.impl.Proposal;
 import org.hornetq.core.server.cluster.Bridge;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.MessageFlowRecord;
@@ -609,6 +611,12 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                case SECURITY_AUTHENTICATION_VIOLATION:
                case SECURITY_PERMISSION_VIOLATION:
                   break;
+               case PROPOSAL:
+                  doProposalReceived(message);
+                  break;
+               case PROPOSAL_RESPONSE:
+                  doProposalResponseReceived(message);
+                  break;
                default:
                {
                   throw new IllegalArgumentException("Invalid type " + ntype);
@@ -621,6 +629,37 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
          }
       }
 
+      private synchronized void doProposalReceived(final ClientMessage message) throws Exception
+      {
+         SimpleString type = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_TYPE);
+         if (type == null)
+         {
+            throw new IllegalStateException("proposal type is null");
+         }
+         SimpleString val = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_VALUE);
+         Integer hops = (Integer) message.getProperty(ManagementHelper.HDR_DISTANCE);
+         Response response = postOffice.getArbitrator().receive(new Proposal(type, val), hops + 1);
+         if(response != null)
+         {
+            postOffice.getArbitrator().send(response, 0);
+         }
+      }
+
+      private synchronized void doProposalResponseReceived(final ClientMessage message) throws Exception
+      {
+         SimpleString type = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_TYPE);
+         if (type == null)
+         {
+            throw new IllegalStateException("proposal type is null");
+         }
+         SimpleString val = (SimpleString)  message.getProperty(ManagementHelper.HDR_PROPOSAL_VALUE);
+         SimpleString alt = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE);
+         Integer hops = (Integer) message.getProperty(ManagementHelper.HDR_DISTANCE);
+         Response response = new Response(type, val, alt);
+         postOffice.getArbitrator().proposed(response);
+         postOffice.getArbitrator().send(response, hops + 1);
+      }
+      
       private synchronized void clearBindings() throws Exception
       {       
          for (RemoteQueueBinding binding : new HashSet<RemoteQueueBinding>(bindings.values()))

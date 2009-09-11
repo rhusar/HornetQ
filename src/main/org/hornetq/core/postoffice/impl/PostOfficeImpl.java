@@ -45,10 +45,12 @@ import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueInfo;
+import org.hornetq.core.postoffice.BindingsFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -69,7 +71,7 @@ import org.hornetq.utils.UUIDGenerator;
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
  * @author <a href="csuconic@redhat.com">Clebert Suconic</a>
  */
-public class PostOfficeImpl implements PostOffice, NotificationListener
+public class PostOfficeImpl implements PostOffice, NotificationListener, BindingsFactory
 {
    private static final Logger log = Logger.getLogger(PostOfficeImpl.class);
 
@@ -123,6 +125,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
+   private Arbitrator groupingArbitrator;
+
    public PostOfficeImpl(final HornetQServer server,
                          final StorageManager storageManager,
                          final PagingManager pagingManager,
@@ -154,11 +158,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
       if (enableWildCardRouting)
       {
-         addressManager = new WildcardAddressManager();
+         addressManager = new WildcardAddressManager(this);
       }
       else
       {
-         addressManager = new SimpleAddressManager();
+         addressManager = new SimpleAddressManager(this);
       }
 
       this.backup = backup;
@@ -553,7 +557,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
       if (bindings == null)
       {
-         bindings = new BindingsImpl();
+         bindings = createBindings();
       }
 
       return bindings;
@@ -736,6 +740,17 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
    public Object getNotificationLock()
    {
       return notificationLock;
+   }
+
+
+   public void addArbitrator(Arbitrator arbitrator)
+   {
+      groupingArbitrator = arbitrator;
+   }
+
+   public Arbitrator getArbitrator()
+   {
+      return groupingArbitrator;
    }
 
    public void sendQueueInfoToQueue(final SimpleString queueName, final SimpleString address) throws Exception
@@ -1098,5 +1113,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
             }
          }
       }
+   }
+
+   public Bindings createBindings()
+   {
+      return new BindingsImpl(this);
    }
 }

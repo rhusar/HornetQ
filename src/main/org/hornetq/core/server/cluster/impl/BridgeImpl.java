@@ -613,6 +613,10 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
                                                    NotificationType.CONSUMER_CREATED +
                                                    "','" +
                                                    NotificationType.CONSUMER_CLOSED +
+                                                   "','" +
+                                                   NotificationType.PROPOSAL +
+                                                   "','" +
+                                                   NotificationType.PROPOSAL_RESPONSE +
                                                    "') AND " +
                                                    ManagementHelper.HDR_DISTANCE +
                                                    "<" +

@@ -28,9 +28,13 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
+import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.Bindable;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.impl.Proposal;
+import org.hornetq.core.server.group.impl.Response;
+import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.SimpleString;
 
@@ -38,10 +42,8 @@ import org.hornetq.utils.SimpleString;
  * A BindingsImpl
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
- * Created 11 Dec 2008 08:34:33
- *
- *
+ *         <p/>
+ *         Created 11 Dec 2008 08:34:33
  */
 public class BindingsImpl implements Bindings
 {
@@ -56,6 +58,13 @@ public class BindingsImpl implements Bindings
    private final List<Binding> exclusiveBindings = new CopyOnWriteArrayList<Binding>();
 
    private volatile boolean routeWhenNoConsumers;
+
+   private final PostOffice postOffice;
+
+   public BindingsImpl(PostOffice postOffice)
+   {
+      this.postOffice = postOffice;
+   }
 
    public void setRouteWhenNoConsumers(final boolean routeWhenNoConsumers)
    {
@@ -125,7 +134,7 @@ public class BindingsImpl implements Bindings
 
    private void routeFromCluster(final ServerMessage message, final Transaction tx) throws Exception
    {
-      byte[] ids = (byte[])message.removeProperty(MessageImpl.HDR_ROUTE_TO_IDS);
+      byte[] ids = (byte[]) message.removeProperty(MessageImpl.HDR_ROUTE_TO_IDS);
 
       ByteBuffer buff = ByteBuffer.wrap(ids);
 
@@ -167,7 +176,7 @@ public class BindingsImpl implements Bindings
       {
          return false;
       }
-      
+
       SimpleString routingName = originatingQueue.getName();
 
       List<Binding> bindings = routingNameBindingMap.get(routingName);
@@ -251,10 +260,14 @@ public class BindingsImpl implements Bindings
       }
    }
 
-   public void route(final ServerMessage message, final Transaction tx) throws Exception
+    public void route(final ServerMessage message, final Transaction tx) throws Exception
    {
       boolean routed = false;
-      
+      Object o = message.getProperty("count_prop");
+      if (o != null)
+      {
+         System.out.println("routing message " + o);
+      }
       if (!exclusiveBindings.isEmpty())
       {
          for (Binding binding : exclusiveBindings)
@@ -262,7 +275,7 @@ public class BindingsImpl implements Bindings
             if (binding.getFilter() == null || binding.getFilter().match(message))
             {
                binding.getBindable().route(message, tx);
-               
+
                routed = true;
             }
          }
@@ -270,9 +283,95 @@ public class BindingsImpl implements Bindings
 
       if (!routed)
       {
+         Arbitrator groupingArbitrator = postOffice.getArbitrator();
+
          if (message.getProperty(MessageImpl.HDR_FROM_CLUSTER) != null)
          {
             routeFromCluster(message, tx);
+         }
+         else if(groupingArbitrator != null && message.getProperty(MessageImpl.HDR_GROUP_ID)!= null)
+         {
+            SimpleString groupId = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
+            Response resp = groupingArbitrator.propose(new Proposal(groupId, null));
+            if(resp == null)
+            {
+               for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+               {
+                  SimpleString routingName = entry.getKey();
+
+                  List<Binding> bindings = entry.getValue();
+                  Binding chosen = null;
+                  Binding lowestPriorityBinding = null;
+                  int lowestPriority = Integer.MAX_VALUE;
+                  for (Binding binding : bindings)
+                  {
+                     boolean bindingIsHighAcceptPriority = binding.isHighAcceptPriority(message);
+                     int distance = binding.getDistance();
+                     if((distance < lowestPriority))
+                     {
+                        lowestPriorityBinding = binding;
+                        lowestPriority = distance;
+                        if(bindingIsHighAcceptPriority)
+                        {
+                           chosen = binding;
+                        }
+                     }
+                  }
+                  if(chosen == null)
+                  {
+                     chosen = lowestPriorityBinding;
+                  }
+                  resp = groupingArbitrator.propose(new Proposal(groupId, chosen.getClusterName()));
+                  if(!resp.getChosen().equals(chosen.getClusterName()))
+                  {
+                     for (Binding binding : bindings)
+                     {
+                        if (binding.getClusterName().equals(resp.getChosen()))
+                        {
+                           chosen = binding;
+                           break;
+                        }
+                     }
+                  }
+
+                  if( chosen != null )
+                  {
+                     System.out.println("sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
+                     chosen.willRoute(message);
+                     chosen.getBindable().preroute(message, tx);
+                     chosen.getBindable().route(message, tx);
+                  }
+               }
+            }
+            else
+            {
+               for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+               {
+                  SimpleString routingName = entry.getKey();
+
+                  List<Binding> bindings = entry.getValue();
+                  Binding chosen = null;
+                  for (Binding binding : bindings)
+                  {
+                     if(binding.getClusterName().equals(resp.getChosen()))
+                     {
+                        chosen = binding;
+                        break;
+                     }
+                  }
+                  if( chosen != null && (routeWhenNoConsumers || chosen.isHighAcceptPriority(message)))
+                  {
+                     System.out.println("found sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
+                     chosen.willRoute(message);
+                     chosen.getBindable().preroute(message, tx);
+                     chosen.getBindable().route(message, tx);
+                  }
+                  else
+                  {
+                     System.out.println("BindingsImpl.route");
+                  }
+               }
+            }
          }
          else
          {
@@ -327,73 +426,73 @@ public class BindingsImpl implements Bindings
                      }
                   }
 
-                  Filter filter = binding.getFilter();
+            Filter filter = binding.getFilter();
 
-                  if (filter == null || filter.match(message))
-                  {
-                     // bindings.length == 1 ==> only a local queue so we don't check for matching consumers (it's an
-                     // unnecessary overhead)
-                     if (length == 1 || routeWhenNoConsumers || binding.isHighAcceptPriority(message))
-                     {
-                        theBinding = binding;
-
-                        pos = incrementPos(pos, length);
-
-                        break;
-                     }
-                     else
-                     {
-                        if (lastLowPriorityBinding == -1)
-                        {
-                           lastLowPriorityBinding = pos;
-                        }
-                     }
-                  }
+            if (filter == null || filter.match(message))
+            {
+               // bindings.length == 1 ==> only a local queue so we don't check for matching consumers (it's an
+               // unnecessary overhead)
+               if (length == 1 || routeWhenNoConsumers || binding.isHighAcceptPriority(message))
+               {
+                  theBinding = binding;
 
                   pos = incrementPos(pos, length);
 
-                  if (pos == startPos)
+                  break;
+               }
+               else
+               {
+                  if (lastLowPriorityBinding == -1)
                   {
-                     if (lastLowPriorityBinding != -1)
-                     {
-                        try
-                        {
-                           theBinding = bindings.get(pos);
-                        }
-                        catch (IndexOutOfBoundsException e)
-                        {
-                           // This can occur if binding is removed while in route
-                           if (!bindings.isEmpty())
-                           {
-                              pos = 0;
-
-                              lastLowPriorityBinding = -1;
-
-                              continue;
-                           }
-                           else
-                           {
-                              break;
-                           }
-                        }
-
-                        pos = lastLowPriorityBinding;
-
-                        pos = incrementPos(pos, length);
-                     }
-                     break;
+                     lastLowPriorityBinding = pos;
                   }
                }
-
-               if (theBinding != null)
-               {
-                  theBinding.willRoute(message);
-
-                  chosen.add(theBinding.getBindable());
-               }
-
-               routingNamePositions.put(routingName, pos);
             }
+
+            pos = incrementPos(pos, length);
+
+            if (pos == startPos)
+            {
+               if (lastLowPriorityBinding != -1)
+               {
+                  try
+                  {
+                     theBinding = bindings.get(pos);
+                  }
+                  catch (IndexOutOfBoundsException e)
+                  {
+                     // This can occur if binding is removed while in route
+                     if (!bindings.isEmpty())
+                     {
+                        pos = 0;
+
+                        lastLowPriorityBinding = -1;
+
+                        continue;
+                     }
+                     else
+                     {
+                        break;
+                     }
+                  }
+
+                  pos = lastLowPriorityBinding;
+
+                  pos = incrementPos(pos, length);
+               }
+               break;
+            }
+         }
+
+         if (theBinding != null)
+         {
+            theBinding.willRoute(message);
+
+            chosen.add(theBinding.getBindable());
+         }
+
+         routingNamePositions.put(routingName, pos);
+         }
 
             // TODO refactor to do this is one iteration
 

@@ -39,6 +39,7 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -86,7 +87,7 @@ public class BindingImplTest extends UnitTestCase
    {
       final FakeBinding fake = new FakeBinding(new SimpleString("a"));
 
-      final BindingsImpl bind = new BindingsImpl();
+      final BindingsImpl bind = new BindingsImpl(new FakePostOffice());
       bind.addBinding(fake);
       bind.addBinding(new FakeBinding(new SimpleString("a")));
       bind.addBinding(new FakeBinding(new SimpleString("a")));

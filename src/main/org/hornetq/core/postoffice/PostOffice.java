@@ -19,6 +19,7 @@ import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.SimpleString;
 
@@ -66,5 +67,9 @@ public interface PostOffice extends HornetQComponent
    
    void sendQueueInfoToQueue(SimpleString queueName, SimpleString address) throws Exception;
    
-   Object getNotificationLock();     
+   Object getNotificationLock();
+
+   void addArbitrator(Arbitrator arbitrator);
+
+   Arbitrator getArbitrator();
 }

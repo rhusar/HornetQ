@@ -30,7 +30,9 @@ public enum NotificationType
    BROADCAST_GROUP_STARTED(10),
    BROADCAST_GROUP_STOPPED(11),
    BRIDGE_STARTED(12),
-   BRIDGE_STOPPED(13);
+   BRIDGE_STOPPED(13),
+   PROPOSAL(14),
+   PROPOSAL_RESPONSE(15);
 
    private final int value;
 

@@ -45,6 +45,10 @@ import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.group.impl.ArbitratorConfiguration;
+import org.hornetq.core.server.group.impl.LocalArbitrator;
+import org.hornetq.core.server.group.impl.RemoteArbitrator;
+import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
 import org.hornetq.integration.transports.netty.TransportConstants;
@@ -419,6 +423,52 @@ public class ClusterTestBase extends ServiceTestBase
       }
 
       session.close();
+   }
+
+   protected void sendWithProperty(int node, String address, int numMessages, boolean durable, SimpleString key, SimpleString val) throws Exception
+   {
+      sendInRange(node, address, 0, numMessages, durable, key, val);
+   }
+   
+   protected void sendInRange(int node, String address, int msgStart, int msgEnd, boolean durable, SimpleString key, SimpleString val) throws Exception
+   {
+      ClientSessionFactory sf = this.sfs[node];
+
+      if (sf == null)
+      {
+         throw new IllegalArgumentException("No sf at " + node);
+      }
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      ClientProducer producer = session.createProducer(address);
+
+      for (int i = msgStart; i < msgEnd; i++)
+      {
+         ClientMessage message = session.createClientMessage(durable);
+
+         message.putStringProperty(key, val);
+         message.putIntProperty(COUNT_PROP, i);
+         System.out.println("i = " + i);
+         producer.send(message);
+      }
+
+      session.close();
+   }
+
+
+   protected void setUpGroupArbitrator(ArbitratorConfiguration.TYPE type,  int node)
+   {
+      Arbitrator arbitrator;
+      if(type == ArbitratorConfiguration.TYPE.LOCAL)
+      {
+         arbitrator = new LocalArbitrator(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"), null);
+      }
+      else
+      {
+         arbitrator = new RemoteArbitrator(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"));
+      }
+      this.servers[node].getPostOffice().addArbitrator(arbitrator);
    }
 
    protected void send(int node, String address, int numMessages, boolean durable, String filterVal) throws Exception
