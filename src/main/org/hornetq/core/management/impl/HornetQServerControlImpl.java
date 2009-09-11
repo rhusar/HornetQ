@@ -127,6 +127,11 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    {
       return configuration.isBackup();
    }
+   
+   public boolean isSharedStore()
+   {
+      return configuration.isSharedStore();
+   }
 
    public String getBackupConnectorName()
    {
@@ -600,11 +605,6 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    public long getMessageExpiryThreadPriority()
    {
       return configuration.getMessageExpiryThreadPriority();
-   }
-
-   public long getQueueActivationTimeout()
-   {
-      return configuration.getQueueActivationTimeout();
    }
 
    public long getTransactionTimeout()

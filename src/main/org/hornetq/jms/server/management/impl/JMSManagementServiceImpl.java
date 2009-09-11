@@ -13,7 +13,6 @@
 
 package org.hornetq.jms.server.management.impl;
 
-
 import java.util.List;
 
 import javax.management.ObjectName;
@@ -31,10 +30,6 @@ import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.management.JMSManagementService;
 import org.hornetq.jms.server.management.JMSServerControl;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareConnectionFactoryControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareJMSQueueControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareJMSServerControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareTopicControlWrapper;
 
 /*
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -65,12 +60,10 @@ public class JMSManagementServiceImpl implements JMSManagementService
    {
       ObjectName objectName = ObjectNames.getJMSServerObjectName();
       JMSServerControlImpl control = new JMSServerControlImpl(server);
-      JMSServerControl replicatingProxy = new ReplicationAwareJMSServerControlWrapper(control, 
-                                                                                      managementService.getReplicationOperationInvoker());
       managementService.registerInJMX(objectName,
-                                      replicatingProxy);
+                                      control);
       managementService.registerInRegistry(ResourceNames.JMS_SERVER, control);
-      return replicatingProxy;
+      return control;
    }
 
    public synchronized void unregisterJMSServer() throws Exception
@@ -97,9 +90,7 @@ public class JMSManagementServiceImpl implements JMSManagementService
                                                     coreQueueControl,
                                                     jndiBinding,
                                                     counter);
-      managementService.registerInJMX(objectName,
-                                      new ReplicationAwareJMSQueueControlWrapper(control, 
-                                                                                 managementService.getReplicationOperationInvoker()));
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_QUEUE + queue.getQueueName(), control);
    }
 
@@ -116,8 +107,7 @@ public class JMSManagementServiceImpl implements JMSManagementService
       ObjectName objectName = ObjectNames.getJMSTopicObjectName(topic.getTopicName());
       AddressControl addressControl = (AddressControl)managementService.getResource(ResourceNames.CORE_ADDRESS + topic.getAddress());
       TopicControlImpl control = new TopicControlImpl(topic, addressControl, jndiBinding, managementService);
-      managementService.registerInJMX(objectName, new ReplicationAwareTopicControlWrapper(control,
-                                                                                          managementService.getReplicationOperationInvoker()));
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_TOPIC + topic.getTopicName(), control);
    }
 
@@ -134,9 +124,7 @@ public class JMSManagementServiceImpl implements JMSManagementService
    {
       ObjectName objectName = ObjectNames.getConnectionFactoryObjectName(name);
       ConnectionFactoryControlImpl control = new ConnectionFactoryControlImpl(connectionFactory, name, bindings);
-      managementService.registerInJMX(objectName,
-                                      new ReplicationAwareConnectionFactoryControlWrapper(control,
-                                                                                          managementService.getReplicationOperationInvoker()));
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_CONNECTION_FACTORY + name, control);
    }
 

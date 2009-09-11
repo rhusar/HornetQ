@@ -41,11 +41,8 @@ import org.hornetq.core.message.Message;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.BindingType;
-import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.FailureListener;
-import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateAcknowledgeMessage;
 import org.hornetq.core.server.HandleStatus;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -131,8 +128,6 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
    private final String clusterPassword;
 
-   private Channel replicatingChannel;
-
    private boolean activated;
 
    private NotificationService notificationService;
@@ -169,7 +164,6 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
                      final String clusterUser,
                      final String clusterPassword,
                      final MessageFlowRecord flowRecord,
-                     final Channel replicatingChannel,
                      final boolean activated,
                      final StorageManager storageManager) throws Exception
    {
@@ -214,8 +208,6 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       this.clusterPassword = clusterPassword;
 
       this.flowRecord = flowRecord;
-
-      this.replicatingChannel = replicatingChannel;
 
       this.activated = activated;  
    }
@@ -309,8 +301,6 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
    public synchronized void activate()
    {
-      replicatingChannel = null;
-
       activated = true;
 
       executor.execute(new CreateObjectsRunnable());
@@ -374,30 +364,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
          if (ref != null)
          {
-            if (replicatingChannel == null)
-            {
-               // Acknowledge when we know send has been processed on the server
-               ref.getQueue().acknowledge(ref);
-            }
-            else
-            {
-               Packet packet = new ReplicateAcknowledgeMessage(name, ref.getMessage().getMessageID());
-
-               replicatingChannel.replicatePacket(packet, 1, new Runnable()
-               {
-                  public void run()
-                  {
-                     try
-                     {
-                        ref.getQueue().acknowledge(ref);
-                     }
-                     catch (Exception e)
-                     {
-                        log.error("Failed to ack", e);
-                     }
-                  }
-               });
-            }
+            ref.getQueue().acknowledge(ref);            
          }
       }
       catch (Exception e)

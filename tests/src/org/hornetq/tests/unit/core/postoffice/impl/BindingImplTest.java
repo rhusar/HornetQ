@@ -1089,7 +1089,7 @@ public class BindingImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.server.Queue#addRedistributor(long, java.util.concurrent.Executor, org.hornetq.core.remoting.Channel)
        */
-      public void addRedistributor(long delay, Executor executor, Channel replicatingChannel)
+      public void addRedistributor(long delay, Executor executor)
       {
 
       }

@@ -50,11 +50,7 @@ import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.Notification;
 import org.hornetq.core.management.NotificationListener;
 import org.hornetq.core.management.ObjectNames;
-import org.hornetq.core.management.ReplicationOperationInvoker;
 import org.hornetq.core.management.ResourceNames;
-import org.hornetq.core.management.jmx.impl.ReplicationAwareAddressControlWrapper;
-import org.hornetq.core.management.jmx.impl.ReplicationAwareHornetQServerControlWrapper;
-import org.hornetq.core.management.jmx.impl.ReplicationAwareQueueControlWrapper;
 import org.hornetq.core.messagecounter.MessageCounter;
 import org.hornetq.core.messagecounter.MessageCounterManager;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
@@ -130,8 +126,6 @@ public class ManagementServiceImpl implements ManagementService
 
    private final Set<NotificationListener> listeners = new org.hornetq.utils.ConcurrentHashSet<NotificationListener>();
 
-   private ReplicationOperationInvoker replicationInvoker;
-
    // Static --------------------------------------------------------
 
    private static void checkDefaultManagementClusterCredentials(String user, String password)
@@ -163,12 +157,6 @@ public class ManagementServiceImpl implements ManagementService
       registry = new HashMap<String, Object>();
       broadcaster = new NotificationBroadcasterSupport();
       notificationsEnabled = true;
-
-      replicationInvoker = new ReplicationOperationInvokerImpl(managementClusterUser,
-                                                               managementClusterPassword,
-                                                               managementAddress,
-                                                               managementRequestTimeout,
-                                                               managementConnectorID);
    }
 
    // Public --------------------------------------------------------
@@ -210,8 +198,7 @@ public class ManagementServiceImpl implements ManagementService
                                                               messageCounterManager,
                                                               broadcaster);
       ObjectName objectName = ObjectNames.getHornetQServerObjectName();
-      registerInJMX(objectName, new ReplicationAwareHornetQServerControlWrapper(messagingServerControl,
-                                                                                  replicationInvoker));
+      registerInJMX(objectName, messagingServerControl);
       registerInRegistry(ResourceNames.CORE_SERVER, messagingServerControl);
 
       return messagingServerControl;
@@ -229,7 +216,7 @@ public class ManagementServiceImpl implements ManagementService
       ObjectName objectName = ObjectNames.getAddressObjectName(address);
       AddressControlImpl addressControl = new AddressControlImpl(address, postOffice, securityRepository);
 
-      registerInJMX(objectName, new ReplicationAwareAddressControlWrapper(addressControl, replicationInvoker));
+      registerInJMX(objectName, addressControl);
 
       registerInRegistry(ResourceNames.CORE_ADDRESS + address, addressControl);
 
@@ -264,7 +251,7 @@ public class ManagementServiceImpl implements ManagementService
       queueControl.setMessageCounter(counter);
       messageCounterManager.registerMessageCounter(queue.getName().toString(), counter);
       ObjectName objectName = ObjectNames.getQueueObjectName(address, queue.getName());
-      registerInJMX(objectName, new ReplicationAwareQueueControlWrapper(queueControl, replicationInvoker));
+      registerInJMX(objectName, queueControl);
       registerInRegistry(ResourceNames.CORE_QUEUE + queue.getName(), queueControl);
 
       if (log.isDebugEnabled())
@@ -572,11 +559,6 @@ public class ManagementServiceImpl implements ManagementService
       return managementClusterPassword;
    }
 
-   public ReplicationOperationInvoker getReplicationOperationInvoker()
-   {
-      return replicationInvoker;
-   }
-
    // HornetQComponent implementation -----------------------------
 
    public void start() throws Exception
@@ -639,8 +621,6 @@ public class ManagementServiceImpl implements ManagementService
       
       registeredNames.clear();
       
-      replicationInvoker.stop();
-
       started = false;
    }
 

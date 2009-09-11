@@ -141,8 +141,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
 
       deploymentManager = new FileDeploymentManager(server.getConfiguration().getFileDeployerScanPeriod());
 
-      server.registerActivateCallback(this);
-
       server.start();
 
       started = true;

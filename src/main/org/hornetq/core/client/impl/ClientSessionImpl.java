@@ -50,7 +50,6 @@ import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessag
 import org.hornetq.core.remoting.impl.wireformat.SessionCreateConsumerMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionDeleteQueueMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionExpiredMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionFailoverCompleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionQueueQueryMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionQueueQueryResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
@@ -743,7 +742,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       try
       {
-         channel.transferConnection(backupConnection, channel.getID(), null);
+         channel.transferConnection(backupConnection);
 
          backupConnection.syncIDGeneratorSequence(remotingConnection.getIDGeneratorSequence());
 
@@ -792,8 +791,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       {
          channel.unlock();
       }
-
-      channel.send(new SessionFailoverCompleteMessage(name));
 
       return ok;
    }

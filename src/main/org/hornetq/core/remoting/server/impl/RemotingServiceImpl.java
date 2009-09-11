@@ -303,8 +303,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
       
       RemotingConnection rc = new RemotingConnectionImpl(connection,
-                                                         interceptors,
-                                                         !config.isBackup(),
+                                                         interceptors,                                                        
                                                          server.getConfiguration().isAsyncConnectionExecutionEnabled() ? server.getExecutorFactory()
                                                                                                                                .getExecutor()
                                                                                                                       : null);

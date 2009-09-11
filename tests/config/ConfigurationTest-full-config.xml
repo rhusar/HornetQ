@@ -28,6 +28,7 @@
       <persist-id-cache>true</persist-id-cache>
       <queue-activation-timeout>12456</queue-activation-timeout>
       <backup>true</backup>
+      <shared-store>true</shared-store>
       <persist-delivery-count-before-delivery>true</persist-delivery-count-before-delivery>      
       <paging-directory>pagingdir</paging-directory>
       <bindings-directory>somedir</bindings-directory>

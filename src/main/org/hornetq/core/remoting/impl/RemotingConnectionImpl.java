@@ -65,7 +65,7 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private volatile boolean destroyed;
 
-   private volatile boolean active;
+   // private volatile boolean active;
 
    private final boolean client;
 
@@ -79,7 +79,7 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private final Object transferLock = new Object();
 
-   private boolean frozen;
+   // private boolean frozen;
 
    private final Object failLock = new Object();
 
@@ -99,7 +99,7 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
                                  final long blockingCallTimeout,
                                  final List<Interceptor> interceptors)
    {
-      this(transportConnection, blockingCallTimeout, interceptors, true, true, null);
+      this(transportConnection, blockingCallTimeout, interceptors, true, null);
    }
 
    /*
@@ -107,17 +107,15 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
     */
    public RemotingConnectionImpl(final Connection transportConnection,
                                  final List<Interceptor> interceptors,
-                                 final boolean active,
                                  final Executor executor)
 
    {
-      this(transportConnection, -1, interceptors, active, false, executor);
+      this(transportConnection, -1, interceptors, false, executor);
    }
 
    private RemotingConnectionImpl(final Connection transportConnection,
                                   final long blockingCallTimeout,
                                   final List<Interceptor> interceptors,
-                                  final boolean active,
                                   final boolean client,
                                   final Executor executor)
 
@@ -127,8 +125,6 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
       this.blockingCallTimeout = blockingCallTimeout;
 
       this.interceptors = interceptors;
-
-      this.active = active;
 
       this.client = client;
 
@@ -306,11 +302,6 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
       return transferLock;
    }
 
-   public boolean isActive()
-   {
-      return active;
-   }
-
    public boolean isClient()
    {
       return client;
@@ -366,52 +357,34 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
    {
       synchronized (transferLock)
       {
-         if (!frozen)
+         if (interceptors != null)
          {
-            if (interceptors != null)
+            for (final Interceptor interceptor : interceptors)
             {
-               for (final Interceptor interceptor : interceptors)
+               try
                {
-                  try
-                  {
-                     boolean callNext = interceptor.intercept(packet, this);
+                  boolean callNext = interceptor.intercept(packet, this);
 
-                     if (!callNext)
-                     {
-                        // abort
-
-                        return;
-                     }
-                  }
-                  catch (final Throwable e)
+                  if (!callNext)
                   {
-                     log.warn("Failure in calling interceptor: " + interceptor, e);
+                     // abort
+
+                     return;
                   }
                }
-            }
-
-            final Channel channel = channels.get(packet.getChannelID());
-
-            if (channel != null)
-            {
-               channel.handlePacket(packet);
+               catch (final Throwable e)
+               {
+                  log.warn("Failure in calling interceptor: " + interceptor, e);
+               }
             }
          }
-      }
-   }
 
-   public void activate()
-   {
-      active = true;
-   }
+         final Channel channel = channels.get(packet.getChannelID());
 
-   public void freeze()
-   {
-      // Prevent any more packets being handled on this connection
-
-      synchronized (transferLock)
-      {
-         frozen = true;
+         if (channel != null)
+         {
+            channel.handlePacket(packet);
+         }
       }
    }
 

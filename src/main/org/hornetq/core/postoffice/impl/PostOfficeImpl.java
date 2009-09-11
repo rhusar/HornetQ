@@ -75,8 +75,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
    public static final SimpleString HDR_RESET_QUEUE_DATA = new SimpleString("_HQ_RESET_QUEUE_DATA");
 
-   private HornetQServer server;
-
    private final AddressManager addressManager;
 
    private final QueueFactory queueFactory;
@@ -87,7 +85,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
    private volatile boolean started;
 
-   private volatile boolean backup;
+  // private volatile boolean backup;
 
    private final ManagementService managementService;
 
@@ -123,23 +121,19 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
-   public PostOfficeImpl(final HornetQServer server,
-                         final StorageManager storageManager,
+   public PostOfficeImpl(final StorageManager storageManager,
                          final PagingManager pagingManager,
                          final QueueFactory bindableFactory,
                          final ManagementService managementService,
                          final long reaperPeriod,
                          final int reaperPriority,
-                         final boolean enableWildCardRouting,
-                         final boolean backup,
+                         final boolean enableWildCardRouting,             
                          final int idCacheSize,
                          final boolean persistIDCache,
                          final ExecutorFactory orderedExecutorFactory,
                          HierarchicalRepository<AddressSettings> addressSettingsRepository)
 
    {
-      this.server = server;
-
       this.storageManager = storageManager;
 
       this.queueFactory = bindableFactory;
@@ -160,8 +154,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
       {
          addressManager = new SimpleAddressManager();
       }
-
-      this.backup = backup;
 
       this.idCacheSize = idCacheSize;
 
@@ -190,10 +182,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
       // This is to avoid thread leakages where the Reaper would run beyong the life cycle of the PostOffice
       started = true;
 
-      if (!backup)
-      {
-         startExpiryScanner();
-      }
+      startExpiryScanner();      
    }
 
    public synchronized void stop() throws Exception
@@ -356,8 +345,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
                      if (redistributionDelay != -1)
                      {
                         queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor(),
-                                               server.getReplicatingChannel());
+                                               redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -428,8 +416,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
                      if (redistributionDelay != -1)
                      {
                         queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor(),
-                                               server.getReplicatingChannel());
+                                               redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -462,11 +449,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
       if (binding.getType() == BindingType.LOCAL_QUEUE)
       {
          Queue queue = (Queue)binding.getBindable();
-
-         if (backup)
-         {
-            queue.setBackup();
-         }
 
          managementService.registerQueue(queue, binding.getAddress(), storageManager);
 
@@ -681,37 +663,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
    public PagingManager getPagingManager()
    {
       return pagingManager;
-   }
-
-   public List<Queue> activate()
-   {
-
-      backup = false;
-
-      pagingManager.activate();
-
-      Map<SimpleString, Binding> nameMap = addressManager.getBindings();
-
-      List<Queue> queues = new ArrayList<Queue>();
-
-      for (Binding binding : nameMap.values())
-      {
-         if (binding.getType() == BindingType.LOCAL_QUEUE)
-         {
-            Queue queue = (Queue)binding.getBindable();
-
-            boolean activated = queue.activate();
-
-            if (!activated)
-            {
-               queues.add(queue);
-            }
-         }
-      }
-
-      startExpiryScanner();
-
-      return queues;
    }
 
    public DuplicateIDCache getDuplicateIDCache(final SimpleString address)

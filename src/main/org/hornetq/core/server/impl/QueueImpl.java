@@ -46,7 +46,6 @@ import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
-import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.server.Consumer;
 import org.hornetq.core.server.Distributor;
 import org.hornetq.core.server.HandleStatus;
@@ -127,10 +126,6 @@ public class QueueImpl implements Queue
 
    private final ScheduledExecutorService scheduledExecutor;
 
-   private volatile boolean backup;
-
-   private int consumersToFailover = -1;
-
    private SimpleString address;
 
    private Redistributor redistributor;
@@ -146,7 +141,7 @@ public class QueueImpl implements Queue
    private final Map<Consumer, Iterator<MessageReference>> iterators = new HashMap<Consumer, Iterator<MessageReference>>();
 
    private ConcurrentMap<SimpleString, Consumer> groups = new ConcurrentHashMap<SimpleString, Consumer>();
-   
+
    private volatile SimpleString expiryAddress;
 
    public QueueImpl(final long persistenceID,
@@ -192,7 +187,7 @@ public class QueueImpl implements Queue
       direct = true;
 
       scheduledDeliveryHandler = new ScheduledDeliveryHandlerImpl(scheduledExecutor);
-      
+
       if (addressSettingsRepository != null)
       {
          expiryAddress = addressSettingsRepository.getMatch(address.toString()).getExpiryAddress();
@@ -202,7 +197,7 @@ public class QueueImpl implements Queue
          expiryAddress = null;
       }
    }
-   
+
    // Bindable implementation -------------------------------------------------------------------------------------
 
    public SimpleString getRoutingName()
@@ -352,11 +347,6 @@ public class QueueImpl implements Queue
 
    public void lockDelivery()
    {
-      if (backup)
-      {
-         return;
-      }
-
       try
       {
          lock.acquire();
@@ -369,11 +359,6 @@ public class QueueImpl implements Queue
 
    public void unlockDelivery()
    {
-      if (backup)
-      {
-         return;
-      }
-
       lock.release();
    }
 
@@ -471,7 +456,7 @@ public class QueueImpl implements Queue
       return removed;
    }
 
-   public synchronized void addRedistributor(final long delay, final Executor executor, final Channel replicatingChannel)
+   public synchronized void addRedistributor(final long delay, final Executor executor)
    {
       if (future != null)
       {
@@ -490,7 +475,7 @@ public class QueueImpl implements Queue
       {
          if (consumers.size() == 0)
          {
-            DelayedAddRedistributor dar = new DelayedAddRedistributor(executor, replicatingChannel);
+            DelayedAddRedistributor dar = new DelayedAddRedistributor(executor);
 
             future = scheduledExecutor.schedule(dar, delay, TimeUnit.MILLISECONDS);
 
@@ -499,7 +484,7 @@ public class QueueImpl implements Queue
       }
       else
       {
-         internalAddRedistributor(executor, replicatingChannel);
+         internalAddRedistributor(executor);
       }
    }
 
@@ -743,26 +728,26 @@ public class QueueImpl implements Queue
    {
       if (checkDLQ(reference))
       {
-         if (!scheduledDeliveryHandler.checkAndSchedule(reference, backup))
+         if (!scheduledDeliveryHandler.checkAndSchedule(reference))
          {
             messageReferences.addFirst(reference, reference.getMessage().getPriority());
          }
       }
-   }     
+   }
 
    public void expire(final MessageReference ref) throws Exception
-   {      
+   {
       log.info("expiring ref " + this.expiryAddress);
       if (expiryAddress != null)
       {
-         move(expiryAddress, ref, true);         
+         move(expiryAddress, ref, true);
       }
       else
-      {         
+      {
          acknowledge(ref);
       }
    }
-   
+
    public void setExpiryAddress(final SimpleString expiryAddress)
    {
       this.expiryAddress = expiryAddress;
@@ -1003,69 +988,6 @@ public class QueueImpl implements Queue
       return false;
    }
 
-   public boolean isBackup()
-   {
-      return backup;
-   }
-
-   public synchronized void setBackup()
-   {
-      backup = true;
-
-      direct = false;
-   }
-
-   public synchronized boolean activate()
-   {
-      consumersToFailover = consumers.size();
-
-      if (consumersToFailover == 0)
-      {
-         backup = false;
-
-         return true;
-      }
-      else
-      {
-         return false;
-      }
-   }
-
-   public synchronized void activateNow(final Executor executor)
-   {
-      if (backup)
-      {
-         log.info("Timed out waiting for all consumers to reconnect to queue " + name +
-                  " so queue will be activated now");
-
-         backup = false;
-
-         scheduledDeliveryHandler.reSchedule();
-
-         deliverAsync(executor);
-      }
-   }
-
-   public synchronized boolean consumerFailedOver()
-   {
-      consumersToFailover--;
-
-      if (consumersToFailover == 0)
-      {
-         // All consumers for the queue have failed over, can re-activate it now
-
-         backup = false;
-
-         scheduledDeliveryHandler.reSchedule();
-
-         return true;
-      }
-      else
-      {
-         return false;
-      }
-   }
-
    // Public
    // -----------------------------------------------------------------------------
 
@@ -1097,17 +1019,12 @@ public class QueueImpl implements Queue
    // Private
    // ------------------------------------------------------------------------------
 
-   private void internalAddRedistributor(final Executor executor, final Channel replicatingChannel)
+   private void internalAddRedistributor(final Executor executor)
    {
       // create the redistributor only once if there are no local consumers
       if (consumers.size() == 0 && redistributor == null)
       {
-         redistributor = new Redistributor(this,
-                                           storageManager,
-                                           postOffice,
-                                           executor,
-                                           REDISTRIBUTOR_BATCH_SIZE,
-                                           replicatingChannel);
+         redistributor = new Redistributor(this, storageManager, postOffice, executor, REDISTRIBUTOR_BATCH_SIZE);
 
          distributionPolicy.addConsumer(redistributor);
 
@@ -1287,16 +1204,6 @@ public class QueueImpl implements Queue
     */
    private synchronized void deliver()
    {
-      // We don't do actual delivery if the queue is on a backup node - this is
-      // because it's async and could get out of step
-      // with the live node. Instead, when we replicate the delivery we remove
-      // the ref from the queue
-
-      if (backup)
-      {
-         return;
-      }
-
       direct = false;
 
       if (distributionPolicy.getConsumerCount() == 0)
@@ -1310,11 +1217,11 @@ public class QueueImpl implements Queue
 
       Iterator<MessageReference> iterator = null;
 
-      //TODO - this needs to be optimised!! Creating too much stuff on an inner loop
+      // TODO - this needs to be optimised!! Creating too much stuff on an inner loop
       int totalConsumers = distributionPolicy.getConsumerCount();
       Set<Consumer> busyConsumers = new HashSet<Consumer>();
       Set<Consumer> nullReferences = new HashSet<Consumer>();
-      
+
       while (true)
       {
          consumer = distributionPolicy.getNextConsumer();
@@ -1334,7 +1241,7 @@ public class QueueImpl implements Queue
             else
             {
                reference = null;
-               
+
                if (consumer.getFilter() != null)
                {
                   // we have iterated on the whole queue for
@@ -1347,7 +1254,7 @@ public class QueueImpl implements Queue
 
          if (reference == null)
          {
-            nullReferences.add(consumer);            
+            nullReferences.add(consumer);
             if (nullReferences.size() + busyConsumers.size() == totalConsumers)
             {
                startDepaging();
@@ -1361,10 +1268,10 @@ public class QueueImpl implements Queue
          else
          {
             nullReferences.remove(consumer);
-            
+
             if (reference.getMessage().isExpired())
             {
-               //We expire messages on the server too
+               // We expire messages on the server too
                if (iterator == null)
                {
                   messageReferences.removeFirst();
@@ -1373,9 +1280,9 @@ public class QueueImpl implements Queue
                {
                   iterator.remove();
                }
-               
+
                referenceHandled();
-               
+
                try
                {
                   expire(reference);
@@ -1384,7 +1291,7 @@ public class QueueImpl implements Queue
                {
                   log.error("Failed to expire ref", e);
                }
-               
+
                continue;
             }
          }
@@ -1443,14 +1350,14 @@ public class QueueImpl implements Queue
          messagesAdded.incrementAndGet();
       }
 
-      if (scheduledDeliveryHandler.checkAndSchedule(ref, backup))
+      if (scheduledDeliveryHandler.checkAndSchedule(ref))
       {
          return;
       }
 
       boolean add = false;
 
-      if (direct && !backup)
+      if (direct)
       {
          // Deliver directly
 
@@ -1670,7 +1577,7 @@ public class QueueImpl implements Queue
 
       if (message.decrementRefCount() == 0 && store != null)
       {
-         store.addSize(-ref.getMessage().getMemoryEstimate());         
+         store.addSize(-ref.getMessage().getMemoryEstimate());
       }
    }
 
@@ -1682,7 +1589,7 @@ public class QueueImpl implements Queue
          {
             ServerMessage msg = ref.getMessage();
 
-            if (!scheduledDeliveryHandler.checkAndSchedule(ref, backup))
+            if (!scheduledDeliveryHandler.checkAndSchedule(ref))
             {
                messageReferences.addFirst(ref, msg.getPriority());
             }
@@ -1871,20 +1778,16 @@ public class QueueImpl implements Queue
    {
       private final Executor executor;
 
-      private final Channel replicatingChannel;
-
-      DelayedAddRedistributor(final Executor executor, final Channel replicatingChannel)
+      DelayedAddRedistributor(final Executor executor)
       {
          this.executor = executor;
-
-         this.replicatingChannel = replicatingChannel;
       }
 
       public void run()
       {
          synchronized (QueueImpl.this)
          {
-            internalAddRedistributor(executor, replicatingChannel);
+            internalAddRedistributor(executor);
 
             futures.remove(this);
          }
