@@ -466,21 +466,19 @@ public class HornetQServerImpl implements HornetQServer
 
       if (!checkActivate())
       {
-         return new ReattachSessionResponseMessage(-1, false, false);
+         return new ReattachSessionResponseMessage(-1, false);
       }
 
       if (session == null)
       {
-         create the session
-         
-         return new ReattachSessionResponseMessage(-1, false, true);
+         return new ReattachSessionResponseMessage(-1, false);
       }
       else
       {
          // Reconnect the channel to the new connection
          int serverLastReceivedCommandID = session.transferConnection(connection, lastReceivedCommandID);
 
-         return new ReattachSessionResponseMessage(serverLastReceivedCommandID, true, true);
+         return new ReattachSessionResponseMessage(serverLastReceivedCommandID, true);
       }
    }
 
@@ -509,7 +507,7 @@ public class HornetQServerImpl implements HornetQServer
                   "interoperate properly");
          return null;
       }
-      
+       
       if (!checkActivate())
       {
          //Backup server is not ready to accept connections
@@ -550,7 +548,7 @@ public class HornetQServerImpl implements HornetQServer
                                                               queueFactory,
                                                               this,
                                                               configuration.getManagementAddress());
-
+      
       sessions.put(name, session);
 
       ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session);
@@ -772,7 +770,7 @@ public class HornetQServerImpl implements HornetQServer
    // Private
    // --------------------------------------------------------------------------------------
 
-   private boolean checkActivate() throws Exception
+   private synchronized boolean checkActivate() throws Exception
    {
       if (configuration.isBackup())
       {
@@ -780,9 +778,11 @@ public class HornetQServerImpl implements HornetQServer
          
          if (configuration.isSharedStore())
          {
-            //load shared store
-                        
+            //Complete the startup procedure
+            
             configuration.setBackup(false);
+            
+            initialisePart2();                                    
          }
          else
          {
@@ -1102,7 +1102,7 @@ public class HornetQServerImpl implements HornetQServer
          }
          else
          {
-            throw new HornetQException(HornetQException.QUEUE_EXISTS);
+            throw new HornetQException(HornetQException.QUEUE_EXISTS, "Queue " + queueName + " already exists");
          }
       }
 

@@ -43,7 +43,7 @@ import org.hornetq.utils.SimpleString;
  *
  */
 public class DelegatingSession implements ClientSessionInternal
-{
+{   
    private static final Logger log = Logger.getLogger(DelegatingSession.class);
 
    private final ClientSessionInternal session;
@@ -183,6 +183,16 @@ public class DelegatingSession implements ClientSessionInternal
    public ClientConsumer createConsumer(String queueName) throws HornetQException
    {
       return session.createConsumer(queueName);
+   }
+   
+   public ClientConsumer createConsumer(SimpleString queueName, boolean browseOnly) throws HornetQException
+   {
+      return session.createConsumer(queueName, browseOnly);
+   }
+
+   public ClientConsumer createConsumer(String queueName, boolean browseOnly) throws HornetQException
+   {
+      return session.createConsumer(queueName, browseOnly);
    }
 
    public ClientProducer createProducer() throws HornetQException
@@ -464,5 +474,10 @@ public class DelegatingSession implements ClientSessionInternal
    public void setForceNotSameRM(boolean force)
    {
       session.setForceNotSameRM(force);
+   }
+   
+   public void workDone()
+   {
+      session.workDone();
    }
 }

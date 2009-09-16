@@ -27,15 +27,19 @@ import org.hornetq.utils.Pair;
 public interface ClientSessionFactory
 {
    ClientSession createXASession() throws HornetQException;
-   
+
    ClientSession createTransactedSession() throws HornetQException;
-   
+
    ClientSession createSession() throws HornetQException;
-   
+
    ClientSession createSession(boolean autoCommitSends, boolean autoCommitAcks) throws HornetQException;
+
+   ClientSession createSession(boolean autoCommitSends, boolean autoCommitAcks, int ackBatchSize) throws HornetQException;
    
    ClientSession createSession(boolean xa, boolean autoCommitSends, boolean autoCommitAcks) throws HornetQException;
 
+   ClientSession createSession(boolean xa, boolean autoCommitSends, boolean autoCommitAcks, boolean preAcknowledge) throws HornetQException;
+   
    ClientSession createSession(String username,
                                String password,
                                boolean xa,
@@ -44,18 +48,17 @@ public interface ClientSessionFactory
                                boolean preAcknowledge,
                                int ackBatchSize) throws HornetQException;
 
-   ClientSession createSession(boolean xa, boolean autoCommitSends, boolean autoCommitAcks, boolean preAcknowledge) throws HornetQException;
- 
+
    List<Pair<TransportConfiguration, TransportConfiguration>> getStaticConnectors();
-   
+
    void setStaticConnectors(List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors);
-   
+
    long getClientFailureCheckPeriod();
 
    void setClientFailureCheckPeriod(long clientFailureCheckPeriod);
-   
+
    boolean isCacheLargeMessagesClient();
-   
+
    void setCacheLargeMessagesClient(boolean cached);
 
    long getConnectionTTL();
@@ -71,7 +74,7 @@ public interface ClientSessionFactory
    void setMaxConnections(int maxConnections);
 
    int getMinLargeMessageSize();
-   
+
    void setMinLargeMessageSize(int minLargeMessageSize);
 
    int getConsumerWindowSize();
@@ -97,9 +100,9 @@ public interface ClientSessionFactory
    boolean isBlockOnPersistentSend();
 
    void setBlockOnPersistentSend(boolean blockOnPersistentSend);
-   
+
    boolean isBlockOnNonPersistentSend();
-   
+
    void setBlockOnNonPersistentSend(boolean blockOnNonPersistentSend);
 
    boolean isAutoGroup();
@@ -145,19 +148,19 @@ public interface ClientSessionFactory
    boolean isFailoverOnServerShutdown();
 
    void setFailoverOnServerShutdown(boolean failoverOnServerShutdown);
-   
+
    String getConnectionLoadBalancingPolicyClassName();
 
    void setConnectionLoadBalancingPolicyClassName(String loadBalancingPolicyClassName);
-   
-   String getDiscoveryAddress();   
+
+   String getDiscoveryAddress();
 
    void setDiscoveryAddress(String discoveryAddress);
 
    int getDiscoveryPort();
 
    void setDiscoveryPort(int discoveryPort);
-   
+
    long getDiscoveryRefreshTimeout();
 
    void setDiscoveryRefreshTimeout(long discoveryRefreshTimeout);

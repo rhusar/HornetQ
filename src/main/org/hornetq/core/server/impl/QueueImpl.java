@@ -78,8 +78,6 @@ public class QueueImpl implements Queue
 
    public static final int REDISTRIBUTOR_BATCH_SIZE = 100;
 
-   private static final boolean trace = log.isTraceEnabled();
-
    public static final int NUM_PRIORITIES = 10;
 
    private volatile long persistenceID = -1;
@@ -736,8 +734,7 @@ public class QueueImpl implements Queue
    }
 
    public void expire(final MessageReference ref) throws Exception
-   {
-      log.info("expiring ref " + this.expiryAddress);
+   {      
       if (expiryAddress != null)
       {
          move(expiryAddress, ref, true);

@@ -70,9 +70,14 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
    {
 
       return new HornetQServerControl()
-      {
+      {         
          private final CoreMessagingProxy proxy = new CoreMessagingProxy(session,
                                                                          ResourceNames.CORE_SERVER);
+         
+         public boolean isSharedStore()
+         {
+            return (Boolean)proxy.retrieveAttributeValue("sharedStore");
+         }
          
          public boolean closeConnectionsForAddress(String ipAddress) throws Exception
          {

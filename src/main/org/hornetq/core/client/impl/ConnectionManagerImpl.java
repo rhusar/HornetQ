@@ -351,6 +351,8 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
 
                ClientSessionInternal session = new ClientSessionImpl(this,
                                                                      name,
+                                                                     username,
+                                                                     password,
                                                                      xa,
                                                                      autoCommitSends,
                                                                      autoCommitAcks,
@@ -360,6 +362,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                                                                      ackBatchSize,
                                                                      consumerWindowSize,
                                                                      consumerMaxRate,
+                                                                     producerWindowSize,
                                                                      producerMaxRate,
                                                                      blockOnNonPersistentSend,
                                                                      blockOnPersistentSend,
@@ -638,31 +641,24 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                   connection.destroy();
                }
 
-               closeConnectionsAndCallFailureListeners(me);
+               closeAllConnections();
             }
          }
          else
          {
-            closeConnectionsAndCallFailureListeners(me);
+            closeAllConnections();
          }
+         
+         //We always call the failure listeners
+         callFailureListeners(me);
       }
    }
 
-   private void closeConnectionsAndCallFailureListeners(final HornetQException me)
+   private void closeAllConnections()
    {
       refCount = 0;
       mapIterator = null;
-      checkCloseConnections();
-
-      // TODO (after beta5) should really execute on different thread then remove the async in HornetQConnection
-
-      // threadPool.execute(new Runnable()
-      // {
-      // public void run()
-      // {
-      callFailureListeners(me);
-      // }
-      // });
+      checkCloseConnections();     
    }
 
    private void callFailureListeners(final HornetQException me)

@@ -30,6 +30,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
+import javax.management.StandardMBean;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.config.Configuration;
@@ -58,7 +59,7 @@ import org.hornetq.utils.json.JSONObject;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class HornetQServerControlImpl implements HornetQServerControl, NotificationEmitter
+public class HornetQServerControlImpl extends StandardMBean implements HornetQServerControl, NotificationEmitter
 {
    // Constants -----------------------------------------------------
 
@@ -94,6 +95,7 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
                                  final MessageCounterManager messageCounterManager,
                                  final NotificationBroadcasterSupport broadcaster) throws Exception
    {
+      super(HornetQServerControl.class);
       this.postOffice = postOffice;
       this.configuration = configuration;
       this.resourceManager = resourceManager;

@@ -16,6 +16,8 @@ package org.hornetq.core.management.impl;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.StandardMBean;
+
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
@@ -40,7 +42,7 @@ import org.hornetq.utils.json.JSONObject;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class QueueControlImpl implements QueueControl
+public class QueueControlImpl extends StandardMBean implements QueueControl
 {
 
    // Constants -----------------------------------------------------
@@ -65,11 +67,11 @@ public class QueueControlImpl implements QueueControl
       for (int i = 0; i < messages.length; i++)
       {
          Map<String, Object> message = messages[i];
-         array.put(new JSONObject(message));         
+         array.put(new JSONObject(message));
       }
       return array.toString();
    }
-   
+
    /**
     * Returns null if the string is null or empty
     */
@@ -78,7 +80,8 @@ public class QueueControlImpl implements QueueControl
       if (filterStr == null || filterStr.trim().length() == 0)
       {
          return null;
-      } else
+      }
+      else
       {
          return new FilterImpl(new SimpleString(filterStr));
       }
@@ -87,10 +90,12 @@ public class QueueControlImpl implements QueueControl
    // Constructors --------------------------------------------------
 
    public QueueControlImpl(final Queue queue,
-                       final String address,
-                       final PostOffice postOffice,
-                       final HierarchicalRepository<AddressSettings> addressSettingsRepository)
+                           final String address,
+                           final PostOffice postOffice,
+                           final HierarchicalRepository<AddressSettings> addressSettingsRepository)
+      throws Exception
    {
+      super(QueueControl.class);
       this.queue = queue;
       this.address = address;
       this.postOffice = postOffice;
@@ -206,12 +211,12 @@ public class QueueControlImpl implements QueueControl
       AddressSettings addressSettings = addressSettingsRepository.getMatch(address);
 
       SimpleString sExpiryAddress = new SimpleString(expiryAddress);
-      
+
       if (expiryAddress != null)
       {
          addressSettings.setExpiryAddress(sExpiryAddress);
       }
-      
+
       queue.setExpiryAddress(sExpiryAddress);
    }
 
@@ -227,14 +232,14 @@ public class QueueControlImpl implements QueueControl
       }
       return messages;
    }
-   
+
    public String listScheduledMessagesAsJSON() throws Exception
    {
       return toJSON(listScheduledMessages());
    }
 
    public Map<String, Object>[] listMessages(final String filterStr) throws Exception
-   {     
+   {
       try
       {
          Filter filter = createFilter(filterStr);
@@ -253,7 +258,7 @@ public class QueueControlImpl implements QueueControl
          throw new IllegalStateException(e.getMessage());
       }
    }
-   
+
    public String listMessagesAsJSON(String filter) throws Exception
    {
       return toJSON(listMessages(filter));

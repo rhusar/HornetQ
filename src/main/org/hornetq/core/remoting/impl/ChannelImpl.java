@@ -194,6 +194,7 @@ public class ChannelImpl implements Channel
          {
             lock.unlock();
          }
+         
          // Must block on semaphore outside the main lock or this can prevent failover from occurring, also after the
          // packet is sent to assure we get some credits back
          if (sendSemaphore != null && packet.getType() != PACKETS_CONFIRMED)
@@ -207,7 +208,6 @@ public class ChannelImpl implements Channel
                throw new IllegalStateException("Semaphore interrupted");
             }
          }
-
       }
    }
 
@@ -293,8 +293,12 @@ public class ChannelImpl implements Channel
             if (response.getType() == PacketImpl.EXCEPTION)
             {
                final HornetQExceptionMessage mem = (HornetQExceptionMessage)response;
+               
+               HornetQException e = mem.getException();
+               
+               e.fillInStackTrace();
 
-               throw mem.getException();
+               throw e;
             }
          }
          finally

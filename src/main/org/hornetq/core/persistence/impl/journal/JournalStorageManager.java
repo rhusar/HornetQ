@@ -94,7 +94,7 @@ public class JournalStorageManager implements StorageManager
    public static final int SIZE_FIELDS = SIZE_INT + SIZE_LONG + SIZE_LONG + SIZE_BYTE;
 
    // Message journal record types
-   
+
    public static final byte ADD_LARGE_MESSAGE = 30;
 
    public static final byte ADD_MESSAGE = 31;
@@ -130,15 +130,15 @@ public class JournalStorageManager implements StorageManager
    private final boolean syncNonTransactional;
 
    private final int perfBlastPages;
-   
+
    private final boolean createBindingsDir;
-   
+
    private final String bindingsDir;
-   
+
    private final boolean createJournalDir;
-   
+
    private final String journalDir;
-   
+
    private final String largeMessagesDirectory;
 
    public JournalStorageManager(final Configuration config, final Executor executor)
@@ -156,7 +156,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new NullPointerException("bindings-dir is null");
       }
-      
+
       createBindingsDir = config.isCreateBindingsDir();
 
       journalDir = config.getJournalDirectory();
@@ -165,7 +165,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new NullPointerException("journal-dir is null");
       }
-      
+
       createJournalDir = config.isCreateJournalDir();
 
       SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDir);
@@ -212,8 +212,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new IllegalArgumentException("Unsupported journal type " + config.getJournalType());
       }
-      
-      
+
       this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
 
       messageJournal = new JournalImpl(config.getJournalFileSize(),
@@ -275,7 +274,7 @@ public class JournalStorageManager implements StorageManager
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "MessageId was not assigned to Message");
       }
 
-      // Note that we don't sync, the add reference that comes immediately after will sync
+      // Note that we don't sync, the add reference that comes immediately after will sync if appropriate
 
       if (message.isLargeMessage())
       {
@@ -350,7 +349,7 @@ public class JournalStorageManager implements StorageManager
       }
 
    }
-   
+
    public void storePageTransaction(final long txID, final PageTransactionInfo pageTransaction) throws Exception
    {
       if (pageTransaction.getRecordID() != 0)
@@ -476,7 +475,7 @@ public class JournalStorageManager implements StorageManager
       List<PreparedTransactionInfo> preparedTransactions = new ArrayList<PreparedTransactionInfo>();
 
       messageJournal.load(records, preparedTransactions);
-
+      
       Map<Long, ServerMessage> messages = new HashMap<Long, ServerMessage>();
 
       Map<Long, Map<Long, AddMessageRecord>> queueMap = new HashMap<Long, Map<Long, AddMessageRecord>>();
@@ -498,29 +497,29 @@ public class JournalStorageManager implements StorageManager
                LargeMessageEncoding messageEncoding = new LargeMessageEncoding(largeMessage);
 
                messageEncoding.decode(buff);
-               
+
                Long originalMessageID = (Long)largeMessage.getProperties().getProperty(MessageImpl.HDR_ORIG_MESSAGE_ID);
-               
+
                // Using the linked file by the original file
                if (originalMessageID != null)
                {
                   LargeServerMessage originalMessage = (LargeServerMessage)messages.get(originalMessageID);
-                  
+
                   if (originalMessage == null)
                   {
-                     // this could happen if the message was deleted but the file still exists as the file still being used
-                      originalMessage = createLargeMessage();
+                     // this could happen if the message was deleted but the file still exists as the file still being
+                     // used
+                     originalMessage = createLargeMessage();
                      originalMessage.setMessageID(originalMessageID);
                      originalMessage.setComplete(true);
                      messages.put(originalMessageID, originalMessage);
                   }
-                  
+
                   originalMessage.incrementRefCount();
-                  
+
                   largeMessage.setLinkedMessage(originalMessage);
                   largeMessage.setComplete(true);
                }
-               
 
                messages.put(record.id, largeMessage);
 
@@ -951,7 +950,7 @@ public class JournalStorageManager implements StorageManager
 
             bindingEncoding.setPersistenceID(id);
 
-            queueBindingInfos.add(bindingEncoding);
+            queueBindingInfos.add(bindingEncoding);          
          }
          else if (rec == PERSISTENT_ID_RECORD)
          {
@@ -985,7 +984,7 @@ public class JournalStorageManager implements StorageManager
       checkAndCreateDir(bindingsDir, createBindingsDir);
 
       checkAndCreateDir(journalDir, createJournalDir);
-      
+
       checkAndCreateDir(largeMessagesDirectory, createJournalDir);
 
       cleanupIncompleteFiles();

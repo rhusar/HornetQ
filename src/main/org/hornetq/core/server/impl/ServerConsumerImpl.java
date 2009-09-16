@@ -298,7 +298,7 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          lock.unlock();
       }
-
+      
       // Outside the lock
       if (started)
       {
@@ -419,10 +419,6 @@ public class ServerConsumerImpl implements ServerConsumer
 
    private void promptDelivery()
    {
-      if (trace)
-      {
-         log.trace("Starting prompt delivery");
-      }
       lock.lock();
       try
       {
@@ -461,8 +457,7 @@ public class ServerConsumerImpl implements ServerConsumer
    private HandleStatus doHandle(final MessageReference ref) throws Exception
    {
       if (availableCredits != null && availableCredits.get() <= 0)
-      {
-         // log.info("busy - available credits is " + availableCredits.get());
+      {         
          return HandleStatus.BUSY;
       }
 
@@ -568,10 +563,6 @@ public class ServerConsumerImpl implements ServerConsumer
       if (availableCredits != null)
       {
          availableCredits.addAndGet(-packet.getRequiredBufferSize());
-         if (trace)
-         {
-            log.trace("Taking " + packet.getRequiredBufferSize() + " out of flow control");
-         }
       }
 
       channel.send(packet);

@@ -37,7 +37,7 @@ import org.hornetq.utils.SimpleString;
 
 /**
  * 
- * A ReconnectTest
+ * A ReattachTest
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * 
@@ -45,9 +45,9 @@ import org.hornetq.utils.SimpleString;
  *
  *
  */
-public class ReconnectTest extends UnitTestCase
+public class ReattachTest extends UnitTestCase
 {
-   private static final Logger log = Logger.getLogger(ReconnectTest.class);
+   private static final Logger log = Logger.getLogger(ReattachTest.class);
 
    // Constants -----------------------------------------------------
 
@@ -66,7 +66,7 @@ public class ReconnectTest extends UnitTestCase
    /*
     * Test failure on connection, but server is still up so should immediately reconnect
     */
-   public void testImmediateReconnect() throws Exception
+   public void testImmediateReattach() throws Exception
    {
       final long retryInterval = 500;
 
@@ -143,7 +143,7 @@ public class ReconnectTest extends UnitTestCase
     * Test failure on connection, simulate failure to create connection for a while, then 
     * allow connection to be recreated
     */
-   public void testDelayedReconnect() throws Exception
+   public void testDelayedReattach() throws Exception
    {
       final long retryInterval = 500;
 
@@ -230,7 +230,7 @@ public class ReconnectTest extends UnitTestCase
    }
 
    // Test an async (e.g. pinger) failure coming in while a connection manager is already reconnecting
-   public void testAsyncFailureWhileReconnecting() throws Exception
+   public void testAsyncFailureWhileReattaching() throws Exception
    {
       final long retryInterval = 500;
 
@@ -352,7 +352,7 @@ public class ReconnectTest extends UnitTestCase
       t.join();
    }
 
-   public void testReconnectAttemptsFailsToReconnect() throws Exception
+   public void testReattachAttemptsFailsToReconnect() throws Exception
    {
       final long retryInterval = 500;
 
@@ -428,7 +428,7 @@ public class ReconnectTest extends UnitTestCase
       t.join();
    }
 
-   public void testReconnectAttemptsSucceedsInReconnecting() throws Exception
+   public void testReattachAttemptsSucceedsInReconnecting() throws Exception
    {
       final long retryInterval = 500;
 

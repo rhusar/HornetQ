@@ -64,4 +64,6 @@ public interface ClientSessionInternal extends ClientSession
    void setForceNotSameRM(boolean force);
    
    ConnectionManager getConnectionManager();
+   
+   void workDone();
 }

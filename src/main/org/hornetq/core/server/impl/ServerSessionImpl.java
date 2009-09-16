@@ -93,8 +93,6 @@ import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.impl.TransactionImpl;
-import org.hornetq.utils.IDGenerator;
-import org.hornetq.utils.SimpleIDGenerator;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -155,8 +153,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    private volatile boolean started = false;
 
    private final List<Runnable> failureRunners = new ArrayList<Runnable>();
-
-   private final IDGenerator idGenerator = new SimpleIDGenerator(0);
 
    private final String name;
 
@@ -390,8 +386,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          {
             theQueue = (Queue)binding.getBindable();
          }
-
-         ServerConsumer consumer = new ServerConsumerImpl(idGenerator.generateID(),                                                          
+         
+         ServerConsumer consumer = new ServerConsumerImpl(packet.getID(),                                                          
                                                           this,
                                                           (QueueBinding)binding,
                                                           filter,
@@ -404,7 +400,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
                                                           updateDeliveries,
                                                           executor,
                                                           managementService);
-
+         
          consumers.put(consumer.getID(), consumer);
 
          if (!browseOnly)
@@ -517,6 +513,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          }
          else
          {
+            log.error("Failed to create queue", e);
             response = new HornetQExceptionMessage(new HornetQException(HornetQException.INTERNAL_ERROR));
          }
       }
@@ -664,7 +661,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void handleAcknowledge(final SessionAcknowledgeMessage packet)
-   {
+   {  
       Packet response = null;
 
       try
@@ -1380,15 +1377,16 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void handleReceiveConsumerCredits(final SessionConsumerFlowCreditMessage packet)
-   {
+   {      
       try
       {
          consumers.get(packet.getConsumerID()).receiveCredits(packet.getCredits());
       }
       catch (Exception e)
       {
-         log.error("Failed to receive credits", e);
+         log.error("Failed to receive credits " + this.server.getConfiguration().isBackup(), e);
       }
+      
       channel.confirm(packet);
    }
 

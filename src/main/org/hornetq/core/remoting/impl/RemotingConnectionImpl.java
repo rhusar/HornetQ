@@ -65,8 +65,6 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private volatile boolean destroyed;
 
-   // private volatile boolean active;
-
    private final boolean client;
 
    // Channels 0-9 are reserved for the system

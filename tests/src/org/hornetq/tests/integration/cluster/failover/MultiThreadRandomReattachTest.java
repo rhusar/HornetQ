@@ -20,38 +20,28 @@ import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
-import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.HornetQ;
 
+
 /**
- * A MultiThreadRandomFailoverStressTest
  * 
+ * A MultiThreadRandomReattachTest
+ *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
+ *
+ *
  */
-public class MultiThreadRandomFailoverTest extends MultiThreadRandomFailoverTestBase
+public class MultiThreadRandomReattachTest extends MultiThreadRandomReattachTestBase
 {
    @Override
    protected void start() throws Exception
-   {
-      Configuration backupConf = new ConfigurationImpl();
-      backupConf.setSecurityEnabled(false);
-      backupParams.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-      backupConf.getAcceptorConfigurations()
-                .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory",
-                                                backupParams));
-      backupConf.setBackup(true);
-      backupServer = HornetQ.newHornetQServer(backupConf, false);
-      backupServer.start();
-
+   {      
       Configuration liveConf = new ConfigurationImpl();
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations()
               .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
       Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                   backupParams,
-                                                                   "backup-connector");
+      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
       connectors.put(backupTC.getName(), backupTC);
       liveConf.setConnectorConfigurations(connectors);
       liveConf.setBackupConnectorName(backupTC.getName());
@@ -60,7 +50,7 @@ public class MultiThreadRandomFailoverTest extends MultiThreadRandomFailoverTest
    }
 
    /* (non-Javadoc)
-    * @see org.hornetq.tests.integration.cluster.failover.MultiThreadRandomFailoverTestBase#setBody(org.hornetq.core.client.ClientMessage)
+    * @see org.hornetq.tests.integration.cluster.failover.MultiThreadRandomReattachTestBase#setBody(org.hornetq.core.client.ClientMessage)
     */
    @Override
    protected void setBody(final ClientMessage message) throws Exception
@@ -68,7 +58,7 @@ public class MultiThreadRandomFailoverTest extends MultiThreadRandomFailoverTest
    }
 
    /* (non-Javadoc)
-    * @see org.hornetq.tests.integration.cluster.failover.MultiThreadRandomFailoverTestBase#checkSize(org.hornetq.core.client.ClientMessage)
+    * @see org.hornetq.tests.integration.cluster.failover.MultiThreadRandomReattachTestBase#checkSize(org.hornetq.core.client.ClientMessage)
     */
    @Override
    protected boolean checkSize(final ClientMessage message)

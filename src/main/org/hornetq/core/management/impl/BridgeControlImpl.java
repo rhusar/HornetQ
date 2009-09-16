@@ -13,6 +13,8 @@
 
 package org.hornetq.core.management.impl;
 
+import javax.management.StandardMBean;
+
 import org.hornetq.core.config.cluster.BridgeConfiguration;
 import org.hornetq.core.management.BridgeControl;
 import org.hornetq.core.server.cluster.Bridge;
@@ -24,7 +26,7 @@ import org.hornetq.core.server.cluster.Bridge;
  * 
  * Created 11 dec. 2008 17:09:04
  */
-public class BridgeControlImpl implements BridgeControl
+public class BridgeControlImpl extends StandardMBean implements BridgeControl
 {
 
    // Constants -----------------------------------------------------
@@ -40,7 +42,9 @@ public class BridgeControlImpl implements BridgeControl
    // Constructors --------------------------------------------------
 
    public BridgeControlImpl(final Bridge bridge, final BridgeConfiguration configuration)
+      throws Exception
    {
+      super(BridgeControl.class);
       this.bridge = bridge;
       this.configuration = configuration;
    }

@@ -308,11 +308,11 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
    // Constructors --------------------------------------------------
 
    public HornetQSession(final HornetQConnection connection,
-                       final boolean transacted,
-                       final boolean xa,
-                       final int ackMode,
-                       final ClientSession session,
-                       final int sessionType)
+                         final boolean transacted,
+                         final boolean xa,
+                         final int ackMode,
+                         final ClientSession session,
+                         final int sessionType)
    {
       this.connection = connection;
 
@@ -513,28 +513,28 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
       {
          HornetQDestination jbd = (HornetQDestination)destination;
 
-         //TODO Uncomment when https://jira.jboss.org/jira/browse/JBMESSAGING-1565 is complete
-//         if (jbd != null)
-//         {
-//            if (jbd instanceof Queue)
-//            {
-//               SessionQueueQueryResponseMessage response = session.queueQuery(jbd.getSimpleAddress());
-//   
-//               if (!response.isExists())
-//               {
-//                  throw new InvalidDestinationException("Queue " + jbd.getName() + " does not exist");
-//               }
-//            }
-//            else
-//            {
-//               SessionBindingQueryResponseMessage response = session.bindingQuery(jbd.getSimpleAddress());
-//   
-//               if (!response.isExists())
-//               {
-//                  throw new InvalidDestinationException("Topic " + jbd.getName() + " does not exist");
-//               }
-//            }
-//         }
+         // TODO Uncomment when https://jira.jboss.org/jira/browse/JBMESSAGING-1565 is complete
+         // if (jbd != null)
+         // {
+         // if (jbd instanceof Queue)
+         // {
+         // SessionQueueQueryResponseMessage response = session.queueQuery(jbd.getSimpleAddress());
+         //   
+         // if (!response.isExists())
+         // {
+         // throw new InvalidDestinationException("Queue " + jbd.getName() + " does not exist");
+         // }
+         // }
+         // else
+         // {
+         // SessionBindingQueryResponseMessage response = session.bindingQuery(jbd.getSimpleAddress());
+         //   
+         // if (!response.isExists())
+         // {
+         // throw new InvalidDestinationException("Topic " + jbd.getName() + " does not exist");
+         // }
+         // }
+         // }
 
          ClientProducer producer = session.createProducer(jbd == null ? null : jbd.getSimpleAddress());
 
@@ -574,9 +574,10 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
 
       if (jbdest.isTemporary() && !connection.containsTemporaryQueue(jbdest.getSimpleAddress()))
       {
-         throw new JMSException("Can not create consumer for temporary destination " + destination + " from another JMS connection");
+         throw new JMSException("Can not create consumer for temporary destination " + destination +
+                                " from another JMS connection");
       }
-      
+
       HornetQMessageConsumer consumer = createConsumer(jbdest, null, messageSelector, noLocal);
 
       return consumer;
@@ -674,9 +675,9 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
    }
 
    private HornetQMessageConsumer createConsumer(final HornetQDestination dest,
-                                               final String subscriptionName,
-                                               String selectorString,
-                                               final boolean noLocal) throws JMSException
+                                                 final String subscriptionName,
+                                                 String selectorString,
+                                                 final boolean noLocal) throws JMSException
    {
       try
       {
@@ -686,7 +687,9 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
          {
             connection.setHasNoLocal();
 
-            String filter = HornetQConnection.CONNECTION_ID_PROPERTY_NAME.toString() + "<>'" + connection.getUID() + "'";
+            String filter = HornetQConnection.CONNECTION_ID_PROPERTY_NAME.toString() + "<>'" +
+                            connection.getUID() +
+                            "'";
 
             if (selectorString != null)
             {
@@ -758,7 +761,7 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
                }
 
                queueName = new SimpleString(HornetQTopic.createQueueNameForDurableSubscription(connection.getClientID(),
-                                                                                             subscriptionName));
+                                                                                               subscriptionName));
 
                SessionQueueQueryResponseMessage subResponse = session.queueQuery(queueName);
 
@@ -807,11 +810,11 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
          }
 
          HornetQMessageConsumer jbc = new HornetQMessageConsumer(this,
-                                                             consumer,
-                                                             noLocal,
-                                                             dest,
-                                                             selectorString,
-                                                             autoDeleteQueueName);
+                                                                 consumer,
+                                                                 noLocal,
+                                                                 dest,
+                                                                 selectorString,
+                                                                 autoDeleteQueueName);
 
          consumers.add(jbc);
 
@@ -947,7 +950,7 @@ public class HornetQSession implements Session, XASession, QueueSession, XAQueue
       }
 
       SimpleString queueName = new SimpleString(HornetQTopic.createQueueNameForDurableSubscription(connection.getClientID(),
-                                                                                                 name));
+                                                                                                   name));
 
       try
       {

@@ -22,10 +22,9 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.server.HornetQ;
-import org.hornetq.integration.transports.netty.TransportConstants;
 
 /**
- * A NettyMultiThreadRandomFailoverTest
+ * A NettyMultiThreadRandomReattachTest
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * 
@@ -33,33 +32,19 @@ import org.hornetq.integration.transports.netty.TransportConstants;
  *
  *
  */
-public class NettyMultiThreadRandomFailoverTest extends MultiThreadRandomFailoverTest
+public class NettyMultiThreadRandomReattachTest extends MultiThreadRandomReattachTest
 {
    @Override
    protected void start() throws Exception
-   {
-      Configuration backupConf = new ConfigurationImpl();
-      backupConf.setJMXManagementEnabled(false);
-      backupConf.setSecurityEnabled(false);
-      backupParams.put(TransportConstants.PORT_PROP_NAME, TransportConstants.DEFAULT_PORT + 1);
-      backupConf.getAcceptorConfigurations().clear();
-      backupConf.getAcceptorConfigurations()
-                .add(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyAcceptorFactory",
-                                                backupParams));
-      backupConf.setBackup(true);
-      backupServer = HornetQ.newHornetQServer(backupConf, false);
-      backupServer.start();
-
+   {      
       Configuration liveConf = new ConfigurationImpl();
-      backupConf.setJMXManagementEnabled(false);
+      liveConf.setJMXManagementEnabled(false);
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations().clear();
       liveConf.getAcceptorConfigurations()
               .add(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyAcceptorFactory"));
       Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory",
-                                                                   backupParams,
-                                                                   "backup-connector");
+      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory");
       connectors.put(backupTC.getName(), backupTC);
       liveConf.setConnectorConfigurations(connectors);
       liveConf.setBackupConnectorName(backupTC.getName());
@@ -70,9 +55,7 @@ public class NettyMultiThreadRandomFailoverTest extends MultiThreadRandomFailove
    @Override
    protected ClientSessionFactoryInternal createSessionFactory()
    {
-      final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory"),
-                                                                           new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory",
-                                                                                                      backupParams));
+      final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory"));
 
       sf.setProducerWindowSize(32 * 1024);
       return sf;

@@ -726,6 +726,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
                                    preAcknowledge,
                                    ackBatchSize);
    }
+   
+   
+
+   public ClientSession createSession(boolean autoCommitSends, boolean autoCommitAcks, int ackBatchSize) throws HornetQException
+   {
+      return createSessionInternal(null,
+                                   null,
+                                   false,
+                                   autoCommitSends,
+                                   autoCommitAcks,
+                                   preAcknowledge,
+                                   ackBatchSize);
+   }
 
    public ClientSession createXASession() throws HornetQException
    {

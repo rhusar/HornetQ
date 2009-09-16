@@ -38,14 +38,14 @@ import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.utils.SimpleString;
 
 /**
- * A MultiThreadRandomFailoverTestBase
+ * A MultiThreadRandomReattachTestBase
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  * 
  *
  */
-public abstract class MultiThreadRandomFailoverTestBase extends MultiThreadFailoverSupport
+public abstract class MultiThreadRandomReattachTestBase extends MultiThreadFailoverSupport
 {
    private final Logger log = Logger.getLogger(getClass());
 
@@ -61,10 +61,6 @@ public abstract class MultiThreadRandomFailoverTestBase extends MultiThreadFailo
    protected static final SimpleString ADDRESS = new SimpleString("FailoverTestAddress");
 
    protected HornetQServer liveServer;
-
-   protected HornetQServer backupServer;
-
-   protected Map<String, Object> backupParams = new HashMap<String, Object>();
 
    // Static --------------------------------------------------------
 
@@ -1286,33 +1282,19 @@ public abstract class MultiThreadRandomFailoverTestBase extends MultiThreadFailo
    {
       super.setUp();
 
-      log.info("************ Starting test " + getName());
-      
+      log.info("************ Starting test " + getName());     
    }
 
    @Override
    protected void tearDown() throws Exception
-   {
-      for (int i = 0 ; i < 10; i ++)
-      log.info("************* Ending test " + getName());
-
+   {      
       if (liveServer != null && liveServer.isStarted())
       {
          liveServer.stop();
       }
-      liveServer = null;
-      if (backupServer != null && backupServer.isStarted())
-      {
-         backupServer.stop();
-      }
-      backupServer = null;
       
       liveServer = null;
-      
-      backupServer = null;
-      
-      backupParams = null;
-      
+           
       super.tearDown();
    }
 
@@ -1339,9 +1321,7 @@ public abstract class MultiThreadRandomFailoverTestBase extends MultiThreadFailo
     */
    protected ClientSessionFactoryInternal createSessionFactory()
    {
-      final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                           new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                      backupParams));
+      final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
       sf.setReconnectAttempts(-1);
       sf.setProducerWindowSize(32 * 1024);
       
@@ -1349,10 +1329,7 @@ public abstract class MultiThreadRandomFailoverTestBase extends MultiThreadFailo
    }
 
    protected void stop() throws Exception
-   {
-      log.info("** Stopping server");
-      backupServer.stop();
-
+   {     
       liveServer.stop();
       
       System.gc();      

@@ -36,7 +36,6 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
-import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.client.HornetQTextMessage;
@@ -48,9 +47,9 @@ import org.hornetq.utils.SimpleString;
  * 
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  */
-public class RandomFailoverTest extends UnitTestCase
+public class RandomReattachTest extends UnitTestCase
 {
-   private static final Logger log = Logger.getLogger(RandomFailoverTest.class);
+   private static final Logger log = Logger.getLogger(RandomReattachTest.class);
 
    // Constants -----------------------------------------------------
 
@@ -61,10 +60,6 @@ public class RandomFailoverTest extends UnitTestCase
    private static final SimpleString ADDRESS = new SimpleString("FailoverTestAddress");
 
    private HornetQServer liveService;
-
-   private HornetQServer backupService;
-
-   private Map<String, Object> backupParams = new HashMap<String, Object>();
 
    private Timer timer;
 
@@ -225,9 +220,7 @@ public class RandomFailoverTest extends UnitTestCase
       {
          start();
 
-         ClientSessionFactoryImpl sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                    new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                               backupParams));
+         ClientSessionFactoryImpl sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
          sf.setProducerWindowSize(32 * 1024);
 
@@ -1431,25 +1424,13 @@ public class RandomFailoverTest extends UnitTestCase
    }
 
    private void start() throws Exception
-   {
-      Configuration backupConf = new ConfigurationImpl();
-      backupConf.setSecurityEnabled(false);
-      backupParams.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-      backupConf.getAcceptorConfigurations()
-                .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory",
-                                                backupParams));
-      backupConf.setBackup(true);
-      backupService = HornetQ.newHornetQServer(backupConf, false);
-      backupService.start();
-
+   {    
       Configuration liveConf = new ConfigurationImpl();
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations()
               .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
       Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                   backupParams,
-                                                                   "backup-connector");
+      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
       connectors.put(backupTC.getName(), backupTC);
       liveConf.setConnectorConfigurations(connectors);
       liveConf.setBackupConnectorName(backupTC.getName());
@@ -1459,13 +1440,9 @@ public class RandomFailoverTest extends UnitTestCase
 
    private void stop() throws Exception
    {
-      backupService.stop();
-
       liveService.stop();
 
       assertEquals(0, InVMRegistry.instance.size());
-      
-      backupService = null;
       
       liveService = null;
    }
