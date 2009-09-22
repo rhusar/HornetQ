@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -71,7 +72,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private final Set<TransportConfiguration> transportConfigs;
 
-   private final List<Interceptor> interceptors = new ArrayList<Interceptor>();
+   private final List<Interceptor> interceptors = new CopyOnWriteArrayList<Interceptor>();
 
    private final Set<Acceptor> acceptors = new HashSet<Acceptor>();
 

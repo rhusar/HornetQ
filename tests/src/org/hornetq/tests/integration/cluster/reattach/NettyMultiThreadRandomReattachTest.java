@@ -11,10 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover;
-
-import java.util.HashMap;
-import java.util.Map;
+package org.hornetq.tests.integration.cluster.reattach;
 
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
@@ -42,12 +39,7 @@ public class NettyMultiThreadRandomReattachTest extends MultiThreadRandomReattac
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations().clear();
       liveConf.getAcceptorConfigurations()
-              .add(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyAcceptorFactory"));
-      Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory");
-      connectors.put(backupTC.getName(), backupTC);
-      liveConf.setConnectorConfigurations(connectors);
-      liveConf.setBackupConnectorName(backupTC.getName());
+              .add(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyAcceptorFactory"));      
       liveServer = HornetQ.newHornetQServer(liveConf, false);
       liveServer.start();
    }
@@ -56,8 +48,8 @@ public class NettyMultiThreadRandomReattachTest extends MultiThreadRandomReattac
    protected ClientSessionFactoryInternal createSessionFactory()
    {
       final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.integration.transports.netty.NettyConnectorFactory"));
-
-      sf.setProducerWindowSize(32 * 1024);
+      sf.setUseReattach(true);
+      sf.setReconnectAttempts(-1);
       return sf;
    }
 

@@ -38,6 +38,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.FailureListener;
+import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.AbstractBufferHandler;
@@ -65,7 +66,6 @@ import org.hornetq.utils.VersionLoader;
  * 
  * Created 27 Nov 2008 18:46:06
  *
- *
  */
 public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeCycleListener
 {
@@ -79,6 +79,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
    // Attributes
    // -----------------------------------------------------------------------------------
 
+   //We hold this reference for GC reasons
    private final ClientSessionFactory sessionFactory;
 
    private final TransportConfiguration connectorConfig;
@@ -140,6 +141,10 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
    private PingRunnable pingRunnable;
 
    private volatile boolean exitLoop;
+   
+   private final List<Interceptor> interceptors;
+   
+   private final boolean useReattach;
 
    // debug
 
@@ -171,8 +176,10 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                                 final long retryInterval,
                                 final double retryIntervalMultiplier,
                                 final int reconnectAttempts,
+                                final boolean useReattach,
                                 final ExecutorService threadPool,
-                                final ScheduledExecutorService scheduledThreadPool)
+                                final ScheduledExecutorService scheduledThreadPool,
+                                final List<Interceptor> interceptors)
    {
       this.sessionFactory = sessionFactory;
 
@@ -212,12 +219,16 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
       this.retryIntervalMultiplier = retryIntervalMultiplier;
 
       this.reconnectAttempts = reconnectAttempts;
+      
+      this.useReattach = useReattach;
 
       this.scheduledThreadPool = scheduledThreadPool;
 
       this.threadPool = threadPool;
 
       this.orderedExecutorFactory = new OrderedExecutorFactory(threadPool);
+      
+      this.interceptors = interceptors;
    }
 
    // ConnectionLifeCycleListener implementation --------------------------------------------------
@@ -274,7 +285,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                Channel channel1;
 
                synchronized (failoverLock)
-               {
+               {                
                   connection = getConnectionWithRetry(1, reconnectAttempts);
 
                   if (connection == null)
@@ -287,6 +298,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
 
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
                                                 "Unable to connect to server using configuration " + connectorConfig);
+                                    
                   }
 
                   channel1 = connection.getChannel(1, -1, false);
@@ -619,11 +631,11 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
 
                backupTransportParams = null;
 
-               done = reattachSessions(reconnectAttempts == -1 ? -1 : reconnectAttempts + 1);
+               done = reattachSessions(reconnectAttempts == -1 ? -1 : reconnectAttempts + 1, false);
             }
             else if (reconnectAttempts != 0)
             {
-               done = reattachSessions(reconnectAttempts);
+               done = reattachSessions(reconnectAttempts, useReattach);
             }
 
             if (done)
@@ -684,7 +696,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
    /*
     * Re-attach sessions all pre-existing sessions to new remoting connections
     */
-   private boolean reattachSessions(final int reconnectAttempts)
+   private boolean reattachSessions(final int reconnectAttempts, final boolean reattach)
    {
       // We re-attach sessions per connection to ensure there is the same mapping of channel id
       // on live and backup connections
@@ -753,8 +765,17 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
          // If all connections got ok, then handle failover
          for (Map.Entry<ClientSessionInternal, RemotingConnection> entry : sessions.entrySet())
          {
-            boolean b = entry.getKey().handleFailover(entry.getValue());
-
+            boolean b;
+            
+            if (reattach)
+            {
+               b = entry.getKey().handleReattach(entry.getValue());
+            }
+            else
+            {
+               b = entry.getKey().handleFailover(entry.getValue());
+            }
+            
             if (!b)
             {
                // If a session fails to re-attach we doom the lot, but we make sure we try all sessions and don't exit
@@ -956,7 +977,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
             return null;
          }
 
-         conn = new RemotingConnectionImpl(tc, callTimeout, null);
+         conn = new RemotingConnectionImpl(tc, callTimeout, interceptors);
 
          conn.addFailureListener(new DelegatingFailureListener(conn.getID()));
 

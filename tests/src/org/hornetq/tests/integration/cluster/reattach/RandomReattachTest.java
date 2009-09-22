@@ -11,11 +11,9 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover;
+package org.hornetq.tests.integration.cluster.reattach;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -222,7 +220,9 @@ public class RandomReattachTest extends UnitTestCase
 
          ClientSessionFactoryImpl sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
-         sf.setProducerWindowSize(32 * 1024);
+         sf.setReconnectAttempts(-1);
+         
+         sf.setUseReattach(true);
 
          ClientSession session = sf.createSession(false, false, false);
 
@@ -1428,12 +1428,7 @@ public class RandomReattachTest extends UnitTestCase
       Configuration liveConf = new ConfigurationImpl();
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations()
-              .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
-      Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
-      connectors.put(backupTC.getName(), backupTC);
-      liveConf.setConnectorConfigurations(connectors);
-      liveConf.setBackupConnectorName(backupTC.getName());
+              .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));      
       liveService = HornetQ.newHornetQServer(liveConf, false);
       liveService.start();
    }

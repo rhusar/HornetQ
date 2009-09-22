@@ -42,6 +42,8 @@ import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
+import org.hornetq.core.remoting.impl.wireformat.ReattachSessionMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.RollbackMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionAcknowledgeMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionBindingQueryMessage;
@@ -167,7 +169,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    private SendAcknowledgementHandler sendAckHandler;
 
-   // private volatile boolean closedSent;
+   private volatile boolean closedSent;
 
    private volatile boolean rollbackOnly;
 
@@ -743,7 +745,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       {
          closeChildren();
 
-         // closedSent = true;
+         closedSent = true;
 
          channel.sendBlocking(new SessionCloseMessage());
       }
@@ -774,75 +776,77 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       sendAckHandler = handler;
    }
 
-   // // Needs to be synchronized to prevent issues with occurring concurrently with close()
-   // public synchronized boolean handleOldFailover(final RemotingConnection backupConnection)
-   // {
-   // if (closed)
-   // {
-   // return true;
-   // }
-   //
-   // boolean ok = false;
-   //
-   // // We lock the channel to prevent any packets to be added to the resend
-   // // cache during the failover process
-   // channel.lock();
-   //
-   // try
-   // {
-   // channel.transferConnection(backupConnection);
-   //
-   // backupConnection.syncIDGeneratorSequence(remotingConnection.getIDGeneratorSequence());
-   //
-   // remotingConnection = backupConnection;
-   //
-   // Packet request = new ReattachSessionMessage(name, channel.getLastReceivedCommandID());
-   //
-   // Channel channel1 = backupConnection.getChannel(1, -1, false);
-   //
-   // ReattachSessionResponseMessage response = (ReattachSessionResponseMessage)channel1.sendBlocking(request);
-   //
-   // if (response.isSessionFound())
-   // {
-   // channel.replayCommands(response.getLastReceivedCommandID(), channel.getID());
-   //
-   // ok = true;
-   // }
-   // else
-   // {
-   // if (closedSent)
-   // {
-   // // a session re-attach may fail, if the session close was sent before failover started, hit the server,
-   // // processed, then before the response was received back, failover occurred, re-attach was attempted. in
-   // // this case it's ok - we don't want to call any failure listeners and we don't want to halt the rest of
-   // // the failover process.
-   // //
-   // // however if session re-attach fails and the session was not in a call to close, then we DO want to call
-   // // the session listeners so we return false
-   // //
-   // // Also session reattach will fail if the server is restarted - so the session is lost
-   // ok = true;
-   // }
-   // else
-   // {
-   // log.warn(System.identityHashCode(this) + " Session not found on server when attempting to re-attach");
-   // }
-   //
-   // channel.returnBlocking();
-   // }
-   //
-   // }
-   // catch (Throwable t)
-   // {
-   // log.error("Failed to handle failover", t);
-   // }
-   // finally
-   // {
-   // channel.unlock();
-   // }
-   //
-   // return ok;
-   // }
+    // Needs to be synchronized to prevent issues with occurring concurrently with close()
+   
+   //TODO - need to reenable
+   public synchronized boolean handleReattach(final RemotingConnection backupConnection)
+   {
+      if (closed)
+      {
+         return true;
+      }
+
+      boolean ok = false;
+
+      // We lock the channel to prevent any packets to be added to the resend
+      // cache during the failover process
+      channel.lock();
+
+      try
+      {
+         channel.transferConnection(backupConnection);
+
+         backupConnection.syncIDGeneratorSequence(remotingConnection.getIDGeneratorSequence());
+
+         remotingConnection = backupConnection;
+
+         Packet request = new ReattachSessionMessage(name, channel.getLastReceivedCommandID());
+
+         Channel channel1 = backupConnection.getChannel(1, -1, false);
+
+         ReattachSessionResponseMessage response = (ReattachSessionResponseMessage)channel1.sendBlocking(request);
+
+         if (response.isSessionFound())
+         {
+            channel.replayCommands(response.getLastReceivedCommandID(), channel.getID());
+
+            ok = true;
+         }
+         else
+         {
+            if (closedSent)
+            {
+               // a session re-attach may fail, if the session close was sent before failover started, hit the server,
+               // processed, then before the response was received back, failover occurred, re-attach was attempted. in
+               // this case it's ok - we don't want to call any failure listeners and we don't want to halt the rest of
+               // the failover process.
+               //
+               // however if session re-attach fails and the session was not in a call to close, then we DO want to call
+               // the session listeners so we return false
+               //
+               // Also session reattach will fail if the server is restarted - so the session is lost
+               ok = true;
+            }
+            else
+            {
+               log.warn(System.identityHashCode(this) + " Session not found on server when attempting to re-attach");
+            }
+
+            channel.returnBlocking();
+         }
+
+      }
+      catch (Throwable t)
+      {
+         log.error("Failed to handle failover", t);
+      }
+      finally
+      {
+         channel.unlock();
+      }
+
+      return ok;
+   }
 
    public void workDone()
    {
@@ -861,6 +865,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       boolean ok = false;
 
+      log.info("Failover occurring");
+      
       // Need to stop all consumers outside the lock
       for (ClientConsumerInternal consumer : consumers.values())
       {
@@ -875,13 +881,21 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
          consumer.clearAtFailover();
       }
+      
+      log.info("stopped consumers");
 
       // We lock the channel to prevent any packets being sent during the failover process
       channel.lock();
+      
+      log.info("got lock");
 
       try
       {
+         log.info("transferring connection");
+         
          channel.transferConnection(backupConnection);
+         
+         log.info("transferred connection");
 
          remotingConnection = backupConnection;
 
@@ -899,10 +913,15 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
          Channel channel1 = backupConnection.getChannel(1, -1, false);
 
+         log.info("sending create session");
+         
          CreateSessionResponseMessage response = (CreateSessionResponseMessage)channel1.sendBlocking(request);
 
+         log.info("got response from create session");
+         
          if (response.isCreated())
          {
+            log.info("craeted ok");
             // Session was created ok
 
             // Now we need to recreate the consumers
@@ -971,14 +990,18 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
             }
 
             ok = true;
+            
+            log.info("session created ok");
          }
          else
          {
+            log.info("not created ok");
             // This means the server we failed onto is not ready to take new sessions - perhaps it hasn't actually
             // failed over
          }
 
          // We cause any blocking calls to return - since they won't get responses.
+         log.info("calling returnblocking");
          channel.returnBlocking();
       }
       catch (Throwable t)

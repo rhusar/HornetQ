@@ -14,7 +14,7 @@
 
 package org.hornetq.tests.soak.failover;
 
-import org.hornetq.tests.integration.cluster.failover.RandomReattachTest;
+import org.hornetq.tests.integration.cluster.reattach.RandomReattachTest;
 
 /**
  * A RandomFailoverSoakTest

@@ -32,21 +32,16 @@ import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ClientSessionInternal;
-import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.Interceptor;
-import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
-import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
-import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.jms.client.HornetQTextMessage;
-import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -69,21 +64,13 @@ import org.hornetq.utils.SimpleString;
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  *
  */
-public class FailoverTest extends ServiceTestBase
+public class FailoverTest extends FailoverTestBase
 {
    private static final Logger log = Logger.getLogger(FailoverTest.class);
 
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
-
-   private static final SimpleString ADDRESS = new SimpleString("FailoverTestAddress");
-
-   private HornetQServer server0Service;
-
-   private HornetQServer server1Service;
-
-   private Map<String, Object> server1Params = new HashMap<String, Object>();
 
    // Static --------------------------------------------------------
 
@@ -93,9 +80,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testNonTransacted() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -173,9 +158,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testTransactedMessagesSentSoRollback() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -250,9 +233,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testTransactedMessagesNotSentSoNoRollback() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -338,9 +319,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testTransactedMessagesConsumedSoRollback() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -430,9 +409,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testTransactedMessagesNotConsumedSoNoRollback() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -538,9 +515,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testXAMessagesSentSoRollbackOnEnd() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -619,9 +594,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testXAMessagesSentSoRollbackOnPrepare() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -703,9 +676,7 @@ public class FailoverTest extends ServiceTestBase
    // This might happen if 1PC optimisation kicks in
    public void testXAMessagesSentSoRollbackOnCommit() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -788,9 +759,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testXAMessagesNotSentSoNoRollbackOnCommit() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -888,9 +857,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testXAMessagesConsumedSoRollbackOnEnd() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -984,9 +951,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testXAMessagesConsumedSoRollbackOnPrepare() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1083,9 +1048,7 @@ public class FailoverTest extends ServiceTestBase
    // 1PC optimisation
    public void testXAMessagesConsumedSoRollbackOnCommit() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1183,7 +1146,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testCreateNewFactoryAfterFailover() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       ClientSession session = sendAndConsume(sf);
 
@@ -1210,10 +1173,11 @@ public class FailoverTest extends ServiceTestBase
 
       assertTrue(ok);
 
+      log.info("closing session");
       session.close();
+      log.info("closed session");
 
-      sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                   server1Params));
+      sf = new ClientSessionFactoryImpl(getConnectorTransportConfiguration(false));
 
       session = sendAndConsume(sf);
 
@@ -1226,9 +1190,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testFailoverMultipleSessionsWithConsumers() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1339,9 +1301,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testFailoverFailMultipleUnderlyingConnections() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1450,107 +1410,12 @@ public class FailoverTest extends ServiceTestBase
       assertEquals(0, sf.numConnections());
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   protected void setUp() throws Exception
-   {
-      super.setUp();
-
-      server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-      Configuration config1 = super.createDefaultConfig();
-      config1.getAcceptorConfigurations().clear();
-      config1.getAcceptorConfigurations()
-             .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory", server1Params));
-      config1.setSecurityEnabled(false);
-      config1.setSharedStore(true);
-      config1.setBackup(true);
-      server1Service = super.createServer(true, config1);
-
-      Configuration config0 = super.createDefaultConfig();
-      config0.getAcceptorConfigurations().clear();
-      config0.getAcceptorConfigurations()
-             .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
-      config0.setSecurityEnabled(false);
-      config0.setSharedStore(true);
-      server0Service = super.createServer(true, config0);
-
-      server1Service.start();
-      server0Service.start();
-   }
-
-   protected void tearDown() throws Exception
-   {
-      server1Service.stop();
-
-      server0Service.stop();
-
-      assertEquals(0, InVMRegistry.instance.size());
-
-      server1Service = null;
-
-      server0Service = null;
-
-      server1Params = null;
-
-      super.tearDown();
-   }
-
-   // Private -------------------------------------------------------
-
-   private ClientSession sendAndConsume(final ClientSessionFactory sf) throws Exception
-   {
-      ClientSession session = sf.createSession(false, true, true);
-
-      session.createQueue(ADDRESS, ADDRESS, null, false);
-
-      ClientProducer producer = session.createProducer(ADDRESS);
-
-      final int numMessages = 1000;
-
-      for (int i = 0; i < numMessages; i++)
-      {
-         ClientMessage message = session.createClientMessage(HornetQTextMessage.TYPE,
-                                                             false,
-                                                             0,
-                                                             System.currentTimeMillis(),
-                                                             (byte)1);
-         message.putIntProperty(new SimpleString("count"), i);
-         message.getBody().writeString("aardvarks");
-         producer.send(message);
-      }
-
-      ClientConsumer consumer = session.createConsumer(ADDRESS);
-
-      session.start();
-
-      for (int i = 0; i < numMessages; i++)
-      {
-         ClientMessage message2 = consumer.receive();
-
-         assertEquals("aardvarks", message2.getBody().readString());
-
-         assertEquals(i, message2.getProperty(new SimpleString("count")));
-
-         message2.acknowledge();
-      }
-
-      ClientMessage message3 = consumer.receive(250);
-
-      assertNull(message3);
-
-      return session;
-   }
-
    /*
     * Browser will get reset to beginning after failover
     */
    public void testFailWithBrowser() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = this.getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1643,9 +1508,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testFailThenReceiveMoreMessagesAfterFailover() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1736,9 +1599,7 @@ public class FailoverTest extends ServiceTestBase
 
    public void testFailThenReceiveMoreMessagesAfterFailover2() throws Exception
    {
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
+      ClientSessionFactoryInternal sf = getSessionFactory();
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1788,7 +1649,7 @@ public class FailoverTest extends ServiceTestBase
          assertEquals("message" + i, message.getBody().readString());
 
          assertEquals(i, message.getProperty("counter"));
-        
+
          message.acknowledge();
       }
 
@@ -1837,20 +1698,14 @@ public class FailoverTest extends ServiceTestBase
 
       assertEquals(0, sf.numConnections());
    }
-        
+
    public void testForceBlockingReturn() throws Exception
-   {      
-      server0Service.stop();
-      
-      //Add an interceptor to delay the send method so we can get time to cause failover before it returns
-      
-      server0Service.getConfiguration().getInterceptorClassNames().add(DelayInterceptor.class.getCanonicalName());
-      
-      ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
-                                                                     new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
-                                                                                                server1Params));
-      
-      server0Service.start();
+   {
+      ClientSessionFactoryInternal sf = this.getSessionFactory();
+
+      // Add an interceptor to delay the send method so we can get time to cause failover before it returns
+
+      server0Service.getRemotingService().addInterceptor(new DelayInterceptor());
 
       sf.setBlockOnNonPersistentSend(true);
       sf.setBlockOnPersistentSend(true);
@@ -1873,7 +1728,7 @@ public class FailoverTest extends ServiceTestBase
       session.addFailureListener(new MyListener());
 
       final ClientProducer producer = session.createProducer(ADDRESS);
-      
+
       class Sender extends Thread
       {
          public void run()
@@ -1891,16 +1746,16 @@ public class FailoverTest extends ServiceTestBase
                this.e = e;
             }
          }
-         
+
          volatile HornetQException e;
       }
-      
+
       Sender sender = new Sender();
-      
+
       sender.start();
-      
+
       Thread.sleep(500);
-      
+
       RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
 
       // Simulate failure on connection
@@ -1911,22 +1766,427 @@ public class FailoverTest extends ServiceTestBase
       boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
 
       assertTrue(ok);
-      
+
       sender.join();
-      
+
       assertNotNull(sender.e);
-      
+
       assertEquals(sender.e.getCode(), HornetQException.UNBLOCKED);
-                  
+
       session.close();
 
       assertEquals(0, sf.numSessions());
 
       assertEquals(0, sf.numConnections());
-      
-      
    }
-   
-   
+
+   public void testCommitOccurredUnblockedAndResendNoDuplicates() throws Exception
+   {
+      final ClientSessionFactoryInternal sf = this.getSessionFactory();
+
+      sf.setBlockOnNonPersistentSend(true);
+      sf.setBlockOnPersistentSend(true);
+      sf.setBlockOnAcknowledge(true);
+
+      log.info("creating session");
+      final ClientSession session = sf.createSession(false, false);
+      log.info("created session");
+
+      session.createQueue(ADDRESS, ADDRESS, null, true);
+
+      final CountDownLatch latch = new CountDownLatch(1);
+
+      class MyListener implements FailureListener
+      {
+         public void connectionFailed(HornetQException me)
+         {
+            latch.countDown();
+         }
+      }
+
+      session.addFailureListener(new MyListener());
+
+      final int numMessages = 100;
+
+      ClientProducer producer = session.createProducer(ADDRESS);
+
+      String txID = "my-tx-id";
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = session.createClientMessage(true);
+
+         if (i == 0)
+         { 
+            // Only need to add it on one message per tx
+            message.putStringProperty(MessageImpl.HDR_DUPLICATE_DETECTION_ID, new SimpleString(txID));
+         }
+         
+         message.getBody().writeString("message" + i);
+
+         message.putIntProperty("counter", i);
+
+         producer.send(message);
+      }
+
+      class Committer extends Thread
+      {
+         public void run()
+         {
+            Interceptor interceptor = new DelayInterceptor2();
+
+            try
+            {
+               sf.addInterceptor(interceptor);
+
+               session.commit();
+
+               log.info("Initial commit succeeded");
+            }
+            catch (HornetQException e)
+            {
+               if (e.getCode() == HornetQException.UNBLOCKED)
+               {
+                  log.info("commit unblocked");
+
+                  // Ok - now we retry the commit after removing the interceptor
+
+                  sf.removeInterceptor(interceptor);
+
+                  try
+                  {
+                     log.info("retrying commit");
+                     session.commit();
+                  }
+                  catch (HornetQException e2)
+                  {
+                     if (e2.getCode() == HornetQException.TRANSACTION_ROLLED_BACK)
+                     {
+                        // Ok
+
+                        failed = false;
+                     }
+                  }
+               }
+            }
+         }
+
+         volatile boolean failed = true;
+      }
+
+      Committer committer = new Committer();
+
+      committer.start();
+
+      Thread.sleep(500);
+
+      RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
+
+      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
+
+      // Wait to be informed of failure
+
+      boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
+
+      assertTrue(ok);
+
+      committer.join();
+
+      assertFalse(committer.failed);
+
+      session.close();
+
+      ClientSession session2 = sf.createSession(false, false);
+
+      producer = session2.createProducer(ADDRESS);
+
+      // We now try and resend the messages since we get a transaction rolled back exception
+      // but the commit actually succeeded, duplicate detection should kick in and prevent dups
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = session2.createClientMessage(true);
+
+         if (i == 0)
+         { 
+            // Only need to add it on one message per tx
+            message.putStringProperty(MessageImpl.HDR_DUPLICATE_DETECTION_ID, new SimpleString(txID));
+         }
+
+         message.getBody().writeString("message" + i);
+
+         message.putIntProperty("counter", i);
+
+         producer.send(message);
+      }
+
+      session2.commit();
+
+      ClientConsumer consumer = session2.createConsumer(ADDRESS);
+
+      session2.start();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = consumer.receive(1000);
+
+         assertNotNull(message);
+
+         assertEquals("message" + i, message.getBody().readString());
+
+         assertEquals(i, message.getProperty("counter"));
+
+         message.acknowledge();
+      }
+
+      ClientMessage message = consumer.receive(500);
+
+      assertNull(message);
+
+      session2.close();
+
+      assertEquals(0, sf.numSessions());
+
+      assertEquals(0, sf.numConnections());
+   }
+
+   public void testCommitDidNotOccurUnblockedAndResend() throws Exception
+   {
+      ClientSessionFactoryInternal sf = this.getSessionFactory();
+
+      sf.setBlockOnNonPersistentSend(true);
+      sf.setBlockOnPersistentSend(true);
+      sf.setBlockOnAcknowledge(true);
+
+      log.info("creating session");
+      final ClientSession session = sf.createSession(false, false);
+      log.info("created session");
+
+      session.createQueue(ADDRESS, ADDRESS, null, true);
+
+      final CountDownLatch latch = new CountDownLatch(1);
+
+      class MyListener implements FailureListener
+      {
+         public void connectionFailed(HornetQException me)
+         {
+            latch.countDown();
+         }
+      }
+
+      session.addFailureListener(new MyListener());
+
+      final int numMessages = 100;
+
+      ClientProducer producer = session.createProducer(ADDRESS);
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = session.createClientMessage(true);
+
+         message.getBody().writeString("message" + i);
+
+         message.putIntProperty("counter", i);
+
+         producer.send(message);
+      }
+
+      class Committer extends Thread
+      {
+         public void run()
+         {
+            Interceptor interceptor = new DelayInterceptor3();
+
+            try
+            {
+               server0Service.getRemotingService().addInterceptor(interceptor);
+
+               session.commit();
+
+               log.info("Initial commit succeeded");
+            }
+            catch (HornetQException e)
+            {
+               if (e.getCode() == HornetQException.UNBLOCKED)
+               {
+                  log.info("commit unblocked");
+
+                  // Ok - now we retry the commit after removing the interceptor
+
+                  server0Service.getRemotingService().removeInterceptor(interceptor);
+
+                  try
+                  {
+                     session.commit();
+                  }
+                  catch (HornetQException e2)
+                  {
+                     if (e2.getCode() == HornetQException.TRANSACTION_ROLLED_BACK)
+                     {
+                        // Ok
+
+                        failed = false;
+                     }
+                  }
+               }
+            }
+         }
+
+         volatile boolean failed = true;
+      }
+
+      Committer committer = new Committer();
+
+      committer.start();
+
+      Thread.sleep(500);
+
+      RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
+
+      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
+
+      // Wait to be informed of failure
+
+      boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
+
+      assertTrue(ok);
+
+      committer.join();
+
+      assertFalse(committer.failed);
+
+      session.close();
+
+      ClientSession session2 = sf.createSession(false, false);
+
+      producer = session2.createProducer(ADDRESS);
+
+      // We now try and resend the messages since we get a transaction rolled back exception
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = session2.createClientMessage(true);
+
+         message.getBody().writeString("message" + i);
+
+         message.putIntProperty("counter", i);
+
+         producer.send(message);
+      }
+
+      session2.commit();
+
+      ClientConsumer consumer = session2.createConsumer(ADDRESS);
+
+      session2.start();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = consumer.receive(1000);
+
+         assertNotNull(message);
+
+         assertEquals("message" + i, message.getBody().readString());
+
+         assertEquals(i, message.getProperty("counter"));
+
+         message.acknowledge();
+      }
+
+      ClientMessage message = consumer.receive(500);
+
+      assertNull(message);
+
+      session2.close();
+
+      assertEquals(0, sf.numSessions());
+
+      assertEquals(0, sf.numConnections());
+   }
+
+   // Package protected ---------------------------------------------
+
+   // Protected -----------------------------------------------------
+
+   @Override
+   protected TransportConfiguration getAcceptorTransportConfiguration(boolean live)
+   {
+      if (live)
+      {
+         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory");
+      }
+      else
+      {
+         Map<String, Object> server1Params = new HashMap<String, Object>();
+
+         server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
+
+         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory", server1Params);
+      }
+   }
+
+   @Override
+   protected TransportConfiguration getConnectorTransportConfiguration(final boolean live)
+   {
+      if (live)
+      {
+         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
+      }
+      else
+      {
+         Map<String, Object> server1Params = new HashMap<String, Object>();
+
+         server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
+
+         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory", server1Params);
+      }
+   }
+
+   // Private -------------------------------------------------------
+
+   private ClientSession sendAndConsume(final ClientSessionFactory sf) throws Exception
+   {
+      ClientSession session = sf.createSession(false, true, true);
+
+      session.createQueue(ADDRESS, ADDRESS, null, false);
+
+      ClientProducer producer = session.createProducer(ADDRESS);
+
+      final int numMessages = 1000;
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message = session.createClientMessage(HornetQTextMessage.TYPE,
+                                                             false,
+                                                             0,
+                                                             System.currentTimeMillis(),
+                                                             (byte)1);
+         message.putIntProperty(new SimpleString("count"), i);
+         message.getBody().writeString("aardvarks");
+         producer.send(message);
+      }
+
+      ClientConsumer consumer = session.createConsumer(ADDRESS);
+
+      session.start();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage message2 = consumer.receive();
+
+         assertEquals("aardvarks", message2.getBody().readString());
+
+         assertEquals(i, message2.getProperty(new SimpleString("count")));
+
+         message2.acknowledge();
+      }
+
+      ClientMessage message3 = consumer.receive(250);
+
+      assertNull(message3);
+
+      return session;
+   }
+
    // Inner classes -------------------------------------------------
 }

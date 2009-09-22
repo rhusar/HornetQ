@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover;
+package org.hornetq.tests.integration.cluster.reattach;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +45,7 @@ import org.hornetq.utils.SimpleString;
  * 
  *
  */
-public abstract class MultiThreadRandomReattachTestBase extends MultiThreadFailoverSupport
+public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReattachSupport
 {
    private final Logger log = Logger.getLogger(getClass());
 
@@ -1323,7 +1323,7 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadFailo
    {
       final ClientSessionFactoryInternal sf = new ClientSessionFactoryImpl(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
       sf.setReconnectAttempts(-1);
-      sf.setProducerWindowSize(32 * 1024);
+      sf.setUseReattach(true);
       
       return sf;
    }

@@ -12,7 +12,7 @@
  */
 
 
-package org.hornetq.tests.integration.cluster.failover;
+package org.hornetq.tests.integration.cluster.reattach;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +39,7 @@ import org.hornetq.tests.util.ServiceTestBase;
  *
  *
  */
-public abstract class MultiThreadFailoverSupport extends ServiceTestBase
+public abstract class MultiThreadReattachSupport extends ServiceTestBase
 {
 
    // Constants -----------------------------------------------------

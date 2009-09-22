@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.utils.Pair;
 
 /**
@@ -144,6 +145,10 @@ public interface ClientSessionFactory
    int getReconnectAttempts();
 
    void setReconnectAttempts(int reconnectAttempts);
+   
+   boolean isUseReattach();
+   
+   void setUseReattach(boolean reattach);
 
    boolean isFailoverOnServerShutdown();
 
@@ -164,6 +169,10 @@ public interface ClientSessionFactory
    long getDiscoveryRefreshTimeout();
 
    void setDiscoveryRefreshTimeout(long discoveryRefreshTimeout);
+   
+   void addInterceptor(Interceptor interceptor);
+
+   boolean removeInterceptor(Interceptor interceptor);
 
    void close();
 }

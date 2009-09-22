@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 
+import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
@@ -186,6 +187,8 @@ public class HornetQServerImpl implements HornetQServer
    private int managementConnectorID;
 
    private static AtomicInteger managementConnectorSequence = new AtomicInteger(0);
+   
+   private ConnectionManager replicatingConnectionManager;
 
    // Constructors
    // ---------------------------------------------------------------------------------
@@ -387,6 +390,7 @@ public class HornetQServerImpl implements HornetQServer
       initialised = false;
       uuid = null;
       nodeID = null;
+      
       log.info("HornetQ Server version " + getVersion().getFullVersion() + " stopped");
    }
 
@@ -507,7 +511,7 @@ public class HornetQServerImpl implements HornetQServer
                   "interoperate properly");
          return null;
       }
-       
+      
       if (!checkActivate())
       {
          //Backup server is not ready to accept connections
@@ -633,7 +637,85 @@ public class HornetQServerImpl implements HornetQServer
 //         log.info("Backup server is now operational");
 //      }
 //   }
-
+   
+//   private boolean setupReplicatingConnection() throws Exception
+//   {
+//      String backupConnectorName = configuration.getBackupConnectorName();
+//
+//      if (backupConnectorName != null)
+//      {
+//         TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
+//
+//         if (backupConnector == null)
+//         {
+//            log.warn("connector with name '" + backupConnectorName + "' is not defined in the configuration.");
+//         }
+//         else
+//         {
+//            replicatingConnectionManager = new ConnectionManagerImpl(null,
+//                                                                     backupConnector,
+//                                                                     null,
+//                                                                     false,
+//                                                                     1,
+//                                                                     ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
+//                                                                     ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+//                                                                     ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
+//                                                                     0,
+//                                                                     1.0d,
+//                                                                     0,
+//                                                                     threadPool,
+//                                                                     scheduledPool);
+//
+//            replicatingConnection = replicatingConnectionManager.getConnection(1);
+//
+//            if (replicatingConnection != null)
+//            {
+//               replicatingChannel = replicatingConnection.getChannel(2, -1, false);
+//
+//               replicatingConnection.addFailureListener(new FailureListener()
+//               {
+//                  public void connectionFailed(HornetQException me)
+//                  {
+//                     replicatingChannel.executeOutstandingDelayedResults();
+//                  }
+//               });
+//
+//               // First time we get channel we send a message down it informing the backup of our node id -
+//               // backup and live must have the same node id
+//
+//               Packet packet = new ReplicateStartupInfoMessage(uuid, storageManager.getCurrentUniqueID());
+//
+//               final Future future = new Future();
+//
+//               replicatingChannel.replicatePacket(packet, 1, new Runnable()
+//               {
+//                  public void run()
+//                  {
+//                     future.run();
+//                  }
+//               });
+//
+//               // This may take a while especially if the journal is large
+//               boolean ok = future.await(60000);
+//
+//               if (!ok)
+//               {
+//                  throw new IllegalStateException("Timed out waiting for response from backup for initialisation");
+//               }
+//            }
+//            else
+//            {
+//               log.warn("Backup server MUST be started before live server. Initialisation will not proceed.");
+//
+//               return false;
+//            }
+//         }
+//      }
+//
+//      return true;
+//   }
+   
+      
    public HornetQServerControlImpl getHornetQServerControl()
    {
       return messagingServerControl;
@@ -771,7 +853,7 @@ public class HornetQServerImpl implements HornetQServer
    // --------------------------------------------------------------------------------------
 
    private synchronized boolean checkActivate() throws Exception
-   {
+   { 
       if (configuration.isBackup())
       {
          //Handle backup server activation

@@ -11,10 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover;
-
-import java.util.HashMap;
-import java.util.Map;
+package org.hornetq.tests.integration.cluster.reattach;
 
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.config.Configuration;
@@ -39,12 +36,7 @@ public class MultiThreadRandomReattachTest extends MultiThreadRandomReattachTest
       Configuration liveConf = new ConfigurationImpl();
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations()
-              .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
-      Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      TransportConfiguration backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
-      connectors.put(backupTC.getName(), backupTC);
-      liveConf.setConnectorConfigurations(connectors);
-      liveConf.setBackupConnectorName(backupTC.getName());
+              .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));      
       liveServer = HornetQ.newHornetQServer(liveConf, false);
       liveServer.start();
    }

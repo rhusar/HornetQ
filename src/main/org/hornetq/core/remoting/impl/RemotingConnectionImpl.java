@@ -353,36 +353,36 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private void doBufferReceived(final Packet packet)
    {
-      synchronized (transferLock)
-      {
-         if (interceptors != null)
+      if (interceptors != null)
+      {            
+         for (final Interceptor interceptor : interceptors)
          {
-            for (final Interceptor interceptor : interceptors)
+            try
             {
-               try
-               {
-                  boolean callNext = interceptor.intercept(packet, this);
+               boolean callNext = interceptor.intercept(packet, this);
 
-                  if (!callNext)
-                  {
-                     // abort
-
-                     return;
-                  }
-               }
-               catch (final Throwable e)
+               if (!callNext)
                {
-                  log.warn("Failure in calling interceptor: " + interceptor, e);
+                  // abort
+
+                  return;
                }
             }
+            catch (final Throwable e)
+            {
+               log.warn("Failure in calling interceptor: " + interceptor, e);
+            }
          }
-
+      }
+      
+      synchronized (transferLock)
+      {         
          final Channel channel = channels.get(packet.getChannelID());
 
          if (channel != null)
          {
             channel.handlePacket(packet);
-         }
+         }                 
       }
    }
 

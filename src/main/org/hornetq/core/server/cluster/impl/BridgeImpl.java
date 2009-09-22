@@ -113,7 +113,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    private final double retryIntervalMultiplier;
 
    private final int reconnectAttempts;
-   
+
    private final boolean failoverOnServerShutdown;
 
    private final SimpleString idsHeaderName;
@@ -131,7 +131,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    private boolean activated;
 
    private NotificationService notificationService;
-   
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -184,9 +184,9 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       this.useDuplicateDetection = useDuplicateDetection;
 
       this.discoveryAddress = discoveryAddress;
-      
+
       this.discoveryPort = discoveryPort;
-      
+
       this.connectorPair = connectorPair;
 
       this.retryInterval = retryInterval;
@@ -209,34 +209,34 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
       this.flowRecord = flowRecord;
 
-      this.activated = activated;  
+      this.activated = activated;
    }
 
    public void setNotificationService(final NotificationService notificationService)
    {
       this.notificationService = notificationService;
    }
-   
+
    public synchronized void start() throws Exception
    {
       if (started)
       {
          return;
       }
-      
+
       started = true;
 
       if (activated)
       {
          executor.execute(new CreateObjectsRunnable());
       }
-      
+
       if (notificationService != null)
       {
          TypedProperties props = new TypedProperties();
          props.putStringProperty(new SimpleString("name"), name);
          Notification notification = new Notification(nodeUUID.toString(), NotificationType.BRIDGE_STARTED, props);
-         notificationService.sendNotification(notification );
+         notificationService.sendNotification(notification);
       }
    }
 
@@ -269,11 +269,11 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
             csf.close();
          }
       }
-      
+
       executor.execute(new StopRunnable());
-           
+
       waitForRunnablesToComplete();
-      
+
       if (notificationService != null)
       {
          TypedProperties props = new TypedProperties();
@@ -281,7 +281,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          Notification notification = new Notification(nodeUUID.toString(), NotificationType.BRIDGE_STOPPED, props);
          try
          {
-            notificationService.sendNotification(notification );
+            notificationService.sendNotification(notification);
          }
          catch (Exception e)
          {
@@ -311,7 +311,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    {
       return queue;
    }
-   
+
    public void setQueue(final Queue queue)
    {
       this.queue = queue;
@@ -360,7 +360,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
          if (ref != null)
          {
-            ref.getQueue().acknowledge(ref);            
+            ref.getQueue().acknowledge(ref);
          }
       }
       catch (Exception e)
@@ -372,12 +372,12 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    // Consumer implementation ---------------------------------------
 
    public HandleStatus handle(final MessageReference ref) throws Exception
-   {     
+   {
       if (filter != null && !filter.match(ref.getMessage()))
       {
          return HandleStatus.NO_MATCH;
       }
-      
+
       if (!active)
       {
          return HandleStatus.BUSY;
@@ -456,7 +456,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
             // Preserve the original address
             dest = message.getDestination();
          }
-         
+
          producer.send(dest, message);
 
          return HandleStatus.HANDLED;
@@ -492,7 +492,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    }
 
    private void fail()
-   {      
+   {
       if (started)
       {
          executor.execute(new FailRunnable());
@@ -505,11 +505,11 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       {
          return false;
       }
-      
+
       try
       {
          queue.addConsumer(BridgeImpl.this);
-  
+
          csf = null;
          if (discoveryAddress != null)
          {
@@ -517,24 +517,17 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          }
          else
          {
-            csf = new ClientSessionFactoryImpl(connectorPair.a,
-                                         connectorPair.b);
+            csf = new ClientSessionFactoryImpl(connectorPair.a, connectorPair.b);
          }
-         
+
          csf.setFailoverOnServerShutdown(failoverOnServerShutdown);
          csf.setRetryInterval(retryInterval);
          csf.setRetryIntervalMultiplier(retryIntervalMultiplier);
          csf.setReconnectAttempts(reconnectAttempts);
 
-         //Session is pre-acknowledge
-         session = (ClientSessionInternal)csf.createSession(clusterUser,
-                                                            clusterPassword,
-                                                            false,
-                                                            true,
-                                                            true,
-                                                            true,
-                                                            1);
-         
+         // Session is pre-acknowledge
+         session = (ClientSessionInternal)csf.createSession(clusterUser, clusterPassword, false, true, true, true, 1);
+
          if (session == null)
          {
             // This can happen if the bridge is shutdown
@@ -559,7 +552,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
             // Otherwise it may already exist if server is restarted before it has been deleted on backup
 
             String qName = "notif." + nodeUUID.toString() + "." + name.toString();
-            
+
             SimpleString notifQueueName = new SimpleString(qName);
 
             SimpleString filter = new SimpleString(ManagementHelper.HDR_BINDING_TYPE + "<>" +
@@ -584,10 +577,10 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
                                                    flowRecord.getAddress() +
                                                    "%')");
 
-            //The queue can't be temporary, since if the node with the bridge crashes then is restarted quickly
-            //it might get deleted on the target when it does connection cleanup
-            
-            //When the backup activates the queue might already exist, so we catch this and ignore
+            // The queue can't be temporary, since if the node with the bridge crashes then is restarted quickly
+            // it might get deleted on the target when it does connection cleanup
+
+            // When the backup activates the queue might already exist, so we catch this and ignore
             try
             {
                session.createQueue(managementNotificationAddress, notifQueueName, filter, false);
@@ -596,7 +589,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
             {
                if (me.getCode() == HornetQException.QUEUE_EXISTS)
                {
-                  //Ok
+                  // Ok
                }
                else
                {
@@ -626,7 +619,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          active = true;
 
          queue.deliverAsync(executor);
-         
+
          return true;
       }
       catch (Exception e)
@@ -653,8 +646,8 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
                }
 
                if (session != null)
-               {              
-                  session.close();               
+               {
+                  session.close();
                }
 
                started = false;
@@ -689,7 +682,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
             {
                try
                {
-                 // flowRecord.reset();
+                  // flowRecord.reset();
                }
                catch (Exception e)
                {
@@ -714,7 +707,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          {
             log.error("Failed to stop", e);
          }
-         
+
          if (!createObjects())
          {
             started = false;

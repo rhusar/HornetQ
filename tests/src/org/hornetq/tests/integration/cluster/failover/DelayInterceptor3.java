@@ -9,44 +9,42 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
  * implied.  See the License for the specific language governing
  * permissions and limitations under the License.
- */ 
+ */
 
-package org.hornetq.tests.integration.clientcrash;
-
-import java.util.concurrent.atomic.AtomicInteger;
+package org.hornetq.tests.integration.cluster.failover;
 
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 
 /**
- * 
- * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
+ * A DelayInterceptor3
+ *
+ * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
+ *
  *
  */
-public class DummyInterceptorB implements Interceptor
+public class DelayInterceptor3 implements Interceptor
 {
+   private static final Logger log = Logger.getLogger(DelayInterceptor3.class);
 
-   protected Logger log = Logger.getLogger(DummyInterceptorB.class);
-
-   static AtomicInteger syncCounter = new AtomicInteger(0);
-   
-   public static int getCounter()
+   public boolean intercept(Packet packet, RemotingConnection connection) throws HornetQException
    {
-      return syncCounter.get();
-   }
-   
-   public static void clearCounter()
-   {
-      syncCounter.set(0);
-   }
-   
-   public boolean intercept(final Packet packet, final RemotingConnection conn) throws HornetQException
-   {
-      syncCounter.addAndGet(1);
-      log.debug("DummyFilter packet = " + packet);
-      return true;
+      if (packet.getType() == PacketImpl.SESS_COMMIT)
+      {
+         log.info("got sess commit, delaying");
+         try
+         {
+            Thread.sleep(2000);
+         }
+         catch (Exception e)
+         {                  
+         }                  
+      }
+      
+      return false;
    }
 }

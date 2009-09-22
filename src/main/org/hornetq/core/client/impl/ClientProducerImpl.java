@@ -224,6 +224,7 @@ public class ClientProducerImpl implements ClientProducerInternal
       }
       else if (sendBlocking)
       {
+         //log.info("sending blocking");
          channel.sendBlocking(message);
       }
       else

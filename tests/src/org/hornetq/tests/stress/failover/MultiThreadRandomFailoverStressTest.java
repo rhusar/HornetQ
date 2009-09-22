@@ -13,7 +13,7 @@
 
 package org.hornetq.tests.stress.failover;
 
-import org.hornetq.tests.integration.cluster.failover.MultiThreadRandomReattachTest;
+import org.hornetq.tests.integration.cluster.reattach.MultiThreadRandomReattachTest;
 
 /**
  * A MultiThreadRandomFailoverStressTest

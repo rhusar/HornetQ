@@ -340,6 +340,11 @@ public class DelegatingSession implements ClientSessionInternal
    {
       return session.handleFailover(backupConnection);
    }
+   
+   public boolean handleReattach(RemotingConnection backupConnection)
+   {
+      return session.handleReattach(backupConnection);
+   }
 
    public void handleReceiveContinuation(long consumerID, SessionReceiveContinuationMessage continuation) throws Exception
    {
