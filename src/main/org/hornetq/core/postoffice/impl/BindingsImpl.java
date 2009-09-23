@@ -36,6 +36,7 @@ import org.hornetq.core.server.group.impl.Proposal;
 import org.hornetq.core.server.group.impl.Response;
 import org.hornetq.core.server.group.Arbitrator;
 import org.hornetq.core.transaction.Transaction;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -359,7 +360,7 @@ public class BindingsImpl implements Bindings
                         break;
                      }
                   }
-                  if( chosen != null && (routeWhenNoConsumers || chosen.isHighAcceptPriority(message)))
+                  if( chosen != null)
                   {
                      System.out.println("found sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
                      chosen.willRoute(message);
@@ -369,6 +370,7 @@ public class BindingsImpl implements Bindings
                   else
                   {
                      System.out.println("BindingsImpl.route");
+                     throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
                   }
                }
             }

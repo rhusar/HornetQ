@@ -14,6 +14,7 @@ package org.hornetq.tests.integration.cluster.distribution;
 
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.server.group.impl.ArbitratorConfiguration;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -369,7 +370,7 @@ public class ClusteredGroupingTest extends ClusterTestBase
          addConsumer(1, 1, "queue0", null);
          addConsumer(2, 2, "queue0", null);
 
-         verifyReceiveAllInRange(0, 30, 1);
+         verifyReceiveAllInRange(0, 30, 1 );
 
          System.out.println("*****************************************************************************");
       }
@@ -426,15 +427,41 @@ public class ClusteredGroupingTest extends ClusterTestBase
          sendInRange(0, "queues.testaddress", 0, 10, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
          verifyReceiveAllInRange(0, 10, 0);
-         removeConsumer(0);
-         deleteQueue(0, "queue0");
          sendInRange(1, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
          verifyReceiveAllInRange(10, 20, 0);
-         sendInRange(2, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+         sendInRange(2, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
-         verifyReceiveAllInRange(10, 20, 0);
-
+         verifyReceiveAllInRange(20, 30, 0);
+         removeConsumer(0);
+         deleteQueue(0, "queue0");
+         try
+         {
+            sendInRange(0, "queues.testaddress", 30, 31, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+            fail("should throw exception");
+         }
+         catch (HornetQException e)
+         {
+            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
+         }
+         try
+         {
+            sendInRange(1, "queues.testaddress", 31, 32, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+            fail("should throw exception");
+         }
+         catch (HornetQException e)
+         {
+            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
+         }
+         try
+         {
+            sendInRange(2, "queues.testaddress", 32, 33, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+            fail("should throw exception");
+         }
+         catch (HornetQException e)
+         {
+            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
+         }
          System.out.println("*****************************************************************************");
       }
       finally
@@ -447,7 +474,7 @@ public class ClusteredGroupingTest extends ClusterTestBase
       }
    }
 
-   /*public void testGroupingSendTo3queuesPinnedNodeGoesDown() throws Exception
+   public void testGroupingSendTo3queuesPinnedNodeGoesDown() throws Exception
    {
       setupServer(0, isFileStorage(), isNetty());
       setupServer(1, isFileStorage(), isNetty());
@@ -514,7 +541,7 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          stopServers(0, 1, 2);
       }
-   }*/
+   }
 
    public boolean isNetty()
    {
