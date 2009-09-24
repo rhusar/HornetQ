@@ -77,7 +77,6 @@ public class RemoteGroupingHandler implements GroupingHandler
       {
          lock.lock();
          TypedProperties props = new TypedProperties();
-         log.info("sending proposal for " + proposal.getProposalType() + " with value " + proposal.getProposal());
          props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getProposalType());
          props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)proposal.getProposal());
          props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
@@ -102,7 +101,6 @@ public class RemoteGroupingHandler implements GroupingHandler
    public void proposed(Response response) throws Exception
    {
       Object value = response.getAlternative() != null ? response.getAlternative() : response.getOriginal();
-      log.info("received proposal response for " + response.getResponseType() + " with value " + value);
       try
       {
          lock.lock();

@@ -264,11 +264,6 @@ public class BindingsImpl implements Bindings
     public void route(final ServerMessage message, final Transaction tx) throws Exception
    {
       boolean routed = false;
-      Object o = message.getProperty("count_prop");
-      if (o != null)
-      {
-         System.out.println("routing message " + o);
-      }
       if (!exclusiveBindings.isEmpty())
       {
          for (Binding binding : exclusiveBindings)
@@ -478,7 +473,6 @@ public class BindingsImpl implements Bindings
 
             if( chosen != null )
             {
-               System.out.println("sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
                chosen.willRoute(message);
                chosen.getBindable().preroute(message, tx);
                chosen.getBindable().route(message, tx);
@@ -503,14 +497,12 @@ public class BindingsImpl implements Bindings
             }
             if( chosen != null)
             {
-               System.out.println("found sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
                chosen.willRoute(message);
                chosen.getBindable().preroute(message, tx);
                chosen.getBindable().route(message, tx);
             }
             else
             {
-               System.out.println("BindingsImpl.route");
                throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
             }
          }

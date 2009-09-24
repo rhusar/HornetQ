@@ -39,7 +39,6 @@ public class ClusteredGroupingExample extends HornetQExample
 
    public boolean runExample() throws Exception
    {
-      Thread.sleep(5000);
       Connection connection0 = null;
 
       Connection connection1 = null;
@@ -73,7 +72,7 @@ public class ClusteredGroupingExample extends HornetQExample
          ic2 = getContext(2);
 
          // Step 5. Look-up a JMS Connection Factory object from JNDI on server 1
-         ConnectionFactory cf2 = (ConnectionFactory)ic1.lookup("/ConnectionFactory");
+         ConnectionFactory cf2 = (ConnectionFactory)ic2.lookup("/ConnectionFactory");
 
          // Step 6. We create a JMS Connection connection0 which is a connection to server 0
          connection0 = cf0.createConnection();
@@ -122,11 +121,30 @@ public class ClusteredGroupingExample extends HornetQExample
 
             producer0.send(message);
 
+            System.out.println("Sent messages: " + message.getText() + " to node 0");
+         }
+
+         for (int i = 0; i < numMessages; i++)
+         {
+            TextMessage message = session1.createTextMessage("This is text message " + (i + 10));
+
+            message.setStringProperty(HornetQMessage.JMSXGROUPID, "Group-0");
+
             producer1.send(message);
+
+            System.out.println("Sent messages: " + message.getText() + " to node 1");
+
+         }
+
+         for (int i = 0; i < numMessages; i++)
+         {
+            TextMessage message = session2.createTextMessage("This is text message " + (i + 20));
+
+            message.setStringProperty(HornetQMessage.JMSXGROUPID, "Group-0");
 
             producer2.send(message);
 
-            System.out.println("Sent messages: " + message.getText());
+            System.out.println("Sent messages: " + message.getText() + " to node 2");
          }
 
          // Step 14. We now consume those messages on *both* server 0 and server 1.
@@ -134,7 +152,7 @@ public class ClusteredGroupingExample extends HornetQExample
          // JMS Queues implement point-to-point message where each message is only ever consumed by a
          // maximum of one consumer
 
-         for (int i = 0; i < numMessages; i += 2)
+         for (int i = 0; i < numMessages * 3; i++)
          {
             TextMessage message0 = (TextMessage)consumer.receive(5000);
 

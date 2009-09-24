@@ -70,12 +70,10 @@ public class LocalGroupingHandler implements GroupingHandler
       Response response = new Response(proposal.getProposalType(), proposal.getProposal());
       if (map.putIfAbsent(response.getResponseType(), response.getChosen()) == null)
       {
-         log.info("accepted proposal for " + proposal.getProposalType() + " with value " + proposal.getProposal());
          return response;
       }
       else
       {
-         log.info("denied proposal for " + proposal.getProposalType() + " with value " + proposal.getProposal());
          return new Response(proposal.getProposalType(), proposal.getProposal(), map.get(proposal.getProposalType()));
       }
    }
@@ -87,7 +85,6 @@ public class LocalGroupingHandler implements GroupingHandler
    public void send(Response response, int distance) throws Exception
    {
       Object value = response.getAlternative() != null ? response.getAlternative() : response.getOriginal();
-      log.info("sending proposal response for " + response.getResponseType() + " with value " + value);
       TypedProperties props = new TypedProperties();
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, response.getResponseType());
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)response.getOriginal());
