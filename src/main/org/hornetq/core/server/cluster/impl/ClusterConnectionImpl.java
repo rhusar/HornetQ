@@ -388,7 +388,7 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                                      retryInterval,
                                      1d,
                                      -1,
-                                     false,
+                                     true,
                                      useDuplicateDetection,
                                      managementService.getManagementAddress(),
                                      managementService.getManagementNotificationAddress(),

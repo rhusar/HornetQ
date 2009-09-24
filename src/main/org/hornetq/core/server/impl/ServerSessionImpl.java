@@ -1348,12 +1348,19 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    public void handleCloseConsumer(final SessionConsumerCloseMessage packet)
    {
       final ServerConsumer consumer = consumers.get(packet.getConsumerID());
-
+      
       Packet response;
 
       try
       {
-         consumer.close();
+         if (consumer != null)
+         {
+            consumer.close();
+         }
+         else
+         {
+            log.error("Cannot find consumer with id " + packet.getConsumerID());
+         }
 
          response = new NullResponseMessage();
       }

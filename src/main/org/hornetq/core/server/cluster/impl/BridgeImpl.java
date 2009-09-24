@@ -500,22 +500,22 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
    private void fail()
    {
+      log.info("bridge " + name + " has failed");
+      
       if (started)
       {
-         //executor.execute(new FailRunnable());
-         
          try
          {
-            cancelRefs();
+            setupNotificationConsumer();
             
-            //setupNotificationConsumer();
+            cancelRefs();                                               
          }
          catch (Exception e)
          {
             log.error("Failed to handle failure", e);
          }                 
-      }
-   }
+      }            
+   }   
    
    private ClientConsumer notifConsumer;
       
@@ -620,8 +620,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       }
 
       try
-      {                 
-         csf = null;
+      {                          
          if (discoveryAddress != null)
          {
             csf = new ClientSessionFactoryImpl(discoveryAddress, discoveryPort);
@@ -707,56 +706,6 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          }
       }
    }
-
-//   private class FailRunnable implements Runnable
-//   {
-//      public void run()
-//      {
-//         synchronized (BridgeImpl.this)
-//         {         
-//            
-//            if (!started)
-//            {
-//               return;
-//            }
-//
-//            if (flowRecord != null)
-//            {
-//               try
-//               {
-//                  // flowRecord.reset();
-//               }
-//               catch (Exception e)
-//               {
-//                  log.error("Failed to reset", e);
-//               }
-//            }
-//
-//            active = false;
-//         }
-//
-//         try
-//         {
-//            queue.removeConsumer(BridgeImpl.this);
-//
-//            session.cleanUp();
-//
-//            cancelRefs();
-//
-//            csf.close();
-//         }
-//         catch (Exception e)
-//         {
-//            log.error("Failed to stop", e);
-//         }
-//
-//         if (!createObjects())
-//         {
-//            started = false;
-//         }
-//         }
-//      }
-//   }
 
    private class CreateObjectsRunnable implements Runnable
    {
