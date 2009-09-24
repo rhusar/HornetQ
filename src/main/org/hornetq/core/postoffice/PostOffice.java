@@ -19,7 +19,7 @@ import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.SimpleString;
 
@@ -69,7 +69,7 @@ public interface PostOffice extends HornetQComponent
    
    Object getNotificationLock();
 
-   void addArbitrator(Arbitrator arbitrator);
+   void setGroupingHandler(GroupingHandler groupingHandler);
 
-   Arbitrator getArbitrator();
+   GroupingHandler getGroupingHandler();
 }

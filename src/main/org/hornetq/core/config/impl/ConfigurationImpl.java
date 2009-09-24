@@ -30,6 +30,7 @@ import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
 import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -215,6 +216,8 @@ public class ConfigurationImpl implements Configuration
    protected List<BroadcastGroupConfiguration> broadcastGroupConfigurations = new ArrayList<BroadcastGroupConfiguration>();
 
    protected Map<String, DiscoveryGroupConfiguration> discoveryGroupConfigurations = new LinkedHashMap<String, DiscoveryGroupConfiguration>();
+
+   protected List<GroupingHandlerConfiguration> groupingHandlerConfiguration = new ArrayList<GroupingHandlerConfiguration>();
 
    // Paging related attributes ------------------------------------------------------------
 
@@ -464,6 +467,17 @@ public class ConfigurationImpl implements Configuration
    {
       this.backupConnectorName = backupConnectorName;
    }
+
+   public List<GroupingHandlerConfiguration> getGroupingHandlerConfigurations()
+   {
+      return groupingHandlerConfiguration;
+   }
+
+   public void setGroupingHandlerConfigurationConfigurations(List<GroupingHandlerConfiguration> groupingHandlerConfiguration)
+   {
+      this.groupingHandlerConfiguration = groupingHandlerConfiguration;
+   }
+
 
    public List<BridgeConfiguration> getBridgeConfigurations()
    {

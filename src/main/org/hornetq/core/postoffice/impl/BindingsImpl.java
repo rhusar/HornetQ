@@ -34,7 +34,7 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.group.impl.Proposal;
 import org.hornetq.core.server.group.impl.Response;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
@@ -284,96 +284,15 @@ public class BindingsImpl implements Bindings
 
       if (!routed)
       {
-         Arbitrator groupingArbitrator = postOffice.getArbitrator();
+         GroupingHandler groupingGroupingHandler = postOffice.getGroupingHandler();
 
          if (message.getProperty(MessageImpl.HDR_FROM_CLUSTER) != null)
          {
             routeFromCluster(message, tx);
          }
-         else if(groupingArbitrator != null && message.getProperty(MessageImpl.HDR_GROUP_ID)!= null)
+         else if(groupingGroupingHandler != null && message.getProperty(MessageImpl.HDR_GROUP_ID)!= null)
          {
-            SimpleString groupId = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
-            Response resp = groupingArbitrator.propose(new Proposal(groupId, null));
-            if(resp == null)
-            {
-               for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
-               {
-                  SimpleString routingName = entry.getKey();
-
-                  List<Binding> bindings = entry.getValue();
-                  Binding chosen = null;
-                  Binding lowestPriorityBinding = null;
-                  int lowestPriority = Integer.MAX_VALUE;
-                  for (Binding binding : bindings)
-                  {
-                     boolean bindingIsHighAcceptPriority = binding.isHighAcceptPriority(message);
-                     int distance = binding.getDistance();
-                     if((distance < lowestPriority))
-                     {
-                        lowestPriorityBinding = binding;
-                        lowestPriority = distance;
-                        if(bindingIsHighAcceptPriority)
-                        {
-                           chosen = binding;
-                        }
-                     }
-                  }
-                  if(chosen == null)
-                  {
-                     chosen = lowestPriorityBinding;
-                  }
-                  resp = groupingArbitrator.propose(new Proposal(groupId, chosen.getClusterName()));
-                  if(!resp.getChosen().equals(chosen.getClusterName()))
-                  {
-                     for (Binding binding : bindings)
-                     {
-                        if (binding.getClusterName().equals(resp.getChosen()))
-                        {
-                           chosen = binding;
-                           break;
-                        }
-                     }
-                  }
-
-                  if( chosen != null )
-                  {
-                     System.out.println("sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
-                     chosen.willRoute(message);
-                     chosen.getBindable().preroute(message, tx);
-                     chosen.getBindable().route(message, tx);
-                  }
-               }
-            }
-            else
-            {
-               for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
-               {
-                  SimpleString routingName = entry.getKey();
-
-                  List<Binding> bindings = entry.getValue();
-                  Binding chosen = null;
-                  for (Binding binding : bindings)
-                  {
-                     if(binding.getClusterName().equals(resp.getChosen()))
-                     {
-                        chosen = binding;
-                        break;
-                     }
-                  }
-                  if( chosen != null)
-                  {
-                     System.out.println("found sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
-                     chosen.willRoute(message);
-                     chosen.getBindable().preroute(message, tx);
-                     chosen.getBindable().route(message, tx);
-                  }
-                  else
-                  {
-                     System.out.println("BindingsImpl.route");
-                     throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
-                  }
-               }
-            }
+            routeUsingStrictOrdering(message, tx, groupingGroupingHandler);
          }
          else
          {
@@ -506,6 +425,93 @@ public class BindingsImpl implements Bindings
             for (Bindable bindable : chosen)
             {
                bindable.route(message, tx);
+            }
+         }
+      }
+   }
+
+   private void routeUsingStrictOrdering(ServerMessage message, Transaction tx, GroupingHandler groupingGroupingHandler)
+         throws Exception
+   {
+      SimpleString groupId = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
+      Response resp = groupingGroupingHandler.propose(new Proposal(groupId, null));
+      if(resp == null)
+      {
+         for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+         {
+            SimpleString routingName = entry.getKey();
+
+            List<Binding> bindings = entry.getValue();
+            Binding chosen = null;
+            Binding lowestPriorityBinding = null;
+            int lowestPriority = Integer.MAX_VALUE;
+            for (Binding binding : bindings)
+            {
+               boolean bindingIsHighAcceptPriority = binding.isHighAcceptPriority(message);
+               int distance = binding.getDistance();
+               if((distance < lowestPriority))
+               {
+                  lowestPriorityBinding = binding;
+                  lowestPriority = distance;
+                  if(bindingIsHighAcceptPriority)
+                  {
+                     chosen = binding;
+                  }
+               }
+            }
+            if(chosen == null)
+            {
+               chosen = lowestPriorityBinding;
+            }
+            resp = groupingGroupingHandler.propose(new Proposal(groupId, chosen.getClusterName()));
+            if(!resp.getChosen().equals(chosen.getClusterName()))
+            {
+               for (Binding binding : bindings)
+               {
+                  if (binding.getClusterName().equals(resp.getChosen()))
+                  {
+                     chosen = binding;
+                     break;
+                  }
+               }
+            }
+
+            if( chosen != null )
+            {
+               System.out.println("sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
+               chosen.willRoute(message);
+               chosen.getBindable().preroute(message, tx);
+               chosen.getBindable().route(message, tx);
+            }
+         }
+      }
+      else
+      {
+         for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+         {
+            SimpleString routingName = entry.getKey();
+
+            List<Binding> bindings = entry.getValue();
+            Binding chosen = null;
+            for (Binding binding : bindings)
+            {
+               if(binding.getClusterName().equals(resp.getChosen()))
+               {
+                  chosen = binding;
+                  break;
+               }
+            }
+            if( chosen != null)
+            {
+               System.out.println("found sending message" + message.getProperty("count_prop") + " to " + chosen.getClusterName());
+               chosen.willRoute(message);
+               chosen.getBindable().preroute(message, tx);
+               chosen.getBindable().route(message, tx);
+            }
+            else
+            {
+               System.out.println("BindingsImpl.route");
+               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
             }
          }
       }

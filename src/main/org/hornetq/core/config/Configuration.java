@@ -25,6 +25,7 @@ import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
 import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -124,6 +125,10 @@ public interface Configuration extends Serializable
    Map<String, DiscoveryGroupConfiguration> getDiscoveryGroupConfigurations();
 
    void setDiscoveryGroupConfigurations(Map<String, DiscoveryGroupConfiguration> configs);
+
+   List<GroupingHandlerConfiguration> getGroupingHandlerConfigurations();
+
+   void setGroupingHandlerConfigurationConfigurations(List<GroupingHandlerConfiguration> groupingHandlerConfiguration);
 
    List<BridgeConfiguration> getBridgeConfigurations();
 

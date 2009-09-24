@@ -638,10 +638,10 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
          }
          SimpleString val = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_VALUE);
          Integer hops = (Integer) message.getProperty(ManagementHelper.HDR_DISTANCE);
-         Response response = postOffice.getArbitrator().receive(new Proposal(type, val), hops + 1);
+         Response response = postOffice.getGroupingHandler().receive(new Proposal(type, val), hops + 1);
          if(response != null)
          {
-            postOffice.getArbitrator().send(response, 0);
+            postOffice.getGroupingHandler().send(response, 0);
          }
       }
 
@@ -656,8 +656,8 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
          SimpleString alt = (SimpleString) message.getProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE);
          Integer hops = (Integer) message.getProperty(ManagementHelper.HDR_DISTANCE);
          Response response = new Response(type, val, alt);
-         postOffice.getArbitrator().proposed(response);
-         postOffice.getArbitrator().send(response, hops + 1);
+         postOffice.getGroupingHandler().proposed(response);
+         postOffice.getGroupingHandler().send(response, hops + 1);
       }
       
       private synchronized void clearBindings() throws Exception

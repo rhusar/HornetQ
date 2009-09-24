@@ -18,7 +18,7 @@ import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.ConcurrentHashSet;
@@ -30,9 +30,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
-public class LocalArbitrator implements Arbitrator
+public class LocalGroupingHandler implements GroupingHandler
 {
-   private static Logger log = Logger.getLogger(LocalArbitrator.class);
+   private static Logger log = Logger.getLogger(LocalGroupingHandler.class);
 
    private ConcurrentHashMap<SimpleString, Object> map = new ConcurrentHashMap<SimpleString, Object>();
 
@@ -46,7 +46,7 @@ public class LocalArbitrator implements Arbitrator
 
    private ConcurrentHashSet<SimpleString> reProposals = new ConcurrentHashSet<SimpleString>();
 
-   public LocalArbitrator(final ManagementService managementService, final SimpleString name, final SimpleString address, ScheduledExecutorService scheduledExecutor)
+   public LocalGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address, ScheduledExecutorService scheduledExecutor)
    {
       this.managementService = managementService;
       this.name = name;

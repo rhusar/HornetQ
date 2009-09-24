@@ -13,7 +13,7 @@
 package org.hornetq.tests.integration.cluster.distribution;
 
 import org.hornetq.core.message.impl.MessageImpl;
-import org.hornetq.core.server.group.impl.ArbitratorConfiguration;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 
@@ -39,9 +39,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -95,9 +95,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -154,9 +154,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -216,9 +216,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -278,9 +278,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -340,9 +340,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -400,9 +400,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -490,9 +490,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(ArbitratorConfiguration.TYPE.REMOTE, 2);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -526,12 +526,22 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          sendInRange(2, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
-         verifyReceiveAllInRange(10, 20, 1);
-         sendInRange(0, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
+         sendInRange(0, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+         startServers(1);          
+         setupSessionFactory(1, isNetty());
+         createQueue(1, "queues.testaddress", "queue0", null, false);
+         addConsumer(1, 1, "queue0", null);
+         waitForBindings(1, "queues.testaddress", 1, 1, true);
+         waitForBindings(1, "queues.testaddress", 2, 2, false);
+         verifyReceiveAllInRange(10, 20, 1);
          verifyReceiveAllInRange(20, 30, 1);
 
          System.out.println("*****************************************************************************");
+      }
+      catch(Exception e)
+      {
+         e.printStackTrace();
       }
       finally
       {

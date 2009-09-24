@@ -40,6 +40,10 @@ import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
+import org.hornetq.core.server.group.impl.LocalGroupingHandler;
+import org.hornetq.core.server.group.impl.RemoteGroupingHandler;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.cluster.Bridge;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.cluster.ClusterConnection;
@@ -149,6 +153,11 @@ public class ClusterManagerImpl implements ClusterManager
       for (ClusterConnectionConfiguration config : configuration.getClusterConfigurations())
       {
          deployClusterConnection(config);
+      }
+      
+      for (GroupingHandlerConfiguration config : configuration.getGroupingHandlerConfigurations())
+      {
+         deployGroupingHandlerConfigurations(config);
       }
 
       started = true;
@@ -484,6 +493,21 @@ public class ClusterManagerImpl implements ClusterManager
       managementService.registerBridge(bridge, config);
 
       bridge.start();
+   }
+
+   private synchronized void deployGroupingHandlerConfigurations(final GroupingHandlerConfiguration config) throws Exception
+   {
+      GroupingHandler groupingHandler;
+      if (config.getType() == GroupingHandlerConfiguration.TYPE.LOCAL)
+      {
+         groupingHandler = new LocalGroupingHandler(managementService, config.getName(), config.getAddress(), scheduledExecutor);
+      }
+      else
+      {
+         groupingHandler = new RemoteGroupingHandler(managementService, config.getName(), config.getAddress());
+      }
+      log.info("deploying grouping handler: " + groupingHandler);
+      postOffice.setGroupingHandler(groupingHandler);
    }
 
    private synchronized void deployClusterConnection(final ClusterConnectionConfiguration config) throws Exception

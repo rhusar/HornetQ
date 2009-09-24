@@ -50,7 +50,7 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerMessage;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -125,7 +125,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
-   private Arbitrator groupingArbitrator;
+   private GroupingHandler groupingGroupingHandler;
 
    public PostOfficeImpl(final HornetQServer server,
                          final StorageManager storageManager,
@@ -743,14 +743,14 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    }
 
 
-   public void addArbitrator(Arbitrator arbitrator)
+   public void setGroupingHandler(GroupingHandler groupingHandler)
    {
-      groupingArbitrator = arbitrator;
+      groupingGroupingHandler = groupingHandler;
    }
 
-   public Arbitrator getArbitrator()
+   public GroupingHandler getGroupingHandler()
    {
-      return groupingArbitrator;
+      return groupingGroupingHandler;
    }
 
    public void sendQueueInfoToQueue(final SimpleString queueName, final SimpleString address) throws Exception

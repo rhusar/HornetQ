@@ -17,7 +17,7 @@ import org.hornetq.core.management.Notification;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.postoffice.BindingType;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -32,9 +32,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
-public class RemoteArbitrator implements Arbitrator
+public class RemoteGroupingHandler implements GroupingHandler
 {
-   private static Logger log = Logger.getLogger(RemoteArbitrator.class.getName());
+   private static Logger log = Logger.getLogger(RemoteGroupingHandler.class.getName());
 
    private final SimpleString name;
 
@@ -50,7 +50,7 @@ public class RemoteArbitrator implements Arbitrator
 
    private int waitTime = 1000;
 
-   public RemoteArbitrator(final ManagementService managementService, final SimpleString name, final SimpleString address)
+   public RemoteGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address)
    {
       this.name = name;
       this.address = address;
@@ -86,12 +86,17 @@ public class RemoteArbitrator implements Arbitrator
          Notification notification = new Notification(null, NotificationType.PROPOSAL, props);
          managementService.sendNotification(notification);
          sendCondition.await(waitTime, TimeUnit.MILLISECONDS);
+         response = responses.get(proposal.getProposalType());
       }
       finally
       {
          lock.unlock();
       }
-      return responses.get(proposal.getProposalType());
+      if(response == null)
+      {
+         throw new IllegalStateException("no response received from group handler for " + proposal.getProposalType());
+      }
+      return response;
    }
 
    public void proposed(Response response) throws Exception

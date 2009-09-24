@@ -46,6 +46,7 @@ import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.XMLUtil;
@@ -247,6 +248,15 @@ public class FileConfiguration extends ConfigurationImpl
          Element mfNode = (Element)brNodes.item(i);
 
          parseBridgeConfiguration(mfNode);
+      }
+
+      NodeList gaNodes = e.getElementsByTagName("grouping-handler");
+      System.out.println("gaNodes.getLength() = " + gaNodes.getLength());
+      for (int i = 0; i < gaNodes.getLength(); i++)
+      {
+         Element gaNode = (Element) gaNodes.item(i);
+
+         parseGroupingHandlerConfiguration(gaNode);
       }
 
       NodeList ccNodes = e.getElementsByTagName("cluster-connection");
@@ -557,6 +567,20 @@ public class FileConfiguration extends ConfigurationImpl
 
       clusterConfigurations.add(config);
    }
+
+   private void parseGroupingHandlerConfiguration(final Element node)
+      {
+         String name = node.getAttribute("name");
+         String type = getString(node, "type", null, NOT_NULL_OR_EMPTY);
+         String address = getString(node, "address",null, NOT_NULL_OR_EMPTY);
+         GroupingHandlerConfiguration arbitratorConfiguration =
+               new GroupingHandlerConfiguration(new SimpleString(name),
+                                           type.equals(GroupingHandlerConfiguration.TYPE.LOCAL.getType())? GroupingHandlerConfiguration.TYPE.LOCAL: GroupingHandlerConfiguration.TYPE.REMOTE,
+                                           new SimpleString(address));
+         System.out.println("arbitratorConfiguration = " + arbitratorConfiguration);
+         groupingHandlerConfiguration.add(arbitratorConfiguration);
+      }
+
 
    private void parseBridgeConfiguration(final Element brNode)
    {

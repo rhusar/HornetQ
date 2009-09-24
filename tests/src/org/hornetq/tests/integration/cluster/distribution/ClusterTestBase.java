@@ -45,10 +45,10 @@ import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.JournalType;
-import org.hornetq.core.server.group.impl.ArbitratorConfiguration;
-import org.hornetq.core.server.group.impl.LocalArbitrator;
-import org.hornetq.core.server.group.impl.RemoteArbitrator;
-import org.hornetq.core.server.group.Arbitrator;
+import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
+import org.hornetq.core.server.group.impl.LocalGroupingHandler;
+import org.hornetq.core.server.group.impl.RemoteGroupingHandler;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
 import org.hornetq.integration.transports.netty.TransportConstants;
@@ -457,18 +457,18 @@ public class ClusterTestBase extends ServiceTestBase
    }
 
 
-   protected void setUpGroupArbitrator(ArbitratorConfiguration.TYPE type,  int node)
+   protected void setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE type,  int node)
    {
-      Arbitrator arbitrator;
-      if(type == ArbitratorConfiguration.TYPE.LOCAL)
+      GroupingHandler groupingHandler;
+      if(type == GroupingHandlerConfiguration.TYPE.LOCAL)
       {
-         arbitrator = new LocalArbitrator(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"), null);
+         groupingHandler = new LocalGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"), null);
       }
       else
       {
-         arbitrator = new RemoteArbitrator(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"));
+         groupingHandler = new RemoteGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"));
       }
-      this.servers[node].getPostOffice().addArbitrator(arbitrator);
+      this.servers[node].getPostOffice().setGroupingHandler(groupingHandler);
    }
 
    protected void send(int node, String address, int numMessages, boolean durable, String filterVal) throws Exception

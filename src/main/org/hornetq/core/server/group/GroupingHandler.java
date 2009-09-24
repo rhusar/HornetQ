@@ -19,7 +19,7 @@ import org.hornetq.core.server.group.impl.Response;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
-public interface Arbitrator
+public interface GroupingHandler
 {
    SimpleString getName();
 

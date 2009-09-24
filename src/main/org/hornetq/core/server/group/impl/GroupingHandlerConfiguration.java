@@ -17,7 +17,7 @@ import org.hornetq.utils.SimpleString;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
-public class ArbitratorConfiguration
+public class GroupingHandlerConfiguration
 {
    private final SimpleString name;
 
@@ -25,7 +25,7 @@ public class ArbitratorConfiguration
 
    private final SimpleString address;
 
-   public ArbitratorConfiguration(final SimpleString name, final TYPE type, SimpleString address)
+   public GroupingHandlerConfiguration(final SimpleString name, final TYPE type, SimpleString address)
    {
       this.type = type;
       this.name = name;
