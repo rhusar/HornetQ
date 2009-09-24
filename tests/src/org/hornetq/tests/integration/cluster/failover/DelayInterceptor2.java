@@ -18,6 +18,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 
 /**
  * A DelayInterceptor2
@@ -32,16 +33,15 @@ public class DelayInterceptor2 implements Interceptor
 
    public boolean intercept(Packet packet, RemotingConnection connection) throws HornetQException
    {
-      try
+      if (packet.getType() == PacketImpl.NULL_RESPONSE)
       {
-         Thread.sleep(2000);
+         //Lose the response from the commit
+
+         return false;
       }
-      catch (InterruptedException e)
+      else
       {
+         return true;
       }
-
-      log.info("proceeding");
-
-      return true;
    }
 }

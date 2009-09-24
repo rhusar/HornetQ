@@ -389,15 +389,12 @@ public class HornetQServerControlImpl extends StandardMBean implements HornetQSe
 
    public String[] listRemoteAddresses()
    {
-      log.info("listing remote addresses");
       Set<RemotingConnection> connections = remotingService.getConnections();
 
       String[] remoteAddresses = new String[connections.size()];
       int i = 0;
       for (RemotingConnection connection : connections)
       {
-         log.info("connection " + connection + " is on server");
-         
          remoteAddresses[i++] = connection.getRemoteAddress();
       }
       return remoteAddresses;

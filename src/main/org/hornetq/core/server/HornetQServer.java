@@ -63,6 +63,10 @@ public interface HornetQServer extends HornetQComponent
    Version getVersion();
 
    HornetQServerControlImpl getHornetQServerControl();
+   
+   void registerActivateCallback(ActivateCallback callback);
+
+   void unregisterActivateCallback(ActivateCallback callback);
 
    ReattachSessionResponseMessage reattachSession(RemotingConnection connection, String name, int lastReceivedCommandID) throws Exception;
 

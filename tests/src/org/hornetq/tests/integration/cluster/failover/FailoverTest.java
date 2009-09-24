@@ -472,8 +472,6 @@ public class FailoverTest extends FailoverTestBase
 
       RemotingConnection conn = ((ClientSessionInternal)session2).getConnection();
 
-      log.info("Failing connection**");
-
       // Simulate failure on connection
       conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
 
@@ -483,15 +481,11 @@ public class FailoverTest extends FailoverTestBase
 
       assertTrue(ok);
 
-      log.info("** creating the consumer");
-
       consumer = session2.createConsumer(ADDRESS);
 
       for (int i = numMessages / 2; i < numMessages; i++)
       {
          ClientMessage message = consumer.receive(1000);
-
-         log.info("got message " + message);
 
          assertNotNull(message);
 
@@ -1173,9 +1167,7 @@ public class FailoverTest extends FailoverTestBase
 
       assertTrue(ok);
 
-      log.info("closing session");
       session.close();
-      log.info("closed session");
 
       sf = new ClientSessionFactoryImpl(getConnectorTransportConfiguration(false));
 
@@ -1477,8 +1469,6 @@ public class FailoverTest extends FailoverTestBase
 
       assertTrue(ok);
 
-      log.info("after failover");
-
       for (int i = 0; i < numMessages; i++)
       {
          // Only the persistent messages will survive
@@ -1486,8 +1476,6 @@ public class FailoverTest extends FailoverTestBase
          if (i % 2 == 0)
          {
             ClientMessage message = consumer.receive(1000);
-
-            log.info("got message " + i);
 
             assertNotNull(message);
 
@@ -1788,9 +1776,7 @@ public class FailoverTest extends FailoverTestBase
       sf.setBlockOnPersistentSend(true);
       sf.setBlockOnAcknowledge(true);
 
-      log.info("creating session");
       final ClientSession session = sf.createSession(false, false);
-      log.info("created session");
 
       session.createQueue(ADDRESS, ADDRESS, null, true);
 
@@ -1840,23 +1826,18 @@ public class FailoverTest extends FailoverTestBase
                sf.addInterceptor(interceptor);
 
                session.commit();
-
-               log.info("Initial commit succeeded");
             }
             catch (HornetQException e)
             {
                if (e.getCode() == HornetQException.UNBLOCKED)
                {
-                  log.info("commit unblocked");
-
                   // Ok - now we retry the commit after removing the interceptor
 
                   sf.removeInterceptor(interceptor);
 
                   try
                   {
-                     log.info("retrying commit");
-                     session.commit();
+                     session.commit();                     
                   }
                   catch (HornetQException e2)
                   {
@@ -1958,9 +1939,7 @@ public class FailoverTest extends FailoverTestBase
       sf.setBlockOnPersistentSend(true);
       sf.setBlockOnAcknowledge(true);
 
-      log.info("creating session");
       final ClientSession session = sf.createSession(false, false);
-      log.info("created session");
 
       session.createQueue(ADDRESS, ADDRESS, null, true);
 
@@ -2002,15 +1981,11 @@ public class FailoverTest extends FailoverTestBase
                server0Service.getRemotingService().addInterceptor(interceptor);
 
                session.commit();
-
-               log.info("Initial commit succeeded");
             }
             catch (HornetQException e)
             {
                if (e.getCode() == HornetQException.UNBLOCKED)
                {
-                  log.info("commit unblocked");
-
                   // Ok - now we retry the commit after removing the interceptor
 
                   server0Service.getRemotingService().removeInterceptor(interceptor);

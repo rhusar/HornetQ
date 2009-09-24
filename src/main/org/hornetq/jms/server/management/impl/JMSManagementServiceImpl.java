@@ -106,7 +106,7 @@ public class JMSManagementServiceImpl implements JMSManagementService
    {
       ObjectName objectName = ObjectNames.getJMSTopicObjectName(topic.getTopicName());
       AddressControl addressControl = (AddressControl)managementService.getResource(ResourceNames.CORE_ADDRESS + topic.getAddress());
-      TopicControlImpl control = new TopicControlImpl(topic, addressControl, jndiBinding, managementService);
+      JMSTopicControlImpl control = new JMSTopicControlImpl(topic, addressControl, jndiBinding, managementService);
       managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_TOPIC + topic.getTopicName(), control);
    }
@@ -123,7 +123,7 @@ public class JMSManagementServiceImpl implements JMSManagementService
                                          final List<String> bindings) throws Exception
    {
       ObjectName objectName = ObjectNames.getConnectionFactoryObjectName(name);
-      ConnectionFactoryControlImpl control = new ConnectionFactoryControlImpl(connectionFactory, name, bindings);
+      JMSConnectionFactoryControlImpl control = new JMSConnectionFactoryControlImpl(connectionFactory, name, bindings);
       managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_CONNECTION_FACTORY + name, control);
    }

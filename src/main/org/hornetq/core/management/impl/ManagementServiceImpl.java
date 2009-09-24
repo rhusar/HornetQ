@@ -169,16 +169,16 @@ public class ManagementServiceImpl implements ManagementService
    }
 
    public HornetQServerControlImpl registerServer(final PostOffice postOffice,
-                                                    final StorageManager storageManager,
-                                                    final Configuration configuration,
-                                                    final HierarchicalRepository<AddressSettings> addressSettingsRepository,
-                                                    final HierarchicalRepository<Set<Role>> securityRepository,
-                                                    final ResourceManager resourceManager,
-                                                    final RemotingService remotingService,
-                                                    final HornetQServer messagingServer,
-                                                    final QueueFactory queueFactory,
-                                                    final ScheduledExecutorService scheduledThreadPool,
-                                                    final boolean backup) throws Exception
+                                                  final StorageManager storageManager,
+                                                  final Configuration configuration,
+                                                  final HierarchicalRepository<AddressSettings> addressSettingsRepository,
+                                                  final HierarchicalRepository<Set<Role>> securityRepository,
+                                                  final ResourceManager resourceManager,
+                                                  final RemotingService remotingService,
+                                                  final HornetQServer messagingServer,
+                                                  final QueueFactory queueFactory,
+                                                  final ScheduledExecutorService scheduledThreadPool,
+                                                  final boolean backup) throws Exception
    {
       this.postOffice = postOffice;
       this.addressSettingsRepository = addressSettingsRepository;
@@ -191,12 +191,12 @@ public class ManagementServiceImpl implements ManagementService
       messageCounterManager.reschedule(configuration.getMessageCounterSamplePeriod());
 
       messagingServerControl = new HornetQServerControlImpl(postOffice,
-                                                              configuration,
-                                                              resourceManager,
-                                                              remotingService,
-                                                              messagingServer,
-                                                              messageCounterManager,
-                                                              broadcaster);
+                                                            configuration,
+                                                            resourceManager,
+                                                            remotingService,
+                                                            messagingServer,
+                                                            messageCounterManager,
+                                                            broadcaster);
       ObjectName objectName = ObjectNames.getHornetQServerObjectName();
       registerInJMX(objectName, messagingServerControl);
       registerInRegistry(ResourceNames.CORE_SERVER, messagingServerControl);
@@ -298,7 +298,7 @@ public class ManagementServiceImpl implements ManagementService
 
    public void unregisterAcceptors()
    {
-      List<String> acceptors = new ArrayList<String>();      
+      List<String> acceptors = new ArrayList<String>();
       for (String resourceName : registry.keySet())
       {
          if (resourceName.startsWith(ResourceNames.CORE_ACCEPTOR))
@@ -306,7 +306,7 @@ public class ManagementServiceImpl implements ManagementService
             acceptors.add(resourceName);
          }
       }
-      
+
       for (String acceptor : acceptors)
       {
          String name = acceptor.substring(ResourceNames.CORE_ACCEPTOR.length());
@@ -320,7 +320,7 @@ public class ManagementServiceImpl implements ManagementService
          }
       }
    }
-   
+
    public synchronized void unregisterAcceptor(final String name) throws Exception
    {
       ObjectName objectName = ObjectNames.getAcceptorObjectName(name);
@@ -478,7 +478,7 @@ public class ManagementServiceImpl implements ManagementService
    }
 
    private Set<ObjectName> registeredNames = new HashSet<ObjectName>();
-   
+
    public void registerInJMX(final ObjectName objectName, final Object managedResource) throws Exception
    {
       if (!jmxManagementEnabled)
@@ -595,14 +595,15 @@ public class ManagementServiceImpl implements ManagementService
             }
             if (!unexpectedResourceNames.isEmpty())
             {
-               log.warn("On ManagementService stop, there are " + unexpectedResourceNames.size() + " unexpected registered MBeans");
+               log.warn("On ManagementService stop, there are " + unexpectedResourceNames.size() +
+                        " unexpected registered MBeans");
             }
 
             for (ObjectName on : this.registeredNames)
             {
                try
                {
-                  mbeanServer.unregisterMBean(on);                                   
+                  mbeanServer.unregisterMBean(on);
                }
                catch (Exception ignore)
                {
@@ -611,16 +612,19 @@ public class ManagementServiceImpl implements ManagementService
          }
       }
 
-      messageCounterManager.stop();
+      if (messageCounterManager != null)
+      {
+         messageCounterManager.stop();
 
-      messageCounterManager.resetAllCounters();
+         messageCounterManager.resetAllCounters();
 
-      messageCounterManager.resetAllCounterHistories();
+         messageCounterManager.resetAllCounterHistories();
 
-      messageCounterManager.clear();
-      
+         messageCounterManager.clear();
+      }
+
       registeredNames.clear();
-      
+
       started = false;
    }
 

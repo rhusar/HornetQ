@@ -551,9 +551,9 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
          // until failover is complete
 
          boolean serverShutdown = me.getCode() == HornetQException.DISCONNECTED;
-
+         
          boolean attemptFailoverOrReconnect = (backupConnectorFactory != null || reconnectAttempts != 0) && (failoverOnServerShutdown || !serverShutdown);
-
+         
          if (attemptFailoverOrReconnect)
          {
             lockAllChannel1s();
@@ -784,6 +784,8 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                ok = false;
             }
          }
+         
+         log.info("Reconnected ok");
       }
 
       return ok;
@@ -792,7 +794,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
    private RemotingConnection getConnectionWithRetry(final int initialRefCount, final int reconnectAttempts)
    {
       long interval = retryInterval;
-
+      
       int count = 0;
 
       while (true)
@@ -1121,7 +1123,7 @@ public class ConnectionManagerImpl implements ConnectionManager, ConnectionLifeC
                public void run()
                {
                   conn.fail(new HornetQException(HornetQException.DISCONNECTED,
-                                                 "The connection was exitLoop by the server"));
+                                                 "The connection was disconnected because of server shutdown"));
                }
             });
          }

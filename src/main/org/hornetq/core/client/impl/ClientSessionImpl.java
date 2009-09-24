@@ -861,12 +861,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          return true;
       }
       
-      log.info("session handling failover");
-
       boolean ok = false;
 
-      log.info("Failover occurring");
-      
       // Need to stop all consumers outside the lock
       for (ClientConsumerInternal consumer : consumers.values())
       {
@@ -882,21 +878,13 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          consumer.clearAtFailover();
       }
       
-      log.info("stopped consumers");
-
       // We lock the channel to prevent any packets being sent during the failover process
       channel.lock();
       
-      log.info("got lock");
-
       try
       {
-         log.info("transferring connection");
-         
          channel.transferConnection(backupConnection);
          
-         log.info("transferred connection");
-
          remotingConnection = backupConnection;
 
          Packet request = new CreateSessionMessage(name,
@@ -913,15 +901,10 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
          Channel channel1 = backupConnection.getChannel(1, -1, false);
 
-         log.info("sending create session");
-         
          CreateSessionResponseMessage response = (CreateSessionResponseMessage)channel1.sendBlocking(request);
 
-         log.info("got response from create session");
-         
          if (response.isCreated())
          {
-            log.info("craeted ok");
             // Session was created ok
 
             // Now we need to recreate the consumers
@@ -959,7 +942,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
                   conn.write(buffer, false);                  
                }
             }
-
+            
             if ((!autoCommitAcks || !autoCommitSends) && workDone)
             {
                // Session is transacted - set for rollback only
@@ -990,18 +973,14 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
             }
 
             ok = true;
-            
-            log.info("session created ok");
          }
          else
          {
-            log.info("not created ok");
             // This means the server we failed onto is not ready to take new sessions - perhaps it hasn't actually
             // failed over
          }
 
          // We cause any blocking calls to return - since they won't get responses.
-         log.info("calling returnblocking");
          channel.returnBlocking();
       }
       catch (Throwable t)
@@ -1012,7 +991,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       {
          channel.unlock();
       }
-
+      
       return ok;
    }
 

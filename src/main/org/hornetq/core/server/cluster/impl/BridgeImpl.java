@@ -241,7 +241,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    }
 
    private void cancelRefs() throws Exception
-   {
+   {      
       MessageReference ref;
 
       LinkedList<MessageReference> list = new LinkedList<MessageReference>();
@@ -251,9 +251,16 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
          list.addFirst(ref);
       }
 
+      Queue queue = null;
       for (MessageReference ref2 : list)
       {
-         ref2.getQueue().cancel(ref2);
+         queue = ref2.getQueue();
+         queue.cancel(ref2);
+      }
+      
+      if (queue != null)
+      {
+         queue.deliverAsync(executor);
       }
    }
 
@@ -495,7 +502,113 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
    {
       if (started)
       {
-         executor.execute(new FailRunnable());
+         //executor.execute(new FailRunnable());
+         
+         try
+         {
+            cancelRefs();
+            
+            //setupNotificationConsumer();
+         }
+         catch (Exception e)
+         {
+            log.error("Failed to handle failure", e);
+         }                 
+      }
+   }
+   
+   private ClientConsumer notifConsumer;
+      
+   // TODO - we should move this code to the ClusterConnectorImpl - and just execute it when the bridge
+   // connection is opened and closed - we can use
+   // a callback to tell us that
+   private void setupNotificationConsumer() throws Exception
+   {           
+      if (flowRecord != null)
+      {
+         if (notifConsumer != null)
+         {
+            try
+            {
+               notifConsumer.close();
+               
+               notifConsumer = null;
+            }
+            catch (HornetQException e)
+            {
+               log.error("Failed to close consumer", e);
+            }
+         }
+         
+         // Get the queue data
+
+         // Create a queue to catch the notifications - the name must be deterministic on live and backup, but
+         // different each time this is called
+         // Otherwise it may already exist if server is restarted before it has been deleted on backup
+
+         String qName = "notif." + nodeUUID.toString() + "." + name.toString();
+
+         SimpleString notifQueueName = new SimpleString(qName);
+
+         SimpleString filter = new SimpleString(ManagementHelper.HDR_BINDING_TYPE + "<>" +
+                                                BindingType.DIVERT.toInt() +
+                                                " AND " +
+                                                ManagementHelper.HDR_NOTIFICATION_TYPE +
+                                                " IN ('" +
+                                                NotificationType.BINDING_ADDED +
+                                                "','" +
+                                                NotificationType.BINDING_REMOVED +
+                                                "','" +
+                                                NotificationType.CONSUMER_CREATED +
+                                                "','" +
+                                                NotificationType.CONSUMER_CLOSED +
+                                                "') AND " +
+                                                ManagementHelper.HDR_DISTANCE +
+                                                "<" +
+                                                flowRecord.getMaxHops() +
+                                                " AND (" +
+                                                ManagementHelper.HDR_ADDRESS +
+                                                " LIKE '" +
+                                                flowRecord.getAddress() +
+                                                "%')");
+
+         // The queue can't be temporary, since if the node with the bridge crashes then is restarted quickly
+         // it might get deleted on the target when it does connection cleanup
+
+         // When the backup activates the queue might already exist, so we catch this and ignore
+         try
+         {
+            session.createQueue(managementNotificationAddress, notifQueueName, filter, false);
+         }
+         catch (HornetQException me)
+         {
+            if (me.getCode() == HornetQException.QUEUE_EXISTS)
+            {
+               // Ok
+            }
+            else
+            {
+               throw me;
+            }
+         }
+
+         notifConsumer = session.createConsumer(notifQueueName);
+
+         notifConsumer.setMessageHandler(flowRecord);
+
+         session.start();
+
+         ClientMessage message = session.createClientMessage(false);
+
+         ManagementHelper.putOperationInvocation(message,
+                                                 ResourceNames.CORE_SERVER,
+                                                 "sendQueueInfoToQueue",
+                                                 notifQueueName.toString(),
+                                                 flowRecord.getAddress());
+
+         ClientProducer prod = session.createProducer(managementAddress);
+
+         prod.send(message);
       }
    }
 
@@ -507,9 +620,7 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       }
 
       try
-      {
-         queue.addConsumer(BridgeImpl.this);
-
+      {                 
          csf = null;
          if (discoveryAddress != null)
          {
@@ -540,92 +651,22 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
 
          session.setSendAcknowledgementHandler(BridgeImpl.this);
 
-         // TODO - we should move this code to the ClusterConnectorImpl - and just execute it when the bridge
-         // connection is opened and closed - we can use
-         // a callback to tell us that
-         if (flowRecord != null)
-         {
-            // Get the queue data
-
-            // Create a queue to catch the notifications - the name must be deterministic on live and backup, but
-            // different each time this is called
-            // Otherwise it may already exist if server is restarted before it has been deleted on backup
-
-            String qName = "notif." + nodeUUID.toString() + "." + name.toString();
-
-            SimpleString notifQueueName = new SimpleString(qName);
-
-            SimpleString filter = new SimpleString(ManagementHelper.HDR_BINDING_TYPE + "<>" +
-                                                   BindingType.DIVERT.toInt() +
-                                                   " AND " +
-                                                   ManagementHelper.HDR_NOTIFICATION_TYPE +
-                                                   " IN ('" +
-                                                   NotificationType.BINDING_ADDED +
-                                                   "','" +
-                                                   NotificationType.BINDING_REMOVED +
-                                                   "','" +
-                                                   NotificationType.CONSUMER_CREATED +
-                                                   "','" +
-                                                   NotificationType.CONSUMER_CLOSED +
-                                                   "') AND " +
-                                                   ManagementHelper.HDR_DISTANCE +
-                                                   "<" +
-                                                   flowRecord.getMaxHops() +
-                                                   " AND (" +
-                                                   ManagementHelper.HDR_ADDRESS +
-                                                   " LIKE '" +
-                                                   flowRecord.getAddress() +
-                                                   "%')");
-
-            // The queue can't be temporary, since if the node with the bridge crashes then is restarted quickly
-            // it might get deleted on the target when it does connection cleanup
-
-            // When the backup activates the queue might already exist, so we catch this and ignore
-            try
-            {
-               session.createQueue(managementNotificationAddress, notifQueueName, filter, false);
-            }
-            catch (HornetQException me)
-            {
-               if (me.getCode() == HornetQException.QUEUE_EXISTS)
-               {
-                  // Ok
-               }
-               else
-               {
-                  throw me;
-               }
-            }
-
-            ClientConsumer notifConsumer = session.createConsumer(notifQueueName);
-
-            notifConsumer.setMessageHandler(flowRecord);
-
-            session.start();
-
-            ClientMessage message = session.createClientMessage(false);
-
-            ManagementHelper.putOperationInvocation(message,
-                                                    ResourceNames.CORE_SERVER,
-                                                    "sendQueueInfoToQueue",
-                                                    notifQueueName.toString(),
-                                                    flowRecord.getAddress());
-
-            ClientProducer prod = session.createProducer(managementAddress);
-
-            prod.send(message);
-         }
-
+         setupNotificationConsumer();
+                  
          active = true;
+                 
+         queue.addConsumer(BridgeImpl.this);
 
          queue.deliverAsync(executor);
+         
+         log.info("Bridge " + name + " is now connected to destination ");
 
          return true;
       }
       catch (Exception e)
       {
-         log.warn("Unable to connect. Bridge is now disabled.", e);
-
+         log.warn("Bridge " + name + " is unable to connect to destination. It will be disabled.");
+         
          return false;
       }
    }
@@ -667,53 +708,55 @@ public class BridgeImpl implements Bridge, FailureListener, SendAcknowledgementH
       }
    }
 
-   private class FailRunnable implements Runnable
-   {
-      public void run()
-      {
-         synchronized (BridgeImpl.this)
-         {
-            if (!started)
-            {
-               return;
-            }
-
-            if (flowRecord != null)
-            {
-               try
-               {
-                  // flowRecord.reset();
-               }
-               catch (Exception e)
-               {
-                  log.error("Failed to reset", e);
-               }
-            }
-
-            active = false;
-         }
-
-         try
-         {
-            queue.removeConsumer(BridgeImpl.this);
-
-            session.cleanUp();
-
-            cancelRefs();
-
-            csf.close();
-         }
-         catch (Exception e)
-         {
-            log.error("Failed to stop", e);
-         }
-
-         if (!createObjects())
-         {
-            started = false;
-         }
-      }
-   }
+//   private class FailRunnable implements Runnable
+//   {
+//      public void run()
+//      {
+//         synchronized (BridgeImpl.this)
+//         {         
+//            
+//            if (!started)
+//            {
+//               return;
+//            }
+//
+//            if (flowRecord != null)
+//            {
+//               try
+//               {
+//                  // flowRecord.reset();
+//               }
+//               catch (Exception e)
+//               {
+//                  log.error("Failed to reset", e);
+//               }
+//            }
+//
+//            active = false;
+//         }
+//
+//         try
+//         {
+//            queue.removeConsumer(BridgeImpl.this);
+//
+//            session.cleanUp();
+//
+//            cancelRefs();
+//
+//            csf.close();
+//         }
+//         catch (Exception e)
+//         {
+//            log.error("Failed to stop", e);
+//         }
+//
+//         if (!createObjects())
+//         {
+//            started = false;
+//         }
+//         }
+//      }
+//   }
 
    private class CreateObjectsRunnable implements Runnable
    {

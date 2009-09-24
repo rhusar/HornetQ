@@ -92,7 +92,7 @@ public class FileConfiguration extends ConfigurationImpl
       }
        
       URL url = getClass().getClassLoader().getResource(configurationUrl);
-      log.info("Loading server configuration from " + url);
+      log.debug("Loading server configuration from " + url);
 
       Reader reader = new InputStreamReader(url.openStream());
       String xml = org.hornetq.utils.XMLUtil.readerToString(reader);

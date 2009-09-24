@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.StandardMBean;
+
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.AddressControl;
@@ -39,11 +41,11 @@ import org.hornetq.utils.json.JSONObject;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class TopicControlImpl implements TopicControl
+public class JMSTopicControlImpl extends StandardMBean implements TopicControl
 {
    // Constants -----------------------------------------------------
 
-   private static final Logger log = Logger.getLogger(TopicControlImpl.class);
+   private static final Logger log = Logger.getLogger(JMSTopicControlImpl.class);
 
    // Attributes ----------------------------------------------------
 
@@ -59,16 +61,18 @@ public class TopicControlImpl implements TopicControl
 
    public static String createFilterFromJMSSelector(final String selectorStr) throws HornetQException
    {
-      return (selectorStr == null || selectorStr.trim().length() == 0) ? null : SelectorTranslator.convertToHornetQFilterString(selectorStr);
+      return (selectorStr == null || selectorStr.trim().length() == 0) ? null
+                                                                      : SelectorTranslator.convertToHornetQFilterString(selectorStr);
    }
 
    // Constructors --------------------------------------------------
 
-   public TopicControlImpl(final HornetQTopic topic,
-                       final AddressControl addressControl,
-                       final String jndiBinding,
-                       final ManagementService managementService)
+   public JMSTopicControlImpl(final HornetQTopic topic,
+                           final AddressControl addressControl,
+                           final String jndiBinding,
+                           final ManagementService managementService) throws Exception
    {
+      super(TopicControl.class);
       this.managedTopic = topic;
       this.addressControl = addressControl;
       this.binding = jndiBinding;
@@ -131,7 +135,7 @@ public class TopicControlImpl implements TopicControl
    {
       return listSubscribersInfos(DurabilityType.ALL);
    }
-   
+
    public String listAllSubscriptionsAsJSON() throws Exception
    {
       return listSubscribersInfosAsJSON(DurabilityType.ALL);
@@ -141,7 +145,7 @@ public class TopicControlImpl implements TopicControl
    {
       return listSubscribersInfos(DurabilityType.DURABLE);
    }
-   
+
    public String listDurableSubscriptionsAsJSON() throws Exception
    {
       return listSubscribersInfosAsJSON(DurabilityType.DURABLE);
@@ -151,7 +155,7 @@ public class TopicControlImpl implements TopicControl
    {
       return listSubscribersInfos(DurabilityType.NON_DURABLE);
    }
-   
+
    public String listNonDurableSubscriptionsAsJSON() throws Exception
    {
       return listSubscribersInfosAsJSON(DurabilityType.NON_DURABLE);
@@ -177,7 +181,7 @@ public class TopicControlImpl implements TopicControl
       }
       return jmsMessages;
    }
-   
+
    public String listMessagesForSubscriptionAsJSON(String queueName) throws Exception
    {
       return JMSQueueControlImpl.toJSON(listMessagesForSubscription(queueName));
@@ -249,7 +253,8 @@ public class TopicControlImpl implements TopicControl
 
          if (queue.isDurable())
          {
-            Pair<String, String> pair = HornetQTopic.decomposeQueueNameForDurableSubscription(queue.getName().toString());
+            Pair<String, String> pair = HornetQTopic.decomposeQueueNameForDurableSubscription(queue.getName()
+                                                                                                   .toString());
             clientID = pair.a;
             subName = pair.b;
          }
@@ -267,7 +272,7 @@ public class TopicControlImpl implements TopicControl
       }
       return subInfos.toArray(new Object[subInfos.size()]);
    }
-   
+
    private String listSubscribersInfosAsJSON(final DurabilityType durability) throws Exception
    {
       List<QueueControl> queues = getQueues(durability);
@@ -280,7 +285,8 @@ public class TopicControlImpl implements TopicControl
 
          if (queue.isDurable())
          {
-            Pair<String, String> pair = HornetQTopic.decomposeQueueNameForDurableSubscription(queue.getName().toString());
+            Pair<String, String> pair = HornetQTopic.decomposeQueueNameForDurableSubscription(queue.getName()
+                                                                                                   .toString());
             clientID = pair.a;
             subName = pair.b;
          }

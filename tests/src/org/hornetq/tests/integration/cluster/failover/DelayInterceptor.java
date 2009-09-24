@@ -32,15 +32,12 @@ public class DelayInterceptor implements Interceptor
    {
       if (packet.getType() == PacketImpl.SESS_SEND)
       {
-         try
-         {
-            Thread.sleep(2000);
-         }
-         catch (Exception e)
-         {                  
-         }                  
+         //Lose the send
+         return false;             
       }
-      
-      return true;
+      else
+      {
+         return true;
+      }
    }
 }

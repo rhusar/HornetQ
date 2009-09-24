@@ -85,8 +85,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
    private volatile boolean started;
 
-  // private volatile boolean backup;
-
    private final ManagementService managementService;
 
    private final Reaper reaperRunnable = new Reaper();
@@ -127,7 +125,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
                          final ManagementService managementService,
                          final long reaperPeriod,
                          final int reaperPriority,
-                         final boolean enableWildCardRouting,             
+                         final boolean enableWildCardRouting,
                          final int idCacheSize,
                          final boolean persistIDCache,
                          final ExecutorFactory orderedExecutorFactory,
@@ -182,7 +180,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
       // This is to avoid thread leakages where the Reaper would run beyong the life cycle of the PostOffice
       started = true;
 
-      startExpiryScanner();      
+      startExpiryScanner();
    }
 
    public synchronized void stop() throws Exception
@@ -344,8 +342,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
                      if (redistributionDelay != -1)
                      {
-                        queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor());
+                        queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -415,8 +412,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
 
                      if (redistributionDelay != -1)
                      {
-                        queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor());
+                        queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -870,7 +866,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener
             log.warn("Reaper thread being restarted");
             closed = false;
          }
-         
+
          // The reaper thread should be finished case the PostOffice is gone
          // This is to avoid leaks on PostOffice between stops and starts
          while (PostOfficeImpl.this.isStarted())

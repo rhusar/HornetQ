@@ -16,6 +16,7 @@ package org.hornetq.jms.server.management.impl;
 import java.util.List;
 
 import javax.management.NotCompliantMBeanException;
+import javax.management.StandardMBean;
 
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.server.management.ConnectionFactoryControl;
@@ -26,7 +27,7 @@ import org.hornetq.jms.server.management.ConnectionFactoryControl;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class ConnectionFactoryControlImpl implements ConnectionFactoryControl
+public class JMSConnectionFactoryControlImpl extends StandardMBean implements ConnectionFactoryControl
 {
    // Constants -----------------------------------------------------
 
@@ -42,8 +43,9 @@ public class ConnectionFactoryControlImpl implements ConnectionFactoryControl
 
    // Constructors --------------------------------------------------
 
-   public ConnectionFactoryControlImpl(final HornetQConnectionFactory cf, final String name, final List<String> bindings) throws NotCompliantMBeanException
+   public JMSConnectionFactoryControlImpl(final HornetQConnectionFactory cf, final String name, final List<String> bindings) throws NotCompliantMBeanException
    {
+      super(ConnectionFactoryControl.class);
       this.cf = cf;
       this.name = name;
       this.bindings = bindings;

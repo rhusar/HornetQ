@@ -1260,6 +1260,7 @@ public class QueueImpl implements Queue
                promptDelivery = false;
                return;
             }
+            
             continue;
          }
          else
@@ -1307,7 +1308,7 @@ public class QueueImpl implements Queue
          }
 
          HandleStatus status = handle(reference, consumer);
-
+         
          if (status == HandleStatus.HANDLED)
          {
             if (iterator == null)
@@ -1335,6 +1336,7 @@ public class QueueImpl implements Queue
             {
                groups.remove(consumer);
             }
+
             continue;
          }
       }

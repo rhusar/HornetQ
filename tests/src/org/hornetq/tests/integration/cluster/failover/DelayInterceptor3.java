@@ -35,16 +35,12 @@ public class DelayInterceptor3 implements Interceptor
    {
       if (packet.getType() == PacketImpl.SESS_COMMIT)
       {
-         log.info("got sess commit, delaying");
-         try
-         {
-            Thread.sleep(2000);
-         }
-         catch (Exception e)
-         {                  
-         }                  
+         //lose the commit
+         return false;
       }
-      
-      return false;
+      else
+      {      
+         return true;
+      }      
    }
 }

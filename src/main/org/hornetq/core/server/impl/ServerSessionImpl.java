@@ -1377,10 +1377,18 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void handleReceiveConsumerCredits(final SessionConsumerFlowCreditMessage packet)
-   {      
-      try
+   {   
+      ServerConsumer consumer = consumers.get(packet.getConsumerID());
+      
+      if (consumer == null)
       {
-         consumers.get(packet.getConsumerID()).receiveCredits(packet.getCredits());
+         log.error("There is no consumer with id " + packet.getConsumerID());
+         return;
+      }
+      
+      try
+      {                 
+         consumer.receiveCredits(packet.getCredits());
       }
       catch (Exception e)
       {

@@ -32,7 +32,7 @@ public class BridgeControlImpl extends StandardMBean implements BridgeControl
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
- 
+
    private final Bridge bridge;
 
    private final BridgeConfiguration configuration;
@@ -41,8 +41,7 @@ public class BridgeControlImpl extends StandardMBean implements BridgeControl
 
    // Constructors --------------------------------------------------
 
-   public BridgeControlImpl(final Bridge bridge, final BridgeConfiguration configuration)
-      throws Exception
+   public BridgeControlImpl(final Bridge bridge, final BridgeConfiguration configuration) throws Exception
    {
       super(BridgeControl.class);
       this.bridge = bridge;
@@ -54,10 +53,10 @@ public class BridgeControlImpl extends StandardMBean implements BridgeControl
    public String[] getConnectorPair() throws Exception
    {
       String[] pair = new String[2];
-      
+
       pair[0] = configuration.getConnectorPair().a;
       pair[1] = configuration.getConnectorPair().b != null ? configuration.getConnectorPair().b : null;
-      
+
       return pair;
    }
 
@@ -70,7 +69,7 @@ public class BridgeControlImpl extends StandardMBean implements BridgeControl
    {
       return configuration.getQueueName();
    }
-   
+
    public String getDiscoveryGroupName()
    {
       return configuration.getDiscoveryGroupName();

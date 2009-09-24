@@ -50,8 +50,7 @@ public class BridgeReconnectTest extends BridgeTestBase
 {
    private static final Logger log = Logger.getLogger(BridgeReconnectTest.class);
 
-
-   //Fail bridge and reconnecting immediately
+   // Fail bridge and reconnecting immediately
    public void testFailoverAndReconnectImmediately() throws Exception
    {
       Map<String, Object> server0Params = new HashMap<String, Object>();
@@ -94,16 +93,16 @@ public class BridgeReconnectTest extends BridgeTestBase
       final long retryInterval = 50;
       final double retryIntervalMultiplier = 1d;
       final int reconnectAttempts = 1;
-   
+
       Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), server2tc.getName());
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
-                                                                        null,                                                            
+                                                                        null,
                                                                         null,
                                                                         retryInterval,
-                                                                        retryIntervalMultiplier,                                                               
+                                                                        retryIntervalMultiplier,
                                                                         reconnectAttempts,
                                                                         true,
                                                                         false,
@@ -151,7 +150,7 @@ public class BridgeReconnectTest extends BridgeTestBase
 
       for (int i = 0; i < numMessages; i++)
       {
-         ClientMessage message = session0.createClientMessage(false);
+         ClientMessage message = session0.createClientMessage(true);
          message.putIntProperty(propKey, i);
 
          prod0.send(message);
@@ -175,7 +174,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       assertEquals(0, server1.getRemotingService().getConnections().size());
       assertEquals(0, service2.getRemotingService().getConnections().size());
    }
-   
+
    // Fail bridge and attempt failover a few times before succeeding
    public void testFailoverAndReconnectAfterAFewTries() throws Exception
    {
@@ -225,7 +224,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
-                                                                        null,                                                               
+                                                                        null,
                                                                         null,
                                                                         retryInterval,
                                                                         retryIntervalMultiplier,
@@ -272,7 +271,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       InVMConnector.numberOfFailures = reconnectAttempts - 1;
       forwardingConnection.fail(new HornetQException(HornetQException.NOT_CONNECTED));
 
-      forwardingConnection = getForwardingConnection(bridge);      
+      forwardingConnection = getForwardingConnection(bridge);
       forwardingConnection.fail(new HornetQException(HornetQException.NOT_CONNECTED));
 
       final int numMessages = 10;
@@ -305,7 +304,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       assertEquals(0, server1.getRemotingService().getConnections().size());
       assertEquals(0, service2.getRemotingService().getConnections().size());
    }
-   
+
    // Fail bridge and reconnect same node, no backup specified
    public void testReconnectSameNode() throws Exception
    {
@@ -344,7 +343,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
-                                                                        null,                                                               
+                                                                        null,
                                                                         null,
                                                                         retryInterval,
                                                                         retryIntervalMultiplier,
@@ -389,7 +388,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       InVMConnector.numberOfFailures = reconnectAttempts - 1;
       forwardingConnection.fail(new HornetQException(HornetQException.NOT_CONNECTED));
 
-      forwardingConnection = getForwardingConnection(bridge);      
+      forwardingConnection = getForwardingConnection(bridge);
       forwardingConnection.fail(new HornetQException(HornetQException.NOT_CONNECTED));
 
       final int numMessages = 10;
@@ -420,7 +419,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       assertEquals(0, server0.getRemotingService().getConnections().size());
       assertEquals(0, server1.getRemotingService().getConnections().size());
    }
-      
+
    public void testShutdownServerCleanlyAndReconnectSameNode() throws Exception
    {
       Map<String, Object> server0Params = new HashMap<String, Object>();
@@ -458,7 +457,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
-                                                                        null,                                                               
+                                                                        null,
                                                                         null,
                                                                         retryInterval,
                                                                         retryIntervalMultiplier,
@@ -491,7 +490,7 @@ public class BridgeReconnectTest extends BridgeTestBase
 
       server1.stop();
       server1.start();
-      
+
       ClientSessionFactory csf1 = new ClientSessionFactoryImpl(server1tc);
       ClientSession session1 = csf1.createSession(false, true, true);
 
@@ -527,7 +526,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       assertEquals(0, server0.getRemotingService().getConnections().size());
       assertEquals(0, server1.getRemotingService().getConnections().size());
    }
-   
+
    public void testFailoverThenFailAgainAndReconnect() throws Exception
    {
       Map<String, Object> server0Params = new HashMap<String, Object>();
@@ -564,7 +563,7 @@ public class BridgeReconnectTest extends BridgeTestBase
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
-                                                                        null,                                                           
+                                                                        null,
                                                                         null,
                                                                         retryInterval,
                                                                         retryIntervalMultiplier,
@@ -626,13 +625,13 @@ public class BridgeReconnectTest extends BridgeTestBase
          assertNotNull(r1);
          assertEquals(i, r1.getProperty(propKey));
       }
-      
-      //Fail again - should reconnect
+
+      // Fail again - should reconnect
       forwardingConnection = ((BridgeImpl)bridge).getForwardingConnection();
       InVMConnector.failOnCreateConnection = true;
       InVMConnector.numberOfFailures = reconnectAttempts - 1;
       forwardingConnection.fail(new HornetQException(HornetQException.NOT_CONNECTED));
-      
+
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message = session0.createClientMessage(false);
@@ -657,24 +656,24 @@ public class BridgeReconnectTest extends BridgeTestBase
       assertEquals(0, server0.getRemotingService().getConnections().size());
       assertEquals(0, server1.getRemotingService().getConnections().size());
    }
-   
+
    private RemotingConnection getForwardingConnection(final Bridge bridge) throws Exception
    {
       long start = System.currentTimeMillis();
-      
+
       do
       {
          RemotingConnection forwardingConnection = ((BridgeImpl)bridge).getForwardingConnection();
-         
+
          if (forwardingConnection != null)
          {
             return forwardingConnection;
          }
-                  
+
          Thread.sleep(10);
       }
       while (System.currentTimeMillis() - start < 50000);
-      
+
       throw new IllegalStateException("Failed to get forwarding connection");
    }
 
