@@ -65,9 +65,11 @@ import org.hornetq.core.postoffice.impl.DivertBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.remoting.Channel;
+import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
+import org.hornetq.core.remoting.server.HandlerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.security.CheckType;
@@ -959,8 +961,19 @@ public class HornetQServerImpl implements HornetQServer
 
       managementService = new ManagementServiceImpl(mbeanServer, configuration, managementConnectorID);
 
+      final HandlerFactory handlerFactory = new HandlerFactory()
+      {
+
+         public ChannelHandler getHandler(RemotingConnection conn, Channel channel)
+         {
+            return new HornetQPacketHandler(HornetQServerImpl.this, channel, conn);
+         }
+         
+      };
+      
       remotingService = new RemotingServiceImpl(configuration,
-                                                this,
+                                                handlerFactory,
+                                                (configuration.isAsyncConnectionExecutionEnabled() ? this.executorFactory : null),
                                                 managementService,
                                                 threadPool,
                                                 scheduledPool,

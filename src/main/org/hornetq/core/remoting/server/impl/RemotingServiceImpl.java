@@ -15,7 +15,6 @@ package org.hornetq.core.remoting.server.impl;
 
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.DISCONNECT;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +42,7 @@ import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.Ping;
+import org.hornetq.core.remoting.server.HandlerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.spi.Acceptor;
 import org.hornetq.core.remoting.spi.AcceptorFactory;
@@ -52,6 +52,7 @@ import org.hornetq.core.remoting.spi.ConnectionLifeCycleListener;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQPacketHandler;
+import org.hornetq.utils.ExecutorFactory;
 
 /**
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -83,7 +84,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private final Configuration config;
 
-   private volatile HornetQServer server;
+   private final ExecutorFactory executorFactory;
+
+   private final HandlerFactory handlerFactory;
 
    private ManagementService managementService;
 
@@ -102,13 +105,18 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
    // Constructors --------------------------------------------------
 
    public RemotingServiceImpl(final Configuration config,
-                              final HornetQServer server,
+                              final HandlerFactory handlerFactory,
+                              final ExecutorFactory executorFactory,
                               final ManagementService managementService,
                               final Executor threadPool,
                               final ScheduledExecutorService scheduledThreadPool,
                               final int managementConnectorID)
    {
       transportConfigs = config.getAcceptorConfigurations();
+
+      this.executorFactory = executorFactory;
+
+      this.handlerFactory = handlerFactory;
 
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
       for (String interceptorClass : config.getInterceptorClassNames())
@@ -125,7 +133,6 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       this.config = config;
-      this.server = server;
       this.managementService = managementService;
       this.threadPool = threadPool;
       this.scheduledThreadPool = scheduledThreadPool;
@@ -176,7 +183,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       // Remove this code when this is implemented without having to require a special acceptor
       // https://jira.jboss.org/jira/browse/JBMESSAGING-1649
 
-      if (config.isJMXManagementEnabled())
+      if (config.isJMXManagementEnabled() && managementService != null)
       {
          Map<String, Object> params = new HashMap<String, Object>();
 
@@ -188,12 +195,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
          acceptors.add(acceptor);
 
-         if (managementService != null)
-         {
-            TransportConfiguration info = new TransportConfiguration(InVMAcceptorFactory.class.getName(), params);
+         TransportConfiguration info = new TransportConfiguration(InVMAcceptorFactory.class.getName(), params);
 
-            managementService.registerAcceptor(acceptor, info);
-         }
+         managementService.registerAcceptor(acceptor, info);
       }
 
       for (Acceptor a : acceptors)
@@ -233,28 +237,31 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       failureCheckThread.close();
-      
+
       // We need to stop them accepting first so no new connections are accepted after we send the disconnect message
       for (Acceptor acceptor : acceptors)
       {
          acceptor.pause();
       }
-     
+
       for (ConnectionEntry entry : connections.values())
-      {       
+      {
          entry.connection.getChannel(0, -1, false).sendAndFlush(new PacketImpl(DISCONNECT));
       }
-           
+
       for (Acceptor acceptor : acceptors)
       {
          acceptor.stop();
       }
-     
+
       acceptors.clear();
 
       connections.clear();
 
-      managementService.unregisterAcceptors();
+      if (managementService != null)
+      {
+         managementService.unregisterAcceptors();
+      }
 
       started = false;
    }
@@ -299,31 +306,14 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    public void connectionCreated(final Connection connection)
    {
-      if (server == null)
-      {
-         throw new IllegalStateException("Unable to create connection, server hasn't finished starting up");
-      }
-      
-      RemotingConnection rc = new RemotingConnectionImpl(connection,
-                                                         interceptors,                                                        
-                                                         server.getConfiguration().isAsyncConnectionExecutionEnabled() ? server.getExecutorFactory()
-                                                                                                                               .getExecutor()
-                                                                                                                      : null);
-
-      Channel channel1 = rc.getChannel(1, -1, false);
-
-      ChannelHandler handler = new HornetQPacketHandler(server, channel1, rc);
-
-      channel1.setHandler(handler);
+      RemotingConnection rc = createChannel(connection);
 
       long ttl = ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL;
       if (config.getConnectionTTLOverride() != -1)
       {
          ttl = config.getConnectionTTLOverride();
       }
-      final ConnectionEntry entry = new ConnectionEntry(rc,
-                                                        System.currentTimeMillis(),
-                                                        ttl);
+      final ConnectionEntry entry = new ConnectionEntry(rc, System.currentTimeMillis(), ttl);
 
       connections.put(connection.getID(), entry);
 
@@ -402,6 +392,29 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    // Protected -----------------------------------------------------
 
+   protected List<Interceptor> getInterceptors()
+   {
+      return this.interceptors;
+   }
+
+   /**
+    * Subclasses (on tests) may use this to create a different channel.
+    */
+   protected RemotingConnection createChannel(final Connection connection)
+   {
+      RemotingConnection rc = new RemotingConnectionImpl(connection,
+                                                         interceptors,
+                                                         executorFactory != null ? executorFactory.getExecutor() : null);
+
+      Channel channel1 = rc.getChannel(1, -1, false);
+
+      ChannelHandler handler = handlerFactory.getHandler(rc, channel1);
+
+      channel1.setHandler(handler);
+
+      return rc;
+   }
+
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
@@ -467,7 +480,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       public void run()
-      {         
+      {
          while (!closed)
          {
             long now = System.currentTimeMillis();
@@ -499,9 +512,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
                RemotingConnection conn = removeConnection(id);
 
                HornetQException me = new HornetQException(HornetQException.CONNECTION_TIMEDOUT,
-                                                              "Did not receive ping from " + conn.getRemoteAddress() +
-                                                                       ". It is likely the client has exited or crashed without " +
-                                                                       "closing its connection, or the network between the server and client has failed. The connection will now be closed.");
+                                                          "Did not receive ping from " + conn.getRemoteAddress() +
+                                                                   ". It is likely the client has exited or crashed without " +
+                                                                   "closing its connection, or the network between the server and client has failed. The connection will now be closed.");
                conn.fail(me);
             }
 
