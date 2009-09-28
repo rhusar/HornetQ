@@ -32,8 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 
+import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ConnectionManager;
+import org.hornetq.core.client.impl.ConnectionManagerImpl;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -65,13 +68,15 @@ import org.hornetq.core.postoffice.impl.DivertBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.remoting.Channel;
-import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
-import org.hornetq.core.remoting.server.HandlerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
+import org.hornetq.core.replication.ReplicationEndpoint;
+import org.hornetq.core.replication.ReplicationManager;
+import org.hornetq.core.replication.impl.ReplicationEndpointImpl;
+import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.HornetQSecurityManager;
 import org.hornetq.core.security.Role;
@@ -192,6 +197,8 @@ public class HornetQServerImpl implements HornetQServer
    private static AtomicInteger managementConnectorSequence = new AtomicInteger(0);
 
    private ConnectionManager replicatingConnectionManager;
+   
+   private ReplicationManager replicationManager;
 
    private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
@@ -583,6 +590,11 @@ public class HornetQServerImpl implements HornetQServer
 
       return new CreateSessionResponseMessage(true, version.getIncrementingVersion());
    }
+   
+   public synchronized ReplicationEndpoint createReplicationEndpoint()
+   {
+      return new ReplicationEndpointImpl(this);
+   }
 
    public void removeSession(final String name) throws Exception
    {
@@ -658,82 +670,44 @@ public class HornetQServerImpl implements HornetQServer
    // }
    // }
 
-   // private boolean setupReplicatingConnection() throws Exception
-   // {
-   // String backupConnectorName = configuration.getBackupConnectorName();
-   //
-   // if (backupConnectorName != null)
-   // {
-   // TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
-   //
-   // if (backupConnector == null)
-   // {
-   // log.warn("connector with name '" + backupConnectorName + "' is not defined in the configuration.");
-   // }
-   // else
-   // {
-   // replicatingConnectionManager = new ConnectionManagerImpl(null,
-   // backupConnector,
-   // null,
-   // false,
-   // 1,
-   // ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-   // ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-   // ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-   // 0,
-   // 1.0d,
-   // 0,
-   // threadPool,
-   // scheduledPool);
-   //
-   // replicatingConnection = replicatingConnectionManager.getConnection(1);
-   //
-   // if (replicatingConnection != null)
-   // {
-   // replicatingChannel = replicatingConnection.getChannel(2, -1, false);
-   //
-   // replicatingConnection.addFailureListener(new FailureListener()
-   // {
-   // public void connectionFailed(HornetQException me)
-   // {
-   // replicatingChannel.executeOutstandingDelayedResults();
-   // }
-   // });
-   //
-   // // First time we get channel we send a message down it informing the backup of our node id -
-   // // backup and live must have the same node id
-   //
-   // Packet packet = new ReplicateStartupInfoMessage(uuid, storageManager.getCurrentUniqueID());
-   //
-   // final Future future = new Future();
-   //
-   // replicatingChannel.replicatePacket(packet, 1, new Runnable()
-   // {
-   // public void run()
-   // {
-   // future.run();
-   // }
-   // });
-   //
-   // // This may take a while especially if the journal is large
-   // boolean ok = future.await(60000);
-   //
-   // if (!ok)
-   // {
-   // throw new IllegalStateException("Timed out waiting for response from backup for initialisation");
-   // }
-   // }
-   // else
-   // {
-   // log.warn("Backup server MUST be started before live server. Initialisation will not proceed.");
-   //
-   // return false;
-   // }
-   // }
-   // }
-   //
-   // return true;
-   // }
+   private boolean startReplication() throws Exception
+   {
+      String backupConnectorName = configuration.getBackupConnectorName();
+
+      if (backupConnectorName != null)
+      {
+         TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
+
+         if (backupConnector == null)
+         {
+            log.warn("connector with name '" + backupConnectorName + "' is not defined in the configuration.");
+         }
+         else
+         {
+            
+            replicatingConnectionManager = new ConnectionManagerImpl(null,
+                                                          backupConnector,
+                                                          null,
+                                                          false,
+                                                          1,
+                                                          ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
+                                                          ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+                                                          ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
+                                                          0,
+                                                          1.0d,
+                                                          0,
+                                                          false,
+                                                          threadPool,
+                                                          scheduledPool,
+                                                          null);
+            
+            this.replicationManager = new ReplicationManagerImpl(replicatingConnectionManager);
+            replicationManager.start();
+         }
+      }
+
+      return true;
+   }
 
    public HornetQServerControlImpl getHornetQServerControl()
    {
@@ -883,7 +857,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       return threadPool;
    }
-   
+
    /** 
     * This method is protected as it may be used as a hook for creating a custom storage manager (on tests for instance) 
     * @return
@@ -899,8 +873,6 @@ public class HornetQServerImpl implements HornetQServer
          return new NullStorageManager();
       }
    }
-
-   
 
    // Private
    // --------------------------------------------------------------------------------------
@@ -961,25 +933,17 @@ public class HornetQServerImpl implements HornetQServer
 
       managementService = new ManagementServiceImpl(mbeanServer, configuration, managementConnectorID);
 
-      final HandlerFactory handlerFactory = new HandlerFactory()
-      {
-
-         public ChannelHandler getHandler(RemotingConnection conn, Channel channel)
-         {
-            return new HornetQPacketHandler(HornetQServerImpl.this, channel, conn);
-         }
-         
-      };
-      
       remotingService = new RemotingServiceImpl(configuration,
-                                                handlerFactory,
-                                                (configuration.isAsyncConnectionExecutionEnabled() ? this.executorFactory : null),
+                                                this,
+                                                (configuration.isAsyncConnectionExecutionEnabled() ? this.executorFactory
+                                                                                                  : null),
                                                 managementService,
                                                 threadPool,
                                                 scheduledPool,
                                                 managementConnectorID);
 
-      memoryManager = new MemoryManagerImpl(configuration.getMemoryWarningThreshold(), configuration.getMemoryMeasureInterval());
+      memoryManager = new MemoryManagerImpl(configuration.getMemoryWarningThreshold(),
+                                            configuration.getMemoryMeasureInterval());
 
       memoryManager.start();
    }
@@ -1182,7 +1146,7 @@ public class HornetQServerImpl implements HornetQServer
          queues.put(queueBindingInfo.getPersistenceID(), queue);
 
          postOffice.addBinding(binding);
-         
+
          managementService.registerAddress(queueBindingInfo.getAddress());
          managementService.registerQueue(queue, queueBindingInfo.getAddress(), storageManager);
       }
@@ -1278,7 +1242,7 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       postOffice.addBinding(binding);
-      
+
       managementService.registerAddress(address);
       managementService.registerQueue(queue, address, storageManager);
 

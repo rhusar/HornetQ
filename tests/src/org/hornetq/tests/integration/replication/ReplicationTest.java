@@ -42,15 +42,15 @@ import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.RemotingConnectionImpl;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
-import org.hornetq.core.remoting.server.HandlerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
-import org.hornetq.core.remoting.spi.Connection;
+import org.hornetq.core.replication.ReplicationEndpoint;
+import org.hornetq.core.replication.impl.ReplicationEndpointImpl;
+import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.security.HornetQSecurityManager;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.ActivateCallback;
@@ -59,7 +59,6 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.cluster.ClusterManager;
-import org.hornetq.core.server.impl.HornetQPacketHandler;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.ResourceManager;
@@ -89,7 +88,7 @@ public class ReplicationTest extends ServiceTestBase
 
    private ExecutorService executor;
 
-   private ConnectionManager connectionManagerLive;
+   private ConnectionManager connectionManager;
 
    private ScheduledExecutorService scheduledExecutor;
 
@@ -101,51 +100,38 @@ public class ReplicationTest extends ServiceTestBase
 
    public void testBasicConnection() throws Exception
    {
-
-      RemotingConnection conn = connectionManagerLive.getConnection(1);
-
-      Channel chann = conn.getChannel(2, -1, false);
-
-      chann.close();
-
+      ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
+      manager.start();
+      manager.stop();
    }
 
    // Package protected ---------------------------------------------
-
-   class LocalHandler implements ChannelHandler
+   class LocalRemotingServiceImpl extends RemotingServiceImpl
    {
 
-      final Channel channel;
-
-      /**
-       * @param channel
-       */
-      public LocalHandler(Channel channel)
+      public LocalRemotingServiceImpl(Configuration config,
+                                      HornetQServer server,
+                                      ExecutorFactory executorFactory,
+                                      ManagementService managementService,
+                                      Executor threadPool,
+                                      ScheduledExecutorService scheduledThreadPool,
+                                      int managementConnectorID)
       {
-         super();
-         this.channel = channel;
+         super(config,
+               server,
+               executorFactory,
+               managementService,
+               threadPool,
+               scheduledThreadPool,
+               managementConnectorID);
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
-       */
-      public void handlePacket(Packet packet)
+      protected ChannelHandler createHandler(RemotingConnection conn, Channel channel)
       {
-         channel.send(new NullResponseMessage());
+         return super.createHandler(conn, channel);
       }
 
    }
-
-   HandlerFactory handlerFactory = new HandlerFactory()
-   {
-
-      public ChannelHandler getHandler(RemotingConnection conn, Channel channel)
-      {
-         System.out.println("Created a handler");
-         return new LocalHandler(channel);
-      }
-
-   };
 
    // Protected -----------------------------------------------------
 
@@ -159,7 +145,7 @@ public class ReplicationTest extends ServiceTestBase
 
       scheduledExecutor = new ScheduledThreadPoolExecutor(10, tFactory);
 
-      remoting = new RemotingServiceImpl(config, handlerFactory, null, null, executor, scheduledExecutor, 0);
+      remoting = new LocalRemotingServiceImpl(config, new FakeServer(), null, null, executor, scheduledExecutor, 0);
 
       remoting.start();
 
@@ -169,21 +155,21 @@ public class ReplicationTest extends ServiceTestBase
 
       List<Interceptor> interceptors = new ArrayList<Interceptor>();
 
-      connectionManagerLive = new ConnectionManagerImpl(null,
-                                                        connectorConfig,
-                                                        null,
-                                                        false,
-                                                        1,
-                                                        ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                                                        ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                        ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                                                        0,
-                                                        1.0d,
-                                                        0,
-                                                        false,
-                                                        executor,
-                                                        scheduledExecutor,
-                                                        interceptors);
+      connectionManager = new ConnectionManagerImpl(null,
+                                                    connectorConfig,
+                                                    null,
+                                                    false,
+                                                    1,
+                                                    ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
+                                                    ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+                                                    ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
+                                                    0,
+                                                    1.0d,
+                                                    0,
+                                                    false,
+                                                    executor,
+                                                    scheduledExecutor,
+                                                    interceptors);
 
    }
 
@@ -206,4 +192,312 @@ public class ReplicationTest extends ServiceTestBase
 
    // Inner classes -------------------------------------------------
 
+   static class FakeServer implements HornetQServer
+   {
+
+      public Queue createQueue(SimpleString address,
+                               SimpleString queueName,
+                               SimpleString filter,
+                               boolean durable,
+                               boolean temporary) throws Exception
+      {
+         return null;
+      }
+
+      public CreateSessionResponseMessage createSession(String name,
+                                                        long channelID,
+                                                        String username,
+                                                        String password,
+                                                        int minLargeMessageSize,
+                                                        int incrementingVersion,
+                                                        RemotingConnection remotingConnection,
+                                                        boolean autoCommitSends,
+                                                        boolean autoCommitAcks,
+                                                        boolean preAcknowledge,
+                                                        boolean xa,
+                                                        int producerWindowSize) throws Exception
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#deployQueue(org.hornetq.utils.SimpleString, org.hornetq.utils.SimpleString, org.hornetq.utils.SimpleString, boolean, boolean)
+       */
+      public Queue deployQueue(SimpleString address,
+                               SimpleString queueName,
+                               SimpleString filterString,
+                               boolean durable,
+                               boolean temporary) throws Exception
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#destroyQueue(org.hornetq.utils.SimpleString, org.hornetq.core.server.ServerSession)
+       */
+      public void destroyQueue(SimpleString queueName, ServerSession session) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getAddressSettingsRepository()
+       */
+      public HierarchicalRepository<AddressSettings> getAddressSettingsRepository()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getClusterManager()
+       */
+      public ClusterManager getClusterManager()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getConfiguration()
+       */
+      public Configuration getConfiguration()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getConnectionCount()
+       */
+      public int getConnectionCount()
+      {
+
+         return 0;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getExecutorFactory()
+       */
+      public ExecutorFactory getExecutorFactory()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getHornetQServerControl()
+       */
+      public HornetQServerControlImpl getHornetQServerControl()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getMBeanServer()
+       */
+      public MBeanServer getMBeanServer()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getManagementService()
+       */
+      public ManagementService getManagementService()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getNodeID()
+       */
+      public SimpleString getNodeID()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getPostOffice()
+       */
+      public PostOffice getPostOffice()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getQueueFactory()
+       */
+      public QueueFactory getQueueFactory()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getRemotingService()
+       */
+      public RemotingService getRemotingService()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getResourceManager()
+       */
+      public ResourceManager getResourceManager()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getSecurityManager()
+       */
+      public HornetQSecurityManager getSecurityManager()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getSecurityRepository()
+       */
+      public HierarchicalRepository<Set<Role>> getSecurityRepository()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getSession(java.lang.String)
+       */
+      public ServerSession getSession(String name)
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getSessions()
+       */
+      public Set<ServerSession> getSessions()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getSessions(java.lang.String)
+       */
+      public List<ServerSession> getSessions(String connectionID)
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getStorageManager()
+       */
+      public StorageManager getStorageManager()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#getVersion()
+       */
+      public Version getVersion()
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#isInitialised()
+       */
+      public boolean isInitialised()
+      {
+
+         return false;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#isStarted()
+       */
+      public boolean isStarted()
+      {
+
+         return false;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#reattachSession(org.hornetq.core.remoting.RemotingConnection, java.lang.String, int)
+       */
+      public ReattachSessionResponseMessage reattachSession(RemotingConnection connection,
+                                                            String name,
+                                                            int lastReceivedCommandID) throws Exception
+      {
+
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#registerActivateCallback(org.hornetq.core.server.ActivateCallback)
+       */
+      public void registerActivateCallback(ActivateCallback callback)
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#removeSession(java.lang.String)
+       */
+      public void removeSession(String name) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#unregisterActivateCallback(org.hornetq.core.server.ActivateCallback)
+       */
+      public void unregisterActivateCallback(ActivateCallback callback)
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQComponent#start()
+       */
+      public void start() throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQComponent#stop()
+       */
+      public void stop() throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQServer#createReplicationEndpoint()
+       */
+      public ReplicationEndpoint createReplicationEndpoint()
+      {
+         return new ReplicationEndpointImpl(this);
+      }
+
+   }
 }

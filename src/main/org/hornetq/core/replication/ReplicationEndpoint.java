@@ -11,22 +11,18 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.remoting.server;
+package org.hornetq.core.replication;
 
-import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
-import org.hornetq.core.remoting.RemotingConnection;
 
 /**
- * The RemotingService could be used by either the Replication Manager or by the Server.
- * 
- * Each will need to use a different Handler, so this factory may be used to pass what handler needs to be created
+ * A ReplicationEndpoint
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface HandlerFactory
+public interface ReplicationEndpoint extends ChannelHandler
 {
-   ChannelHandler getHandler(RemotingConnection conn, Channel channel);
+
 }

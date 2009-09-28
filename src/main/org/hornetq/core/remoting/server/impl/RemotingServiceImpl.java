@@ -42,7 +42,6 @@ import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.Ping;
-import org.hornetq.core.remoting.server.HandlerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.spi.Acceptor;
 import org.hornetq.core.remoting.spi.AcceptorFactory;
@@ -86,7 +85,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private final ExecutorFactory executorFactory;
 
-   private final HandlerFactory handlerFactory;
+   private final HornetQServer server;
 
    private ManagementService managementService;
 
@@ -105,7 +104,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
    // Constructors --------------------------------------------------
 
    public RemotingServiceImpl(final Configuration config,
-                              final HandlerFactory handlerFactory,
+                              final HornetQServer server,
                               final ExecutorFactory executorFactory,
                               final ManagementService managementService,
                               final Executor threadPool,
@@ -116,7 +115,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
       this.executorFactory = executorFactory;
 
-      this.handlerFactory = handlerFactory;
+      this.server = server;
 
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
       for (String interceptorClass : config.getInterceptorClassNames())
@@ -306,7 +305,18 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    public void connectionCreated(final Connection connection)
    {
-      RemotingConnection rc = createChannel(connection);
+      RemotingConnection rc = new RemotingConnectionImpl(connection,
+                                                         interceptors,
+                                                         executorFactory != null ? executorFactory.getExecutor() : null);
+
+      Channel channel1 = rc.getChannel(1, -1, false);
+      
+      ChannelHandler handler = createHandler(rc, channel1); 
+
+      channel1.setHandler(handler);
+
+
+      
 
       long ttl = ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL;
       if (config.getConnectionTTLOverride() != -1)
@@ -400,19 +410,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
    /**
     * Subclasses (on tests) may use this to create a different channel.
     */
-   protected RemotingConnection createChannel(final Connection connection)
+   protected ChannelHandler createHandler(final RemotingConnection rc, Channel channel)
    {
-      RemotingConnection rc = new RemotingConnectionImpl(connection,
-                                                         interceptors,
-                                                         executorFactory != null ? executorFactory.getExecutor() : null);
-
-      Channel channel1 = rc.getChannel(1, -1, false);
-
-      ChannelHandler handler = handlerFactory.getHandler(rc, channel1);
-
-      channel1.setHandler(handler);
-
-      return rc;
+      return new HornetQPacketHandler(server, channel, rc);
    }
 
    // Private -------------------------------------------------------

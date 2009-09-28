@@ -13,17 +13,15 @@
 
 package org.hornetq.core.replication;
 
+import org.hornetq.core.server.HornetQComponent;
+
 
 /**
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface ReplicationManager
+public interface ReplicationManager  extends HornetQComponent
 {
    void replicate(byte[] bytes, ReplicationToken token);
-   
- 
-   /** to be used on the backup node only */
-   void addBackupListener(BackupListener listener);
 }

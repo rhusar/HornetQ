@@ -15,6 +15,10 @@ package org.hornetq.core.replication.impl;
 
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPacket;
+import org.hornetq.core.replication.ReplicationEndpoint;
+import org.hornetq.core.replication.ReplicationManager;
+import org.hornetq.core.server.HornetQServer;
 
 /**
  * A ReplicationPacketHandler
@@ -23,25 +27,31 @@ import org.hornetq.core.remoting.Packet;
  *
  *
  */
-public class ReplicationPacketHandler implements ChannelHandler
+public class ReplicationEndpointImpl implements ReplicationEndpoint
 {
 
+   // Constants -----------------------------------------------------
+
+   // Attributes ----------------------------------------------------
+   
+   private final HornetQServer server;
+
+   // Static --------------------------------------------------------
+
+   // Constructors --------------------------------------------------
+   public ReplicationEndpointImpl(HornetQServer server)
+   {
+      this.server = server ;
+   }
+
+   // Public --------------------------------------------------------
    /* (non-Javadoc)
     * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
     */
    public void handlePacket(Packet packet)
    {
+
    }
-
-   // Constants -----------------------------------------------------
-
-   // Attributes ----------------------------------------------------
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
 
    // Package protected ---------------------------------------------
 

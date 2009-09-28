@@ -13,7 +13,10 @@
 
 package org.hornetq.core.replication.impl;
 
-import org.hornetq.core.replication.BackupListener;
+import org.hornetq.core.client.impl.ConnectionManager;
+import org.hornetq.core.remoting.Channel;
+import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
 
@@ -31,20 +34,31 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    // Attributes ----------------------------------------------------
 
+   // TODO: Should this be configurable or not?
+   private static final int WINDOW_SIZE = 100 * 1024;
+
+   private final ConnectionManager connectionManager;
+
+   private RemotingConnection connection;
+
+   private Channel replicatingChannel;
+
+   private boolean started;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   // Public --------------------------------------------------------
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#addListener(org.hornetq.core.replication.ReplicationListener)
+   /**
+    * @param replicationConnectionManager
     */
-   public void addBackupListener(BackupListener listener)
+   public ReplicationManagerImpl(ConnectionManager connectionManager)
    {
-      // TODO Auto-generated method stub
-      
+      super();
+      this.connectionManager = connectionManager;
    }
+
+   // Public --------------------------------------------------------
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#replicate(byte[], org.hornetq.core.replication.ReplicationToken)
@@ -52,7 +66,52 @@ public class ReplicationManagerImpl implements ReplicationManager
    public void replicate(byte[] bytes, ReplicationToken token)
    {
       // TODO Auto-generated method stub
-      
+
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#isStarted()
+    */
+   public synchronized boolean isStarted()
+   {
+      return this.started;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#start()
+    */
+   public synchronized void start() throws Exception
+   {
+      this.started = true;
+
+      connection = connectionManager.getConnection(1);
+
+      long channelID = connection.generateChannelID();
+
+      Channel mainChannel = connection.getChannel(1, -1, false);
+
+      Channel tempChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
+
+      CreateReplicationSessionMessage replicationStartPackage = new CreateReplicationSessionMessage(channelID,
+                                                                                                    WINDOW_SIZE);
+
+      mainChannel.sendBlocking(replicationStartPackage);
+
+      this.replicatingChannel = tempChannel;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#stop()
+    */
+   public void stop() throws Exception
+   {
+      replicatingChannel.close();
+
+      this.started = false;
+
+      connection.destroy();
+
+      connection = null;
    }
 
    // Package protected ---------------------------------------------

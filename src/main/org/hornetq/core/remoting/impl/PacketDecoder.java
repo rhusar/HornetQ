@@ -13,6 +13,8 @@
 
 package org.hornetq.core.remoting.impl;
 
+
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATE_REPLICATION;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATESESSION;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATESESSION_RESP;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATE_QUEUE;
@@ -62,6 +64,7 @@ import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_SUSPE
 
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
+import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.HornetQExceptionMessage;
@@ -349,7 +352,13 @@ public class PacketDecoder
          {
             packet = new SessionSendContinuationMessage();
             break;
-         }        
+         }
+
+         case CREATE_REPLICATION:
+         {
+            packet = new CreateReplicationSessionMessage();
+            break;
+         }
          default:
          {
             throw new IllegalArgumentException("Invalid type: " + packetType);

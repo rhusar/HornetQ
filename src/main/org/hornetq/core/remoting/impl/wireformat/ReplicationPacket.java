@@ -11,17 +11,26 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.replication;
+package org.hornetq.core.remoting.impl.wireformat;
 
 /**
- * A ReplicationListener
+ * A ReplicationPacket
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface BackupListener
+public class ReplicationPacket extends PacketImpl
 {
+
+   /**
+    * @param type
+    */
+   public ReplicationPacket(byte type)
+   {
+      super(type);
+      // TODO Auto-generated constructor stub
+   }
 
    // Constants -----------------------------------------------------
 
@@ -32,8 +41,6 @@ public interface BackupListener
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
-   
-   void onReplication(byte data[]);
 
    // Package protected ---------------------------------------------
 

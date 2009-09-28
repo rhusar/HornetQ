@@ -64,6 +64,8 @@ public class PacketImpl implements Packet
    public static final byte CREATE_QUEUE = 34;
 
    public static final byte DELETE_QUEUE = 35;
+   
+   public static final byte CREATE_REPLICATION = 36;
 
 
    // Session
@@ -136,6 +138,10 @@ public class PacketImpl implements Packet
    public static final byte SESS_RECEIVE_MSG = 75;
 
    public static final byte SESS_RECEIVE_CONTINUATION = 76;
+   
+   // Replication
+   
+   public static final byte REPLICATION_SEND_REPLICATION = 77;
 
    // Static --------------------------------------------------------
 
