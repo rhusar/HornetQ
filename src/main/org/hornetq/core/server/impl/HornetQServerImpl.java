@@ -199,6 +199,8 @@ public class HornetQServerImpl implements HornetQServer
    private ConnectionManager replicatingConnectionManager;
    
    private ReplicationManager replicationManager;
+   
+   private ReplicationEndpoint replicationEndpoint = new ReplicationEndpointImpl(this);
 
    private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
@@ -593,7 +595,12 @@ public class HornetQServerImpl implements HornetQServer
    
    public synchronized ReplicationEndpoint createReplicationEndpoint()
    {
-      return new ReplicationEndpointImpl(this);
+      if (replicationEndpoint == null)
+      {
+         replicationEndpoint = new ReplicationEndpointImpl(this);
+         
+      }
+      return replicationEndpoint;
    }
 
    public void removeSession(final String name) throws Exception
@@ -891,21 +898,24 @@ public class HornetQServerImpl implements HornetQServer
       {
          // Handle backup server activation
 
-         if (configuration.isSharedStore())
+         if (!configuration.isSharedStore())
          {
-            // Complete the startup procedure
-
-            log.info("Activating server");
-
-            configuration.setBackup(false);
-
-            initialisePart2();
+            if (replicationEndpoint == null)
+            {
+               log.warn("There is no replication endpoint, can't activate this backup server");
+               throw new HornetQException(HornetQException.INTERNAL_ERROR, "Can't activate the server");
+            }
+            
+            replicationEndpoint.stop();
          }
-         else
-         {
-            // TODO
-            // just load journal
-         }
+         
+         // Complete the startup procedure
+
+         log.info("Activating server");
+
+         configuration.setBackup(false);
+
+         initialisePart2();
       }
 
       return true;

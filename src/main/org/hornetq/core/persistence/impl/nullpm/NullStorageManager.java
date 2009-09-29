@@ -238,4 +238,11 @@ public class NullStorageManager implements StorageManager
    {
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#loadInternalOnly()
+    */
+   public void loadInternalOnly() throws Exception
+   {
+   }
+
 }

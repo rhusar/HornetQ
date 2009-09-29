@@ -1095,6 +1095,13 @@ public class PagingStoreImplTest extends UnitTestCase
       {
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#loadInternalOnly()
+       */
+      public void loadInternalOnly() throws Exception
+      {
+      }
+
    }
 
    class FakeStoreFactory implements PagingStoreFactory

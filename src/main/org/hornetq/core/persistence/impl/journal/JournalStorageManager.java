@@ -35,6 +35,7 @@ import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.Journal;
+import org.hornetq.core.journal.LoaderCallback;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFile;
@@ -1087,6 +1088,41 @@ public class JournalStorageManager implements StorageManager
    {
       return started;
    }
+   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#loadInternalOnly()
+    */
+   public void loadInternalOnly() throws Exception
+   {
+      LoaderCallback dummyLoader = new LoaderCallback()
+      {
+         
+         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+         {
+         }
+         
+         public void updateRecord(RecordInfo info)
+         {
+         }
+         
+         public void deleteRecord(long id)
+         {
+         }
+         
+         public void addRecord(RecordInfo info)
+         {
+         }
+         
+         public void addPreparedTransaction(PreparedTransactionInfo preparedTransaction)
+         {
+         }
+      };
+      
+      bindingsJournal.load(dummyLoader);
+      messageJournal.load(dummyLoader);
+   }
+
 
    // Public -----------------------------------------------------------------------------------
 

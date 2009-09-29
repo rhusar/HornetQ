@@ -96,6 +96,10 @@ public interface StorageManager extends HornetQComponent
 
    void deletePageTransactional(long txID, long recordID) throws Exception;
 
+   /** This method is only useful at the backup side. We only load internal structures making the journals ready for
+    *  append mode on the backup side. */
+   void loadInternalOnly() throws Exception;
+
    void loadMessageJournal(PagingManager pagingManager,
                            ResourceManager resourceManager,
                            Map<Long, Queue> queues,

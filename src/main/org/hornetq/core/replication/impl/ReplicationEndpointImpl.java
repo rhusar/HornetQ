@@ -33,7 +33,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
-   
+
    private final HornetQServer server;
 
    // Static --------------------------------------------------------
@@ -41,7 +41,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Constructors --------------------------------------------------
    public ReplicationEndpointImpl(HornetQServer server)
    {
-      this.server = server ;
+      this.server = server;
    }
 
    // Public --------------------------------------------------------
@@ -51,6 +51,28 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    public void handlePacket(Packet packet)
    {
 
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#isStarted()
+    */
+   public boolean isStarted()
+   {
+      return true;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#start()
+    */
+   public void start() throws Exception
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.HornetQComponent#stop()
+    */
+   public void stop() throws Exception
+   {
    }
 
    // Package protected ---------------------------------------------

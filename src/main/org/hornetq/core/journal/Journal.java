@@ -74,6 +74,12 @@ public interface Journal extends HornetQComponent
    void appendRollbackRecord(long txID, boolean sync) throws Exception;
 
    // Load
+   
+   /** This method could be promoted to {@link Journal} interface when we decide to use the loadManager 
+    *  instead of load(List,List)
+    */
+   long load(LoaderCallback reloadManager) throws Exception;
+
 
    long load(List<RecordInfo> committedRecords, List<PreparedTransactionInfo> preparedTransactions, TransactionFailureCallback transactionFailure) throws Exception;
 
