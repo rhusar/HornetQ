@@ -50,7 +50,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     */
    public void handlePacket(Packet packet)
    {
-
+      System.out.println("packet = " + packet);
    }
 
    /* (non-Javadoc)

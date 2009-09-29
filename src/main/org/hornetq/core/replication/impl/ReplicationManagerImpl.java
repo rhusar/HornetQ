@@ -34,7 +34,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    // Attributes ----------------------------------------------------
 
-   // TODO: Should this be configurable or not?
+   // TODO: where should this be configured?
    private static final int WINDOW_SIZE = 100 * 1024;
 
    private final ConnectionManager connectionManager;
@@ -65,8 +65,7 @@ public class ReplicationManagerImpl implements ReplicationManager
     */
    public void replicate(byte[] bytes, ReplicationToken token)
    {
-      // TODO Auto-generated method stub
-
+      replicatingChannel.send(new CreateReplicationSessionMessage(1, 1));
    }
 
    /* (non-Javadoc)
@@ -105,11 +104,17 @@ public class ReplicationManagerImpl implements ReplicationManager
     */
    public void stop() throws Exception
    {
-      replicatingChannel.close();
+      if (replicatingChannel != null)
+      {
+         replicatingChannel.close();
+      }
 
       this.started = false;
-
-      connection.destroy();
+      
+      if (connection != null)
+      {
+         connection.destroy();
+      }
 
       connection = null;
    }

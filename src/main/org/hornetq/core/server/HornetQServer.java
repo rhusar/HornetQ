@@ -19,6 +19,7 @@ import java.util.Set;
 import javax.management.MBeanServer;
 
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -70,7 +71,7 @@ public interface HornetQServer extends HornetQComponent
 
    ReattachSessionResponseMessage reattachSession(RemotingConnection connection, String name, int lastReceivedCommandID) throws Exception;
    
-   ReplicationEndpoint createReplicationEndpoint();
+   ReplicationEndpoint createReplicationEndpoint() throws HornetQException;
 
    CreateSessionResponseMessage createSession(String name,
                                               long channelID,                                              

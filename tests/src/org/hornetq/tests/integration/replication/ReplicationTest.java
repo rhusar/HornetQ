@@ -33,6 +33,7 @@ import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.client.impl.ConnectionManagerImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -40,11 +41,9 @@ import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Interceptor;
-import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
-import org.hornetq.core.remoting.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
@@ -59,6 +58,7 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.cluster.ClusterManager;
+import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.ResourceManager;
@@ -82,8 +82,6 @@ public class ReplicationTest extends ServiceTestBase
 
    // Attributes ----------------------------------------------------
 
-   private RemotingService remoting;
-
    private ThreadFactory tFactory;
 
    private ExecutorService executor;
@@ -100,9 +98,80 @@ public class ReplicationTest extends ServiceTestBase
 
    public void testBasicConnection() throws Exception
    {
-      ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
-      manager.start();
-      manager.stop();
+
+      Configuration config = createDefaultConfig(false);
+
+      config.setBackup(true);
+
+      HornetQServer server = new HornetQServerImpl(config);
+
+      server.start();
+
+      try
+      {
+         ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
+         manager.start();
+         manager.stop();
+      }
+      finally
+      {
+         server.stop();
+      }
+   }
+
+   public void testConnectIntoNonBackup() throws Exception
+   {
+
+      Configuration config = createDefaultConfig(false);
+
+      config.setBackup(false);
+
+      HornetQServer server = new HornetQServerImpl(config);
+
+      server.start();
+
+      try
+      {
+         ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
+         try
+         {
+            manager.start();
+            fail("Exception was expected");
+         }
+         catch (HornetQException expected)
+         {
+         }
+
+         manager.stop();
+      }
+      finally
+      {
+         server.stop();
+      }
+   }
+
+   public void testSendPackets() throws Exception
+   {
+
+      Configuration config = createDefaultConfig(false);
+
+      config.setBackup(true);
+
+      HornetQServer server = new HornetQServerImpl(config);
+
+      server.start();
+
+      try
+      {
+         ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
+         manager.start();
+         manager.replicate(new byte[]{3}, null);
+         manager.stop();
+      }
+      finally
+      {
+         server.stop();
+      }
    }
 
    // Package protected ---------------------------------------------
@@ -137,17 +206,13 @@ public class ReplicationTest extends ServiceTestBase
 
    protected void setUp() throws Exception
    {
-      Configuration config = createDefaultConfig(false);
+      super.setUp();
 
       tFactory = new HornetQThreadFactory("HornetQ-ReplicationTest", false);
 
       executor = Executors.newCachedThreadPool(tFactory);
 
       scheduledExecutor = new ScheduledThreadPoolExecutor(10, tFactory);
-
-      remoting = new LocalRemotingServiceImpl(config, new FakeServer(), null, null, executor, scheduledExecutor, 0);
-
-      remoting.start();
 
       TransportConfiguration connectorConfig = new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                           new HashMap<String, Object>(),
@@ -175,15 +240,13 @@ public class ReplicationTest extends ServiceTestBase
 
    protected void tearDown() throws Exception
    {
-      remoting.stop();
-
       executor.shutdown();
 
       scheduledExecutor.shutdown();
 
-      remoting = null;
-
       tFactory = null;
+
+      connectionManager = null;
 
       scheduledExecutor = null;
    }

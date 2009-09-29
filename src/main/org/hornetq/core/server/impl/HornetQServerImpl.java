@@ -593,12 +593,16 @@ public class HornetQServerImpl implements HornetQServer
       return new CreateSessionResponseMessage(true, version.getIncrementingVersion());
    }
    
-   public synchronized ReplicationEndpoint createReplicationEndpoint()
+   public synchronized ReplicationEndpoint createReplicationEndpoint() throws HornetQException
    {
+      if (!configuration.isBackup())
+      {
+         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Connected server is not a backup server");
+      }
+      
       if (replicationEndpoint == null)
       {
          replicationEndpoint = new ReplicationEndpointImpl(this);
-         
       }
       return replicationEndpoint;
    }
