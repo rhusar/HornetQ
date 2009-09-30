@@ -13,7 +13,7 @@
 
 package org.hornetq.core.remoting.impl;
 
-
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_APPEND;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATE_REPLICATION;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATESESSION;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATESESSION_RESP;
@@ -74,6 +74,7 @@ import org.hornetq.core.remoting.impl.wireformat.PacketsConfirmedMessage;
 import org.hornetq.core.remoting.impl.wireformat.Ping;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
 import org.hornetq.core.remoting.impl.wireformat.RollbackMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionAcknowledgeMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionBindingQueryMessage;
@@ -353,10 +354,14 @@ public class PacketDecoder
             packet = new SessionSendContinuationMessage();
             break;
          }
-
          case CREATE_REPLICATION:
          {
             packet = new CreateReplicationSessionMessage();
+            break;
+         }
+         case REPLICATION_APPEND:
+         {
+            packet = new ReplicationAddMessage();
             break;
          }
          default:

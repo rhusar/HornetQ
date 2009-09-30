@@ -141,7 +141,7 @@ public class PacketImpl implements Packet
    
    // Replication
    
-   public static final byte REPLICATION_SEND_REPLICATION = 77;
+   public static final byte REPLICATION_APPEND = 77;
 
    // Static --------------------------------------------------------
 

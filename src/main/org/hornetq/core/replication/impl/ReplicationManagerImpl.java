@@ -14,9 +14,11 @@
 package org.hornetq.core.replication.impl;
 
 import org.hornetq.core.client.impl.ConnectionManager;
+import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
 
@@ -63,9 +65,11 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#replicate(byte[], org.hornetq.core.replication.ReplicationToken)
     */
-   public void replicate(byte[] bytes, ReplicationToken token)
+   
+   
+   public void appendAddRecord(long id, byte recordType, EncodingSupport encodingData)
    {
-      replicatingChannel.send(new CreateReplicationSessionMessage(1, 1));
+      replicatingChannel.send(new ReplicationAddMessage(id, recordType, encodingData));
    }
 
    /* (non-Javadoc)

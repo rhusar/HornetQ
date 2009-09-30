@@ -13,6 +13,7 @@
 
 package org.hornetq.core.replication;
 
+import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.server.HornetQComponent;
 
 
@@ -23,5 +24,5 @@ import org.hornetq.core.server.HornetQComponent;
  */
 public interface ReplicationManager  extends HornetQComponent
 {
-   void replicate(byte[] bytes, ReplicationToken token);
+   void appendAddRecord(long id, byte recordType, EncodingSupport record);
 }

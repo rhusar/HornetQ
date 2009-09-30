@@ -34,6 +34,7 @@ import org.hornetq.core.client.impl.ConnectionManagerImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -47,6 +48,7 @@ import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.replication.impl.ReplicationEndpointImpl;
 import org.hornetq.core.replication.impl.ReplicationManagerImpl;
@@ -165,13 +167,36 @@ public class ReplicationTest extends ServiceTestBase
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager);
          manager.start();
-         manager.replicate(new byte[]{3}, null);
+         manager.appendAddRecord(1, (byte)1, new DataImplement());
+         Thread.sleep(1000);
          manager.stop();
       }
       finally
       {
          server.stop();
       }
+   }
+   
+   class DataImplement implements EncodingSupport
+   {
+
+      public void decode(HornetQBuffer buffer)
+      {
+      }
+
+      public void encode(HornetQBuffer buffer)
+      {
+         buffer.writeBytes(new byte[5]);
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.EncodingSupport#getEncodeSize()
+       */
+      public int getEncodeSize()
+      {
+         return 5;
+      }
+      
    }
 
    // Package protected ---------------------------------------------
