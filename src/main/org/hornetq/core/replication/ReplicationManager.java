@@ -16,13 +16,31 @@ package org.hornetq.core.replication;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.server.HornetQComponent;
 
-
 /**
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface ReplicationManager  extends HornetQComponent
+public interface ReplicationManager extends HornetQComponent
 {
-   void appendAddRecord(byte journalID, long id, byte recordType, EncodingSupport record);
+   void appendAddRecord(byte journalID, long id, byte recordType, EncodingSupport record) throws Exception;
+
+   void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport record, boolean sync) throws Exception;
+
+   void appendDeleteRecord(byte journalID, long id, boolean sync) throws Exception;
+
+   void appendAddRecordTransactional(byte journalID, long txID, long id, byte recordType, EncodingSupport record) throws Exception;
+
+   void appendUpdateRecordTransactional(byte journalID, long txID, long id, byte recordType, EncodingSupport record) throws Exception;
+
+   void appendDeleteRecordTransactional(byte journalID, long txID, long id, EncodingSupport record) throws Exception;
+
+   void appendDeleteRecordTransactional(byte journalID, long txID, long id) throws Exception;
+
+   void appendCommitRecord(byte journalID, long txID, boolean sync) throws Exception;
+
+   void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData, boolean sync) throws Exception;
+
+   void appendRollbackRecord(byte journalID, long txID, boolean sync) throws Exception;
+
 }

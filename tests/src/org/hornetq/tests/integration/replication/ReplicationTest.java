@@ -146,7 +146,10 @@ public class ReplicationTest extends ServiceTestBase
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
-         manager.appendAddRecord((byte)0, 1, (byte)1, new DataImplement());
+         for (int i = 0; i < 100; i++)
+         {
+            manager.appendAddRecord((byte)0, i, (byte)1, new DataImplement());
+         }
          final CountDownLatch latch = new CountDownLatch(1);
          manager.getReplicationToken().addFutureCompletion(new Runnable()
          {

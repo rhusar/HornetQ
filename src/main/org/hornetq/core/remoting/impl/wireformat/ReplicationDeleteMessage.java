@@ -24,7 +24,7 @@ import org.hornetq.utils.DataConstants;
  *
  *
  */
-public class ReplicationAddMessage extends PacketImpl
+public class ReplicationDeleteMessage extends PacketImpl
 {
 
    // Constants -----------------------------------------------------
@@ -48,12 +48,12 @@ public class ReplicationAddMessage extends PacketImpl
 
    // Constructors --------------------------------------------------
 
-   public ReplicationAddMessage()
+   public ReplicationDeleteMessage()
    {
-      super(REPLICATION_APPEND);
+      super(REPLICATION_DELETE);
    }
 
-   public ReplicationAddMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationDeleteMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;

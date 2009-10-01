@@ -22,6 +22,7 @@ import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
 
@@ -79,7 +80,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
          // TODO: what to do when the IO fails on the backup side? should we shutdown the backup?
          log.warn(e.getMessage(), e);
       }
-      channel.send(new NullResponseMessage());
+      channel.send(new ReplicationResponseMessage());
    }
 
    /* (non-Javadoc)

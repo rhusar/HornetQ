@@ -603,10 +603,10 @@ public class HornetQServerImpl implements HornetQServer
       if (replicationEndpoint == null)
       {
          replicationEndpoint = new ReplicationEndpointImpl(this);
+         replicationEndpoint.setChannel(channel);
          replicationEndpoint.start();
       }
       
-      replicationEndpoint.setChannel(channel);
       
       return replicationEndpoint;
    }
