@@ -163,12 +163,6 @@ public class JournalStorageManager implements StorageManager
 
       journalDir = config.getJournalDirectory();
 
-      if (journalDir == null)
-      {
-         throw new NullPointerException("journal-dir is null");
-      }
-
-      createJournalDir = config.isCreateJournalDir();
 
       SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDir);
 
@@ -180,6 +174,13 @@ public class JournalStorageManager implements StorageManager
                                         "hornetq-bindings",
                                         "bindings",
                                         1);
+
+      if (journalDir == null)
+      {
+         throw new NullPointerException("journal-dir is null");
+      }
+
+      createJournalDir = config.isCreateJournalDir();
 
       syncNonTransactional = config.isJournalSyncNonTransactional();
 
@@ -738,7 +739,7 @@ public class JournalStorageManager implements StorageManager
          messageJournal.perfBlast(perfBlastPages);
       }
    }
-
+   
    /**
     * @param messages
     * @param buff
@@ -1141,7 +1142,7 @@ public class JournalStorageManager implements StorageManager
    // This should be accessed from this package only
    void deleteFile(final SequentialFile file)
    {
-      executor.execute(new Runnable()
+      Runnable deleteAction = new Runnable()
       {
          public void run()
          {
@@ -1155,7 +1156,16 @@ public class JournalStorageManager implements StorageManager
             }
          }
 
-      });
+      };
+      
+      if (executor == null)
+      {
+         deleteAction.run();
+      }
+      else
+      {
+         executor.execute(deleteAction);
+      }
    }
 
    /**

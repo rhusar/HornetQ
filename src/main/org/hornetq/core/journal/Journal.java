@@ -75,9 +75,6 @@ public interface Journal extends HornetQComponent
 
    // Load
    
-   /** This method could be promoted to {@link Journal} interface when we decide to use the loadManager 
-    *  instead of load(List,List)
-    */
    long load(LoaderCallback reloadManager) throws Exception;
 
 

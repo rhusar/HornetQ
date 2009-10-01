@@ -33,6 +33,9 @@ public class ReplicationAddMessage extends PacketImpl
 
    private long id;
 
+   /** 0 - Bindings, 1 - MessagesJournal */
+   private byte journalID;
+
    private byte recordType;
 
    private EncodingSupport encodingData;
@@ -42,27 +45,26 @@ public class ReplicationAddMessage extends PacketImpl
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
-   
+
    public ReplicationAddMessage()
    {
       super(REPLICATION_APPEND);
    }
 
-   public ReplicationAddMessage(long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationAddMessage(byte journalID, long id, byte recordType, EncodingSupport encodingData)
    {
       this();
+      this.journalID = journalID;
       this.id = id;
       this.recordType = recordType;
       this.encodingData = encodingData;
    }
 
    // Public --------------------------------------------------------
-   
-   
-   
+
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE +
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_BYTE +
              DataConstants.SIZE_INT +
@@ -73,6 +75,7 @@ public class ReplicationAddMessage extends PacketImpl
    @Override
    public void encodeBody(final HornetQBuffer buffer)
    {
+      buffer.writeByte(journalID);
       buffer.writeLong(id);
       buffer.writeByte(recordType);
       buffer.writeInt(encodingData.getEncodeSize());
@@ -82,6 +85,7 @@ public class ReplicationAddMessage extends PacketImpl
    @Override
    public void decodeBody(final HornetQBuffer buffer)
    {
+      journalID = buffer.readByte();
       id = buffer.readLong();
       recordType = buffer.readByte();
       int size = buffer.readInt();
@@ -89,6 +93,37 @@ public class ReplicationAddMessage extends PacketImpl
       buffer.readBytes(recordData);
    }
 
+   /**
+    * @return the id
+    */
+   public long getId()
+   {
+      return id;
+   }
+
+   /**
+    * @return the journalID
+    */
+   public byte getJournalID()
+   {
+      return journalID;
+   }
+
+   /**
+    * @return the recordType
+    */
+   public byte getRecordType()
+   {
+      return recordType;
+   }
+
+   /**
+    * @return the recordData
+    */
+   public byte[] getRecordData()
+   {
+      return recordData;
+   }
 
    // Package protected ---------------------------------------------
 

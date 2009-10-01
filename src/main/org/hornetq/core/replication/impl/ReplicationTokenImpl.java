@@ -46,6 +46,7 @@ public class ReplicationTokenImpl implements ReplicationToken
    public synchronized void linedUp()
    {
       pendings++;
+      System.out.println("pendings (lined up) = " + pendings);
    }
 
    /** To be called by the replication manager, when data is confirmed on the channel */
@@ -62,11 +63,13 @@ public class ReplicationTokenImpl implements ReplicationToken
             tasks.clear();
          }
       }
+      System.out.println("pendings (replicated) = " + pendings);
    }
    
    /** You may have several actions to be done after a replication operation is completed. */
    public synchronized void addFutureCompletion(Runnable runnable)
    {
+      System.out.println("pendings = " + pendings);
       if (pendings == 0)
       {
          executor.execute(runnable);

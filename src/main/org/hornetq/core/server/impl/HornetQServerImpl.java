@@ -200,7 +200,7 @@ public class HornetQServerImpl implements HornetQServer
    
    private ReplicationManager replicationManager;
    
-   private ReplicationEndpoint replicationEndpoint = new ReplicationEndpointImpl(this);
+   private ReplicationEndpoint replicationEndpoint;
 
    private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
@@ -593,7 +593,7 @@ public class HornetQServerImpl implements HornetQServer
       return new CreateSessionResponseMessage(true, version.getIncrementingVersion());
    }
    
-   public synchronized ReplicationEndpoint createReplicationEndpoint() throws HornetQException
+   public synchronized ReplicationEndpoint createReplicationEndpoint(final Channel channel) throws Exception
    {
       if (!configuration.isBackup())
       {
@@ -603,7 +603,11 @@ public class HornetQServerImpl implements HornetQServer
       if (replicationEndpoint == null)
       {
          replicationEndpoint = new ReplicationEndpointImpl(this);
+         replicationEndpoint.start();
       }
+      
+      replicationEndpoint.setChannel(channel);
+      
       return replicationEndpoint;
    }
 
@@ -712,7 +716,7 @@ public class HornetQServerImpl implements HornetQServer
                                                           scheduledPool,
                                                           null);
             
-            this.replicationManager = new ReplicationManagerImpl(replicatingConnectionManager);
+            this.replicationManager = new ReplicationManagerImpl(replicatingConnectionManager, this.executorFactory.getExecutor());
             replicationManager.start();
          }
       }
@@ -1113,6 +1117,8 @@ public class HornetQServerImpl implements HornetQServer
             }
          }, 0, dumpInfoInterval, TimeUnit.MILLISECONDS);
       }
+      
+      startReplication();
 
       initialised = true;
    }

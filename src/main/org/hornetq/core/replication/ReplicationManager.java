@@ -24,5 +24,5 @@ import org.hornetq.core.server.HornetQComponent;
  */
 public interface ReplicationManager  extends HornetQComponent
 {
-   void appendAddRecord(long id, byte recordType, EncodingSupport record);
+   void appendAddRecord(byte journalID, long id, byte recordType, EncodingSupport record);
 }

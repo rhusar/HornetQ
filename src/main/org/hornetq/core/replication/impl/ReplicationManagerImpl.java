@@ -13,11 +13,19 @@
 
 package org.hornetq.core.replication.impl;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+
 import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Channel;
+import org.hornetq.core.remoting.ChannelHandler;
+import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
@@ -33,11 +41,14 @@ public class ReplicationManagerImpl implements ReplicationManager
 {
 
    // Constants -----------------------------------------------------
+   private static final Logger log = Logger.getLogger(ReplicationManagerImpl.class);
 
    // Attributes ----------------------------------------------------
 
    // TODO: where should this be configured?
    private static final int WINDOW_SIZE = 100 * 1024;
+
+   private final ResponseHandler responseHandler = new ResponseHandler();
 
    private final ConnectionManager connectionManager;
 
@@ -47,6 +58,16 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private boolean started;
 
+   private boolean playedResponsesOnFailure;
+
+   private final Object replicationLock = new Object();
+
+   private final Executor executor;
+
+   private final ThreadLocal<ReplicationToken> repliToken = new ThreadLocal<ReplicationToken>();
+
+   private final Queue<ReplicationToken> pendingTokens = new ConcurrentLinkedQueue<ReplicationToken>();
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -54,10 +75,11 @@ public class ReplicationManagerImpl implements ReplicationManager
    /**
     * @param replicationConnectionManager
     */
-   public ReplicationManagerImpl(ConnectionManager connectionManager)
+   public ReplicationManagerImpl(final ConnectionManager connectionManager, final Executor executor)
    {
       super();
       this.connectionManager = connectionManager;
+      this.executor = executor;
    }
 
    // Public --------------------------------------------------------
@@ -65,11 +87,10 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#replicate(byte[], org.hornetq.core.replication.ReplicationToken)
     */
-   
-   
-   public void appendAddRecord(long id, byte recordType, EncodingSupport encodingData)
+
+   public void appendAddRecord(final byte journalID, final long id, final byte recordType, final EncodingSupport encodingData)
    {
-      replicatingChannel.send(new ReplicationAddMessage(id, recordType, encodingData));
+      sendReplicatePacket(new ReplicationAddMessage(journalID, id, recordType, encodingData));
    }
 
    /* (non-Javadoc)
@@ -85,22 +106,22 @@ public class ReplicationManagerImpl implements ReplicationManager
     */
    public synchronized void start() throws Exception
    {
-      this.started = true;
-
       connection = connectionManager.getConnection(1);
 
       long channelID = connection.generateChannelID();
 
       Channel mainChannel = connection.getChannel(1, -1, false);
 
-      Channel tempChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
+      this.replicatingChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
 
+      this.replicatingChannel.setHandler(this.responseHandler);
+      
       CreateReplicationSessionMessage replicationStartPackage = new CreateReplicationSessionMessage(channelID,
                                                                                                     WINDOW_SIZE);
 
       mainChannel.sendBlocking(replicationStartPackage);
 
-      this.replicatingChannel = tempChannel;
+      this.started = true;
    }
 
    /* (non-Javadoc)
@@ -114,13 +135,70 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
 
       this.started = false;
-      
+
       if (connection != null)
       {
          connection.destroy();
       }
 
       connection = null;
+   }
+
+   public ReplicationToken getReplicationToken()
+   {
+      ReplicationToken token = repliToken.get();
+      if (token == null)
+      {
+         token = new ReplicationTokenImpl(executor);
+         repliToken.set(token);
+      }
+      return token;
+   }
+
+   private void sendReplicatePacket(final Packet packet)
+   {
+      boolean runItNow = false;
+
+      ReplicationToken repliToken = getReplicationToken();
+      repliToken.linedUp();
+
+      synchronized (replicationLock)
+      {
+         if (playedResponsesOnFailure)
+         {
+            // Already replicating channel failed, so just play the action now
+
+            runItNow = true;
+         }
+         else
+         {
+            pendingTokens.add(repliToken);
+
+            // TODO: Should I use connect.write directly here?
+            replicatingChannel.send(packet);
+         }
+      }
+
+      // Execute outside lock
+
+      if (runItNow)
+      {
+         repliToken.replicated();
+      }
+   }
+
+   private void replicated()
+   {
+      ReplicationToken tokenPolled = pendingTokens.poll();
+      if (tokenPolled == null)
+      {
+         // We should debug the logs if this happens
+         log.warn("Missing replication token on the stack. There is a bug on the ReplicatoinManager since this was not supposed to happen");
+      }
+      else
+      {
+         tokenPolled.replicated();
+      }
    }
 
    // Package protected ---------------------------------------------
@@ -130,5 +208,21 @@ public class ReplicationManagerImpl implements ReplicationManager
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+
+   protected class ResponseHandler implements ChannelHandler
+   {
+      /* (non-Javadoc)
+       * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
+       */
+      public void handlePacket(Packet packet)
+      {
+         System.out.println("HandlePacket on client");
+         if (packet.getType() == PacketImpl.NULL_RESPONSE)
+         {
+            replicated();
+         }
+      }
+
+   }
 
 }

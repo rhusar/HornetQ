@@ -196,7 +196,7 @@ public class HornetQPacketHandler implements ChannelHandler
       try
       {
          Channel channel = connection.getChannel(request.getSessionChannelID(), request.getWindowSize(), false);
-         ReplicationEndpoint endpoint = server.createReplicationEndpoint();
+         ReplicationEndpoint endpoint = server.createReplicationEndpoint(channel);
          channel.setHandler(endpoint);
          response = new NullResponseMessage();
 

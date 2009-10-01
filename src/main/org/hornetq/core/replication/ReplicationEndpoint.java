@@ -13,6 +13,7 @@
 
 package org.hornetq.core.replication;
 
+import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.server.HornetQComponent;
 
@@ -25,5 +26,9 @@ import org.hornetq.core.server.HornetQComponent;
  */
 public interface ReplicationEndpoint extends ChannelHandler, HornetQComponent
 {
+
+   void setChannel(Channel channel);
+
+   Channel getChannel();
 
 }

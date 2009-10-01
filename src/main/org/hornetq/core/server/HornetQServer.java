@@ -24,6 +24,7 @@ import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
+import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
@@ -71,7 +72,7 @@ public interface HornetQServer extends HornetQComponent
 
    ReattachSessionResponseMessage reattachSession(RemotingConnection connection, String name, int lastReceivedCommandID) throws Exception;
    
-   ReplicationEndpoint createReplicationEndpoint() throws HornetQException;
+   ReplicationEndpoint createReplicationEndpoint(Channel channel) throws Exception;
 
    CreateSessionResponseMessage createSession(String name,
                                               long channelID,                                              

@@ -13,11 +13,16 @@
 
 package org.hornetq.core.replication.impl;
 
-import org.hornetq.core.remoting.ChannelHandler;
+import org.hornetq.core.config.Configuration;
+import org.hornetq.core.journal.Journal;
+import org.hornetq.core.logging.Logger;
+import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
+import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.Packet;
-import org.hornetq.core.remoting.impl.wireformat.ReplicationPacket;
+import org.hornetq.core.remoting.impl.wireformat.NullResponseMessage;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
 import org.hornetq.core.replication.ReplicationEndpoint;
-import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.server.HornetQServer;
 
 /**
@@ -32,9 +37,19 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
    // Constants -----------------------------------------------------
 
+   private static final Logger log = Logger.getLogger(ReplicationEndpointImpl.class);
+
    // Attributes ----------------------------------------------------
 
    private final HornetQServer server;
+
+   private Channel channel;
+
+   private Journal bindingsJournal;
+
+   private Journal messagingJournal;
+   
+   private JournalStorageManager storage;
 
    // Static --------------------------------------------------------
 
@@ -45,12 +60,26 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    }
 
    // Public --------------------------------------------------------
-   /* (non-Javadoc)
+   /* 
+    * (non-Javadoc)
     * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
     */
    public void handlePacket(Packet packet)
    {
-      System.out.println("packet = " + packet);
+      try
+      {
+         if (packet.getType() == PacketImpl.REPLICATION_APPEND)
+         {
+            System.out.println("Replicated");
+            handleAppendAddRecord(packet);
+         }
+      }
+      catch (Exception e)
+      {
+         // TODO: what to do when the IO fails on the backup side? should we shutdown the backup?
+         log.warn(e.getMessage(), e);
+      }
+      channel.send(new NullResponseMessage());
    }
 
    /* (non-Javadoc)
@@ -66,6 +95,17 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     */
    public void start() throws Exception
    {
+      Configuration config = server.getConfiguration();
+      
+      // TODO: this needs an executor
+      JournalStorageManager storage = new JournalStorageManager(config, null);
+      storage.start();
+      
+      this.bindingsJournal = storage.getBindingsJournal();
+      this.messagingJournal = storage.getBindingsJournal();
+      
+      // We only need to load internal structures on the backup...
+      storage.loadInternalOnly();
    }
 
    /* (non-Javadoc)
@@ -73,6 +113,23 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     */
    public void stop() throws Exception
    {
+      storage.stop();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationEndpoint#getChannel()
+    */
+   public Channel getChannel()
+   {
+      return channel;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationEndpoint#setChannel(org.hornetq.core.remoting.Channel)
+    */
+   public void setChannel(Channel channel)
+   {
+      this.channel = channel;
    }
 
    // Package protected ---------------------------------------------
@@ -80,6 +137,27 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+
+   /**
+    * @param packet
+    * @throws Exception
+    */
+   private void handleAppendAddRecord(Packet packet) throws Exception
+   {
+      ReplicationAddMessage addMessage = (ReplicationAddMessage)packet;
+      Journal journalToUse;
+
+      if (addMessage.getJournalID() == (byte)0)
+      {
+         journalToUse = bindingsJournal;
+      }
+      else
+      {
+         journalToUse = messagingJournal;
+      }
+
+      journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
+   }
 
    // Inner classes -------------------------------------------------
 
