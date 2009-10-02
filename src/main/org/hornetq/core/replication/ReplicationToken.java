@@ -30,7 +30,7 @@ public interface ReplicationToken
    /** To be called by the replication manager, when data is confirmed on the channel */
    void replicated();
    
-   void addFutureCompletion(Runnable runnable);
+   void addReplicationAction(Runnable runnable);
    
    /** To be called when there are no more operations pending */
    void complete();

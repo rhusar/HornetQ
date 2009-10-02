@@ -13,6 +13,8 @@
 
 package org.hornetq.core.replication;
 
+import java.util.Set;
+
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.server.HornetQComponent;
 
@@ -42,5 +44,13 @@ public interface ReplicationManager extends HornetQComponent
    void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData) throws Exception;
 
    void appendRollbackRecord(byte journalID, long txID) throws Exception;
+   
+   /** Add an action to be executed after the pending replications */
+   void addReplicationAction(Runnable runnable);
+   
+   void completeToken();
+   
+   /** A list of tokens that are still waiting for replications to be completed */
+   Set<ReplicationToken> getActiveTokens();
 
 }

@@ -66,7 +66,7 @@ public class ReplicationTokenImpl implements ReplicationToken
    }
    
    /** You may have several actions to be done after a replication operation is completed. */
-   public synchronized void addFutureCompletion(Runnable runnable)
+   public synchronized void addReplicationAction(Runnable runnable)
    {
       System.out.println("pendings on addFutureCompletion = " + pendings);
       if (pendings == 0)

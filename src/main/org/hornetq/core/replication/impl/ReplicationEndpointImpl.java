@@ -122,7 +122,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       Configuration config = server.getConfiguration();
 
       // TODO: this needs an executor
-      JournalStorageManager storage = new JournalStorageManager(config, null);
+      storage = new JournalStorageManager(config, null);
       storage.start();
 
       this.bindingsJournal = storage.getBindingsJournal();

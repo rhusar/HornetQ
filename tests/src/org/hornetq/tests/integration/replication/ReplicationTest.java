@@ -146,20 +146,22 @@ public class ReplicationTest extends ServiceTestBase
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
-         
+
+         manager.appendPrepareRecord((byte)0, 100, new FakeData());
+
          manager.appendAddRecord((byte)0, 1, (byte)1, new FakeData());
          manager.appendUpdateRecord((byte)0, 1, (byte)2, new FakeData());
          manager.appendDeleteRecord((byte)0, 1);
          manager.appendAddRecordTransactional((byte)0, 2, 2, (byte)1, new FakeData());
          manager.appendUpdateRecordTransactional((byte)0, 2, 2, (byte)2, new FakeData());
          manager.appendCommitRecord((byte)0, 2);
-         
-         manager.appendDeleteRecordTransactional((byte)0, 3, 4,new FakeData());
+
+         manager.appendDeleteRecordTransactional((byte)0, 3, 4, new FakeData());
          manager.appendPrepareRecord((byte)0, 3, new FakeData());
          manager.appendRollbackRecord((byte)0, 3);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.getReplicationToken().addFutureCompletion(new Runnable()
+         manager.getReplicationToken().addReplicationAction(new Runnable()
          {
 
             public void run()
@@ -169,6 +171,21 @@ public class ReplicationTest extends ServiceTestBase
 
          });
          assertTrue(latch.await(1, TimeUnit.SECONDS));
+         assertEquals(1, manager.getActiveTokens().size());
+         
+         manager.completeToken();
+         
+         for (int i = 0 ; i < 100; i++)
+         {
+            // This is asynchronous. Have to wait completion
+            if (manager.getActiveTokens().size() == 0)
+            {
+               break;
+            }
+            Thread.sleep(1);
+         }
+
+         assertEquals(0, manager.getActiveTokens().size());
          manager.stop();
       }
       finally
@@ -265,6 +282,7 @@ public class ReplicationTest extends ServiceTestBase
 
    protected void tearDown() throws Exception
    {
+
       executor.shutdown();
 
       scheduledExecutor.shutdown();
@@ -274,6 +292,9 @@ public class ReplicationTest extends ServiceTestBase
       connectionManager = null;
 
       scheduledExecutor = null;
+      
+      super.tearDown();
+
    }
 
    // Private -------------------------------------------------------

@@ -354,6 +354,12 @@ public class HornetQServerImpl implements HornetQServer
       {
          storageManager.stop();
       }
+      
+      if (replicationEndpoint != null)
+      {
+         replicationEndpoint.stop();
+         replicationEndpoint = null;
+      }
 
       if (securityManager != null)
       {

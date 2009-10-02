@@ -46,7 +46,7 @@ public class ReplicationPrepareMessage extends PacketImpl
 
    public ReplicationPrepareMessage()
    {
-      super(REPLICATION_DELETE_TX);
+      super(REPLICATION_PREPARE);
    }
 
    public ReplicationPrepareMessage(byte journalID, long txId, EncodingSupport encodingData)

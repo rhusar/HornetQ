@@ -14,12 +14,12 @@
 package org.hornetq.core.replication.impl;
 
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
 import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.journal.EncodingSupport;
-import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
@@ -36,6 +36,7 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
+import org.hornetq.utils.ConcurrentHashSet;
 
 /**
  * A RepplicationManagerImpl
@@ -74,6 +75,8 @@ public class ReplicationManagerImpl implements ReplicationManager
    private final ThreadLocal<ReplicationToken> repliToken = new ThreadLocal<ReplicationToken>();
 
    private final Queue<ReplicationToken> pendingTokens = new ConcurrentLinkedQueue<ReplicationToken>();
+
+   private final ConcurrentHashSet<ReplicationToken> activeTokens = new ConcurrentHashSet<ReplicationToken>();
 
    // Static --------------------------------------------------------
 
@@ -121,7 +124,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       sendReplicatePacket(new ReplicationAddTXMessage(journalID, false, txID, id, recordType, record));
    }
 
-   
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecordTransactional(byte, long, long, byte, org.hornetq.core.journal.EncodingSupport)
     */
@@ -134,7 +136,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       sendReplicatePacket(new ReplicationAddTXMessage(journalID, true, txID, id, recordType, record));
    }
 
-   
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendCommitRecord(byte, long, boolean)
     */
@@ -232,10 +233,49 @@ public class ReplicationManagerImpl implements ReplicationManager
       if (token == null)
       {
          token = new ReplicationTokenImpl(executor);
+         activeTokens.add(token);
          repliToken.set(token);
       }
       return token;
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#addReplicationAction(java.lang.Runnable)
+    */
+   public void addReplicationAction(Runnable runnable)
+   {
+      getReplicationToken().addReplicationAction(runnable);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#completeToken()
+    */
+   public void completeToken()
+   {
+      final ReplicationToken token = repliToken.get();
+      if (token != null)
+      {
+         // Disassociate thread local
+         repliToken.set(null);
+         // Remove from pending tokens as soon as this is complete
+         token.addReplicationAction(new Runnable()
+         {
+            public void run()
+            {
+               activeTokens.remove(token);
+            }
+         });
+      }
+   }
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#getPendingTokens()
+    */
+   public Set<ReplicationToken> getActiveTokens()
+   {
+      return activeTokens;
+   }
+
 
    private void sendReplicatePacket(final Packet packet)
    {
@@ -298,7 +338,6 @@ public class ReplicationManagerImpl implements ReplicationManager
        */
       public void handlePacket(Packet packet)
       {
-         System.out.println("HandlePacket on client");
          if (packet.getType() == PacketImpl.REPLICATION_RESPONSE)
          {
             replicated();
@@ -311,7 +350,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
 
       static NullEncoding instance = new NullEncoding();
-      
+
       public void decode(final HornetQBuffer buffer)
       {
       }
@@ -326,5 +365,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
 
    }
+
 
 }
