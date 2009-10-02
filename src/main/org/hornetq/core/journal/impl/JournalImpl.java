@@ -2159,7 +2159,7 @@ public class JournalImpl implements TestableJournal
       return (compactMinFiles * compactPercentage);
    }
 
-   public synchronized void cleanUp(final JournalFile file) throws Exception
+   private synchronized void cleanUp(final JournalFile file) throws Exception
    {
       if (state != STATE_LOADED)
       {
@@ -2236,7 +2236,7 @@ public class JournalImpl implements TestableJournal
 
    }
 
-   public void checkCompact() throws Exception
+   private void checkCompact() throws Exception
    {
       if (compactMinFiles == 0)
       {

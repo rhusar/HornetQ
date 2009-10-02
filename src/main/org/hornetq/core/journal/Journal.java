@@ -86,22 +86,5 @@ public interface Journal extends HornetQComponent
 
    void perfBlast(int pages) throws Exception;
 
-   /** This method is called automatically when a new file is opened.
-    * @return true if it needs to re-check due to cleanup or other factors  */
-   boolean checkReclaimStatus() throws Exception;
-
-   /** This method check for the need of compacting based on the minCompactPercentage 
-    * This method is usually called automatically when new files are opened
-   */
-   void checkCompact() throws Exception;
-
-   /**
-    * Eliminate deleted records of the journal.
-    * @throws Exception 
-    */
-   void compact() throws Exception;
-   
-   
-   JournalFile[] getDataFiles();
 
 }

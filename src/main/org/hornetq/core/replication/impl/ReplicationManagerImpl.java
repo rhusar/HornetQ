@@ -66,7 +66,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private boolean started;
 
-   private boolean playedResponsesOnFailure;
+   private volatile boolean enabled;
 
    private final Object replicationLock = new Object();
 
@@ -100,80 +100,120 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    public void appendAddRecord(final byte journalID, final long id, final byte recordType, final EncodingSupport record)
    {
-      sendReplicatePacket(new ReplicationAddMessage(journalID, false, id, recordType, record));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationAddMessage(journalID, false, id, recordType, record));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecord(byte, long, byte, org.hornetq.core.journal.EncodingSupport, boolean)
     */
-   public void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport record) throws Exception
+   public void appendUpdateRecord(final byte journalID,
+                                  final long id,
+                                  final byte recordType,
+                                  final EncodingSupport record) throws Exception
    {
-      sendReplicatePacket(new ReplicationAddMessage(journalID, true, id, recordType, record));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationAddMessage(journalID, true, id, recordType, record));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecord(byte, long, boolean)
     */
-   public void appendDeleteRecord(byte journalID, long id) throws Exception
+   public void appendDeleteRecord(final byte journalID, final long id) throws Exception
    {
-      sendReplicatePacket(new ReplicationDeleteMessage(journalID, id));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationDeleteMessage(journalID, id));
+      }
    }
 
-   public void appendAddRecordTransactional(byte journalID, long txID, long id, byte recordType, EncodingSupport record) throws Exception
+   public void appendAddRecordTransactional(final byte journalID,
+                                            final long txID,
+                                            final long id,
+                                            final byte recordType,
+                                            final EncodingSupport record) throws Exception
    {
-      sendReplicatePacket(new ReplicationAddTXMessage(journalID, false, txID, id, recordType, record));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationAddTXMessage(journalID, false, txID, id, recordType, record));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecordTransactional(byte, long, long, byte, org.hornetq.core.journal.EncodingSupport)
     */
-   public void appendUpdateRecordTransactional(byte journalID,
-                                               long txID,
-                                               long id,
-                                               byte recordType,
-                                               EncodingSupport record) throws Exception
+   public void appendUpdateRecordTransactional(final byte journalID,
+                                               final long txID,
+                                               final long id,
+                                               final byte recordType,
+                                               final EncodingSupport record) throws Exception
    {
-      sendReplicatePacket(new ReplicationAddTXMessage(journalID, true, txID, id, recordType, record));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationAddTXMessage(journalID, true, txID, id, recordType, record));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendCommitRecord(byte, long, boolean)
     */
-   public void appendCommitRecord(byte journalID, long txID) throws Exception
+   public void appendCommitRecord(final byte journalID, final long txID) throws Exception
    {
-      sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long, org.hornetq.core.journal.EncodingSupport)
     */
-   public void appendDeleteRecordTransactional(byte journalID, long txID, long id, EncodingSupport record) throws Exception
+   public void appendDeleteRecordTransactional(final byte journalID,
+                                               final long txID,
+                                               final long id,
+                                               final EncodingSupport record) throws Exception
    {
-      sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, record));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, record));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long)
     */
-   public void appendDeleteRecordTransactional(byte journalID, long txID, long id) throws Exception
+   public void appendDeleteRecordTransactional(final byte journalID, final long txID, final long id) throws Exception
    {
-      sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, NullEncoding.instance));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, NullEncoding.instance));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendPrepareRecord(byte, long, org.hornetq.core.journal.EncodingSupport, boolean)
     */
-   public void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData) throws Exception
+   public void appendPrepareRecord(final byte journalID, final long txID, final EncodingSupport transactionData) throws Exception
    {
-      sendReplicatePacket(new ReplicationPrepareMessage(journalID, txID, transactionData));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationPrepareMessage(journalID, txID, transactionData));
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendRollbackRecord(byte, long, boolean)
     */
-   public void appendRollbackRecord(byte journalID, long txID) throws Exception
+   public void appendRollbackRecord(final byte journalID, final long txID) throws Exception
    {
-      sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+      }
    }
 
    /* (non-Javadoc)
@@ -181,7 +221,7 @@ public class ReplicationManagerImpl implements ReplicationManager
     */
    public synchronized boolean isStarted()
    {
-      return this.started;
+      return started;
    }
 
    /* (non-Javadoc)
@@ -195,16 +235,18 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       Channel mainChannel = connection.getChannel(1, -1, false);
 
-      this.replicatingChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
+      replicatingChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
 
-      this.replicatingChannel.setHandler(this.responseHandler);
+      replicatingChannel.setHandler(responseHandler);
 
       CreateReplicationSessionMessage replicationStartPackage = new CreateReplicationSessionMessage(channelID,
                                                                                                     WINDOW_SIZE);
 
       mainChannel.sendBlocking(replicationStartPackage);
 
-      this.started = true;
+      started = true;
+
+      enabled = true;
    }
 
    /* (non-Javadoc)
@@ -217,7 +259,7 @@ public class ReplicationManagerImpl implements ReplicationManager
          replicatingChannel.close();
       }
 
-      this.started = false;
+      started = false;
 
       if (connection != null)
       {
@@ -242,7 +284,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#addReplicationAction(java.lang.Runnable)
     */
-   public void addReplicationAction(Runnable runnable)
+   public void addReplicationAction(final Runnable runnable)
    {
       getReplicationToken().addReplicationAction(runnable);
    }
@@ -267,7 +309,7 @@ public class ReplicationManagerImpl implements ReplicationManager
          });
       }
    }
-   
+
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#getPendingTokens()
     */
@@ -275,7 +317,6 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       return activeTokens;
    }
-
 
    private void sendReplicatePacket(final Packet packet)
    {
@@ -286,7 +327,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       synchronized (replicationLock)
       {
-         if (playedResponsesOnFailure)
+         if (!enabled)
          {
             // Already replicating channel failed, so just play the action now
 
@@ -336,7 +377,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       /* (non-Javadoc)
        * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
        */
-      public void handlePacket(Packet packet)
+      public void handlePacket(final Packet packet)
       {
          if (packet.getType() == PacketImpl.REPLICATION_RESPONSE)
          {
@@ -365,6 +406,5 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
 
    }
-
 
 }

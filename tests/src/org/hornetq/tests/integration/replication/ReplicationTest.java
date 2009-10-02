@@ -34,6 +34,11 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.Journal;
+import org.hornetq.core.journal.LoaderCallback;
+import org.hornetq.core.journal.PreparedTransactionInfo;
+import org.hornetq.core.journal.RecordInfo;
+import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
@@ -42,6 +47,7 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.replication.impl.ReplicatedJournalImpl;
 import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQServerImpl;
@@ -147,21 +153,23 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
 
-         manager.appendPrepareRecord((byte)0, 100, new FakeData());
+         Journal replicatedJournal = new ReplicatedJournalImpl((byte)1, new FakeJournal(), manager);
 
-         manager.appendAddRecord((byte)0, 1, (byte)1, new FakeData());
-         manager.appendUpdateRecord((byte)0, 1, (byte)2, new FakeData());
-         manager.appendDeleteRecord((byte)0, 1);
-         manager.appendAddRecordTransactional((byte)0, 2, 2, (byte)1, new FakeData());
-         manager.appendUpdateRecordTransactional((byte)0, 2, 2, (byte)2, new FakeData());
-         manager.appendCommitRecord((byte)0, 2);
+         replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
-         manager.appendDeleteRecordTransactional((byte)0, 3, 4, new FakeData());
-         manager.appendPrepareRecord((byte)0, 3, new FakeData());
-         manager.appendRollbackRecord((byte)0, 3);
+         replicatedJournal.appendAddRecord(1, (byte)1, new FakeData(), false);
+         replicatedJournal.appendUpdateRecord(1, (byte)2, new FakeData(), false);
+         replicatedJournal.appendDeleteRecord(1, false);
+         replicatedJournal.appendAddRecordTransactional(2, 2, (byte)1, new FakeData());
+         replicatedJournal.appendUpdateRecordTransactional(2, 2, (byte)2, new FakeData());
+         replicatedJournal.appendCommitRecord(2, false);
+
+         replicatedJournal.appendDeleteRecordTransactional(3, 4, new FakeData());
+         replicatedJournal.appendPrepareRecord(3, new FakeData(), false);
+         replicatedJournal.appendRollbackRecord(3, false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.getReplicationToken().addReplicationAction(new Runnable()
+         manager.addReplicationAction(new Runnable()
          {
 
             public void run()
@@ -172,10 +180,10 @@ public class ReplicationTest extends ServiceTestBase
          });
          assertTrue(latch.await(1, TimeUnit.SECONDS));
          assertEquals(1, manager.getActiveTokens().size());
-         
+
          manager.completeToken();
-         
-         for (int i = 0 ; i < 100; i++)
+
+         for (int i = 0; i < 100; i++)
          {
             // This is asynchronous. Have to wait completion
             if (manager.getActiveTokens().size() == 0)
@@ -292,7 +300,7 @@ public class ReplicationTest extends ServiceTestBase
       connectionManager = null;
 
       scheduledExecutor = null;
-      
+
       super.tearDown();
 
    }
@@ -300,4 +308,199 @@ public class ReplicationTest extends ServiceTestBase
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+
+   static class FakeJournal implements Journal
+   {
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecord(long, byte, byte[], boolean)
+       */
+      public void appendAddRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecord(long, byte, org.hornetq.core.journal.EncodingSupport, boolean)
+       */
+      public void appendAddRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecordTransactional(long, long, byte, byte[])
+       */
+      public void appendAddRecordTransactional(long txID, long id, byte recordType, byte[] record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecordTransactional(long, long, byte, org.hornetq.core.journal.EncodingSupport)
+       */
+      public void appendAddRecordTransactional(long txID, long id, byte recordType, EncodingSupport record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendCommitRecord(long, boolean)
+       */
+      public void appendCommitRecord(long txID, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendDeleteRecord(long, boolean)
+       */
+      public void appendDeleteRecord(long id, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendDeleteRecordTransactional(long, long, byte[])
+       */
+      public void appendDeleteRecordTransactional(long txID, long id, byte[] record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendDeleteRecordTransactional(long, long, org.hornetq.core.journal.EncodingSupport)
+       */
+      public void appendDeleteRecordTransactional(long txID, long id, EncodingSupport record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendDeleteRecordTransactional(long, long)
+       */
+      public void appendDeleteRecordTransactional(long txID, long id) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, org.hornetq.core.journal.EncodingSupport, boolean)
+       */
+      public void appendPrepareRecord(long txID, EncodingSupport transactionData, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, byte[], boolean)
+       */
+      public void appendPrepareRecord(long txID, byte[] transactionData, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendRollbackRecord(long, boolean)
+       */
+      public void appendRollbackRecord(long txID, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecord(long, byte, byte[], boolean)
+       */
+      public void appendUpdateRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecord(long, byte, org.hornetq.core.journal.EncodingSupport, boolean)
+       */
+      public void appendUpdateRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecordTransactional(long, long, byte, byte[])
+       */
+      public void appendUpdateRecordTransactional(long txID, long id, byte recordType, byte[] record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecordTransactional(long, long, byte, org.hornetq.core.journal.EncodingSupport)
+       */
+      public void appendUpdateRecordTransactional(long txID, long id, byte recordType, EncodingSupport record) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#getAlignment()
+       */
+      public int getAlignment() throws Exception
+      {
+
+         return 0;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#load(org.hornetq.core.journal.LoaderCallback)
+       */
+      public long load(LoaderCallback reloadManager) throws Exception
+      {
+
+         return 0;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#load(java.util.List, java.util.List, org.hornetq.core.journal.TransactionFailureCallback)
+       */
+      public long load(List<RecordInfo> committedRecords,
+                       List<PreparedTransactionInfo> preparedTransactions,
+                       TransactionFailureCallback transactionFailure) throws Exception
+      {
+
+         return 0;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#perfBlast(int)
+       */
+      public void perfBlast(int pages) throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQComponent#isStarted()
+       */
+      public boolean isStarted()
+      {
+
+         return false;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQComponent#start()
+       */
+      public void start() throws Exception
+      {
+
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.HornetQComponent#stop()
+       */
+      public void stop() throws Exception
+      {
+
+      }
+
+   }
 }
