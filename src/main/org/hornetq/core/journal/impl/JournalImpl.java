@@ -1163,6 +1163,16 @@ public class JournalImpl implements TestableJournal
    {
       appendDeleteRecordTransactional(txID, id, NullEncoding.instance);
    }
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, byte[], boolean)
+    */
+   public void appendPrepareRecord(long txID, byte[] transactionData, boolean sync) throws Exception
+   {
+      appendPrepareRecord(txID, new ByteArrayEncoding(transactionData), sync);
+   }
+
+
 
    /** 
     * 
@@ -3342,7 +3352,12 @@ public class JournalImpl implements TestableJournal
    private static class NullEncoding implements EncodingSupport
    {
 
-      static NullEncoding instance = new NullEncoding();
+      private static NullEncoding instance = new NullEncoding();
+      
+      public static NullEncoding getInstance()
+      {
+         return instance;
+      }
 
       public void decode(final HornetQBuffer buffer)
       {

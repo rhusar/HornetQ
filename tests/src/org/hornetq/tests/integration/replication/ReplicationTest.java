@@ -146,10 +146,18 @@ public class ReplicationTest extends ServiceTestBase
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
-         for (int i = 0; i < 100; i++)
-         {
-            manager.appendAddRecord((byte)0, i, (byte)1, new DataImplement());
-         }
+         
+         manager.appendAddRecord((byte)0, 1, (byte)1, new FakeData());
+         manager.appendUpdateRecord((byte)0, 1, (byte)2, new FakeData());
+         manager.appendDeleteRecord((byte)0, 1);
+         manager.appendAddRecordTransactional((byte)0, 2, 2, (byte)1, new FakeData());
+         manager.appendUpdateRecordTransactional((byte)0, 2, 2, (byte)2, new FakeData());
+         manager.appendCommitRecord((byte)0, 2);
+         
+         manager.appendDeleteRecordTransactional((byte)0, 3, 4,new FakeData());
+         manager.appendPrepareRecord((byte)0, 3, new FakeData());
+         manager.appendRollbackRecord((byte)0, 3);
+
          final CountDownLatch latch = new CountDownLatch(1);
          manager.getReplicationToken().addFutureCompletion(new Runnable()
          {
@@ -169,7 +177,7 @@ public class ReplicationTest extends ServiceTestBase
       }
    }
 
-   class DataImplement implements EncodingSupport
+   class FakeData implements EncodingSupport
    {
 
       public void decode(HornetQBuffer buffer)

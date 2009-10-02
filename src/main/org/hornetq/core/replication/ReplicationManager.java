@@ -25,9 +25,9 @@ public interface ReplicationManager extends HornetQComponent
 {
    void appendAddRecord(byte journalID, long id, byte recordType, EncodingSupport record) throws Exception;
 
-   void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport record, boolean sync) throws Exception;
+   void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport record) throws Exception;
 
-   void appendDeleteRecord(byte journalID, long id, boolean sync) throws Exception;
+   void appendDeleteRecord(byte journalID, long id) throws Exception;
 
    void appendAddRecordTransactional(byte journalID, long txID, long id, byte recordType, EncodingSupport record) throws Exception;
 
@@ -37,10 +37,10 @@ public interface ReplicationManager extends HornetQComponent
 
    void appendDeleteRecordTransactional(byte journalID, long txID, long id) throws Exception;
 
-   void appendCommitRecord(byte journalID, long txID, boolean sync) throws Exception;
+   void appendCommitRecord(byte journalID, long txID) throws Exception;
 
-   void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData, boolean sync) throws Exception;
+   void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData) throws Exception;
 
-   void appendRollbackRecord(byte journalID, long txID, boolean sync) throws Exception;
+   void appendRollbackRecord(byte journalID, long txID) throws Exception;
 
 }

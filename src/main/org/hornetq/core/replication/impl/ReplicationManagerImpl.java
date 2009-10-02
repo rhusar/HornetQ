@@ -19,6 +19,7 @@ import java.util.concurrent.Executor;
 
 import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
@@ -27,6 +28,12 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
 
@@ -46,7 +53,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    // Attributes ----------------------------------------------------
 
    // TODO: where should this be configured?
-   private static final int WINDOW_SIZE = 100 * 1024;
+   private static final int WINDOW_SIZE = 1024 * 1024;
 
    private final ResponseHandler responseHandler = new ResponseHandler();
 
@@ -88,81 +95,33 @@ public class ReplicationManagerImpl implements ReplicationManager
     * @see org.hornetq.core.replication.ReplicationManager#replicate(byte[], org.hornetq.core.replication.ReplicationToken)
     */
 
-   public void appendAddRecord(final byte journalID, final long id, final byte recordType, final EncodingSupport encodingData)
+   public void appendAddRecord(final byte journalID, final long id, final byte recordType, final EncodingSupport record)
    {
-      sendReplicatePacket(new ReplicationAddMessage(journalID, false, id, recordType, encodingData));
+      sendReplicatePacket(new ReplicationAddMessage(journalID, false, id, recordType, record));
    }
-   
-   
+
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecord(byte, long, byte, org.hornetq.core.journal.EncodingSupport, boolean)
     */
-   public void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport encodingData, boolean sync) throws Exception
+   public void appendUpdateRecord(byte journalID, long id, byte recordType, EncodingSupport record) throws Exception
    {
-      sendReplicatePacket(new ReplicationAddMessage(journalID, true, id, recordType, encodingData));
+      sendReplicatePacket(new ReplicationAddMessage(journalID, true, id, recordType, record));
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecord(byte, long, boolean)
     */
-   public void appendDeleteRecord(byte journalID, long id, boolean sync) throws Exception
+   public void appendDeleteRecord(byte journalID, long id) throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      sendReplicatePacket(new ReplicationDeleteMessage(journalID, id));
    }
 
-
-   
    public void appendAddRecordTransactional(byte journalID, long txID, long id, byte recordType, EncodingSupport record) throws Exception
    {
-      
+      sendReplicatePacket(new ReplicationAddTXMessage(journalID, false, txID, id, recordType, record));
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendCommitRecord(byte, long, boolean)
-    */
-   public void appendCommitRecord(byte journalID, long txID, boolean sync) throws Exception
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long, org.hornetq.core.journal.EncodingSupport)
-    */
-   public void appendDeleteRecordTransactional(byte journalID, long txID, long id, EncodingSupport record) throws Exception
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long)
-    */
-   public void appendDeleteRecordTransactional(byte journalID, long txID, long id) throws Exception
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendPrepareRecord(byte, long, org.hornetq.core.journal.EncodingSupport, boolean)
-    */
-   public void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData, boolean sync) throws Exception
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendRollbackRecord(byte, long, boolean)
-    */
-   public void appendRollbackRecord(byte journalID, long txID, boolean sync) throws Exception
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
+   
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecordTransactional(byte, long, long, byte, org.hornetq.core.journal.EncodingSupport)
     */
@@ -172,13 +131,49 @@ public class ReplicationManagerImpl implements ReplicationManager
                                                byte recordType,
                                                EncodingSupport record) throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      sendReplicatePacket(new ReplicationAddTXMessage(journalID, true, txID, id, recordType, record));
    }
 
    
-   
-   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#appendCommitRecord(byte, long, boolean)
+    */
+   public void appendCommitRecord(byte journalID, long txID) throws Exception
+   {
+      sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long, org.hornetq.core.journal.EncodingSupport)
+    */
+   public void appendDeleteRecordTransactional(byte journalID, long txID, long id, EncodingSupport record) throws Exception
+   {
+      sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, record));
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecordTransactional(byte, long, long)
+    */
+   public void appendDeleteRecordTransactional(byte journalID, long txID, long id) throws Exception
+   {
+      sendReplicatePacket(new ReplicationDeleteTXMessage(journalID, txID, id, NullEncoding.instance));
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#appendPrepareRecord(byte, long, org.hornetq.core.journal.EncodingSupport, boolean)
+    */
+   public void appendPrepareRecord(byte journalID, long txID, EncodingSupport transactionData) throws Exception
+   {
+      sendReplicatePacket(new ReplicationPrepareMessage(journalID, txID, transactionData));
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#appendRollbackRecord(byte, long, boolean)
+    */
+   public void appendRollbackRecord(byte journalID, long txID) throws Exception
+   {
+      sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.server.HornetQComponent#isStarted()
@@ -202,7 +197,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       this.replicatingChannel = connection.getChannel(channelID, WINDOW_SIZE, false);
 
       this.replicatingChannel.setHandler(this.responseHandler);
-      
+
       CreateReplicationSessionMessage replicationStartPackage = new CreateReplicationSessionMessage(channelID,
                                                                                                     WINDOW_SIZE);
 
@@ -308,6 +303,26 @@ public class ReplicationManagerImpl implements ReplicationManager
          {
             replicated();
          }
+      }
+
+   }
+
+   private static class NullEncoding implements EncodingSupport
+   {
+
+      static NullEncoding instance = new NullEncoding();
+      
+      public void decode(final HornetQBuffer buffer)
+      {
+      }
+
+      public void encode(final HornetQBuffer buffer)
+      {
+      }
+
+      public int getEncodeSize()
+      {
+         return 0;
       }
 
    }

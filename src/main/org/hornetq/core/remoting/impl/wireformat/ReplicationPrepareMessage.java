@@ -24,21 +24,17 @@ import org.hornetq.utils.DataConstants;
  *
  *
  */
-public class ReplicationAddMessage extends PacketImpl
+public class ReplicationPrepareMessage extends PacketImpl
 {
 
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
-   private long id;
+   private long txId;
 
    /** 0 - Bindings, 1 - MessagesJournal */
    private byte journalID;
-   
-   private boolean isUpdate;
-
-   private byte recordType;
 
    private EncodingSupport encodingData;
 
@@ -48,18 +44,16 @@ public class ReplicationAddMessage extends PacketImpl
 
    // Constructors --------------------------------------------------
 
-   public ReplicationAddMessage()
+   public ReplicationPrepareMessage()
    {
-      super(REPLICATION_APPEND);
+      super(REPLICATION_DELETE_TX);
    }
 
-   public ReplicationAddMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationPrepareMessage(byte journalID, long txId, EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
-      this.isUpdate = isUpdate;
-      this.id = id;
-      this.recordType = recordType;
+      this.txId = txId;
       this.encodingData = encodingData;
    }
 
@@ -69,9 +63,7 @@ public class ReplicationAddMessage extends PacketImpl
    {
       return BASIC_PACKET_SIZE + 
              DataConstants.SIZE_BYTE +
-             DataConstants.SIZE_BOOLEAN +
              DataConstants.SIZE_LONG +
-             DataConstants.SIZE_BYTE +
              DataConstants.SIZE_INT +
              (encodingData != null ? encodingData.getEncodeSize() : recordData.length);
 
@@ -81,9 +73,7 @@ public class ReplicationAddMessage extends PacketImpl
    public void encodeBody(final HornetQBuffer buffer)
    {
       buffer.writeByte(journalID);
-      buffer.writeBoolean(isUpdate);
-      buffer.writeLong(id);
-      buffer.writeByte(recordType);
+      buffer.writeLong(txId);
       buffer.writeInt(encodingData.getEncodeSize());
       encodingData.encode(buffer);
    }
@@ -92,20 +82,15 @@ public class ReplicationAddMessage extends PacketImpl
    public void decodeBody(final HornetQBuffer buffer)
    {
       journalID = buffer.readByte();
-      isUpdate = buffer.readBoolean();
-      id = buffer.readLong();
-      recordType = buffer.readByte();
+      txId = buffer.readLong();
       int size = buffer.readInt();
       recordData = new byte[size];
       buffer.readBytes(recordData);
    }
 
-   /**
-    * @return the id
-    */
-   public long getId()
+   public long getTxId()
    {
-      return id;
+      return txId;
    }
 
    /**
@@ -116,19 +101,6 @@ public class ReplicationAddMessage extends PacketImpl
       return journalID;
    }
    
-   public boolean isUpdate()
-   {
-      return isUpdate;
-   }
-
-   /**
-    * @return the recordType
-    */
-   public byte getRecordType()
-   {
-      return recordType;
-   }
-
    /**
     * @return the recordData
     */

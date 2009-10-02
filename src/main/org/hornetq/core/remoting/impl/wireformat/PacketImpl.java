@@ -145,7 +145,17 @@ public class PacketImpl implements Packet
 
    public static final byte REPLICATION_APPEND = 81;
 
-   public static final byte REPLICATION_DELETE = 82;
+   public static final byte REPLICATION_APPEND_TX = 82;
+
+   public static final byte REPLICATION_DELETE = 83;
+
+   public static final byte REPLICATION_DELETE_TX = 84;
+   
+   public static final byte REPLICATION_PREPARE = 85;
+   
+   public static final byte REPLICATION_COMMIT_ROLLBACK = 86;
+   
+   
 
    // Static --------------------------------------------------------
 

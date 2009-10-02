@@ -24,13 +24,15 @@ import org.hornetq.utils.DataConstants;
  *
  *
  */
-public class ReplicationAddMessage extends PacketImpl
+public class ReplicationAddTXMessage extends PacketImpl
 {
 
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
+   private long txId;
+   
    private long id;
 
    /** 0 - Bindings, 1 - MessagesJournal */
@@ -48,16 +50,17 @@ public class ReplicationAddMessage extends PacketImpl
 
    // Constructors --------------------------------------------------
 
-   public ReplicationAddMessage()
+   public ReplicationAddTXMessage()
    {
-      super(REPLICATION_APPEND);
+      super(REPLICATION_APPEND_TX);
    }
 
-   public ReplicationAddMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationAddTXMessage(byte journalID, boolean isUpdate, long txId, long id, byte recordType, EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
       this.isUpdate = isUpdate;
+      this.txId = txId;
       this.id = id;
       this.recordType = recordType;
       this.encodingData = encodingData;
@@ -71,6 +74,7 @@ public class ReplicationAddMessage extends PacketImpl
              DataConstants.SIZE_BYTE +
              DataConstants.SIZE_BOOLEAN +
              DataConstants.SIZE_LONG +
+             DataConstants.SIZE_LONG +
              DataConstants.SIZE_BYTE +
              DataConstants.SIZE_INT +
              (encodingData != null ? encodingData.getEncodeSize() : recordData.length);
@@ -82,6 +86,7 @@ public class ReplicationAddMessage extends PacketImpl
    {
       buffer.writeByte(journalID);
       buffer.writeBoolean(isUpdate);
+      buffer.writeLong(txId);
       buffer.writeLong(id);
       buffer.writeByte(recordType);
       buffer.writeInt(encodingData.getEncodeSize());
@@ -93,6 +98,7 @@ public class ReplicationAddMessage extends PacketImpl
    {
       journalID = buffer.readByte();
       isUpdate = buffer.readBoolean();
+      txId = buffer.readLong();
       id = buffer.readLong();
       recordType = buffer.readByte();
       int size = buffer.readInt();
@@ -106,6 +112,11 @@ public class ReplicationAddMessage extends PacketImpl
    public long getId()
    {
       return id;
+   }
+   
+   public long getTxId()
+   {
+      return txId;
    }
 
    /**

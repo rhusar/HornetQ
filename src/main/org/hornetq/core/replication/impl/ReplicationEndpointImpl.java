@@ -19,9 +19,13 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.Packet;
-import org.hornetq.core.remoting.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
@@ -49,7 +53,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private Journal bindingsJournal;
 
    private Journal messagingJournal;
-   
+
    private JournalStorageManager storage;
 
    // Static --------------------------------------------------------
@@ -71,8 +75,27 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       {
          if (packet.getType() == PacketImpl.REPLICATION_APPEND)
          {
-            System.out.println("Replicated");
             handleAppendAddRecord(packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_APPEND_TX)
+         {
+            handleAppendAddTXRecord(packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_DELETE)
+         {
+            handleAppendDelete(packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_DELETE_TX)
+         {
+            handleAppendDeleteTX(packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_PREPARE)
+         {
+            handlePrepare(packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_COMMIT_ROLLBACK)
+         {
+            handleCommitRollback(packet);
          }
       }
       catch (Exception e)
@@ -97,14 +120,14 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    public void start() throws Exception
    {
       Configuration config = server.getConfiguration();
-      
+
       // TODO: this needs an executor
       JournalStorageManager storage = new JournalStorageManager(config, null);
       storage.start();
-      
+
       this.bindingsJournal = storage.getBindingsJournal();
       this.messagingJournal = storage.getBindingsJournal();
-      
+
       // We only need to load internal structures on the backup...
       storage.loadInternalOnly();
    }
@@ -138,6 +161,88 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+   /**
+    * @param packet
+    */
+   private void handleCommitRollback(Packet packet) throws Exception
+   {
+      ReplicationCommitMessage commitMessage = (ReplicationCommitMessage)packet;
+
+      Journal journalToUse = getJournal(commitMessage.getJournalID());
+
+      
+      if (commitMessage.isRollback())
+      {
+         journalToUse.appendRollbackRecord(commitMessage.getTxId(), false);
+      }
+      else
+      {
+         journalToUse.appendCommitRecord(commitMessage.getTxId(), false);
+      }
+   }
+
+   /**
+    * @param packet
+    */
+   private void handlePrepare(Packet packet) throws Exception
+   {
+      ReplicationPrepareMessage prepareMessage = (ReplicationPrepareMessage)packet;
+
+      Journal journalToUse = getJournal(prepareMessage.getJournalID());
+
+      journalToUse.appendPrepareRecord(prepareMessage.getTxId(), prepareMessage.getRecordData(), false);
+   }
+
+   /**
+    * @param packet
+    */
+   private void handleAppendDeleteTX(Packet packet) throws Exception
+   {
+      ReplicationDeleteTXMessage deleteMessage = (ReplicationDeleteTXMessage)packet;
+
+      Journal journalToUse = getJournal(deleteMessage.getJournalID());
+
+      journalToUse.appendDeleteRecordTransactional(deleteMessage.getTxId(),
+                                                   deleteMessage.getId(),
+                                                   deleteMessage.getRecordData());
+   }
+
+   /**
+    * @param packet
+    */
+   private void handleAppendDelete(Packet packet) throws Exception
+   {
+      ReplicationDeleteMessage deleteMessage = (ReplicationDeleteMessage)packet;
+
+      Journal journalToUse = getJournal(deleteMessage.getJournalID());
+
+      journalToUse.appendDeleteRecord(deleteMessage.getId(), false);
+   }
+
+   /**
+    * @param packet
+    */
+   private void handleAppendAddTXRecord(Packet packet) throws Exception
+   {
+      ReplicationAddTXMessage addMessage = (ReplicationAddTXMessage)packet;
+
+      Journal journalToUse = getJournal(addMessage.getJournalID());
+
+      if (addMessage.isUpdate())
+      {
+         journalToUse.appendUpdateRecordTransactional(addMessage.getTxId(),
+                                                      addMessage.getId(),
+                                                      addMessage.getRecordType(),
+                                                      addMessage.getRecordData());
+      }
+      else
+      {
+         journalToUse.appendAddRecordTransactional(addMessage.getTxId(),
+                                                   addMessage.getId(),
+                                                   addMessage.getRecordType(),
+                                                   addMessage.getRecordData());
+      }
+   }
 
    /**
     * @param packet
@@ -146,9 +251,30 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private void handleAppendAddRecord(Packet packet) throws Exception
    {
       ReplicationAddMessage addMessage = (ReplicationAddMessage)packet;
-      Journal journalToUse;
 
-      if (addMessage.getJournalID() == (byte)0)
+      Journal journalToUse = getJournal(addMessage.getJournalID());
+
+      if (addMessage.isUpdate())
+      {
+         journalToUse.appendUpdateRecord(addMessage.getId(),
+                                         addMessage.getRecordType(),
+                                         addMessage.getRecordData(),
+                                         false);
+      }
+      else
+      {
+         journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
+      }
+   }
+
+   /**
+    * @param journalID
+    * @return
+    */
+   private Journal getJournal(byte journalID)
+   {
+      Journal journalToUse;
+      if (journalID == (byte)0)
       {
          journalToUse = bindingsJournal;
       }
@@ -156,8 +282,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       {
          journalToUse = messagingJournal;
       }
-
-      journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
+      return journalToUse;
    }
 
    // Inner classes -------------------------------------------------

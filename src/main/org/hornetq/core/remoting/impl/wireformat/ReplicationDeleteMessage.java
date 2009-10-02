@@ -35,14 +35,6 @@ public class ReplicationDeleteMessage extends PacketImpl
 
    /** 0 - Bindings, 1 - MessagesJournal */
    private byte journalID;
-   
-   private boolean isUpdate;
-
-   private byte recordType;
-
-   private EncodingSupport encodingData;
-
-   private byte[] recordData;
 
    // Static --------------------------------------------------------
 
@@ -53,14 +45,11 @@ public class ReplicationDeleteMessage extends PacketImpl
       super(REPLICATION_DELETE);
    }
 
-   public ReplicationDeleteMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationDeleteMessage(byte journalID, long id)
    {
       this();
       this.journalID = journalID;
-      this.isUpdate = isUpdate;
       this.id = id;
-      this.recordType = recordType;
-      this.encodingData = encodingData;
    }
 
    // Public --------------------------------------------------------
@@ -69,11 +58,7 @@ public class ReplicationDeleteMessage extends PacketImpl
    {
       return BASIC_PACKET_SIZE + 
              DataConstants.SIZE_BYTE +
-             DataConstants.SIZE_BOOLEAN +
-             DataConstants.SIZE_LONG +
-             DataConstants.SIZE_BYTE +
-             DataConstants.SIZE_INT +
-             (encodingData != null ? encodingData.getEncodeSize() : recordData.length);
+             DataConstants.SIZE_LONG;
 
    }
 
@@ -81,23 +66,14 @@ public class ReplicationDeleteMessage extends PacketImpl
    public void encodeBody(final HornetQBuffer buffer)
    {
       buffer.writeByte(journalID);
-      buffer.writeBoolean(isUpdate);
       buffer.writeLong(id);
-      buffer.writeByte(recordType);
-      buffer.writeInt(encodingData.getEncodeSize());
-      encodingData.encode(buffer);
    }
 
    @Override
    public void decodeBody(final HornetQBuffer buffer)
    {
       journalID = buffer.readByte();
-      isUpdate = buffer.readBoolean();
       id = buffer.readLong();
-      recordType = buffer.readByte();
-      int size = buffer.readInt();
-      recordData = new byte[size];
-      buffer.readBytes(recordData);
    }
 
    /**
@@ -116,21 +92,6 @@ public class ReplicationDeleteMessage extends PacketImpl
       return journalID;
    }
 
-   /**
-    * @return the recordType
-    */
-   public byte getRecordType()
-   {
-      return recordType;
-   }
-
-   /**
-    * @return the recordData
-    */
-   public byte[] getRecordData()
-   {
-      return recordData;
-   }
 
    // Package protected ---------------------------------------------
 

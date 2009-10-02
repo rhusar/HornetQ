@@ -71,6 +71,8 @@ public interface Journal extends HornetQComponent
     */
    void appendPrepareRecord(long txID, EncodingSupport transactionData, boolean sync) throws Exception;
 
+   void appendPrepareRecord(long txID, byte[] transactionData, boolean sync) throws Exception;
+
    void appendRollbackRecord(long txID, boolean sync) throws Exception;
 
    // Load

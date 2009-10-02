@@ -12,7 +12,11 @@
  */
 
 package org.hornetq.core.remoting.impl;
-
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PREPARE;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_DELETE_TX;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_COMMIT_ROLLBACK;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_APPEND_TX;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_DELETE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_RESPONSE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_APPEND;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.CREATE_REPLICATION;
@@ -76,6 +80,11 @@ import org.hornetq.core.remoting.impl.wireformat.Ping;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationAddMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.RollbackMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionAcknowledgeMessage;
@@ -364,6 +373,31 @@ public class PacketDecoder
          case REPLICATION_APPEND:
          {
             packet = new ReplicationAddMessage();
+            break;
+         }
+         case REPLICATION_APPEND_TX:
+         {
+            packet = new ReplicationAddTXMessage();
+            break;
+         }
+         case REPLICATION_DELETE:
+         {
+            packet = new ReplicationDeleteMessage();
+            break;
+         }
+         case REPLICATION_DELETE_TX:
+         {
+            packet = new ReplicationDeleteTXMessage();
+            break;
+         }
+         case REPLICATION_PREPARE:
+         {
+            packet = new ReplicationPrepareMessage();
+            break;
+         }
+         case REPLICATION_COMMIT_ROLLBACK:
+         {
+            packet = new ReplicationCommitMessage();
             break;
          }
          case REPLICATION_RESPONSE:
