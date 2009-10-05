@@ -126,7 +126,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       storage.start();
 
       this.bindingsJournal = storage.getBindingsJournal();
-      this.messagingJournal = storage.getBindingsJournal();
+      this.messagingJournal = storage.getMessageJournal();
 
       // We only need to load internal structures on the backup...
       storage.loadInternalOnly();
