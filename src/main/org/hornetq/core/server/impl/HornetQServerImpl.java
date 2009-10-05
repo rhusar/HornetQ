@@ -755,35 +755,6 @@ public class HornetQServerImpl implements HornetQServer
       return nodeID;
    }
 
-   public void handleReplicateRedistribution(final SimpleString queueName, final long messageID) throws Exception
-   {
-      Binding binding = postOffice.getBinding(queueName);
-
-      if (binding == null)
-      {
-         throw new IllegalStateException("Cannot find queue " + queueName);
-      }
-
-      Queue queue = (Queue)binding.getBindable();
-
-      MessageReference reference = queue.removeFirstReference(messageID);
-
-      Transaction tx = new TransactionImpl(storageManager);
-
-      boolean routed = postOffice.redistribute(reference.getMessage(), queue, tx);
-
-      if (routed)
-      {
-         queue.acknowledge(tx, reference);
-
-         tx.commit();
-      }
-      else
-      {
-         throw new IllegalStateException("Must be routed");
-      }
-   }
-
    public Queue createQueue(final SimpleString address,
                             final SimpleString queueName,
                             final SimpleString filterString,

@@ -254,7 +254,7 @@ public class JournalStorageManager implements StorageManager
       }
       else
       {
-         this.messageJournal = localBindings;
+         this.messageJournal = localMessage;
       }
 
       
@@ -265,6 +265,17 @@ public class JournalStorageManager implements StorageManager
       perfBlastPages = config.getJournalPerfBlastPages();
    }
    
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#completeReplication()
+    */
+   public void completeReplication()
+   {
+      if (replicator != null)
+      {
+         replicator.completeToken();
+      }
+   }
+
    public boolean isReplicated()
    {
       return replicator != null;

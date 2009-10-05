@@ -201,6 +201,60 @@ public class ReplicationTest extends ServiceTestBase
          server.stop();
       }
    }
+   
+   public void testNoActions() throws Exception
+   {
+
+      Configuration config = createDefaultConfig(false);
+
+      config.setBackup(true);
+
+      HornetQServer server = new HornetQServerImpl(config);
+
+      server.start();
+
+      try
+      {
+         ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
+         manager.start();
+
+         Journal replicatedJournal = new ReplicatedJournalImpl((byte)1, new FakeJournal(), manager);
+
+         replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
+
+         final CountDownLatch latch = new CountDownLatch(1);
+         manager.afterReplicated(new Runnable()
+         {
+
+            public void run()
+            {
+               latch.countDown();
+            }
+
+         });
+         assertTrue(latch.await(1, TimeUnit.SECONDS));
+         assertEquals(1, manager.getActiveTokens().size());
+
+         manager.completeToken();
+
+         for (int i = 0; i < 100; i++)
+         {
+            // This is asynchronous. Have to wait completion
+            if (manager.getActiveTokens().size() == 0)
+            {
+               break;
+            }
+            Thread.sleep(1);
+         }
+
+         assertEquals(0, manager.getActiveTokens().size());
+         manager.stop();
+      }
+      finally
+      {
+         server.stop();
+      }
+   }
 
    class FakeData implements EncodingSupport
    {

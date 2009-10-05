@@ -261,4 +261,11 @@ public class NullStorageManager implements StorageManager
       return false;
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#completeReplication()
+    */
+   public void completeReplication()
+   {
+   }
+
 }

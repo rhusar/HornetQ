@@ -48,6 +48,8 @@ public interface StorageManager extends HornetQComponent
    
    void afterReplicated(Runnable run);
    
+   void completeReplication();
+   
    UUID getPersistentID();
    
    void setPersistentID(UUID id) throws Exception;
