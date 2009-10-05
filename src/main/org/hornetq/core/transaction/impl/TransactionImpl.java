@@ -264,10 +264,10 @@ public class TransactionImpl implements Transaction
                {
                   storageManager.afterReplicated(execAfterCommit);
                }
-            }
-            else if (execAfterCommit != null)
-            {
-               execAfterCommit.run();
+               else
+               {
+                  execAfterCommit.run();
+               }
             }
          }
          else if (execAfterCommit != null)
