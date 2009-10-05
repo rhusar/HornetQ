@@ -46,7 +46,7 @@ public interface ReplicationManager extends HornetQComponent
    void appendRollbackRecord(byte journalID, long txID) throws Exception;
    
    /** Add an action to be executed after the pending replications */
-   void addReplicationAction(Runnable runnable);
+   void afterReplicated(Runnable runnable);
    
    void completeToken();
    

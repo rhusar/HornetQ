@@ -239,7 +239,7 @@ public class QueueImpl implements Queue
       boolean durableRef = message.isDurable() && durable;
 
       // If durable, must be persisted before anything is routed
-      MessageReference ref = message.createReference(this);
+      final MessageReference ref = message.createReference(this);
 
       PagingStore store = pagingManager.getPageStore(message.getDestination());
 
@@ -270,8 +270,20 @@ public class QueueImpl implements Queue
          {
             storageManager.updateScheduledDeliveryTime(ref);
          }
-
-         addLast(ref);
+         
+         if (storageManager.isReplicated())
+         {
+            storageManager.afterReplicated(new Runnable(){
+               public void run()
+               {
+                  addLast(ref);
+               }
+            });
+         }
+         else
+         {
+            addLast(ref);
+         }
       }
       else
       {

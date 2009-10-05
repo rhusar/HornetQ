@@ -245,4 +245,20 @@ public class NullStorageManager implements StorageManager
    {
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#afterReplicated(java.lang.Runnable)
+    */
+   public void afterReplicated(Runnable run)
+   {
+      run.run();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#isReplicated()
+    */
+   public boolean isReplicated()
+   {
+      return false;
+   }
+
 }

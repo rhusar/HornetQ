@@ -16,7 +16,6 @@ package org.hornetq.tests.unit.core.paging.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -24,8 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.journal.SequentialFile;
@@ -41,26 +38,19 @@ import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagedMessageImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
-import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.postoffice.Binding;
+import org.hornetq.core.persistence.impl.nullpm.NullStorageManager;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.core.server.LargeServerMessage;
-import org.hornetq.core.server.MessageReference;
-import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
-import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
 import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
-import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
-import org.hornetq.utils.UUID;
 
 /**
  * 
@@ -835,272 +825,8 @@ public class PagingStoreImplTest extends UnitTestCase
 
    }
 
-   class FakeStorageManager implements StorageManager
+   class FakeStorageManager extends NullStorageManager
    {
-
-      public void setUniqueIDSequence(long id)
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#addQueueBinding(org.hornetq.core.postoffice.Binding)
-       */
-      public void addQueueBinding(final Binding binding) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#commit(long)
-       */
-      public void commit(final long txID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#createLargeMessage()
-       */
-      public LargeServerMessage createLargeMessage()
-      {
-         return null;
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deleteDuplicateID(long)
-       */
-      public void deleteDuplicateID(final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deleteDuplicateIDTransactional(long, long)
-       */
-      public void deleteDuplicateIDTransactional(final long txID, final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deleteMessage(long)
-       */
-      public void deleteMessage(final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deleteMessageTransactional(long, long, long)
-       */
-      public void deleteMessageTransactional(final long txID, final long queueID, final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deletePageTransactional(long, long)
-       */
-      public void deletePageTransactional(final long txID, final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#deleteQueueBinding(long)
-       */
-      public void deleteQueueBinding(final long queueBindingID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#generateUniqueID()
-       */
-      public long generateUniqueID()
-      {
-         return 0;
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#getCurrentUniqueID()
-       */
-      public long getCurrentUniqueID()
-      {
-         return 0;
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#getPersistentID()
-       */
-      public UUID getPersistentID()
-      {
-         return null;
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#loadBindingJournal(java.util.List)
-       */
-      public void loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#loadMessageJournal(org.hornetq.core.paging.PagingManager, java.util.Map, org.hornetq.core.transaction.ResourceManager, java.util.Map)
-       */
-      public void loadMessageJournal(PagingManager pagingManager,
-                                     ResourceManager resourceManager,
-                                     Map<Long, Queue> queues,
-                                     Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#prepare(long, javax.transaction.xa.Xid)
-       */
-      public void prepare(final long txID, final Xid xid) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#rollback(long)
-       */
-      public void rollback(final long txID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#setPersistentID(org.hornetq.utils.UUID)
-       */
-      public void setPersistentID(final UUID id) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeAcknowledge(long, long)
-       */
-      public void storeAcknowledge(final long queueID, final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeAcknowledgeTransactional(long, long, long)
-       */
-      public void storeAcknowledgeTransactional(final long txID, final long queueID, final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeDuplicateID(org.hornetq.utils.SimpleString, byte[], long)
-       */
-      public void storeDuplicateID(final SimpleString address, final byte[] duplID, final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeDuplicateIDTransactional(long, org.hornetq.utils.SimpleString, byte[], long)
-       */
-      public void storeDuplicateIDTransactional(final long txID,
-                                                final SimpleString address,
-                                                final byte[] duplID,
-                                                final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeMessage(org.hornetq.core.server.ServerMessage)
-       */
-      public void storeMessage(final ServerMessage message) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeMessageTransactional(long, org.hornetq.core.server.ServerMessage)
-       */
-      public void storeMessageTransactional(final long txID, final ServerMessage message) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storePageTransaction(long, org.hornetq.core.paging.PageTransactionInfo)
-       */
-      public void storePageTransaction(final long txID, final PageTransactionInfo pageTransaction) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeReference(long, long)
-       */
-      public void storeReference(final long queueID, final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#storeReferenceTransactional(long, long, long)
-       */
-      public void storeReferenceTransactional(final long txID, final long queueID, final long messageID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#updateDeliveryCount(org.hornetq.core.server.MessageReference)
-       */
-      public void updateDeliveryCount(final MessageReference ref) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#updateDuplicateID(org.hornetq.utils.SimpleString, byte[], long)
-       */
-      public void updateDuplicateID(final SimpleString address, final byte[] duplID, final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#updateDuplicateIDTransactional(long, org.hornetq.utils.SimpleString, byte[], long)
-       */
-      public void updateDuplicateIDTransactional(final long txID,
-                                                 final SimpleString address,
-                                                 final byte[] duplID,
-                                                 final long recordID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#updateScheduledDeliveryTime(org.hornetq.core.server.MessageReference)
-       */
-      public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#updateScheduledDeliveryTimeTransactional(long, org.hornetq.core.server.MessageReference)
-       */
-      public void updateScheduledDeliveryTimeTransactional(final long txID, final MessageReference ref) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.server.HornetQComponent#isStarted()
-       */
-      public boolean isStarted()
-      {
-         return false;
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.server.HornetQComponent#start()
-       */
-      public void start() throws Exception
-      {
-
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.server.HornetQComponent#stop()
-       */
-      public void stop() throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#loadInternalOnly()
-       */
-      public void loadInternalOnly() throws Exception
-      {
-      }
 
    }
 

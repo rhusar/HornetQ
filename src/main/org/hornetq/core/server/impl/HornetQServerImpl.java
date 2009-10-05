@@ -887,7 +887,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       if (configuration.isPersistenceEnabled())
       {
-         return new JournalStorageManager(configuration, threadPool);
+         return new JournalStorageManager(configuration, threadPool, replicationManager);
       }
       else
       {
@@ -980,6 +980,9 @@ public class HornetQServerImpl implements HornetQServer
       {
          deploymentManager = new FileDeploymentManager(configuration.getFileDeployerScanPeriod());
       }
+
+      
+      startReplication();
 
       this.storageManager = createStorageManager();
 
@@ -1123,8 +1126,6 @@ public class HornetQServerImpl implements HornetQServer
             }
          }, 0, dumpInfoInterval, TimeUnit.MILLISECONDS);
       }
-      
-      startReplication();
 
       initialised = true;
    }

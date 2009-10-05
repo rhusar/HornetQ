@@ -284,7 +284,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#addReplicationAction(java.lang.Runnable)
     */
-   public void addReplicationAction(final Runnable runnable)
+   public void afterReplicated(final Runnable runnable)
    {
       getReplicationToken().addReplicationAction(runnable);
    }

@@ -54,6 +54,8 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.remoting.impl.wireformat.XidCodecSupport;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.replication.ReplicationManager;
+import org.hornetq.core.replication.impl.ReplicatedJournalImpl;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
@@ -116,6 +118,8 @@ public class JournalStorageManager implements StorageManager
    private UUID persistentID;
 
    private final BatchingIDGenerator idGenerator;
+   
+   private final ReplicationManager replicator;
 
    private final Journal messageJournal;
 
@@ -145,7 +149,14 @@ public class JournalStorageManager implements StorageManager
 
    public JournalStorageManager(final Configuration config, final Executor executor)
    {
+      this (config, executor, null);
+   }
+
+   public JournalStorageManager(final Configuration config, final Executor executor, final ReplicationManager replicator)
+   {
       this.executor = executor;
+      
+      this.replicator = replicator;
 
       if (config.getJournalType() != JournalType.NIO && config.getJournalType() != JournalType.ASYNCIO)
       {
@@ -166,7 +177,7 @@ public class JournalStorageManager implements StorageManager
 
       SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDir);
 
-      bindingsJournal = new JournalImpl(1024 * 1024,
+      Journal localBindings = new JournalImpl(1024 * 1024,
                                         2,
                                         config.getJournalCompactMinFiles(),
                                         config.getJournalCompactPercentage(),
@@ -174,6 +185,15 @@ public class JournalStorageManager implements StorageManager
                                         "hornetq-bindings",
                                         "bindings",
                                         1);
+      
+      if (replicator != null)
+      {
+         this.bindingsJournal = new ReplicatedJournalImpl((byte)0, localBindings, replicator);
+      }
+      else
+      {
+         this.bindingsJournal = localBindings;
+      }
 
       if (journalDir == null)
       {
@@ -218,7 +238,7 @@ public class JournalStorageManager implements StorageManager
 
       this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
 
-      messageJournal = new JournalImpl(config.getJournalFileSize(),
+      Journal localMessage = new JournalImpl(config.getJournalFileSize(),
                                        config.getJournalMinFiles(),
                                        config.getJournalCompactMinFiles(),
                                        config.getJournalCompactPercentage(),
@@ -227,12 +247,38 @@ public class JournalStorageManager implements StorageManager
                                        "hq",
                                        config.getJournalMaxAIO());
 
+      
+      if (replicator != null)
+      {
+         this.messageJournal = new ReplicatedJournalImpl((byte)1, localMessage, replicator);
+      }
+      else
+      {
+         this.messageJournal = localBindings;
+      }
+
+      
       largeMessagesDirectory = config.getLargeMessagesDirectory();
 
       largeMessagesFactory = new NIOSequentialFileFactory(largeMessagesDirectory);
 
       perfBlastPages = config.getJournalPerfBlastPages();
    }
+   
+   public boolean isReplicated()
+   {
+      return replicator != null;
+   }
+   
+   public void afterReplicated(Runnable run)
+   {
+      if (replicator == null)
+      {
+         throw new IllegalStateException("StorageManager is not replicated");
+      }
+      replicator.afterReplicated(run);
+   }
+
 
    public UUID getPersistentID()
    {

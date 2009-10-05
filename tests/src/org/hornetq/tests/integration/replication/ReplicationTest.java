@@ -169,7 +169,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendRollbackRecord(3, false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.addReplicationAction(new Runnable()
+         manager.afterReplicated(new Runnable()
          {
 
             public void run()
