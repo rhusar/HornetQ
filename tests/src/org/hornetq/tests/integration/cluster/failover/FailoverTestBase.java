@@ -56,6 +56,19 @@ public abstract class FailoverTestBase extends ServiceTestBase
    {
       super.setUp();
       
+      createConfigs();
+      
+      server1Service.start();
+      server0Service.start();
+      
+   }
+
+
+   /**
+    * @throws Exception
+    */
+   protected void createConfigs() throws Exception
+   {
       Configuration config1 = super.createDefaultConfig();
       config1.getAcceptorConfigurations().clear();
       config1.getAcceptorConfigurations()
@@ -63,7 +76,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config1.setSecurityEnabled(false);
       config1.setSharedStore(true);
       config1.setBackup(true);
-      server1Service = super.createServer(true, config1);
+      server1Service = createServer(true, config1);
 
       Configuration config0 = super.createDefaultConfig();
       config0.getAcceptorConfigurations().clear();
@@ -71,10 +84,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
              .add(getAcceptorTransportConfiguration(true));
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
-      server0Service = super.createServer(true, config0);
+      server0Service = createServer(true, config0);
 
-      server1Service.start();
-      server0Service.start();
    }
    
    
