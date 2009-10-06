@@ -22,13 +22,15 @@ import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.JournalImpl.ByteArrayEncoding;
+import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.replication.ReplicationManager;
 
 /**
- * A ReplicatedJournalImpl
+ * Used by the {@link JournalStorageManager} to replicate journal calls. 
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
+ * @see JournalStorageManager
  *
  */
 public class ReplicatedJournalImpl implements Journal
@@ -44,11 +46,6 @@ public class ReplicatedJournalImpl implements Journal
 
    private final byte journalID;
 
-   /**
-    * @param journaID
-    * @param replicatedJournal
-    * @param replicationManager
-    */
    public ReplicatedJournalImpl(byte journaID, Journal replicatedJournal, ReplicationManager replicationManager)
    {
       super();
@@ -72,8 +69,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendAddRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception
    {
-      replicationManager.appendAddRecord(journalID, id, recordType, new ByteArrayEncoding(record));
-      replicatedJournal.appendAddRecord(id, recordType, record, sync);
+      this.appendAddRecord(id, recordType, new ByteArrayEncoding(record), sync);
    }
 
    /**
@@ -86,6 +82,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendAddRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception
    {
+      System.out.println("Append record id = " + id + " recordType = " + recordType);
       replicationManager.appendAddRecord(journalID, id, recordType, record);
       replicatedJournal.appendAddRecord(id, recordType, record, sync);
    }
@@ -100,8 +97,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendAddRecordTransactional(long txID, long id, byte recordType, byte[] record) throws Exception
    {
-      replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, new ByteArrayEncoding(record));
-      replicatedJournal.appendAddRecordTransactional(txID, id, recordType, record);
+      this.appendAddRecordTransactional(txID, id, recordType, new ByteArrayEncoding(record));
    }
 
    /**
@@ -114,6 +110,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendAddRecordTransactional(long txID, long id, byte recordType, EncodingSupport record) throws Exception
    {
+      System.out.println("Append record TXid = " + id + " recordType = " + recordType);
       replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
       replicatedJournal.appendAddRecordTransactional(txID, id, recordType, record);
    }
@@ -126,6 +123,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendCommitRecord(long txID, boolean sync) throws Exception
    {
+      System.out.println("AppendCommit " + txID);
       replicationManager.appendCommitRecord(journalID, txID);
       replicatedJournal.appendCommitRecord(txID, sync);
    }
@@ -138,9 +136,10 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendDeleteRecord(long id, boolean sync) throws Exception
    {
+      System.out.println("AppendDelete " + id);
       replicationManager.appendDeleteRecord(journalID, id);
       replicatedJournal.appendDeleteRecord(id, sync);
-   }
+    }
 
    /**
     * @param txID
@@ -151,8 +150,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendDeleteRecordTransactional(long txID, long id, byte[] record) throws Exception
    {
-      replicationManager.appendDeleteRecordTransactional(journalID, txID, id, new ByteArrayEncoding(record));
-      replicatedJournal.appendDeleteRecordTransactional(txID, id, record);
+      this.appendDeleteRecordTransactional(txID, id, new ByteArrayEncoding(record));
    }
 
    /**
@@ -164,6 +162,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendDeleteRecordTransactional(long txID, long id, EncodingSupport record) throws Exception
    {
+      System.out.println("AppendDelete txID=" + txID + " id=" + id);
       replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
       replicatedJournal.appendDeleteRecordTransactional(txID, id, record);
    }
@@ -176,6 +175,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendDeleteRecordTransactional(long txID, long id) throws Exception
    {
+      System.out.println("AppendDelete (noencoding) txID=" + txID + " id=" + id);
       replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
       replicatedJournal.appendDeleteRecordTransactional(txID, id);
    }
@@ -189,8 +189,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendPrepareRecord(long txID, byte[] transactionData, boolean sync) throws Exception
    {
-      replicationManager.appendPrepareRecord(journalID, txID, new ByteArrayEncoding(transactionData));
-      replicatedJournal.appendPrepareRecord(txID, transactionData, sync);
+      this.appendPrepareRecord(txID, new ByteArrayEncoding(transactionData), sync);
    }
 
    /**
@@ -202,6 +201,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendPrepareRecord(long txID, EncodingSupport transactionData, boolean sync) throws Exception
    {
+      System.out.println("AppendPrepare txID=" + txID);
       replicationManager.appendPrepareRecord(journalID, txID, transactionData);
       replicatedJournal.appendPrepareRecord(txID, transactionData, sync);
    }
@@ -214,6 +214,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendRollbackRecord(long txID, boolean sync) throws Exception
    {
+      System.out.println("AppendRollback " + txID);
       replicationManager.appendRollbackRecord(journalID, txID);
       replicatedJournal.appendRollbackRecord(txID, sync);
    }
@@ -228,8 +229,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendUpdateRecord(long id, byte recordType, byte[] record, boolean sync) throws Exception
    {
-      replicationManager.appendUpdateRecord(journalID, id, recordType, new ByteArrayEncoding(record));
-      replicatedJournal.appendUpdateRecord(id, recordType, record, sync);
+      this.appendUpdateRecord(id, recordType, new ByteArrayEncoding(record), sync);
    }
 
    /**
@@ -242,6 +242,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendUpdateRecord(long id, byte recordType, EncodingSupport record, boolean sync) throws Exception
    {
+      System.out.println("AppendUpdateRecord id = " + id + " , recordType = " + recordType);
       replicationManager.appendUpdateRecord(journalID, id, recordType, record);
       replicatedJournal.appendUpdateRecord(id, recordType, record, sync);
    }
@@ -256,8 +257,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendUpdateRecordTransactional(long txID, long id, byte recordType, byte[] record) throws Exception
    {
-      replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, new ByteArrayEncoding(record));
-      replicatedJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+      this.appendUpdateRecordTransactional(txID, id, recordType, new ByteArrayEncoding(record));
    }
 
    /**
@@ -270,6 +270,7 @@ public class ReplicatedJournalImpl implements Journal
     */
    public void appendUpdateRecordTransactional(long txID, long id, byte recordType, EncodingSupport record) throws Exception
    {
+      System.out.println("AppendUpdateRecord txid=" + txID + " id = " + id + " , recordType = " + recordType);
       replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
       replicatedJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
    }

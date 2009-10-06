@@ -55,6 +55,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private Journal messagingJournal;
 
    private JournalStorageManager storage;
+   
+   private volatile boolean started;
 
    // Static --------------------------------------------------------
 
@@ -130,6 +132,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       // We only need to load internal structures on the backup...
       storage.loadInternalOnly();
+
+      started = true;
    }
 
    /* (non-Javadoc)
@@ -137,6 +141,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     */
    public void stop() throws Exception
    {
+      started = false;
+      channel.close();
       storage.stop();
    }
 
@@ -161,6 +167,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+
    /**
     * @param packet
     */
@@ -169,7 +176,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       ReplicationCommitMessage commitMessage = (ReplicationCommitMessage)packet;
 
       Journal journalToUse = getJournal(commitMessage.getJournalID());
-
+      
       
       if (commitMessage.isRollback())
       {
@@ -256,6 +263,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       if (addMessage.isUpdate())
       {
+         System.out.println("Endpoint appendUpdate id = "  + addMessage.getId());
          journalToUse.appendUpdateRecord(addMessage.getId(),
                                          addMessage.getRecordType(),
                                          addMessage.getRecordData(),
@@ -263,6 +271,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       }
       else
       {
+         System.out.println("Endpoint append id = "  + addMessage.getId());
          journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
       }
    }

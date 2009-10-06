@@ -193,7 +193,7 @@ public class FailoverTest extends FailoverTestBase
 
          producer.send(message);
       }
-
+      
       RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
 
       // Simulate failure on connection
