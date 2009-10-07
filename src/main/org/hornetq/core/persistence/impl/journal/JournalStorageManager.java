@@ -94,6 +94,8 @@ public class JournalStorageManager implements StorageManager
 
    public static final byte PERSISTENT_ID_RECORD = 23;
 
+   public static final byte ID_COUNTER_RECORD = 24;
+
    // type + expiration + timestamp + priority
    public static final int SIZE_FIELDS = SIZE_INT + SIZE_LONG + SIZE_LONG + SIZE_BYTE;
 
@@ -235,8 +237,15 @@ public class JournalStorageManager implements StorageManager
       {
          throw new IllegalArgumentException("Unsupported journal type " + config.getJournalType());
       }
-
-      this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
+      
+      if (config.isBackup())
+      {
+         this.idGenerator = null;
+      }
+      else
+      {
+         this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
+      }
 
       Journal localMessage = new JournalImpl(config.getJournalFileSize(),
                                        config.getJournalMinFiles(),
@@ -1087,7 +1096,7 @@ public class JournalStorageManager implements StorageManager
 
             persistentID = encoding.uuid;
          }
-         else if (rec == BatchingIDGenerator.ID_COUNTER_RECORD)
+         else if (rec == ID_COUNTER_RECORD)
          {
             idGenerator.loadState(record.id, buffer);
          }
@@ -1131,7 +1140,10 @@ public class JournalStorageManager implements StorageManager
       }
 
       // Must call close to make sure last id is persisted
-      idGenerator.close();
+      if (idGenerator != null)
+      {
+         idGenerator.close();
+      }
 
       bindingsJournal.stop();
 

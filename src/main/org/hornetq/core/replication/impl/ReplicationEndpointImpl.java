@@ -31,7 +31,6 @@ import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
 
 /**
- * A ReplicationPacketHandler
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
@@ -46,6 +45,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
    // Attributes ----------------------------------------------------
 
+   private static final boolean trace = false;
+
    private final HornetQServer server;
 
    private Channel channel;
@@ -55,13 +56,9 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private Journal messagingJournal;
 
    private JournalStorageManager storage;
-   
-   private volatile boolean started;
-
-   // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
-   public ReplicationEndpointImpl(HornetQServer server)
+   public ReplicationEndpointImpl(final HornetQServer server)
    {
       this.server = server;
    }
@@ -71,7 +68,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     * (non-Javadoc)
     * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
     */
-   public void handlePacket(Packet packet)
+   public void handlePacket(final Packet packet)
    {
       try
       {
@@ -127,13 +124,11 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       storage = new JournalStorageManager(config, null);
       storage.start();
 
-      this.bindingsJournal = storage.getBindingsJournal();
-      this.messagingJournal = storage.getMessageJournal();
+      bindingsJournal = storage.getBindingsJournal();
+      messagingJournal = storage.getMessageJournal();
 
       // We only need to load internal structures on the backup...
       storage.loadInternalOnly();
-
-      started = true;
    }
 
    /* (non-Javadoc)
@@ -141,7 +136,6 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     */
    public void stop() throws Exception
    {
-      started = false;
       channel.close();
       storage.stop();
    }
@@ -157,7 +151,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationEndpoint#setChannel(org.hornetq.core.remoting.Channel)
     */
-   public void setChannel(Channel channel)
+   public void setChannel(final Channel channel)
    {
       this.channel = channel;
    }
@@ -171,13 +165,12 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handleCommitRollback(Packet packet) throws Exception
+   private void handleCommitRollback(final Packet packet) throws Exception
    {
       ReplicationCommitMessage commitMessage = (ReplicationCommitMessage)packet;
 
       Journal journalToUse = getJournal(commitMessage.getJournalID());
-      
-      
+
       if (commitMessage.isRollback())
       {
          journalToUse.appendRollbackRecord(commitMessage.getTxId(), false);
@@ -191,7 +184,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handlePrepare(Packet packet) throws Exception
+   private void handlePrepare(final Packet packet) throws Exception
    {
       ReplicationPrepareMessage prepareMessage = (ReplicationPrepareMessage)packet;
 
@@ -203,7 +196,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handleAppendDeleteTX(Packet packet) throws Exception
+   private void handleAppendDeleteTX(final Packet packet) throws Exception
    {
       ReplicationDeleteTXMessage deleteMessage = (ReplicationDeleteTXMessage)packet;
 
@@ -217,7 +210,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handleAppendDelete(Packet packet) throws Exception
+   private void handleAppendDelete(final Packet packet) throws Exception
    {
       ReplicationDeleteMessage deleteMessage = (ReplicationDeleteMessage)packet;
 
@@ -229,7 +222,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handleAppendAddTXRecord(Packet packet) throws Exception
+   private void handleAppendAddTXRecord(final Packet packet) throws Exception
    {
       ReplicationAddTXMessage addMessage = (ReplicationAddTXMessage)packet;
 
@@ -255,7 +248,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     * @param packet
     * @throws Exception
     */
-   private void handleAppendAddRecord(Packet packet) throws Exception
+   private void handleAppendAddRecord(final Packet packet) throws Exception
    {
       ReplicationAddMessage addMessage = (ReplicationAddMessage)packet;
 
@@ -263,7 +256,10 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       if (addMessage.isUpdate())
       {
-         System.out.println("Endpoint appendUpdate id = "  + addMessage.getId());
+         if (trace)
+         {
+            System.out.println("Endpoint appendUpdate id = " + addMessage.getId());
+         }
          journalToUse.appendUpdateRecord(addMessage.getId(),
                                          addMessage.getRecordType(),
                                          addMessage.getRecordData(),
@@ -271,7 +267,10 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       }
       else
       {
-         System.out.println("Endpoint append id = "  + addMessage.getId());
+         if (trace)
+         {
+            System.out.println("Endpoint append id = " + addMessage.getId());
+         }
          journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
       }
    }
@@ -280,7 +279,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     * @param journalID
     * @return
     */
-   private Journal getJournal(byte journalID)
+   private Journal getJournal(final byte journalID)
    {
       Journal journalToUse;
       if (journalID == (byte)0)

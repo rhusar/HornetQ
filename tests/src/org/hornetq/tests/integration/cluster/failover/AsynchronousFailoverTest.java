@@ -126,7 +126,6 @@ public class AsynchronousFailoverTest extends FailoverTestBase
    
             sf.setBlockOnNonPersistentSend(true);
             sf.setBlockOnPersistentSend(true);
-            sf.setBlockOnAcknowledge(true);
    
             ClientSession createSession = sf.createSession(true, true);
    
@@ -246,8 +245,6 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             {
                break;
             }
-            
-            System.out.println("Thread " + Thread.currentThread().getName() + " received " + message.getMessageID());
 
             // There may be some missing or duplicate messages - but the order should be correct
 
@@ -257,7 +254,6 @@ public class AsynchronousFailoverTest extends FailoverTestBase
 
             lastCount = count;
 
-            System.out.println("Client ACK: " + message.getMessageID());
             message.acknowledge();
          }
 
