@@ -16,16 +16,9 @@ import javax.jms.Connection;
 import javax.jms.Session;
 
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
-import org.hornetq.core.config.impl.ConfigurationImpl;
-import org.hornetq.core.server.HornetQ;
-import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.client.HornetQConnectionFactory;
-import org.hornetq.jms.server.impl.JMSServerManagerImpl;
-import org.hornetq.tests.integration.jms.server.management.NullInitialContext;
 import org.hornetq.tests.util.JMSTestBase;
-import org.hornetq.tests.util.UnitTestCase;
 
 /**
  * 
@@ -81,7 +74,7 @@ public class CloseConnectionOnGCTest extends JMSTestBase
       Connection conn2 = cf.createConnection();
       Connection conn3 = cf.createConnection();     
       
-      assertEquals(3, server.getRemotingService().getConnections().size());
+      assertEquals(1, server.getRemotingService().getConnections().size());
       
       conn1 = null;
       conn2 = null;
@@ -110,8 +103,6 @@ public class CloseConnectionOnGCTest extends JMSTestBase
       Session sess6 = conn3.createSession(false, Session.AUTO_ACKNOWLEDGE);
       Session sess7 = conn3.createSession(false, Session.AUTO_ACKNOWLEDGE);
             
-      assertEquals(ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS, server.getRemotingService().getConnections().size());
-      
       sess1 = sess2 = sess3 = sess4 = sess5 = sess6 = sess7 = null;
       
       conn1 = null;

@@ -23,7 +23,7 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.management.HornetQServerControl;
-import org.hornetq.core.management.ObjectNames;
+import org.hornetq.core.management.ObjectNameBuilder;
 import org.hornetq.core.management.QueueControl;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
@@ -59,6 +59,20 @@ public class HornetQServerControlTest extends ManagementTestBase
 
    // Static --------------------------------------------------------
 
+   private static boolean contains(String name, String[] strings)
+   {
+      boolean found = false;
+      for (String str : strings)
+      {
+         if (name.equals(str))
+         {
+            found = true;
+            break;
+         }
+      } 
+      return found;
+   }
+   
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
@@ -72,7 +86,7 @@ public class HornetQServerControlTest extends ManagementTestBase
       assertEquals(conf.isClustered(), serverControl.isClustered());     
       assertEquals(conf.isPersistDeliveryCountBeforeDelivery(), serverControl.isPersistDeliveryCountBeforeDelivery());
       assertEquals(conf.isBackup(), serverControl.isBackup());
-      assertEquals(conf.getQueueActivationTimeout(), serverControl.getQueueActivationTimeout());
+      assertEquals(conf.isSharedStore(), serverControl.isSharedStore());
       assertEquals(conf.getScheduledThreadPoolMaxSize(), serverControl.getScheduledThreadPoolMaxSize());
       assertEquals(conf.getThreadPoolMaxSize(), serverControl.getThreadPoolMaxSize());
       assertEquals(conf.getSecurityInvalidationInterval(), serverControl.getSecurityInvalidationInterval());
@@ -105,6 +119,9 @@ public class HornetQServerControlTest extends ManagementTestBase
       assertEquals(conf.getTransactionTimeoutScanPeriod(), serverControl.getTransactionTimeoutScanPeriod());
       assertEquals(conf.getMessageExpiryScanPeriod(), serverControl.getMessageExpiryScanPeriod());
       assertEquals(conf.getMessageExpiryThreadPriority(), serverControl.getMessageExpiryThreadPriority());
+      assertEquals(conf.getJournalCompactMinFiles(), serverControl.getJournalCompactMinFiles());
+      assertEquals(conf.getJournalCompactPercentage(), serverControl.getJournalCompactPercentage());
+      assertEquals(conf.isPersistenceEnabled(), serverControl.isPersistenceEnabled());
    }
 
    public void testGetConnectors() throws Exception
@@ -141,11 +158,11 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       HornetQServerControl serverControl = createManagementControl();
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
 
       serverControl.createQueue(address.toString(), name.toString());
 
-      checkResource(ObjectNames.getQueueObjectName(address, name));
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
       QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, mbeanServer);
       assertEquals(address.toString(), queueControl.getAddress());
       assertEquals(name.toString(), queueControl.getName());
@@ -155,7 +172,7 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
    }
 
    public void testCreateAndDestroyQueue_2() throws Exception
@@ -167,11 +184,11 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       HornetQServerControl serverControl = createManagementControl();
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
 
       serverControl.createQueue(address.toString(), name.toString(), filter, durable);
 
-      checkResource(ObjectNames.getQueueObjectName(address, name));
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
       QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, mbeanServer);
       assertEquals(address.toString(), queueControl.getAddress());
       assertEquals(name.toString(), queueControl.getName());
@@ -181,7 +198,32 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+   }
+   
+   public void testCreateAndDestroyQueue_3() throws Exception
+   {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+      boolean durable = true;
+
+      HornetQServerControl serverControl = createManagementControl();
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+
+      serverControl.createQueue(address.toString(), name.toString(), durable);
+
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, mbeanServer);
+      assertEquals(address.toString(), queueControl.getAddress());
+      assertEquals(name.toString(), queueControl.getName());
+      assertNull(queueControl.getFilter());
+      assertEquals(durable, queueControl.isDurable());
+      assertEquals(false, queueControl.isTemporary());
+
+      serverControl.destroyQueue(name.toString());
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
    }
 
    public void testCreateAndDestroyQueueWithNullFilter() throws Exception
@@ -193,11 +235,11 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       HornetQServerControl serverControl = createManagementControl();
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
 
       serverControl.createQueue(address.toString(), name.toString(), filter, durable);
 
-      checkResource(ObjectNames.getQueueObjectName(address, name));
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
       QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, mbeanServer);
       assertEquals(address.toString(), queueControl.getAddress());
       assertEquals(name.toString(), queueControl.getName());
@@ -207,7 +249,71 @@ public class HornetQServerControlTest extends ManagementTestBase
 
       serverControl.destroyQueue(name.toString());
 
-      checkNoResource(ObjectNames.getQueueObjectName(address, name));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+   }
+   
+   public void testCreateAndDestroyQueueWithEmptyStringForFilter() throws Exception
+   {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+      String filter = "";
+      boolean durable = true;
+
+      HornetQServerControl serverControl = createManagementControl();
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+
+      serverControl.createQueue(address.toString(), name.toString(), filter, durable);
+
+      checkResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+      QueueControl queueControl = ManagementControlHelper.createQueueControl(address, name, mbeanServer);
+      assertEquals(address.toString(), queueControl.getAddress());
+      assertEquals(name.toString(), queueControl.getName());
+      assertNull(queueControl.getFilter());
+      assertEquals(durable, queueControl.isDurable());
+      assertEquals(false, queueControl.isTemporary());
+
+      serverControl.destroyQueue(name.toString());
+
+      checkNoResource(ObjectNameBuilder.DEFAULT.getQueueObjectName(address, name));
+   }
+   
+   public void testGetQueueNames() throws Exception
+   {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+
+      HornetQServerControl serverControl = createManagementControl();
+
+      // due to replication, there can be another queue created for replicating
+      // management operations
+
+      assertFalse(contains(name.toString(), serverControl.getQueueNames()));
+      
+      serverControl.createQueue(address.toString(), name.toString());
+      assertTrue(contains(name.toString(), serverControl.getQueueNames()));
+
+      serverControl.destroyQueue(name.toString());
+      assertFalse(contains(name.toString(), serverControl.getQueueNames()));
+   }
+
+   public void testGetAddressNames() throws Exception
+   {
+      SimpleString address = RandomUtil.randomSimpleString();
+      SimpleString name = RandomUtil.randomSimpleString();
+
+      HornetQServerControl serverControl = createManagementControl();
+
+      // due to replication, there can be another queue created for replicating
+      // management operations
+
+      assertFalse(contains(address.toString(), serverControl.getAddressNames()));
+      
+      serverControl.createQueue(address.toString(), name.toString());
+      assertTrue(contains(address.toString(), serverControl.getAddressNames()));
+
+      serverControl.destroyQueue(name.toString());
+      assertFalse(contains(address.toString(), serverControl.getAddressNames()));
    }
 
    public void testMessageCounterMaxDayCount() throws Exception

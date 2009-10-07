@@ -13,8 +13,8 @@
 
 package org.hornetq.tests.util;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,6 +64,7 @@ public class ServiceTestBase extends UnitTestCase
 
    // Static --------------------------------------------------------
    private final Logger log = Logger.getLogger(this.getClass());
+
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
@@ -73,10 +74,10 @@ public class ServiceTestBase extends UnitTestCase
    // Protected -----------------------------------------------------
 
    protected HornetQServer createServer(final boolean realFiles,
-                                          final Configuration configuration,
-                                          int pageSize,
-                                          int maxAddressSize,
-                                          final Map<String, AddressSettings> settings)
+                                        final Configuration configuration,
+                                        int pageSize,
+                                        int maxAddressSize,
+                                        final Map<String, AddressSettings> settings)
    {
       HornetQServer server;
 
@@ -104,9 +105,9 @@ public class ServiceTestBase extends UnitTestCase
    }
 
    protected HornetQServer createServer(final boolean realFiles,
-                                          final Configuration configuration,
-                                          final MBeanServer mbeanServer,
-                                          final Map<String, AddressSettings> settings)
+                                        final Configuration configuration,
+                                        final MBeanServer mbeanServer,
+                                        final Map<String, AddressSettings> settings)
    {
       HornetQServer server;
 
@@ -141,23 +142,21 @@ public class ServiceTestBase extends UnitTestCase
    }
 
    protected HornetQServer createServer(final boolean realFiles,
-                                          final Configuration configuration,
-                                          final HornetQSecurityManager securityManager)
+                                        final Configuration configuration,
+                                        final HornetQSecurityManager securityManager)
    {
       HornetQServer server;
 
       if (realFiles)
       {
-         server = HornetQ.newHornetQServer(configuration,
-                                               ManagementFactory.getPlatformMBeanServer(),
-                                               securityManager);
+         server = HornetQ.newHornetQServer(configuration, ManagementFactory.getPlatformMBeanServer(), securityManager);
       }
       else
       {
          server = HornetQ.newHornetQServer(configuration,
-                                               ManagementFactory.getPlatformMBeanServer(),
-                                               securityManager,
-                                               false);
+                                           ManagementFactory.getPlatformMBeanServer(),
+                                           securityManager,
+                                           false);
       }
 
       Map<String, AddressSettings> settings = new HashMap<String, AddressSettings>();
@@ -175,8 +174,8 @@ public class ServiceTestBase extends UnitTestCase
    }
 
    protected HornetQServer createClusteredServerWithParams(final int index,
-                                                             final boolean realFiles,
-                                                             final Map<String, Object> params)
+                                                           final boolean realFiles,
+                                                           final Map<String, Object> params)
    {
       return createServer(realFiles,
                           createClusteredDefaultConfig(index, params, INVM_ACCEPTOR_FACTORY),
@@ -251,6 +250,8 @@ public class ServiceTestBase extends UnitTestCase
       configuration.setLargeMessagesDirectory(getLargeMessagesDir());
       configuration.setJournalCompactMinFiles(0);
       configuration.setJournalCompactPercentage(0);
+      
+      configuration.setFileDeploymentEnabled(false);
 
       configuration.setJournalType(JournalType.ASYNCIO);
 
@@ -313,6 +314,39 @@ public class ServiceTestBase extends UnitTestCase
       message.getBody().writeBytes(b);
       return message;
    }
+   
+   /**
+    * Deleting a file on LargeDire is an asynchronous process. Wee need to keep looking for a while if the file hasn't been deleted yet
+    */
+   protected void validateNoFilesOnLargeDir(int expect) throws Exception
+   {
+      File largeMessagesFileDir = new File(getLargeMessagesDir());
+
+      // Deleting the file is async... we keep looking for a period of the time until the file is really gone
+      for (int i = 0; i < 100; i++)
+      {
+         if (largeMessagesFileDir.listFiles().length != expect)
+         {
+            Thread.sleep(10);
+         }
+         else
+         {
+            break;
+         }
+      }
+
+      assertEquals(expect, largeMessagesFileDir.listFiles().length);
+   }
+
+   /**
+    * Deleting a file on LargeDire is an asynchronous process. Wee need to keep looking for a while if the file hasn't been deleted yet
+    */
+   protected void validateNoFilesOnLargeDir() throws Exception
+   {
+      validateNoFilesOnLargeDir(0);
+   }
+
+   
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------

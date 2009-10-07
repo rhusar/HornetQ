@@ -125,7 +125,7 @@ public class FileDeploymentManager implements Runnable, DeploymentManager
 
                try
                {
-                  log.info("Deploying " + url + " for " + deployer.getClass().getSimpleName());
+                  log.debug("Deploying " + url + " for " + deployer.getClass().getSimpleName());
                   deployer.deploy(url);
                }
                catch (Exception e)
@@ -224,19 +224,18 @@ public class FileDeploymentManager implements Runnable, DeploymentManager
          for (Map.Entry<Pair<URL, Deployer>, DeployInfo> entry : deployed.entrySet())
          {
             Pair<URL, Deployer> pair = entry.getKey();
-            
-            if (!new File(pair.a.getFile()).exists())
+            if (!fileExists(pair.a))
             {
                try
                {
                   Deployer deployer = entry.getValue().deployer;
-                  log.debug("Undeploying " + deployer + " with url" + entry.getKey());
-                  deployer.undeploy(entry.getKey().a);
-                  toRemove.add(entry.getKey());
+                  log.info("Undeploying " + deployer + " with url " + pair.a);
+                  deployer.undeploy(pair.a);
+                  toRemove.add(pair);
                }
                catch (Exception e)
                {
-                  log.error("Error undeploying " + entry.getKey().a, e);
+                  log.error("Error undeploying " + pair.a, e);
                }
             }
          }
@@ -259,6 +258,36 @@ public class FileDeploymentManager implements Runnable, DeploymentManager
    public synchronized Map<Pair<URL, Deployer>, DeployInfo> getDeployed()
    {
       return deployed;
+   }
+   
+   // Private -------------------------------------------------------
+   
+   /**
+    * Checks if the URL is among the current thread context class loader's resources.
+    * 
+    * We do not check that the corresponding file exists using File.exists() directly as it would fail
+    * in the case the resource is loaded from inside an EAR file (see https://jira.jboss.org/jira/browse/HORNETQ-122)
+    */
+   private boolean fileExists(URL resourceURL)
+   {
+      try
+      {
+         File f = new File(resourceURL.getPath());
+         Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(f.getName());
+         while (resources.hasMoreElements())
+         {
+            URL url = (URL)resources.nextElement();
+            if (url.equals(resourceURL))
+            {
+               return true;
+            }
+         }
+      }
+      catch (Exception e)
+      {
+         return false;
+      }
+      return false;
    }
 
    // Inner classes -------------------------------------------------------------------------------------------

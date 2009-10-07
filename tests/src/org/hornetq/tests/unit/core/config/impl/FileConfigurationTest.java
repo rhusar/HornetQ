@@ -49,6 +49,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
       assertEquals("Frog", conf.getManagementClusterUser());
       assertEquals("Wombat", conf.getManagementClusterPassword());
       assertEquals(false, conf.isJMXManagementEnabled());
+      assertEquals("gro.qtenroh", conf.getJMXDomain());
       assertEquals(true, conf.isMessageCounterEnabled());
       assertEquals(5, conf.getMessageCounterMaxDayHistory());
       assertEquals(123456, conf.getMessageCounterSamplePeriod());
@@ -56,11 +57,12 @@ public class FileConfigurationTest extends ConfigurationImplTest
       assertEquals(98765, conf.getTransactionTimeout());
       assertEquals(56789, conf.getTransactionTimeoutScanPeriod());
       assertEquals(10111213, conf.getMessageExpiryScanPeriod());
+      assertEquals("ocelot", conf.getLogDelegateFactoryClassName());
       assertEquals(8, conf.getMessageExpiryThreadPriority());
       assertEquals(127, conf.getIDCacheSize());
       assertEquals(true, conf.isPersistIDCache());
-      assertEquals(12456, conf.getQueueActivationTimeout());
       assertEquals(true, conf.isBackup());
+      assertEquals(true, conf.isSharedStore());
       assertEquals(true, conf.isPersistDeliveryCountBeforeDelivery());      
       assertEquals("pagingdir", conf.getPagingDirectory());
       assertEquals("somedir", conf.getBindingsDirectory());
@@ -79,6 +81,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
       assertEquals(33, conf.getJournalCompactPercentage());
       assertEquals(56546, conf.getJournalMaxAIO());
       assertEquals("largemessagesdir", conf.getLargeMessagesDirectory());
+      assertEquals(95, conf.getMemoryWarningThreshold());
       
       assertEquals(2, conf.getInterceptorClassNames().size());
       assertTrue(conf.getInterceptorClassNames().contains("org.hornetq.tests.unit.core.config.impl.TestInterceptor1"));

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.core.client.ClientMessage;
@@ -37,13 +38,6 @@ import org.hornetq.core.management.NotificationType;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
-import org.hornetq.core.remoting.Channel;
-import org.hornetq.core.remoting.Packet;
-import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteBindingAddedMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteBindingRemovedMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteConsumerAddedMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateRemoteConsumerRemovedMessage;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.group.impl.Response;
@@ -99,16 +93,12 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
    private final UUID nodeUUID;
 
-   private final Channel replicatingChannel;
-
    private final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors;
 
    private boolean backup;
 
    private volatile boolean started;
-   
-   private int replicationCount;
-   
+
    /*
     * Constructor using static list of connectors
     */
@@ -125,7 +115,6 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                                 final List<Pair<TransportConfiguration, TransportConfiguration>> connectors,
                                 final int maxHops,
                                 final UUID nodeUUID,
-                                final Channel replicatingChannel,
                                 final boolean backup) throws Exception
    {
       this.name = name;
@@ -159,8 +148,6 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
       this.nodeUUID = nodeUUID;
 
-      this.replicatingChannel = replicatingChannel;
-
       this.backup = backup;
 
       this.staticConnectors = connectors;
@@ -187,7 +174,6 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                                 final DiscoveryGroup discoveryGroup,
                                 final int maxHops,
                                 final UUID nodeUUID,
-                                final Channel replicatingChannel,
                                 final boolean backup) throws Exception
    {
       this.name = name;
@@ -216,8 +202,6 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
       this.nodeUUID = nodeUUID;
 
-      this.replicatingChannel = replicatingChannel;
-
       this.backup = backup;
 
       this.staticConnectors = null;
@@ -239,7 +223,8 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
    }
 
    public synchronized void stop() throws Exception
-   {      if (!started)
+   {
+      if (!started)
       {
          return;
       }
@@ -272,7 +257,25 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
    {
       return name;
    }
+   
+   public String getNodeID()
+   {
+      return nodeUUID.toString();
+   }
 
+   public Map<String, String> getNodes()
+   {
+      Map<String, String> nodes = new HashMap<String, String>();
+      for (Entry<String, MessageFlowRecord> record : records.entrySet( ))
+      {
+         if (record.getValue().getBridge().getForwardingConnection() != null)
+         {
+            nodes.put(record.getKey(), record.getValue().getBridge().getForwardingConnection().getRemoteAddress());
+         }
+      }
+      return nodes;
+   }
+   
    public synchronized void activate()
    {
       if (!started)
@@ -376,47 +379,9 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                // Add binding in storage so the queue will get reloaded on startup and we can find it - it's never
                // actually routed to at that address though
 
-               if (replicatingChannel == null)
-               {
-                  queue = server.createQueue(queueName, queueName, null, true, false);
+               queue = server.createQueue(queueName, queueName, null, true, false);
 
-                  createNewRecord(entry.getKey(), connectorPair, queueName, queue, true);
-               }
-               else
-               {
-                  // We need to create the record before we replicate, since otherwise, two updates can come in for
-                  // the same entry before the first replication comes back, and it won't find the record, so it
-                  // will try and create the queue twice
-                  createNewRecord(entry.getKey(), connectorPair, queueName, null, false);
-
-                  // Replicate the createQueue first
-                  Packet packet = new CreateQueueMessage(queueName, queueName, null, true, false);
-
-                  replicatingChannel.replicatePacket(packet, 1, new Runnable()
-                  {
-                     public void run()
-                     {
-                        try
-                        {
-                           Queue queue = server.createQueue(queueName, queueName, null, true, false);
-
-                           synchronized (ClusterConnectionImpl.this)
-                           {
-                              MessageFlowRecord record = records.get(entry.getKey());
-
-                              if (record != null)
-                              {
-                                 record.activate(queue);
-                              }
-                           }
-                        }
-                        catch (Exception e)
-                        {
-                           log.error("Failed create record", e);
-                        }
-                     }
-                  });
-               }
+               createNewRecord(entry.getKey(), connectorPair, queueName, queue, true);
             }
          }
       }
@@ -444,14 +409,13 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                                      retryInterval,
                                      1d,
                                      -1,
-                                     false,
+                                     true,
                                      useDuplicateDetection,
                                      managementService.getManagementAddress(),
                                      managementService.getManagementNotificationAddress(),
                                      managementService.getClusterUser(),
                                      managementService.getClusterPassword(),
                                      record,
-                                     replicatingChannel,
                                      !backup,
                                      server.getStorageManager());
 
@@ -497,64 +461,16 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
          bridge.stop();
 
          clearBindings();
-         
-         waitForReplicationsToComplete(3000);
-      }
-      
-      private synchronized void waitForReplicationsToComplete(long timeout)
-      {
-         long toWait = timeout;
-
-         long start = System.currentTimeMillis();
-
-         while (replicationCount > 0 && toWait > 0)
-         {
-            try
-            {
-               wait(toWait);
-            }
-            catch (InterruptedException e)
-            {
-            }
-
-            long now = System.currentTimeMillis();
-
-            toWait -= now - start;
-
-            start = now;
-         }
-
-         if (toWait <= 0)
-         {
-            log.warn("Timed out waiting for replication responses to return");
-         }
-      
-      }
-      
-      private synchronized void replicationComplete()
-      {
-         replicationCount--;
-         
-         notify();
-      }
-      
-      private synchronized void beforeReplicate()
-      {
-         replicationCount++;
-      }
-
-      public void activate(final Queue queue) throws Exception
-      {
-         this.queue = queue;
-
-         bridge.setQueue(queue);
-
-         bridge.start();
       }
 
       public void setBridge(final Bridge bridge)
       {
          this.bridge = bridge;
+      }
+      
+      public Bridge getBridge()
+      {
+         return bridge;
       }
 
       public synchronized void onMessage(final ClientMessage message)
@@ -586,7 +502,7 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
             {
                case BINDING_ADDED:
                {
-                  doBindingAdded(message, replicatingChannel);
+                  doBindingAdded(message);
 
                   break;
                }
@@ -598,13 +514,13 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
                }
                case CONSUMER_CREATED:
                {
-                  doConsumerCreated(message, replicatingChannel);
+                  doConsumerCreated(message);
 
                   break;
                }
                case CONSUMER_CLOSED:
                {
-                  doConsumerClosed(message, replicatingChannel);
+                  doConsumerClosed(message);
 
                   break;
                }
@@ -661,14 +577,14 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
       }
       
       private synchronized void clearBindings() throws Exception
-      {       
+      {
          for (RemoteQueueBinding binding : new HashSet<RemoteQueueBinding>(bindings.values()))
          {
-            removeBinding(binding.getClusterName(), replicatingChannel);
-         }         
+            removeBinding(binding.getClusterName());
+         }
       }
 
-      private synchronized void doBindingAdded(final ClientMessage message, final Channel replChannel) throws Exception
+      private synchronized void doBindingAdded(final ClientMessage message) throws Exception
       {
          Integer distance = (Integer)message.getProperty(ManagementHelper.HDR_DISTANCE);
 
@@ -700,80 +616,50 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
          SimpleString filterString = (SimpleString)message.getProperty(ManagementHelper.HDR_FILTERSTRING);
 
-         Integer queueID = (Integer)message.getProperty(ManagementHelper.HDR_BINDING_ID);
+         Long queueID = (Long)message.getProperty(ManagementHelper.HDR_BINDING_ID);
 
          if (queueID == null)
          {
             throw new IllegalStateException("queueID is null");
          }
 
-         if (replChannel != null)
+         RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateUniqueID(),
+                                                                 queueAddress,
+                                                                 clusterName,
+                                                                 routingName,
+                                                                 queueID,
+                                                                 filterString,
+                                                                 queue,
+                                                                 bridge.getName(),
+                                                                 distance + 1);
+
+         bindings.put(clusterName, binding);
+
+         if (postOffice.getBinding(clusterName) != null)
          {
-            Packet packet = new ReplicateRemoteBindingAddedMessage(name,
-                                                                   queueAddress,
-                                                                   clusterName,
-                                                                   routingName,
-                                                                   queueID,
-                                                                   filterString,
-                                                                   queue.getName(),
-                                                                   distance + 1);
+            // Sanity check - this means the binding has already been added via another bridge, probably max
+            // hops is too high
+            // or there are multiple cluster connections for the same address
 
-            beforeReplicate();
-            replChannel.replicatePacket(packet, 1, new Runnable()
-            {
-               public void run()
-               {                  
-                  try
-                  {
-                     doBindingAdded(message, null);
-                  }
-                  catch (Exception e)
-                  {
-                     log.error("Failed to add remote queue binding", e);
-                  }
-                  
-                  replicationComplete();
-               }
-            });
+            log.warn("Remote queue binding " + clusterName +
+                     " has already been bound in the post office. Most likely cause for this is you have a loop " +
+                     "in your cluster due to cluster max-hops being too large or you have multiple cluster connections to the same nodes using overlapping addresses");
+
+            return;
          }
-         else
+
+         try
          {
-            RemoteQueueBinding binding = new RemoteQueueBindingImpl(queueAddress,
-                                                                    clusterName,
-                                                                    routingName,
-                                                                    queueID,
-                                                                    filterString,
-                                                                    queue,
-                                                                    bridge.getName(),
-                                                                    distance + 1);
-
-            bindings.put(clusterName, binding);
-
-            if (postOffice.getBinding(clusterName) != null)
-            {
-               // Sanity check - this means the binding has already been added via another bridge, probably max
-               // hops is too high
-               // or there are multiple cluster connections for the same address
-
-               log.warn("Remote queue binding " + clusterName +
-                        " has already been bound in the post office. Most likely cause for this is you have a loop " +
-                        "in your cluster due to cluster max-hops being too large or you have multiple cluster connections to the same nodes using overlapping addresses");
-
-               return;
-            }
-
-            try
-            {
-               postOffice.addBinding(binding);
-            }
-            catch (Exception ignore)
-            {
-            }
-
-            Bindings theBindings = postOffice.getBindingsForAddress(queueAddress);
-
-            theBindings.setRouteWhenNoConsumers(routeWhenNoConsumers);
+            postOffice.addBinding(binding);
          }
+         catch (Exception ignore)
+         {
+         }
+
+         Bindings theBindings = postOffice.getBindingsForAddress(queueAddress);
+
+         theBindings.setRouteWhenNoConsumers(routeWhenNoConsumers);
+
       }
 
       private void doBindingRemoved(final ClientMessage message) throws Exception
@@ -785,47 +671,22 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
             throw new IllegalStateException("clusterName is null");
          }
 
-         removeBinding(clusterName, replicatingChannel);
+         removeBinding(clusterName);
       }
-      
-      private synchronized void removeBinding(final SimpleString clusterName, final Channel replChannel) throws Exception
+
+      private synchronized void removeBinding(final SimpleString clusterName) throws Exception
       {
-         if (replChannel != null)
+         RemoteQueueBinding binding = bindings.remove(clusterName);
+
+         if (binding == null)
          {
-            Packet packet = new ReplicateRemoteBindingRemovedMessage(clusterName);
-
-            beforeReplicate();
-            replChannel.replicatePacket(packet, 1, new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     removeBinding(clusterName, null);
-                  }
-                  catch (Exception e)
-                  {
-                     log.error("Failed to remove remote queue binding", e);
-                  }
-                  
-                  replicationComplete();
-               }
-            });
+            throw new IllegalStateException("Cannot find binding for queue " + clusterName);
          }
-         else
-         {
-            RemoteQueueBinding binding = bindings.remove(clusterName);
 
-            if (binding == null)
-            {
-               throw new IllegalStateException("Cannot find binding for queue " + clusterName);
-            }
-
-            postOffice.removeBinding(binding.getUniqueName());
-         }
+         postOffice.removeBinding(binding.getUniqueName());
       }
 
-      private synchronized void doConsumerCreated(final ClientMessage message, final Channel replChannel) throws Exception
+      private synchronized void doConsumerCreated(final ClientMessage message) throws Exception
       {
          Integer distance = (Integer)message.getProperty(ManagementHelper.HDR_DISTANCE);
 
@@ -845,47 +706,22 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
          SimpleString filterString = (SimpleString)message.getProperty(ManagementHelper.HDR_FILTERSTRING);
 
-         if (replChannel != null)
+         RemoteQueueBinding binding = bindings.get(clusterName);
+
+         if (binding == null)
          {
-            Packet packet = new ReplicateRemoteConsumerAddedMessage(clusterName, filterString, message.getProperties());
-
-            beforeReplicate();
-            replChannel.replicatePacket(packet, 1, new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     doConsumerCreated(message, null);
-                  }
-                  catch (Exception e)
-                  {
-                     log.error("Failed to add remote consumer", e);
-                  }
-                  
-                  replicationComplete();
-               }
-            });
+            throw new IllegalStateException("Cannot find binding for " + clusterName);
          }
-         else
-         {
-            RemoteQueueBinding binding = bindings.get(clusterName);
 
-            if (binding == null)
-            {
-               throw new IllegalStateException("Cannot find binding for " + clusterName);
-            }
+         binding.addConsumer(filterString);
 
-            binding.addConsumer(filterString);
+         // Need to propagate the consumer add
+         Notification notification = new Notification(null, CONSUMER_CREATED, message.getProperties());
 
-            // Need to propagate the consumer add
-            Notification notification = new Notification(null, CONSUMER_CREATED, message.getProperties());
-
-            managementService.sendNotification(notification);
-         }
+         managementService.sendNotification(notification);
       }
 
-      private synchronized void doConsumerClosed(final ClientMessage message, final Channel replChannel) throws Exception
+      private synchronized void doConsumerClosed(final ClientMessage message) throws Exception
       {
          Integer distance = (Integer)message.getProperty(ManagementHelper.HDR_DISTANCE);
 
@@ -905,46 +741,19 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
          SimpleString filterString = (SimpleString)message.getProperty(ManagementHelper.HDR_FILTERSTRING);
 
-         if (replChannel != null)
+         RemoteQueueBinding binding = bindings.get(clusterName);
+
+         if (binding == null)
          {
-            Packet packet = new ReplicateRemoteConsumerRemovedMessage(clusterName,
-                                                                      filterString,
-                                                                      message.getProperties());
-
-            beforeReplicate();
-            replChannel.replicatePacket(packet, 1, new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     doConsumerClosed(message, null);
-                  }
-                  catch (Exception e)
-                  {
-                     log.error("Failed to remove remote consumer", e);
-                  }
-                  
-                  replicationComplete();
-               }
-            });
+            throw new IllegalStateException("Cannot find binding for " + clusterName);
          }
-         else
-         {
-            RemoteQueueBinding binding = bindings.get(clusterName);
 
-            if (binding == null)
-            {
-               throw new IllegalStateException("Cannot find binding for " + clusterName);
-            }
+         binding.removeConsumer(filterString);
 
-            binding.removeConsumer(filterString);
+         // Need to propagate the consumer close
+         Notification notification = new Notification(null, CONSUMER_CLOSED, message.getProperties());
 
-            // Need to propagate the consumer close
-            Notification notification = new Notification(null, CONSUMER_CLOSED, message.getProperties());
-
-            managementService.sendNotification(notification);
-         }
+         managementService.sendNotification(notification);         
       }
 
    }
@@ -952,7 +761,7 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
    public void handleReplicatedAddBinding(final SimpleString address,
                                           final SimpleString uniqueName,
                                           final SimpleString routingName,
-                                          final int queueID,
+                                          final long queueID,
                                           final SimpleString filterString,
                                           final SimpleString queueName,
                                           final int distance) throws Exception
@@ -966,7 +775,8 @@ public class ClusterConnectionImpl implements ClusterConnection, DiscoveryListen
 
       Queue queue = (Queue)queueBinding.getBindable();
 
-      RemoteQueueBinding binding = new RemoteQueueBindingImpl(address,
+      RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateUniqueID(),
+                                                              address,
                                                               uniqueName,
                                                               routingName,
                                                               queueID,

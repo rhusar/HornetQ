@@ -13,7 +13,6 @@
 
 package org.hornetq.tests.integration.largemessage;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -72,7 +71,7 @@ public class LargeMessageTestBase extends ServiceTestBase
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
-   
+
    protected void tearDown() throws Exception
    {
       if (server != null && server.isStarted())
@@ -86,13 +85,14 @@ public class LargeMessageTestBase extends ServiceTestBase
             log.warn(e.getMessage(), e);
          }
       }
-      
+
       server = null;
-      
+
       super.tearDown();
    }
 
    protected void testChunks(final boolean isXA,
+                             final boolean restartOnXA,
                              final boolean rollbackFirstSend,
                              final boolean useStreamOnConsume,
                              final boolean realFiles,
@@ -106,6 +106,7 @@ public class LargeMessageTestBase extends ServiceTestBase
                              final long delayDelivery) throws Exception
    {
       testChunks(isXA,
+                 restartOnXA,
                  rollbackFirstSend,
                  useStreamOnConsume,
                  realFiles,
@@ -122,6 +123,7 @@ public class LargeMessageTestBase extends ServiceTestBase
    }
 
    protected void testChunks(final boolean isXA,
+                             final boolean restartOnXA,
                              final boolean rollbackFirstSend,
                              final boolean useStreamOnConsume,
                              final boolean realFiles,
@@ -180,8 +182,26 @@ public class LargeMessageTestBase extends ServiceTestBase
 
             if (isXA)
             {
+
                session.end(xid, XAResource.TMSUCCESS);
+               session.prepare(xid);
+
+               session.close();
+
+               if (realFiles && restartOnXA)
+               {
+                  server.stop();
+                  server.start();
+               }
+               
+               session = sf.createSession(null, null, isXA, false, false, preAck, 0);
+               
+               Xid[] xids = session.recover(XAResource.TMSTARTRSCAN);
+               assertEquals(1, xids.length);
+               assertEquals(xid, xids[0]);
+               
                session.rollback(xid);
+               producer = session.createProducer(ADDRESS);
                xid = newXID();
                session.start(xid, XAResource.TMNOFLAGS);
             }
@@ -198,6 +218,25 @@ public class LargeMessageTestBase extends ServiceTestBase
          if (isXA)
          {
             session.end(xid, XAResource.TMSUCCESS);
+            session.prepare(xid);
+
+            session.close();
+
+            if (realFiles && restartOnXA)
+            {
+               server.stop();
+               server.start();
+            }
+
+            session = sf.createSession(null, null, isXA, false, false, preAck, 0);
+            
+            Xid[] xids = session.recover(XAResource.TMSTARTRSCAN);
+            assertEquals(1, xids.length);
+            assertEquals(xid, xids[0]);
+            
+
+            producer = session.createProducer(ADDRESS);
+
             session.commit(xid, true);
             xid = newXID();
             session.start(xid, XAResource.TMNOFLAGS);
@@ -325,7 +364,7 @@ public class LargeMessageTestBase extends ServiceTestBase
                               {
                                  log.debug("Read " + b + " bytes");
                               }
-                              
+
                               assertEquals(getSamplebyte(b), buffer.readByte());
                            }
                         }
@@ -612,37 +651,6 @@ public class LargeMessageTestBase extends ServiceTestBase
       session.commit();
 
       consumer.close();
-   }
-
-   /**
-    * Deleting a file on LargeDire is an asynchronous process. Wee need to keep looking for a while if the file hasn't been deleted yet
-    */
-   protected void validateNoFilesOnLargeDir(int expect) throws Exception
-   {
-      File largeMessagesFileDir = new File(getLargeMessagesDir());
-
-      // Deleting the file is async... we keep looking for a period of the time until the file is really gone
-      for (int i = 0; i < 100; i++)
-      {
-         if (largeMessagesFileDir.listFiles().length != expect)
-         {
-            Thread.sleep(10);
-         }
-         else
-         {
-            break;
-         }
-      }
-
-      assertEquals(expect, largeMessagesFileDir.listFiles().length);
-   }
-
-   /**
-    * Deleting a file on LargeDire is an asynchronous process. Wee need to keep looking for a while if the file hasn't been deleted yet
-    */
-   protected void validateNoFilesOnLargeDir() throws Exception
-   {
-      validateNoFilesOnLargeDir(0);
    }
 
    protected OutputStream createFakeOutputStream() throws Exception

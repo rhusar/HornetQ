@@ -30,14 +30,17 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
+import javax.management.StandardMBean;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.management.AddressControl;
 import org.hornetq.core.management.HornetQServerControl;
 import org.hornetq.core.management.NotificationType;
+import org.hornetq.core.management.QueueControl;
 import org.hornetq.core.messagecounter.MessageCounterManager;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
 import org.hornetq.core.postoffice.PostOffice;
@@ -58,7 +61,7 @@ import org.hornetq.utils.json.JSONObject;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class HornetQServerControlImpl implements HornetQServerControl, NotificationEmitter
+public class HornetQServerControlImpl extends StandardMBean implements HornetQServerControl, NotificationEmitter
 {
    // Constants -----------------------------------------------------
 
@@ -80,8 +83,6 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
 
    private final NotificationBroadcasterSupport broadcaster;
 
-   private boolean messageCounterEnabled;
-
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -94,6 +95,7 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
                                  final MessageCounterManager messageCounterManager,
                                  final NotificationBroadcasterSupport broadcaster) throws Exception
    {
+      super(HornetQServerControl.class);
       this.postOffice = postOffice;
       this.configuration = configuration;
       this.resourceManager = resourceManager;
@@ -101,7 +103,6 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
       this.server = messagingServer;
       this.messageCounterManager = messageCounterManager;
       this.broadcaster = broadcaster;
-      this.messageCounterEnabled = configuration.isMessageCounterEnabled();
    }
 
    // Public --------------------------------------------------------
@@ -126,6 +127,11 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    public boolean isBackup()
    {
       return configuration.isBackup();
+   }
+   
+   public boolean isSharedStore()
+   {
+      return configuration.isSharedStore();
    }
 
    public String getBackupConnectorName()
@@ -171,6 +177,21 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    public int getJournalMinFiles()
    {
       return configuration.getJournalMinFiles();
+   }
+   
+   public int getJournalCompactMinFiles()
+   {
+      return configuration.getJournalCompactMinFiles();
+   }
+
+   public int getJournalCompactPercentage()
+   {
+      return configuration.getJournalCompactPercentage();
+   }
+
+   public boolean isPersistenceEnabled()
+   {
+      return configuration.isPersistenceEnabled();
    }
 
    public String getJournalType()
@@ -244,12 +265,47 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    {
       server.createQueue(new SimpleString(address), new SimpleString(name), null, true, false);
    }
+   
+   public void createQueue(final String address, final String name, final boolean durable) throws Exception
+   {
+      server.createQueue(new SimpleString(address), new SimpleString(name), null, durable, false);
+   }
 
    public void createQueue(final String address, final String name, final String filterStr, final boolean durable) throws Exception
    {
-      SimpleString filter = filterStr == null ? null : new SimpleString(filterStr);
+      SimpleString filter = null;
+      if (filterStr != null && !filterStr.trim().equals(""))
+      {
+         filter = new SimpleString(filterStr);
+      }
 
       server.createQueue(new SimpleString(address), new SimpleString(name), filter, durable, false);
+   }
+
+   public String[] getQueueNames()
+   {
+      Object[] queues = server.getManagementService().getResources(QueueControl.class);
+      String[] names = new String[queues.length];
+      for (int i = 0; i < queues.length; i++)
+      {
+         QueueControl queue = (QueueControl)queues[i];
+         names[i] = queue.getName();
+      }
+      
+      return names;
+   }
+
+   public String[] getAddressNames()
+   {
+      Object[] addresses = server.getManagementService().getResources(AddressControl.class);
+      String[] names = new String[addresses.length];
+      for (int i = 0; i < addresses.length; i++)
+      {
+         AddressControl address = (AddressControl)addresses[i];
+         names[i] = address.getAddress();
+      }
+      
+      return names;
    }
 
    public void destroyQueue(final String name) throws Exception
@@ -286,7 +342,7 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
 
    public boolean isMessageCounterEnabled()
    {
-      return messageCounterEnabled;
+      return configuration.isMessageCounterEnabled();
    }
 
    public synchronized long getMessageCounterSamplePeriod()
@@ -347,6 +403,30 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
       }
       return s;
    }
+   
+   public String[] listHeuristicCommittedTransactions()
+   {
+      List<Xid> xids = resourceManager.getHeuristicCommittedTransactions();
+      String[] s = new String[xids.size()];
+      int i = 0;
+      for (Xid xid : xids)
+      {
+         s[i++] = XidImpl.toBase64String(xid);
+      }
+      return s;
+   }
+   
+   public String[] listHeuristicRolledBackTransactions()
+   {
+      List<Xid> xids = resourceManager.getHeuristicRolledbackTransactions();
+      String[] s = new String[xids.size()];
+      int i = 0;
+      for (Xid xid : xids)
+      {
+         s[i++] = XidImpl.toBase64String(xid);
+      }
+      return s;
+   }
 
    public synchronized boolean commitPreparedTransaction(final String transactionAsBase64) throws Exception
    {
@@ -358,6 +438,8 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
          {
             Transaction transaction = resourceManager.removeTransaction(xid);
             transaction.commit();
+            long recordID = server.getStorageManager().storeHeuristicCompletion(xid, true);
+            resourceManager.putHeuristicCompletion(recordID, xid, true);
             return true;
          }
       }
@@ -374,6 +456,8 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
          {
             Transaction transaction = resourceManager.removeTransaction(xid);
             transaction.rollback();
+            long recordID = server.getStorageManager().storeHeuristicCompletion(xid, false);
+            resourceManager.putHeuristicCompletion(recordID, xid, false);
             return true;
          }
       }
@@ -382,15 +466,12 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
 
    public String[] listRemoteAddresses()
    {
-      log.info("listing remote addresses");
       Set<RemotingConnection> connections = remotingService.getConnections();
 
       String[] remoteAddresses = new String[connections.size()];
       int i = 0;
       for (RemotingConnection connection : connections)
       {
-         log.info("connection " + connection + " is on server");
-         
          remoteAddresses[i++] = connection.getRemoteAddress();
       }
       return remoteAddresses;
@@ -536,16 +617,16 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    {
       if (isStarted())
       {
-         if (messageCounterEnabled && !enable)
+         if (configuration.isMessageCounterEnabled() && !enable)
          {
             stopMessageCounters();
          }
-         else if (!messageCounterEnabled && enable)
+         else if (!configuration.isMessageCounterEnabled() && enable)
          {
             startMessageCounters();
          }
       }
-      messageCounterEnabled = enable;
+      configuration.setMessageCounterEnabled(enable);
    }
 
    private void startMessageCounters()
@@ -602,11 +683,6 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
       return configuration.getMessageExpiryThreadPriority();
    }
 
-   public long getQueueActivationTimeout()
-   {
-      return configuration.getQueueActivationTimeout();
-   }
-
    public long getTransactionTimeout()
    {
       return configuration.getTransactionTimeout();
@@ -631,4 +707,5 @@ public class HornetQServerControlImpl implements HornetQServerControl, Notificat
    {
       return configuration.isWildcardRoutingEnabled();
    }
+
 }

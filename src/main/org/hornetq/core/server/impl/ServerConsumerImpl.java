@@ -34,10 +34,8 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.remoting.Channel;
-import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.SessionReplicateDeliveryMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HandleStatus;
 import org.hornetq.core.server.LargeServerMessage;
@@ -48,6 +46,7 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
 /**
@@ -77,8 +76,6 @@ public class ServerConsumerImpl implements ServerConsumer
    // Attributes -----------------------------------------------------------------------------------
 
    private final long id;
-
-   private final long replicatedSessionID;
 
    private final Queue messageQueue;
 
@@ -119,8 +116,6 @@ public class ServerConsumerImpl implements ServerConsumer
 
    private final Channel channel;
 
-   private final Channel replicatingChannel;
-
    private volatile boolean closed;
 
    private final boolean preAcknowledge;
@@ -130,9 +125,9 @@ public class ServerConsumerImpl implements ServerConsumer
    private final Binding binding;
 
    // Constructors ---------------------------------------------------------------------------------
-
+   
+   
    public ServerConsumerImpl(final long id,
-                             final long replicatedSessionID,
                              final ServerSession session,
                              final QueueBinding binding,
                              final Filter filter,
@@ -141,15 +136,13 @@ public class ServerConsumerImpl implements ServerConsumer
                              final StorageManager storageManager,
                              final PagingManager pagingManager,
                              final Channel channel,
-                             final Channel replicatingChannel,
                              final boolean preAcknowledge,
                              final boolean updateDeliveries,
                              final Executor executor,
                              final ManagementService managementService) throws Exception
    {
+      
       this.id = id;
-
-      this.replicatedSessionID = replicatedSessionID;
 
       this.filter = filter;
 
@@ -169,8 +162,6 @@ public class ServerConsumerImpl implements ServerConsumer
 
       this.channel = channel;
 
-      this.replicatingChannel = replicatingChannel;
-
       this.preAcknowledge = preAcknowledge;
 
       this.pagingManager = pagingManager;
@@ -180,7 +171,7 @@ public class ServerConsumerImpl implements ServerConsumer
       this.minLargeMessageSize = session.getMinLargeMessageSize();
 
       this.updateDeliveries = updateDeliveries;
-      
+
       if (browseOnly)
       {
          browserDeliverer = new BrowserDeliverer(messageQueue.iterator());
@@ -222,7 +213,7 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          messageQueue.removeConsumer(this);
       }
-      
+
       session.removeConsumer(this);
 
       LinkedList<MessageReference> refs = cancelRefs(false, null);
@@ -310,7 +301,7 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          lock.unlock();
       }
-
+      
       // Outside the lock
       if (started)
       {
@@ -371,8 +362,6 @@ public class ServerConsumerImpl implements ServerConsumer
                                             id +
                                             ", messageId = " +
                                             messageID +
-                                            " backup = " +
-                                            messageQueue.isBackup() +
                                             " queue = " +
                                             messageQueue.getName() +
                                             " closed = " +
@@ -397,7 +386,7 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          return null;
       }
-            
+
       // Expiries can come in out of sequence with respect to delivery order
 
       Iterator<MessageReference> iter = deliveringRefs.iterator();
@@ -421,70 +410,6 @@ public class ServerConsumerImpl implements ServerConsumer
       return ref;
    }
 
-   public void deliverReplicated(final long messageID) throws Exception
-   {
-      MessageReference ref = messageQueue.removeFirstReference(messageID);
-
-      if (ref == null)
-      {
-         // The order is correct, but it hasn't been depaged yet, so we need to force a depage
-         PagingStore store = pagingManager.getPageStore(binding.getAddress());
-
-         // force a depage
-         if (!store.readPage()) // This returns false if there are no pages
-         {
-            throw new IllegalStateException("Cannot find Reference[" + messageID +
-                                            "] in queue " +
-                                            messageQueue.getName());
-         }
-         else
-         {
-            ref = messageQueue.removeFirstReference(messageID);
-
-            if (ref == null)
-            {
-               throw new IllegalStateException("Cannot find Reference[" + messageID +
-                                               "] after depaging on Queue " +
-                                               messageQueue.getName());
-            }
-         }
-      }
-
-      // We call doHandle rather than handle, since we don't want to check available credits
-      // This is because delivery and receive credits can be processed in different order on live
-      // and backup, and otherwise we could have a situation where the delivery is replicated
-      // but the credits haven't arrived yet, so the delivery gets rejected on backup
-      HandleStatus handled = doHandle(ref);
-
-      if (handled != HandleStatus.HANDLED)
-      {
-         throw new IllegalStateException("Reference " + ref +
-                                         " was not handled on backup node, handleStatus = " +
-                                         handled);
-      }
-   }
-
-   public void failedOver()
-   {
-      if (messageQueue.consumerFailedOver())
-      {
-         if (started)
-         {
-            promptDelivery();
-         }
-      }
-   }
-
-   public void lock()
-   {
-      lock.lock();
-   }
-
-   public void unlock()
-   {
-      lock.unlock();
-   }
-
    // Public ---------------------------------------------------------------------------------------
 
    /** To be used on tests only */
@@ -497,10 +422,6 @@ public class ServerConsumerImpl implements ServerConsumer
 
    private void promptDelivery()
    {
-      if (trace)
-      {
-         log.trace("Starting prompt delivery");
-      }
       lock.lock();
       try
       {
@@ -533,23 +454,13 @@ public class ServerConsumerImpl implements ServerConsumer
     */
    private void resumeLargeMessage()
    {
-      if (messageQueue.isBackup())
-      {
-         // We need to deliver the largeMessage on backup also, exactly as done on the live node.
-         // In case of failure the same packets will be available for resume sending.
-         largeMessageDeliverer.deliver();
-      }
-      else
-      {
-         executor.execute(resumeLargeMessageRunnable);
-      }
+      executor.execute(resumeLargeMessageRunnable);
    }
 
    private HandleStatus doHandle(final MessageReference ref) throws Exception
    {
       if (availableCredits != null && availableCredits.get() <= 0)
-      {
-        // log.info("busy - available credits is " + availableCredits.get());
+      {         
          return HandleStatus.BUSY;
       }
 
@@ -571,18 +482,11 @@ public class ServerConsumerImpl implements ServerConsumer
          // This has to be checked inside the lock as the set to null is done inside the lock
          if (pendingLargeMessagesCounter.get() > 0)
          {
-            if (messageQueue.isBackup())
-            {
-               log.warn("doHandle: rejecting message while send is pending, ignoring reference = " + ref +
-                        " backup = " +
-                        messageQueue.isBackup());
-            }
-
             return HandleStatus.BUSY;
          }
 
          final ServerMessage message = ref.getMessage();
-
+         
          if (filter != null && !filter.match(message))
          {
             return HandleStatus.NO_MATCH;
@@ -646,40 +550,9 @@ public class ServerConsumerImpl implements ServerConsumer
 
       final LargeMessageDeliverer localDeliverer = new LargeMessageDeliverer((LargeServerMessage)message, ref);
 
-      if (replicatingChannel == null)
-      {
-         // it doesn't need lock because deliverLargeMesasge is already inside the lock()
-         largeMessageDeliverer = localDeliverer;
-         largeMessageDeliverer.deliver();
-      }
-      else
-      {
-         Packet replPacket = new SessionReplicateDeliveryMessage(id, message.getMessageID());
-         replPacket.setChannelID(channel.getID());
-
-         replicatingChannel.replicatePacket(replPacket, replicatedSessionID, new Runnable()
-         {
-            public void run()
-            {
-               // setting & unsetting largeMessageDeliver is done inside the lock,
-               // so this needs to be locked
-               lock.lock();
-               try
-               {
-                  largeMessageDeliverer = localDeliverer;
-                  if (largeMessageDeliverer.deliver())
-                  {
-                     promptDelivery();
-                  }
-               }
-               finally
-               {
-                  lock.unlock();
-               }
-            }
-         });
-      }
-
+      // it doesn't need lock because deliverLargeMesasge is already inside the lock()
+      largeMessageDeliverer = localDeliverer;
+      largeMessageDeliverer.deliver();
    }
 
    /**
@@ -693,39 +566,9 @@ public class ServerConsumerImpl implements ServerConsumer
       if (availableCredits != null)
       {
          availableCredits.addAndGet(-packet.getRequiredBufferSize());
-         if (trace)
-         {
-            log.trace("Taking " + packet.getRequiredBufferSize() + " out of flow control");
-         }
       }
 
-      if (replicatingChannel == null)
-      {
-         // Not replicated - just send now
-
-         if (trace)
-         {
-            log.trace("delivering Message " + ref + " on backup");
-         }
-         channel.send(packet);
-      }
-      else
-      {
-         Packet replPacket = new SessionReplicateDeliveryMessage(id, message.getMessageID());
-         replPacket.setChannelID(channel.getID());
-
-         replicatingChannel.replicatePacket(replPacket, replicatedSessionID, new Runnable()
-         {
-            public void run()
-            {
-               if (trace)
-               {
-                  log.trace("delivering Message " + ref + " on live");
-               }
-               channel.send(packet);
-            }
-         });
-      }
+      channel.send(packet);
    }
 
    // Inner classes
@@ -849,7 +692,7 @@ public class ServerConsumerImpl implements ServerConsumer
                {
                   if (trace)
                   {
-                     trace("deliverLargeMessage: Leaving loop of send LargeMessage because of credits, backup = " + messageQueue.isBackup());
+                     trace("deliverLargeMessage: Leaving loop of send LargeMessage because of credits");
                   }
                   return false;
                }
@@ -870,9 +713,7 @@ public class ServerConsumerImpl implements ServerConsumer
                {
                   trace("deliverLargeMessage: Sending " + chunk.getRequiredBufferSize() +
                         " availableCredits now is " +
-                        availableCredits +
-                        " isBackup = " +
-                        messageQueue.isBackup());
+                        availableCredits);
                }
 
                channel.send(chunk);
@@ -887,7 +728,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
             if (trace)
             {
-               trace("Finished deliverLargeMessage isBackup = " + messageQueue.isBackup());
+               trace("Finished deliverLargeMessage");
             }
 
             close();
@@ -997,18 +838,18 @@ public class ServerConsumerImpl implements ServerConsumer
          return chunk;
       }
    }
-   
+
    private class BrowserDeliverer implements Runnable
    {
       private MessageReference current = null;
-      
+
       public BrowserDeliverer(final Iterator<MessageReference> iterator)
       {
          this.iterator = iterator;
       }
 
       private final Iterator<MessageReference> iterator;
-      
+
       public void run()
       {
          // if the reference was busy during the previous iteration, handle it now
@@ -1020,7 +861,7 @@ public class ServerConsumerImpl implements ServerConsumer
                if (status == HandleStatus.BUSY)
                {
                   return;
-               }            
+               }
             }
             catch (Exception e)
             {
@@ -1050,6 +891,6 @@ public class ServerConsumerImpl implements ServerConsumer
             }
          }
       }
-      
+
    }
 }

@@ -29,6 +29,7 @@ import org.hornetq.core.config.cluster.ClusterConnectionConfiguration;
 import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
+import org.hornetq.core.logging.impl.JULLogDelegateFactory;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.utils.SimpleString;
@@ -48,14 +49,14 @@ public class ConfigurationImpl implements Configuration
    public static final boolean DEFAULT_PERSIST_DELIVERY_COUNT_BEFORE_DELIVERY = false;
 
    public static final boolean DEFAULT_BACKUP = false;
+   
+   public static final boolean DEFAULT_SHARED_STORE = false;
 
    public static final boolean DEFAULT_FILE_DEPLOYMENT_ENABLED = false;
 
    public static final boolean DEFAULT_PERSISTENCE_ENABLED = true;
 
    public static final long DEFAULT_FILE_DEPLOYER_SCAN_PERIOD = 5000;
-
-   public static final long DEFAULT_QUEUE_ACTIVATION_TIMEOUT = 30000;
 
    public static final int DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE = 5;
 
@@ -67,8 +68,10 @@ public class ConfigurationImpl implements Configuration
 
    public static final boolean DEFAULT_JMX_MANAGEMENT_ENABLED = true;
 
+   public static final String DEFAULT_JMX_DOMAIN = "org.hornetq";
+
    public static final long DEFAULT_CONNECTION_TTL_OVERRIDE = -1;
-   
+
    public static final boolean DEFAULT_ASYNC_CONNECTION_EXECUTION_ENABLED = true;
 
    public static final String DEFAULT_BINDINGS_DIRECTORY = "data/bindings";
@@ -90,23 +93,23 @@ public class ConfigurationImpl implements Configuration
    public static final boolean DEFAULT_JOURNAL_SYNC_NON_TRANSACTIONAL = false;
 
    public static final int DEFAULT_JOURNAL_FILE_SIZE = 10485760;
-   
+
    public static final int DEFAULT_JOURNAL_COMPACT_MIN_FILES = 10;
-   
+
    public static final int DEFAULT_JOURNAL_COMPACT_PERCENTAGE = 30;
 
    public static final int DEFAULT_JOURNAL_MIN_FILES = 2;
 
    public static final int DEFAULT_JOURNAL_MAX_AIO = 500;
-   
+
    public static final boolean DEFAULT_JOURNAL_AIO_FLUSH_SYNC = false;
-   
+
    public static final int DEFAULT_JOURNAL_AIO_BUFFER_TIMEOUT = 20000;
-   
+
    public static final int DEFAULT_JOURNAL_AIO_BUFFER_SIZE = 128 * 1024;
-   
+
    public static final boolean DEFAULT_JOURNAL_LOG_WRITE_RATE = false;
-   
+
    public static final int DEFAULT_JOURNAL_PERF_BLAST_PAGES = -1;
 
    public static final boolean DEFAULT_WILDCARD_ROUTING_ENABLED = true;
@@ -117,7 +120,7 @@ public class ConfigurationImpl implements Configuration
 
    public static final int DEFAULT_MESSAGE_COUNTER_MAX_DAY_HISTORY = 10;
 
-   public static final long DEFAULT_TRANSACTION_TIMEOUT = 60000;
+   public static final long DEFAULT_TRANSACTION_TIMEOUT = 300000; // 5 minutes
 
    public static final long DEFAULT_TRANSACTION_TIMEOUT_SCAN_PERIOD = 1000;
 
@@ -159,12 +162,20 @@ public class ConfigurationImpl implements Configuration
 
    public static final long DEFAULT_SERVER_DUMP_INTERVAL = -1;
 
+   public static final int DEFAULT_MEMORY_WARNING_THRESHOLD = 25;
+   
+   public static final long DEFAULT_MEMORY_MEASURE_INTERVAL = 3000; // in milliseconds
+   
+   public static final String DEFAULT_LOG_DELEGATE_FACTORY_CLASS_NAME = JULLogDelegateFactory.class.getCanonicalName();
+
    // Attributes -----------------------------------------------------------------------------
 
    protected boolean clustered = DEFAULT_CLUSTERED;
 
    protected boolean backup = DEFAULT_BACKUP;
-
+   
+   protected boolean sharedStore = DEFAULT_SHARED_STORE;
+       
    protected boolean fileDeploymentEnabled = DEFAULT_FILE_DEPLOYMENT_ENABLED;
 
    protected boolean persistenceEnabled = DEFAULT_PERSISTENCE_ENABLED;
@@ -172,8 +183,6 @@ public class ConfigurationImpl implements Configuration
    protected long fileDeploymentScanPeriod = DEFAULT_FILE_DEPLOYER_SCAN_PERIOD;
 
    protected boolean persistDeliveryCountBeforeDelivery = DEFAULT_PERSIST_DELIVERY_COUNT_BEFORE_DELIVERY;
-
-   protected long queueActivationTimeout = DEFAULT_QUEUE_ACTIVATION_TIMEOUT;
 
    protected int scheduledThreadPoolMaxSize = DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE;
 
@@ -185,10 +194,12 @@ public class ConfigurationImpl implements Configuration
 
    protected boolean jmxManagementEnabled = DEFAULT_JMX_MANAGEMENT_ENABLED;
 
+   protected String jmxDomain = DEFAULT_JMX_DOMAIN;
+
    protected long connectionTTLOverride = DEFAULT_CONNECTION_TTL_OVERRIDE;
-   
+
    protected boolean asyncConnectionExecutionEnabled = DEFAULT_ASYNC_CONNECTION_EXECUTION_ENABLED;
-   
+
    protected long messageExpiryScanPeriod = DEFAULT_MESSAGE_EXPIRY_SCAN_PERIOD;
 
    protected int messageExpiryThreadPriority = DEFAULT_MESSAGE_EXPIRY_THREAD_PRIORITY;
@@ -196,6 +207,8 @@ public class ConfigurationImpl implements Configuration
    protected int idCacheSize = DEFAULT_ID_CACHE_SIZE;
 
    protected boolean persistIDCache = DEFAULT_PERSIST_ID_CACHE;
+   
+   protected String logDelegateFactoryClassName = DEFAULT_LOG_DELEGATE_FACTORY_CLASS_NAME;
 
    protected List<String> interceptorClassNames = new ArrayList<String>();
 
@@ -241,25 +254,24 @@ public class ConfigurationImpl implements Configuration
 
    protected boolean journalSyncNonTransactional = DEFAULT_JOURNAL_SYNC_NON_TRANSACTIONAL;
 
-   
    protected int journalCompactMinFiles = DEFAULT_JOURNAL_COMPACT_MIN_FILES;
-   
+
    protected int journalCompactPercentage = DEFAULT_JOURNAL_COMPACT_PERCENTAGE;
-   
+
    protected int journalFileSize = DEFAULT_JOURNAL_FILE_SIZE;
 
    protected int journalMinFiles = DEFAULT_JOURNAL_MIN_FILES;
 
    protected int journalMaxAIO = DEFAULT_JOURNAL_MAX_AIO;
-   
+
    protected boolean journalAIOFlushSync = DEFAULT_JOURNAL_AIO_FLUSH_SYNC;
-   
+
    protected int journalAIOBufferTimeout = DEFAULT_JOURNAL_AIO_BUFFER_TIMEOUT;
-   
+
    protected int journalAIOBufferSize = DEFAULT_JOURNAL_AIO_BUFFER_SIZE;
-   
+
    protected boolean logJournalWriteRate = DEFAULT_JOURNAL_LOG_WRITE_RATE;
-   
+
    protected int journalPerfBlastPages = DEFAULT_JOURNAL_PERF_BLAST_PAGES;
 
    protected boolean wildcardRoutingEnabled = DEFAULT_WILDCARD_ROUTING_ENABLED;
@@ -286,6 +298,10 @@ public class ConfigurationImpl implements Configuration
 
    protected long serverDumpInterval = DEFAULT_SERVER_DUMP_INTERVAL;
 
+   // percentage of free memory which triggers warning from the memory manager
+   protected int memoryWarningThreshold = DEFAULT_MEMORY_WARNING_THRESHOLD;
+   
+   protected long memoryMeasureInterval = DEFAULT_MEMORY_MEASURE_INTERVAL;
 
    // Public -------------------------------------------------------------------------
 
@@ -367,15 +383,15 @@ public class ConfigurationImpl implements Configuration
    {
       this.backup = backup;
    }
-
-   public long getQueueActivationTimeout()
+   
+   public boolean isSharedStore()
    {
-      return queueActivationTimeout;
+      return sharedStore;
    }
 
-   public void setQueueActivationTimeout(final long timeout)
+   public void setSharedStore(final boolean sharedStore)
    {
-      queueActivationTimeout = timeout;
+      this.sharedStore = sharedStore;
    }
 
    public int getScheduledThreadPoolMaxSize()
@@ -417,12 +433,12 @@ public class ConfigurationImpl implements Configuration
    {
       connectionTTLOverride = ttl;
    }
-   
+
    public boolean isAsyncConnectionExecutionEnabled()
    {
       return asyncConnectionExecutionEnabled;
    }
-   
+
    public void setEnabledAsyncConnectionExecution(final boolean enabled)
    {
       asyncConnectionExecutionEnabled = enabled;
@@ -648,7 +664,7 @@ public class ConfigurationImpl implements Configuration
    {
       journalMinFiles = files;
    }
-      
+
    public boolean isLogJournalWriteRate()
    {
       return logJournalWriteRate;
@@ -658,7 +674,7 @@ public class ConfigurationImpl implements Configuration
    {
       this.logJournalWriteRate = logJournalWriteRate;
    }
-     
+
    public int getJournalPerfBlastPages()
    {
       return journalPerfBlastPages;
@@ -758,13 +774,22 @@ public class ConfigurationImpl implements Configuration
    {
       jmxManagementEnabled = enabled;
    }
-
+   
+   public String getJMXDomain()
+   {
+      return jmxDomain;
+   }
+   
+   public void setJMXDomain(String domain)
+   {
+      jmxDomain = domain;
+   }
 
    public void setAIOBufferTimeout(int timeout)
    {
       this.journalAIOBufferTimeout = timeout;
    }
-   
+
    public int getAIOBufferTimeout()
    {
       return journalAIOBufferTimeout;
@@ -789,7 +814,7 @@ public class ConfigurationImpl implements Configuration
    {
       this.journalAIOBufferSize = size;
    }
-   
+
    public String getLargeMessagesDirectory()
    {
       return largeMessagesDirectory;
@@ -805,6 +830,11 @@ public class ConfigurationImpl implements Configuration
       return messageCounterEnabled;
    }
 
+   public void setMessageCounterEnabled(boolean enabled)
+   {
+      this.messageCounterEnabled = enabled;
+   }
+
    public long getMessageCounterSamplePeriod()
    {
       return messageCounterSamplePeriod;
@@ -813,6 +843,11 @@ public class ConfigurationImpl implements Configuration
    public int getMessageCounterMaxDayHistory()
    {
       return messageCounterMaxDayHistory;
+   }
+
+   public void setMessageCounterMaxDayHistory(int maxDayHistory)
+   {
+      this.messageCounterMaxDayHistory = maxDayHistory;
    }
 
    public SimpleString getManagementAddress()
@@ -840,6 +875,11 @@ public class ConfigurationImpl implements Configuration
       return managementClusterUser;
    }
 
+   public void setManagementClusterUser(String user)
+   {
+      this.managementClusterUser = user;
+   }
+
    public String getManagementClusterPassword()
    {
       return managementClusterPassword;
@@ -861,36 +901,167 @@ public class ConfigurationImpl implements Configuration
    }
 
    @Override
-   public boolean equals(final Object other)
+   public boolean equals(Object obj)
    {
-      if (this == other)
-      {
+      if (this == obj)
          return true;
-      }
-
-      if (other instanceof Configuration == false)
-      {
+      if (obj == null)
          return false;
+      if (getClass() != obj.getClass())
+         return false;
+      ConfigurationImpl other = (ConfigurationImpl)obj;
+      if (asyncConnectionExecutionEnabled != other.asyncConnectionExecutionEnabled)
+         return false;
+      if (backup != other.backup)
+         return false;
+      if (sharedStore != other.sharedStore)
+         return false;
+      if (backupConnectorName == null)
+      {
+         if (other.backupConnectorName != null)
+            return false;
       }
-
-      Configuration cother = (Configuration)other;
-
-      return cother.isClustered() == isClustered() && cother.isCreateBindingsDir() == isCreateBindingsDir() &&
-             cother.isCreateJournalDir() == isCreateJournalDir() &&
-             cother.isJournalSyncNonTransactional() == isJournalSyncNonTransactional() &&
-             cother.isJournalSyncTransactional() == isJournalSyncTransactional() &&
-             cother.isSecurityEnabled() == isSecurityEnabled() &&
-             cother.isWildcardRoutingEnabled() == isWildcardRoutingEnabled() &&
-             cother.getLargeMessagesDirectory().equals(getLargeMessagesDirectory()) &&
-             cother.getBindingsDirectory().equals(getBindingsDirectory()) &&
-             cother.getJournalDirectory().equals(getJournalDirectory()) &&
-             cother.getJournalFileSize() == getJournalFileSize() &&
-             cother.getJournalMaxAIO() == getJournalMaxAIO() &&
-             cother.getJournalMinFiles() == getJournalMinFiles() &&
-             cother.getJournalType() == getJournalType() &&
-             cother.getScheduledThreadPoolMaxSize() == getScheduledThreadPoolMaxSize() &&
-             cother.getSecurityInvalidationInterval() == getSecurityInvalidationInterval() &&
-             cother.getManagementAddress().equals(getManagementAddress());
+      else if (!backupConnectorName.equals(other.backupConnectorName))
+         return false;
+      if (bindingsDirectory == null)
+      {
+         if (other.bindingsDirectory != null)
+            return false;
+      }
+      else if (!bindingsDirectory.equals(other.bindingsDirectory))
+         return false;
+       if (clustered != other.clustered)
+         return false;
+      if (connectionTTLOverride != other.connectionTTLOverride)
+         return false;
+      if (createBindingsDir != other.createBindingsDir)
+         return false;
+      if (createJournalDir != other.createJournalDir)
+         return false;
+      
+      if (fileDeploymentEnabled != other.fileDeploymentEnabled)
+         return false;
+      if (fileDeploymentScanPeriod != other.fileDeploymentScanPeriod)
+         return false;
+      if (idCacheSize != other.idCacheSize)
+         return false;
+      if (jmxManagementEnabled != other.jmxManagementEnabled)
+         return false;
+      if (journalAIOBufferSize != other.journalAIOBufferSize)
+         return false;
+      if (journalAIOBufferTimeout != other.journalAIOBufferTimeout)
+         return false;
+      if (journalAIOFlushSync != other.journalAIOFlushSync)
+         return false;
+      if (journalCompactMinFiles != other.journalCompactMinFiles)
+         return false;
+      if (journalCompactPercentage != other.journalCompactPercentage)
+         return false;
+      if (journalDirectory == null)
+      {
+         if (other.journalDirectory != null)
+            return false;
+      }
+      else if (!journalDirectory.equals(other.journalDirectory))
+         return false;
+      if (journalFileSize != other.journalFileSize)
+         return false;
+      if (journalMaxAIO != other.journalMaxAIO)
+         return false;
+      if (journalMinFiles != other.journalMinFiles)
+         return false;
+      if (journalPerfBlastPages != other.journalPerfBlastPages)
+         return false;
+      if (journalSyncNonTransactional != other.journalSyncNonTransactional)
+         return false;
+      if (journalSyncTransactional != other.journalSyncTransactional)
+         return false;
+      if (journalType == null)
+      {
+         if (other.journalType != null)
+            return false;
+      }
+      else if (!journalType.equals(other.journalType))
+         return false;
+      if (largeMessagesDirectory == null)
+      {
+         if (other.largeMessagesDirectory != null)
+            return false;
+      }
+      else if (!largeMessagesDirectory.equals(other.largeMessagesDirectory))
+         return false;
+      if (logJournalWriteRate != other.logJournalWriteRate)
+         return false;
+      if (managementAddress == null)
+      {
+         if (other.managementAddress != null)
+            return false;
+      }
+      else if (!managementAddress.equals(other.managementAddress))
+         return false;
+      if (managementClusterPassword == null)
+      {
+         if (other.managementClusterPassword != null)
+            return false;
+      }
+      else if (!managementClusterPassword.equals(other.managementClusterPassword))
+         return false;
+      if (managementClusterUser == null)
+      {
+         if (other.managementClusterUser != null)
+            return false;
+      }
+      else if (!managementClusterUser.equals(other.managementClusterUser))
+         return false;
+      if (managementNotificationAddress == null)
+      {
+         if (other.managementNotificationAddress != null)
+            return false;
+      }
+      else if (!managementNotificationAddress.equals(other.managementNotificationAddress))
+         return false;
+      if (managementRequestTimeout != other.managementRequestTimeout)
+         return false;
+      if (messageCounterEnabled != other.messageCounterEnabled)
+         return false;
+      if (messageCounterMaxDayHistory != other.messageCounterMaxDayHistory)
+         return false;
+      if (messageCounterSamplePeriod != other.messageCounterSamplePeriod)
+         return false;
+      if (messageExpiryScanPeriod != other.messageExpiryScanPeriod)
+         return false;
+      if (messageExpiryThreadPriority != other.messageExpiryThreadPriority)
+         return false;
+      if (pagingDirectory == null)
+      {
+         if (other.pagingDirectory != null)
+            return false;
+      }
+      else if (!pagingDirectory.equals(other.pagingDirectory))
+         return false;
+      if (persistDeliveryCountBeforeDelivery != other.persistDeliveryCountBeforeDelivery)
+         return false;
+      if (persistIDCache != other.persistIDCache)
+         return false;
+      if (persistenceEnabled != other.persistenceEnabled)
+         return false;
+      if (scheduledThreadPoolMaxSize != other.scheduledThreadPoolMaxSize)
+         return false;
+      if (securityEnabled != other.securityEnabled)
+         return false;
+      if (securityInvalidationInterval != other.securityInvalidationInterval)
+         return false;
+      if (serverDumpInterval != other.serverDumpInterval)
+         return false;
+      if (threadPoolMaxSize != other.threadPoolMaxSize)
+         return false;
+      if (transactionTimeout != other.transactionTimeout)
+         return false;
+      if (transactionTimeoutScanPeriod != other.transactionTimeoutScanPeriod)
+         return false;
+      if (wildcardRoutingEnabled != other.wildcardRoutingEnabled)
+         return false;
+      return true;
    }
 
    public int getJournalCompactMinFiles()
@@ -902,7 +1073,7 @@ public class ConfigurationImpl implements Configuration
    {
       return journalCompactPercentage;
    }
-   
+
    public void setJournalCompactMinFiles(int minFiles)
    {
       this.journalCompactMinFiles = minFiles;
@@ -912,14 +1083,44 @@ public class ConfigurationImpl implements Configuration
    {
       this.journalCompactPercentage = percentage;
    }
-   
+
    public long getServerDumpInterval()
    {
       return serverDumpInterval;
    }
-   
-   public void getServerDumpInterval(long intervalInMilliseconds)
+
+   public void setServerDumpInterval(long intervalInMilliseconds)
    {
       this.serverDumpInterval = intervalInMilliseconds;
+   }
+   
+   public int getMemoryWarningThreshold()
+   {
+      return memoryWarningThreshold ;
+   }
+   
+   public void setMemoryWarningThreshold(int memoryWarningThreshold)
+   {
+      this.memoryWarningThreshold = memoryWarningThreshold;
+   }
+
+   public long getMemoryMeasureInterval()
+   {
+      return memoryMeasureInterval ;
+   }
+   
+   public void setMemoryMeasureInterval(long memoryMeasureInterval)
+   {
+      this.memoryMeasureInterval = memoryMeasureInterval;
+   }
+
+   public String getLogDelegateFactoryClassName()
+   {
+      return logDelegateFactoryClassName;
+   }
+
+   public void setLogDelegateFactoryClassName(String className)
+   {
+      this.logDelegateFactoryClassName = className;
    }
 }

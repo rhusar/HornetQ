@@ -16,6 +16,8 @@
       <management-cluster-user>Frog</management-cluster-user>
       <management-cluster-password>Wombat</management-cluster-password>
       <jmx-management-enabled>false</jmx-management-enabled>
+      <jmx-domain>gro.qtenroh</jmx-domain>
+      <log-delegate-factory-class-name>ocelot</log-delegate-factory-class-name>
       <message-counter-enabled>true</message-counter-enabled>
       <message-counter-max-day-history>5</message-counter-max-day-history>
       <message-counter-sample-period>123456</message-counter-sample-period>      
@@ -25,9 +27,9 @@
       <message-expiry-scan-period>10111213</message-expiry-scan-period>
       <message-expiry-thread-priority>8</message-expiry-thread-priority>
       <id-cache-size>127</id-cache-size>
-      <persist-id-cache>true</persist-id-cache>
-      <queue-activation-timeout>12456</queue-activation-timeout>
+      <persist-id-cache>true</persist-id-cache>      
       <backup>true</backup>
+      <shared-store>true</shared-store>
       <persist-delivery-count-before-delivery>true</persist-delivery-count-before-delivery>      
       <paging-directory>pagingdir</paging-directory>
       <bindings-directory>somedir</bindings-directory>
@@ -46,6 +48,8 @@
       <journal-min-files>100</journal-min-files>
       <journal-max-aio>56546</journal-max-aio>
       <large-messages-directory>largemessagesdir</large-messages-directory>
+      <memory-warning-threshold>95</memory-warning-threshold>
+      <memory-measure-interval>54321</memory-measure-interval>
       
       <remoting-interceptors>
          <class-name>org.hornetq.tests.unit.core.config.impl.TestInterceptor1</class-name>

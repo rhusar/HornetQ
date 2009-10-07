@@ -31,6 +31,7 @@ import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.cluster.BroadcastGroupConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
@@ -49,6 +50,8 @@ import org.hornetq.utils.Pair;
  */
 public class SessionFactoryTest extends ServiceTestBase
 {
+   private static final Logger log = Logger.getLogger(SessionFactoryTest.class);
+
    private final String groupAddress = "230.1.2.3";
 
    private final int groupPort = 8765;
@@ -62,14 +65,14 @@ public class SessionFactoryTest extends ServiceTestBase
    private TransportConfiguration backupTC;
    
    protected void tearDown() throws Exception
-   {
+   {      
       if (liveService != null && liveService.isStarted())
-      {
+      {         
          liveService.stop();
-      }
+      }     
       if (backupService != null && backupService.isStarted())
-      {
-         liveService.stop();
+      {         
+         backupService.stop();
       }
       liveService = null;
       backupService = null;
@@ -106,7 +109,7 @@ public class SessionFactoryTest extends ServiceTestBase
    {
       try
       {
-         startLiveAndBackup();
+         startLiveAndBackup();         
          ClientSessionFactory cf = new ClientSessionFactoryImpl();
          assertFactoryParams(cf,
                              null,
@@ -115,8 +118,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                              ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                              ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                             ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                         
                              ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE,
@@ -136,7 +138,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL,
                              ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
                              ClientSessionFactoryImpl.DEFAULT_RECONNECT_ATTEMPTS,
-                             ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                             ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);         
          try
          {
             ClientSession session = cf.createSession(false, true, true);
@@ -144,8 +146,9 @@ public class SessionFactoryTest extends ServiceTestBase
          }
          catch (HornetQException e)
          {
+            e.printStackTrace();
             // Ok
-         }
+         }    
          final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
          Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(this.liveTC,
                                                                                                                                this.backupTC);
@@ -175,8 +178,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                              ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                              ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                             ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                             
                              ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE,
@@ -226,8 +228,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                              ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                              ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                             ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                             
                              ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE,
@@ -277,8 +278,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                              ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                              ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                             ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                             
                              ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE,
@@ -328,8 +328,7 @@ public class SessionFactoryTest extends ServiceTestBase
                              ClientSessionFactoryImpl.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                              ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                              ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                             ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                             ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                             
                              ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
                              ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE,
@@ -376,7 +375,6 @@ public class SessionFactoryTest extends ServiceTestBase
       long clientFailureCheckPeriod = RandomUtil.randomPositiveLong();
       long connectionTTL = RandomUtil.randomPositiveLong();
       long callTimeout = RandomUtil.randomPositiveLong();
-      int maxConnections = RandomUtil.randomPositiveInt();
       int minLargeMessageSize = RandomUtil.randomPositiveInt();
       int consumerWindowSize = RandomUtil.randomPositiveInt();
       int consumerMaxRate = RandomUtil.randomPositiveInt();
@@ -405,7 +403,6 @@ public class SessionFactoryTest extends ServiceTestBase
       cf.setClientFailureCheckPeriod(clientFailureCheckPeriod);
       cf.setConnectionTTL(connectionTTL);
       cf.setCallTimeout(callTimeout);
-      cf.setMaxConnections(maxConnections);
       cf.setMinLargeMessageSize(minLargeMessageSize);
       cf.setConsumerWindowSize(consumerWindowSize);
       cf.setConsumerMaxRate(consumerMaxRate);
@@ -433,8 +430,7 @@ public class SessionFactoryTest extends ServiceTestBase
       assertEquals(discoveryRefreshTimeout, cf.getDiscoveryRefreshTimeout());
       assertEquals(clientFailureCheckPeriod, cf.getClientFailureCheckPeriod());
       assertEquals(connectionTTL, cf.getConnectionTTL());
-      assertEquals(callTimeout, cf.getCallTimeout());
-      assertEquals(maxConnections, cf.getMaxConnections());
+      assertEquals(callTimeout, cf.getCallTimeout());      
       assertEquals(minLargeMessageSize, cf.getMinLargeMessageSize());
       assertEquals(consumerWindowSize, cf.getConsumerWindowSize());
       assertEquals(consumerMaxRate, cf.getConsumerMaxRate());
@@ -470,8 +466,7 @@ public class SessionFactoryTest extends ServiceTestBase
       long discoveryRefreshTimeout = RandomUtil.randomPositiveLong();
       long clientFailureCheckPeriod = RandomUtil.randomPositiveLong();
       long connectionTTL = RandomUtil.randomPositiveLong();
-      long callTimeout = RandomUtil.randomPositiveLong();
-      int maxConnections = RandomUtil.randomPositiveInt();
+      long callTimeout = RandomUtil.randomPositiveLong();      
       int minLargeMessageSize = RandomUtil.randomPositiveInt();
       int consumerWindowSize = RandomUtil.randomPositiveInt();
       int consumerMaxRate = RandomUtil.randomPositiveInt();
@@ -550,15 +545,6 @@ public class SessionFactoryTest extends ServiceTestBase
       try
       {
          cf.setCallTimeout(callTimeout);
-         fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
-      try
-      {
-         cf.setMaxConnections(maxConnections);
          fail("Should throw exception");
       }
       catch (IllegalStateException e)
@@ -753,7 +739,6 @@ public class SessionFactoryTest extends ServiceTestBase
       cf.getClientFailureCheckPeriod();
       cf.getConnectionTTL();
       cf.getCallTimeout();
-      cf.getMaxConnections();
       cf.getMinLargeMessageSize();
       cf.getConsumerWindowSize();
       cf.getConsumerMaxRate();
@@ -784,8 +769,7 @@ public class SessionFactoryTest extends ServiceTestBase
                                     long discoveryRefreshTimeout,
                                     long clientFailureCheckPeriod,
                                     long connectionTTL,
-                                    long callTimeout,
-                                    int maxConnections,
+                                    long callTimeout,                                   
                                     int minLargeMessageSize,
                                     int consumerWindowSize,
                                     int consumerMaxRate,
@@ -827,7 +811,6 @@ public class SessionFactoryTest extends ServiceTestBase
       assertEquals(cf.getClientFailureCheckPeriod(), clientFailureCheckPeriod);
       assertEquals(cf.getConnectionTTL(), connectionTTL);
       assertEquals(cf.getCallTimeout(), callTimeout);
-      assertEquals(cf.getMaxConnections(), maxConnections);
       assertEquals(cf.getMinLargeMessageSize(), minLargeMessageSize);
       assertEquals(cf.getConsumerWindowSize(), consumerWindowSize);
       assertEquals(cf.getConsumerMaxRate(), consumerMaxRate);
@@ -854,10 +837,12 @@ public class SessionFactoryTest extends ServiceTestBase
    {
       if (liveService.isStarted())
       {
+         log.info("stopping live");
          liveService.stop();
       }
       if (backupService.isStarted())
       {
+         log.info("stopping backup");
          backupService.stop();
       }
    }

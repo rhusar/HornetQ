@@ -16,6 +16,7 @@ package org.hornetq.core.transaction.impl;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,18 +45,20 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
 
    private final ConcurrentMap<Xid, Transaction> transactions = new ConcurrentHashMap<Xid, Transaction>();
 
+   private List<HeuristicCompletionHolder> heuristicCompletions = new ArrayList<HeuristicCompletionHolder>();
+
    private final int defaultTimeoutSeconds;
 
    private volatile int timeoutSeconds;
 
    private boolean started = false;
 
-   //private TxTimeoutHandler task;
+   private TxTimeoutHandler task;
 
    private final long txTimeoutScanPeriod;
 
-   //private final ScheduledExecutorService scheduledThreadPool;
-
+   private final ScheduledExecutorService scheduledThreadPool;
+   
    public ResourceManagerImpl(final int defaultTimeoutSeconds, 
                               final long txTimeoutScanPeriod, 
                               final ScheduledExecutorService scheduledThreadPool)
@@ -63,7 +66,7 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
       this.defaultTimeoutSeconds = defaultTimeoutSeconds;
       this.timeoutSeconds = defaultTimeoutSeconds;
       this.txTimeoutScanPeriod = txTimeoutScanPeriod;
-     // this.scheduledThreadPool = scheduledThreadPool;
+      this.scheduledThreadPool = scheduledThreadPool;
    }
 
    // HornetQComponent implementation
@@ -74,10 +77,9 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
       {
          return;
       }
-      //todo - https://jira.jboss.org/jira/browse/HORNETQ-106
-      /*task = new TxTimeoutHandler();
+      task = new TxTimeoutHandler();
       Future<?> future = scheduledThreadPool.scheduleAtFixedRate(task, txTimeoutScanPeriod, txTimeoutScanPeriod, TimeUnit.MILLISECONDS);
-      task.setFuture(future);*/
+      task.setFuture(future);
       
       started = true;
    }
@@ -88,10 +90,10 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
       {
          return;
       }
-      /*if (task != null)
+      if (task != null)
       {
          task.close();
-      }*/
+      }
 
       started = false;
    }
@@ -135,7 +137,7 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
          this.timeoutSeconds = timeoutSeconds;
       }
 
-      return false;
+      return true;
    }
 
    public List<Xid> getPreparedTransactions()
@@ -162,6 +164,49 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
          xidsWithCreationTime.put(xid, transactions.get(xid).getCreateTime());
       }
       return xidsWithCreationTime;
+   }
+   
+   public void putHeuristicCompletion(final long recordID, final Xid xid, final boolean isCommit)
+   {
+      heuristicCompletions.add(new HeuristicCompletionHolder(recordID, xid, isCommit));
+   }
+   
+   public List<Xid>getHeuristicCommittedTransactions()
+   {
+      return getHeuristicCompletedTransactions(true);
+   }
+   
+   public List<Xid>getHeuristicRolledbackTransactions()
+   {
+      return getHeuristicCompletedTransactions(false);
+   }
+
+   public long removeHeuristicCompletion(Xid xid)
+   {
+      Iterator<HeuristicCompletionHolder> iterator = heuristicCompletions.iterator();
+      while (iterator.hasNext())
+      {
+         ResourceManagerImpl.HeuristicCompletionHolder holder = (ResourceManagerImpl.HeuristicCompletionHolder)iterator.next();
+         if (holder.xid.equals(xid))
+         {
+            iterator.remove();
+            return holder.recordID;
+         }
+      }
+      return -1;
+   }
+   
+   private List<Xid>getHeuristicCompletedTransactions(boolean isCommit)
+   {
+      List<Xid> xids = new ArrayList<Xid>();
+      for (HeuristicCompletionHolder holder : heuristicCompletions)
+      {
+         if (holder.isCommit == isCommit)
+         {
+            xids.add(holder.xid);
+         }
+      }
+      return xids;
    }
 
    class TxTimeoutHandler implements Runnable
@@ -219,5 +264,19 @@ public class ResourceManagerImpl implements ResourceManager, HornetQComponent
          closed = true;
       }
 
+   }
+   
+   private class HeuristicCompletionHolder
+   {
+      public final boolean isCommit;
+      public final Xid xid;
+      public final long recordID;
+
+      public HeuristicCompletionHolder(long recordID, Xid xid, boolean isCommit)
+      {
+         this.recordID = recordID;
+         this.xid = xid;
+         this.isCommit = isCommit;
+      }
    }
 }

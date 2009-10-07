@@ -128,10 +128,13 @@ public class QueueDeployerTest extends UnitTestCase
 
    private class FakeServerControl implements HornetQServerControl
    {
+      public boolean isSharedStore()
+      {
+         return false;
+      }
 
       public int getThreadPoolMaxSize()
       {
-
          return 0;
       }
 
@@ -155,6 +158,21 @@ public class QueueDeployerTest extends UnitTestCase
       public void createQueue(String address, String name) throws Exception
       {
 
+      }
+      
+      public void createQueue(String address, String name, boolean durable) throws Exception
+      {
+
+      }
+
+      public String[] getAddressNames()
+      {
+         return null;
+      }
+      
+      public String[] getQueueNames()
+      {
+         return null;
       }
 
       List<QueueConfiguration> configs = new ArrayList<QueueConfiguration>();
@@ -329,18 +347,6 @@ public class QueueDeployerTest extends UnitTestCase
          return null;
       }
 
-      public int getGlobalPageSize()
-      {
-
-         return 0;
-      }
-
-      public long getPagingMaxGlobalSizeBytes()
-      {
-
-         return 0;
-      }
-
       public long getQueueActivationTimeout()
       {
 
@@ -460,7 +466,17 @@ public class QueueDeployerTest extends UnitTestCase
 
          return null;
       }
-
+      
+      public String[] listHeuristicCommittedTransactions() throws Exception
+      {
+         return null;
+      }
+      
+      public String[] listHeuristicRolledBackTransactions() throws Exception
+      {
+         return null;
+      }
+      
       public String[] listRemoteAddresses() throws Exception
       {
 
@@ -510,29 +526,29 @@ public class QueueDeployerTest extends UnitTestCase
 
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.management.HornetQServerControlMBean#getAIOBufferSize()
-       */
       public int getAIOBufferSize()
       {
 
          return 0;
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.management.HornetQServerControlMBean#getAIOBufferTimeout()
-       */
       public int getAIOBufferTimeout()
       {
          return 0;
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.management.HornetQServerControlMBean#getAIOFlushOnSync()
-       */
-      public boolean isAIOFlushOnSync()
+      public int getJournalCompactMinFiles()
       {
+         return 0;
+      }
 
+      public int getJournalCompactPercentage()
+      {
+         return 0;
+      }
+
+      public boolean isPersistenceEnabled()
+      {
          return false;
       }
 

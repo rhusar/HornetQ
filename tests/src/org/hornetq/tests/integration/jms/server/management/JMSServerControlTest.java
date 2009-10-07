@@ -28,7 +28,7 @@ import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.management.ObjectNames;
+import org.hornetq.core.management.ObjectNameBuilder;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
@@ -96,7 +96,7 @@ public class JMSServerControlTest extends ManagementTestBase
       String queueName = randomString();
 
       checkNoBinding(context, queueJNDIBinding);
-      checkNoResource(ObjectNames.getJMSQueueObjectName(queueName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
       JMSServerControl control = createManagementControl();
       control.createQueue(queueName, queueJNDIBinding);
@@ -105,7 +105,7 @@ public class JMSServerControlTest extends ManagementTestBase
       assertTrue(o instanceof Queue);
       Queue queue = (Queue)o;
       assertEquals(queueName, queue.getQueueName());
-      checkResource(ObjectNames.getJMSQueueObjectName(queueName));
+      checkResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
    }
 
@@ -115,18 +115,37 @@ public class JMSServerControlTest extends ManagementTestBase
       String queueName = randomString();
 
       checkNoBinding(context, queueJNDIBinding);
-      checkNoResource(ObjectNames.getJMSQueueObjectName(queueName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
       JMSServerControl control = createManagementControl();
       control.createQueue(queueName, queueJNDIBinding);
 
       checkBinding(context, queueJNDIBinding);
-      checkResource(ObjectNames.getJMSQueueObjectName(queueName));
+      checkResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
       control.destroyQueue(queueName);
 
       checkNoBinding(context, queueJNDIBinding);
-      checkNoResource(ObjectNames.getJMSQueueObjectName(queueName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
+   }
+   
+   public void testGetQueueNames() throws Exception
+   {
+      String queueJNDIBinding = randomString();
+      String queueName = randomString();
+
+      JMSServerControl control = createManagementControl();
+      assertEquals(0, control.getQueueNames().length);
+
+      control.createQueue(queueName, queueJNDIBinding);
+
+      String[] names = control.getQueueNames();
+      assertEquals(1, names.length);
+      assertEquals(queueName, names[0]);
+
+      control.destroyQueue(queueName);
+
+      assertEquals(0, control.getQueueNames().length);
    }
 
    public void testCreateTopic() throws Exception
@@ -135,7 +154,7 @@ public class JMSServerControlTest extends ManagementTestBase
       String topicName = randomString();
 
       checkNoBinding(context, topicJNDIBinding);
-      checkNoResource(ObjectNames.getJMSTopicObjectName(topicName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
 
       JMSServerControl control = createManagementControl();
       control.createTopic(topicName, topicJNDIBinding);
@@ -144,7 +163,7 @@ public class JMSServerControlTest extends ManagementTestBase
       assertTrue(o instanceof Topic);
       Topic topic = (Topic)o;
       assertEquals(topicName, topic.getTopicName());
-      checkResource(ObjectNames.getJMSTopicObjectName(topicName));
+      checkResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
    }
 
    public void testDestroyTopic() throws Exception
@@ -153,18 +172,37 @@ public class JMSServerControlTest extends ManagementTestBase
       String topicName = randomString();
 
       checkNoBinding(context, topicJNDIBinding);
-      checkNoResource(ObjectNames.getJMSTopicObjectName(topicName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
 
       JMSServerControl control = createManagementControl();
       control.createTopic(topicName, topicJNDIBinding);
 
       checkBinding(context, topicJNDIBinding);
-      checkResource(ObjectNames.getJMSTopicObjectName(topicName));
+      checkResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
 
       control.destroyTopic(topicName);
 
       checkNoBinding(context, topicJNDIBinding);
-      checkNoResource(ObjectNames.getJMSTopicObjectName(topicName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
+   }
+   
+   public void testGetTopicNames() throws Exception
+   {
+      String topicJNDIBinding = randomString();
+      String topicName = randomString();
+
+      JMSServerControl control = createManagementControl();
+      assertEquals(0, control.getTopicNames().length);
+
+      control.createTopic(topicName, topicJNDIBinding);
+
+      String[] names = control.getTopicNames();
+      assertEquals(1, names.length);
+      assertEquals(topicName, names[0]);
+
+      control.destroyTopic(topicName);
+
+      assertEquals(0, control.getTopicNames().length);
    }
 
    public void testCreateConnectionFactory_1() throws Exception
@@ -393,8 +431,7 @@ public class JMSServerControlTest extends ManagementTestBase
                                             clientID,
                                             ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                             ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                                            ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                                            ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                                            ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                                            
                                             ClientSessionFactoryImpl.DEFAULT_CACHE_LARGE_MESSAGE_CLIENT,
                                             ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                             ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
@@ -414,6 +451,7 @@ public class JMSServerControlTest extends ManagementTestBase
                                             ClientSessionFactoryImpl.DEFAULT_THREAD_POOL_MAX_SIZE,
                                             ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL,
                                             ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
+                                            ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL,
                                             ClientSessionFactoryImpl.DEFAULT_RECONNECT_ATTEMPTS,
                                             ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                             bindings);
@@ -438,8 +476,7 @@ public class JMSServerControlTest extends ManagementTestBase
                                             clientID,
                                             ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                             ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                                            ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                                            ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS,
+                                            ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,                                            
                                             ClientSessionFactoryImpl.DEFAULT_CACHE_LARGE_MESSAGE_CLIENT,
                                             ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                             ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE,
@@ -459,6 +496,7 @@ public class JMSServerControlTest extends ManagementTestBase
                                             ClientSessionFactoryImpl.DEFAULT_THREAD_POOL_MAX_SIZE,
                                             ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL,
                                             ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
+                                            ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL,
                                             ClientSessionFactoryImpl.DEFAULT_RECONNECT_ATTEMPTS,
                                             ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                             jndiBindings);
@@ -528,6 +566,25 @@ public class JMSServerControlTest extends ManagementTestBase
       }
 
    }
+   
+   public void testGetConnectionFactoryNames() throws Exception
+   {
+      String cfBinding = randomString();
+      String cfName = randomString();
+
+      JMSServerControl control = createManagementControl();
+      assertEquals(0, control.getConnectionFactoryNames().length);
+      
+      TransportConfiguration tcLive = new TransportConfiguration(InVMConnectorFactory.class.getName());
+      control.createConnectionFactory(cfName, tcLive.getFactoryClassName(), tcLive.getParams(), new String[] {cfBinding});
+
+      String[] cfNames = control.getConnectionFactoryNames();
+      assertEquals(1, cfNames.length);
+      assertEquals(cfName, cfNames[0]);
+      
+      control.destroyConnectionFactory(cfName);
+      assertEquals(0, control.getConnectionFactoryNames().length);
+   }
 
    // Package protected ---------------------------------------------
 
@@ -582,7 +639,7 @@ public class JMSServerControlTest extends ManagementTestBase
       {
          checkNoBinding(context, cfJNDIBinding.toString());
       }
-      checkNoResource(ObjectNames.getConnectionFactoryObjectName(cfName));
+      checkNoResource(ObjectNameBuilder.DEFAULT.getConnectionFactoryObjectName(cfName));
 
       JMSServerControl control = createManagementControl();
       creator.createConnectionFactory(control, cfName, cfJNDIBindings);
@@ -595,7 +652,7 @@ public class JMSServerControlTest extends ManagementTestBase
          Connection connection = cf.createConnection();
          connection.close();
       }
-      checkResource(ObjectNames.getConnectionFactoryObjectName(cfName));
+      checkResource(ObjectNameBuilder.DEFAULT.getConnectionFactoryObjectName(cfName));
    }
 
    private JMSServerManager startHornetQServer(int discoveryPort) throws Exception

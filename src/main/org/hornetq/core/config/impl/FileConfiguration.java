@@ -93,7 +93,7 @@ public class FileConfiguration extends ConfigurationImpl
       }
        
       URL url = getClass().getClassLoader().getResource(configurationUrl);
-      log.info("Loading server configuration from " + url);
+      log.debug("Loading server configuration from " + url);
 
       Reader reader = new InputStreamReader(url.openStream());
       String xml = org.hornetq.utils.XMLUtil.readerToString(reader);
@@ -105,6 +105,8 @@ public class FileConfiguration extends ConfigurationImpl
 
       backup = getBoolean(e, "backup", backup);
       
+      sharedStore = getBoolean(e, "shared-store", sharedStore);
+      
       //Defaults to true when using FileConfiguration
       fileDeploymentEnabled = getBoolean(e, "file-deployment-enabled", true);
       
@@ -112,8 +114,6 @@ public class FileConfiguration extends ConfigurationImpl
 
       persistDeliveryCountBeforeDelivery = getBoolean(e, "persist-delivery-count-before-delivery", persistDeliveryCountBeforeDelivery);
       
-      queueActivationTimeout = getLong(e, "queue-activation-timeout", queueActivationTimeout, GE_ZERO);
-
       // NOTE! All the defaults come from the super class
 
       scheduledThreadPoolMaxSize = getInteger(e, "scheduled-thread-pool-max-size", scheduledThreadPoolMaxSize, GT_ZERO);
@@ -123,6 +123,8 @@ public class FileConfiguration extends ConfigurationImpl
       securityEnabled = getBoolean(e, "security-enabled", securityEnabled);
 
       jmxManagementEnabled = getBoolean(e, "jmx-management-enabled", jmxManagementEnabled);
+
+      jmxDomain = getString(e, "jmx-domain", jmxDomain, NOT_NULL_OR_EMPTY);
 
       securityInvalidationInterval = getLong(e, "security-invalidation-interval", securityInvalidationInterval, GT_ZERO);
 
@@ -153,6 +155,8 @@ public class FileConfiguration extends ConfigurationImpl
       managementClusterUser = getString(e, "management-cluster-user", managementClusterUser, NOT_NULL_OR_EMPTY);
 
       managementRequestTimeout = getLong(e, "management-request-timeout", managementRequestTimeout, GT_ZERO);
+      
+      logDelegateFactoryClassName = getString(e, "log-delegate-factory-class-name", logDelegateFactoryClassName, NOT_NULL_OR_EMPTY);
 
       NodeList interceptorNodes = e.getElementsByTagName("remoting-interceptors");
 
@@ -336,6 +340,10 @@ public class FileConfiguration extends ConfigurationImpl
       
       serverDumpInterval = getLong(e, "server-dump-interval", serverDumpInterval, MINUS_ONE_OR_GT_ZERO); // in milliseconds
 
+      memoryWarningThreshold = getInteger(e, "memory-warning-threshold", memoryWarningThreshold, PERCENTAGE);
+      
+      memoryMeasureInterval = getLong(e, "memory-measure-interval", memoryMeasureInterval, GT_ZERO); // in milliseconds
+      
       started = true;
    }
    

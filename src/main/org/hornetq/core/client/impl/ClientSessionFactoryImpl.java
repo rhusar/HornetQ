@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,6 +37,7 @@ import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.UUIDGenerator;
@@ -61,9 +63,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
    public static final long DEFAULT_CLIENT_FAILURE_CHECK_PERIOD = 30000;
 
-   // 5 minutes - normally this should be much higher than ping period, this allows clients to re-attach on live
-   // or backup without fear of session having already been closed when connection having timed out.
-   public static final long DEFAULT_CONNECTION_TTL = 5 * 60 * 1000;
+   // 1 minute - this should be higher than ping period
+   public static final long DEFAULT_CONNECTION_TTL = 1 * 60 * 1000;
 
    // Any message beyond this size is considered a large message (to be sent in chunks)
    public static final int DEFAULT_MIN_LARGE_MESSAGE_SIZE = 100 * 1024;
@@ -86,8 +87,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
    public static final long DEFAULT_CALL_TIMEOUT = 30000;
 
-   public static final int DEFAULT_MAX_CONNECTIONS = 8;
-
    public static final int DEFAULT_ACK_BATCH_SIZE = 1024 * 1024;
 
    public static final boolean DEFAULT_PRE_ACKNOWLEDGE = false;
@@ -99,8 +98,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    public static final long DEFAULT_RETRY_INTERVAL = 2000;
 
    public static final double DEFAULT_RETRY_INTERVAL_MULTIPLIER = 1d;
+   
+   public static final long DEFAULT_MAX_RETRY_INTERVAL = 2000;
 
    public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
+   
+   public static final boolean DEFAULT_USE_REATTACH = false;
 
    public static final boolean DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN = false;
 
@@ -115,7 +118,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    // Attributes
    // -----------------------------------------------------------------------------------
 
-   private final Map<Pair<TransportConfiguration, TransportConfiguration>, ConnectionManager> connectionManagerMap = new LinkedHashMap<Pair<TransportConfiguration, TransportConfiguration>, ConnectionManager>();
+   private final Map<Pair<TransportConfiguration, TransportConfiguration>, FailoverManager> failoverManagerMap = new LinkedHashMap<Pair<TransportConfiguration, TransportConfiguration>, FailoverManager>();
 
    private volatile boolean receivedBroadcast = false;
 
@@ -127,7 +130,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
    private ConnectionLoadBalancingPolicy loadBalancingPolicy;
 
-   private ConnectionManager[] connectionManagerArray;
+   private FailoverManager[] failoverManagerArray;
 
    private boolean readOnly;
 
@@ -150,8 +153,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    private long connectionTTL;
 
    private long callTimeout;
-
-   private int maxConnections;
 
    private int minLargeMessageSize;
 
@@ -186,12 +187,18 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    private long retryInterval;
 
    private double retryIntervalMultiplier;
+   
+   private long maxRetryInterval;
 
    private int reconnectAttempts;
+   
+   private boolean useReattach;
 
    private volatile boolean closed;
 
    private boolean failoverOnServerShutdown;
+   
+   private final List<Interceptor> interceptors = new CopyOnWriteArrayList<Interceptor>();
 
    private static ExecutorService globalThreadPool;
 
@@ -273,24 +280,26 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       {
          for (Pair<TransportConfiguration, TransportConfiguration> pair : staticConnectors)
          {
-            ConnectionManager cm = new ConnectionManagerImpl(this,
+            FailoverManager cm = new FailoverManagerImpl(this,
                                                              pair.a,
                                                              pair.b,
-                                                             failoverOnServerShutdown,
-                                                             maxConnections,
+                                                             failoverOnServerShutdown,                                                            
                                                              callTimeout,
                                                              clientFailureCheckPeriod,
                                                              connectionTTL,
                                                              retryInterval,
                                                              retryIntervalMultiplier,
+                                                             maxRetryInterval,
                                                              reconnectAttempts,
+                                                             useReattach,
                                                              threadPool,
-                                                             scheduledThreadPool);
+                                                             scheduledThreadPool,
+                                                             interceptors);
 
-            connectionManagerMap.put(pair, cm);
+            failoverManagerMap.put(pair, cm);
          }
 
-         updateConnectionManagerArray();
+         updatefailoverManagerArray();
       }
       else
       {
@@ -313,8 +322,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       connectionTTL = DEFAULT_CONNECTION_TTL;
 
       callTimeout = DEFAULT_CALL_TIMEOUT;
-
-      maxConnections = DEFAULT_MAX_CONNECTIONS;
 
       minLargeMessageSize = DEFAULT_MIN_LARGE_MESSAGE_SIZE;
 
@@ -351,8 +358,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       retryInterval = DEFAULT_RETRY_INTERVAL;
 
       retryIntervalMultiplier = DEFAULT_RETRY_INTERVAL_MULTIPLIER;
+      
+      maxRetryInterval = DEFAULT_MAX_RETRY_INTERVAL;
 
       reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
+      
+      useReattach = DEFAULT_USE_REATTACH;
 
       failoverOnServerShutdown = DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
    }
@@ -444,17 +455,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    {
       checkWrite();
       this.callTimeout = callTimeout;
-   }
-
-   public synchronized int getMaxConnections()
-   {
-      return maxConnections;
-   }
-
-   public synchronized void setMaxConnections(int maxConnections)
-   {
-      checkWrite();
-      this.maxConnections = maxConnections;
    }
 
    public synchronized int getMinLargeMessageSize()
@@ -632,6 +632,17 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       checkWrite();
       this.retryInterval = retryInterval;
    }
+   
+   public synchronized long getMaxRetryInterval()
+   {
+      return maxRetryInterval;
+   }
+
+   public synchronized void setMaxRetryInterval(long retryInterval)
+   {
+      checkWrite();
+      this.maxRetryInterval = retryInterval;
+   }
 
    public synchronized double getRetryIntervalMultiplier()
    {
@@ -653,6 +664,17 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    {
       checkWrite();
       this.reconnectAttempts = reconnectAttempts;
+   }
+   
+   public synchronized boolean isUseReattach()
+   {
+      return useReattach;
+   }
+
+   public synchronized void setUseReattach(boolean reattach)
+   {
+      checkWrite();
+      this.useReattach = reattach;
    }
 
    public synchronized boolean isFailoverOnServerShutdown()
@@ -703,6 +725,16 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    {
       return discoveryRefreshTimeout;
    }
+   
+   public void addInterceptor(final Interceptor interceptor)
+   {
+      interceptors.add(interceptor);
+   }
+
+   public boolean removeInterceptor(final Interceptor interceptor)
+   {
+      return interceptors.remove(interceptor);
+   }
 
    public synchronized void setDiscoveryRefreshTimeout(long discoveryRefreshTimeout)
    {
@@ -721,6 +753,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       return createSessionInternal(username,
                                    password,
                                    xa,
+                                   autoCommitSends,
+                                   autoCommitAcks,
+                                   preAcknowledge,
+                                   ackBatchSize);
+   }
+   
+   
+
+   public ClientSession createSession(boolean autoCommitSends, boolean autoCommitAcks, int ackBatchSize) throws HornetQException
+   {
+      return createSessionInternal(null,
+                                   null,
+                                   false,
                                    autoCommitSends,
                                    autoCommitAcks,
                                    preAcknowledge,
@@ -770,9 +815,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    {
       int num = 0;
 
-      for (ConnectionManager connectionManager : connectionManagerMap.values())
+      for (FailoverManager failoverManager : failoverManagerMap.values())
       {
-         num += connectionManager.numSessions();
+         num += failoverManager.numSessions();
       }
 
       return num;
@@ -782,9 +827,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    {
       int num = 0;
 
-      for (ConnectionManager connectionManager : connectionManagerMap.values())
+      for (FailoverManager failoverManager : failoverManagerMap.values())
       {
-         num += connectionManager.numConnections();
+         num += failoverManager.numConnections();
       }
 
       return num;
@@ -809,12 +854,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
          }
       }
       
-      for (ConnectionManager connectionManager : connectionManagerMap.values())
+      for (FailoverManager failoverManager : failoverManagerMap.values())
       {
-         connectionManager.causeExit();
+         failoverManager.causeExit();
       }
 
-      connectionManagerMap.clear();
+      failoverManagerMap.clear();
 
       if (!useGlobalPools)
       {
@@ -863,15 +908,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
          connectorSet.add(entry.getConnectorPair());
       }
 
-      Iterator<Map.Entry<Pair<TransportConfiguration, TransportConfiguration>, ConnectionManager>> iter = connectionManagerMap.entrySet()
+      Iterator<Map.Entry<Pair<TransportConfiguration, TransportConfiguration>, FailoverManager>> iter = failoverManagerMap.entrySet()
                                                                                                                               .iterator();
       while (iter.hasNext())
       {
-         Map.Entry<Pair<TransportConfiguration, TransportConfiguration>, ConnectionManager> entry = iter.next();
+         Map.Entry<Pair<TransportConfiguration, TransportConfiguration>, FailoverManager> entry = iter.next();
 
          if (!connectorSet.contains(entry.getKey()))
          {
-            // ConnectionManager no longer there - we should remove it
+            // failoverManager no longer there - we should remove it
 
             iter.remove();
          }
@@ -879,34 +924,36 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
       for (Pair<TransportConfiguration, TransportConfiguration> connectorPair : connectorSet)
       {
-         if (!connectionManagerMap.containsKey(connectorPair))
+         if (!failoverManagerMap.containsKey(connectorPair))
          {
-            // Create a new ConnectionManager
+            // Create a new failoverManager
 
-            ConnectionManager connectionManager = new ConnectionManagerImpl(this,
+            FailoverManager failoverManager = new FailoverManagerImpl(this,
                                                                             connectorPair.a,
                                                                             connectorPair.b,
-                                                                            failoverOnServerShutdown,
-                                                                            maxConnections,
+                                                                            failoverOnServerShutdown,                                                                          
                                                                             callTimeout,
                                                                             clientFailureCheckPeriod,
                                                                             connectionTTL,
                                                                             retryInterval,
                                                                             retryIntervalMultiplier,
+                                                                            maxRetryInterval,
                                                                             reconnectAttempts,
+                                                                            useReattach,
                                                                             threadPool,
-                                                                            scheduledThreadPool);
+                                                                            scheduledThreadPool,
+                                                                            interceptors);
 
-            connectionManagerMap.put(connectorPair, connectionManager);
+            failoverManagerMap.put(connectorPair, failoverManager);
          }
       }
 
-      updateConnectionManagerArray();
+      updatefailoverManagerArray();
    }
 
-   public ConnectionManager[] getConnectionManagers()
+   public FailoverManager[] getFailoverManagers()
    {
-      return connectionManagerArray;
+      return failoverManagerArray;
    }
 
    // Protected ------------------------------------------------------------------------------
@@ -969,11 +1016,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
       synchronized (this)
       {
-         int pos = loadBalancingPolicy.select(connectionManagerArray.length);
+         int pos = loadBalancingPolicy.select(failoverManagerArray.length);
 
-         ConnectionManager connectionManager = connectionManagerArray[pos];
+         FailoverManager failoverManager = failoverManagerArray[pos];
 
-         ClientSession session = connectionManager.createSession(username,
+         ClientSession session = failoverManager.createSession(username,
                                                                  password,
                                                                  xa,
                                                                  autoCommitSends,
@@ -1016,11 +1063,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       }
    }
 
-   private synchronized void updateConnectionManagerArray()
+   private synchronized void updatefailoverManagerArray()
    {
-      connectionManagerArray = new ConnectionManager[connectionManagerMap.size()];
+      failoverManagerArray = new FailoverManager[failoverManagerMap.size()];
 
-      connectionManagerMap.values().toArray(connectionManagerArray);
+      failoverManagerMap.values().toArray(failoverManagerArray);
    }
 
 }

@@ -13,6 +13,8 @@
 
 package org.hornetq.core.server.cluster;
 
+import java.util.Map;
+
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.utils.SimpleString;
 
@@ -29,10 +31,17 @@ public interface ClusterConnection extends HornetQComponent
 {
    SimpleString getName();
 
+   String getNodeID();
+
+   /**
+    * @return a Map of node ID and addresses
+    */
+   Map<String, String> getNodes();
+
    void handleReplicatedAddBinding(SimpleString address,
                                    SimpleString uniqueName,
                                    SimpleString routingName,
-                                   int queueID,
+                                   long queueID,
                                    SimpleString filterString,
                                    SimpleString queueName,                 
                                    int distance) throws Exception;

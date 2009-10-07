@@ -22,7 +22,7 @@ import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONN
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
-import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS;
+import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRE_ACKNOWLEDGE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRODUCER_MAX_RATE;
@@ -49,7 +49,7 @@ import javax.naming.InitialContext;
 
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.management.ObjectNames;
+import org.hornetq.core.management.ObjectNameBuilder;
 import org.hornetq.core.management.ResourceNames;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.BindingType;
@@ -316,8 +316,7 @@ public class LocalTestServer implements Server, Runnable
                                                     clientId,
                                                     DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                                     DEFAULT_CONNECTION_TTL,
-                                                    DEFAULT_CALL_TIMEOUT,
-                                                    DEFAULT_MAX_CONNECTIONS,
+                                                    DEFAULT_CALL_TIMEOUT,                                                   
                                                     DEFAULT_CACHE_LARGE_MESSAGE_CLIENT,                                                    
                                                     DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                                     prefetchSize,
@@ -337,6 +336,7 @@ public class LocalTestServer implements Server, Runnable
                                                     DEFAULT_THREAD_POOL_MAX_SIZE,                                                     
                                                     DEFAULT_RETRY_INTERVAL,
                                                     DEFAULT_RETRY_INTERVAL_MULTIPLIER,
+                                                    DEFAULT_MAX_RETRY_INTERVAL,
                                                     DEFAULT_RECONNECT_ATTEMPTS,
                                                     DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                     jndiBindings);
@@ -439,7 +439,7 @@ public class LocalTestServer implements Server, Runnable
 
    public List<String> listAllSubscribersForTopic(String s) throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSTopicObjectName(s);
+      ObjectName objectName = ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(s);
       TopicControl topic = (TopicControl)MBeanServerInvocationHandler.newProxyInstance(ManagementFactory.getPlatformMBeanServer(),
                                                                                                  objectName,
                                                                                                  TopicControl.class,

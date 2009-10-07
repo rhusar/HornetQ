@@ -25,7 +25,7 @@ public interface HornetQServerControl
 {
    // Attributes ----------------------------------------------------
 
-   public String getBackupConnectorName();
+   String getBackupConnectorName();
 
    String getVersion();
 
@@ -60,6 +60,12 @@ public interface HornetQServerControl
    int getJournalMinFiles();
 
    int getJournalMaxAIO();
+   
+   int getJournalCompactMinFiles();
+   
+   int getJournalCompactPercentage();
+   
+   boolean isPersistenceEnabled();
 
    boolean isCreateBindingsDir();
 
@@ -77,17 +83,17 @@ public interface HornetQServerControl
 
    void setMessageCounterSamplePeriod(long newPeriod) throws Exception;
 
-   public boolean isBackup();
+   boolean isBackup();
+   
+   boolean isSharedStore();
 
    int getAIOBufferSize();
 
    int getAIOBufferTimeout();
 
-   public String getPagingDirectory();
+   String getPagingDirectory();
 
    boolean isPersistDeliveryCountBeforeDelivery();
-
-   long getQueueActivationTimeout();
 
    long getConnectionTTLOverride();
 
@@ -116,17 +122,26 @@ public interface HornetQServerControl
    Object[] getConnectors() throws Exception;
 
    String getConnectorsAsJSON() throws Exception;
+   
+   String[] getAddressNames();
+
+   String[] getQueueNames();
 
    // Operations ----------------------------------------------------
 
    @Operation(desc = "Create a queue with the specified address", impact = ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name) throws Exception;
-
+   
    @Operation(desc = "Create a queue", impact = ACTION)
    void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
                     @Parameter(name = "name", desc = "Name of the queue") String name,
                     @Parameter(name = "filter", desc = "Filter of the queue") String filter,
+                    @Parameter(name = "durable", desc = "Is the queue durable?") boolean durable) throws Exception;
+   
+   @Operation(desc = "Create a queue with the specified address, name and durability", impact = ACTION)
+   void createQueue(@Parameter(name = "address", desc = "Address of the queue") String address,
+                    @Parameter(name = "name", desc = "Name of the queue") String name,
                     @Parameter(name = "durable", desc = "Is the queue durable?") boolean durable) throws Exception;
 
    @Operation(desc = "Deploy a queue", impact = ACTION)
@@ -156,7 +171,11 @@ public interface HornetQServerControl
    void resetAllMessageCounterHistories() throws Exception;
 
    @Operation(desc = "List all the prepared transaction, sorted by date, oldest first")
-   public String[] listPreparedTransactions() throws Exception;
+   String[] listPreparedTransactions() throws Exception;
+
+   String[] listHeuristicCommittedTransactions() throws Exception;
+
+   String[] listHeuristicRolledBackTransactions() throws Exception;
 
    @Operation(desc = "Commit a prepared transaction")
    boolean commitPreparedTransaction(@Parameter(desc = "the Base64 representation of a transaction", name = "transactionAsBase64") String transactionAsBase64) throws Exception;

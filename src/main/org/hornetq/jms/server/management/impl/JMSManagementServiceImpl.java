@@ -13,14 +13,12 @@
 
 package org.hornetq.jms.server.management.impl;
 
-
 import java.util.List;
 
 import javax.management.ObjectName;
 
 import org.hornetq.core.management.AddressControl;
 import org.hornetq.core.management.ManagementService;
-import org.hornetq.core.management.ObjectNames;
 import org.hornetq.core.management.QueueControl;
 import org.hornetq.core.management.ResourceNames;
 import org.hornetq.core.messagecounter.MessageCounter;
@@ -31,10 +29,6 @@ import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.management.JMSManagementService;
 import org.hornetq.jms.server.management.JMSServerControl;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareConnectionFactoryControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareJMSQueueControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareJMSServerControlWrapper;
-import org.hornetq.jms.server.management.jmx.impl.ReplicationAwareTopicControlWrapper;
 
 /*
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -63,19 +57,17 @@ public class JMSManagementServiceImpl implements JMSManagementService
 
    public synchronized JMSServerControl registerJMSServer(final JMSServerManager server) throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSServerObjectName();
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSServerObjectName();
       JMSServerControlImpl control = new JMSServerControlImpl(server);
-      JMSServerControl replicatingProxy = new ReplicationAwareJMSServerControlWrapper(control, 
-                                                                                      managementService.getReplicationOperationInvoker());
       managementService.registerInJMX(objectName,
-                                      replicatingProxy);
+                                      control);
       managementService.registerInRegistry(ResourceNames.JMS_SERVER, control);
-      return replicatingProxy;
+      return control;
    }
 
    public synchronized void unregisterJMSServer() throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSServerObjectName();
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSServerObjectName();
       managementService.unregisterFromJMX(objectName);
       managementService.unregisterFromRegistry(ResourceNames.JMS_SERVER);
    }
@@ -92,20 +84,18 @@ public class JMSManagementServiceImpl implements JMSManagementService
                                                   coreQueueControl.isDurable(),
                                                   messageCounterManager.getMaxDayCount());
       messageCounterManager.registerMessageCounter(queue.getName(), counter);
-      ObjectName objectName = ObjectNames.getJMSQueueObjectName(queue.getQueueName());
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSQueueObjectName(queue.getQueueName());
       JMSQueueControlImpl control = new JMSQueueControlImpl(queue,
                                                     coreQueueControl,
                                                     jndiBinding,
                                                     counter);
-      managementService.registerInJMX(objectName,
-                                      new ReplicationAwareJMSQueueControlWrapper(control, 
-                                                                                 managementService.getReplicationOperationInvoker()));
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_QUEUE + queue.getQueueName(), control);
    }
 
    public synchronized void unregisterQueue(final String name) throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSQueueObjectName(name);
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSQueueObjectName(name);
       managementService.unregisterFromJMX(objectName);
       managementService.unregisterFromRegistry(ResourceNames.JMS_QUEUE + name);
    }
@@ -113,17 +103,16 @@ public class JMSManagementServiceImpl implements JMSManagementService
    public synchronized void registerTopic(final HornetQTopic topic,
                              final String jndiBinding) throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSTopicObjectName(topic.getTopicName());
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSTopicObjectName(topic.getTopicName());
       AddressControl addressControl = (AddressControl)managementService.getResource(ResourceNames.CORE_ADDRESS + topic.getAddress());
-      TopicControlImpl control = new TopicControlImpl(topic, addressControl, jndiBinding, managementService);
-      managementService.registerInJMX(objectName, new ReplicationAwareTopicControlWrapper(control,
-                                                                                          managementService.getReplicationOperationInvoker()));
+      JMSTopicControlImpl control = new JMSTopicControlImpl(topic, addressControl, jndiBinding, managementService);
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_TOPIC + topic.getTopicName(), control);
    }
 
    public synchronized void unregisterTopic(final String name) throws Exception
    {
-      ObjectName objectName = ObjectNames.getJMSTopicObjectName(name);
+      ObjectName objectName = managementService.getObjectNameBuilder().getJMSTopicObjectName(name);
       managementService.unregisterFromJMX(objectName);
       managementService.unregisterFromRegistry(ResourceNames.JMS_TOPIC + name);
    }
@@ -132,17 +121,15 @@ public class JMSManagementServiceImpl implements JMSManagementService
                                          final HornetQConnectionFactory connectionFactory,
                                          final List<String> bindings) throws Exception
    {
-      ObjectName objectName = ObjectNames.getConnectionFactoryObjectName(name);
-      ConnectionFactoryControlImpl control = new ConnectionFactoryControlImpl(connectionFactory, name, bindings);
-      managementService.registerInJMX(objectName,
-                                      new ReplicationAwareConnectionFactoryControlWrapper(control,
-                                                                                          managementService.getReplicationOperationInvoker()));
+      ObjectName objectName = managementService.getObjectNameBuilder().getConnectionFactoryObjectName(name);
+      JMSConnectionFactoryControlImpl control = new JMSConnectionFactoryControlImpl(connectionFactory, name, bindings);
+      managementService.registerInJMX(objectName, control);
       managementService.registerInRegistry(ResourceNames.JMS_CONNECTION_FACTORY + name, control);
    }
 
    public synchronized void unregisterConnectionFactory(final String name) throws Exception
    {
-      ObjectName objectName = ObjectNames.getConnectionFactoryObjectName(name);
+      ObjectName objectName = managementService.getObjectNameBuilder().getConnectionFactoryObjectName(name);
       managementService.unregisterFromJMX(objectName);
       managementService.unregisterFromRegistry(ResourceNames.JMS_CONNECTION_FACTORY + name);
    }

@@ -24,7 +24,7 @@ import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONN
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE;
-import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS;
+import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRE_ACKNOWLEDGE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRODUCER_MAX_RATE;
@@ -120,7 +120,7 @@ public class JMSTestBase extends ServiceTestBase
 
       conf.getAcceptorConfigurations().add(new TransportConfiguration(NettyAcceptorFactory.class.getName()));
 
-      server = HornetQ.newHornetQServer(conf, false);
+      server = HornetQ.newHornetQServer(conf, usePersistence());
 
       jmsServer = new JMSServerManagerImpl(server);
       context = new InVMContext();
@@ -202,8 +202,7 @@ public class JMSTestBase extends ServiceTestBase
                                             null,
                                             DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                             DEFAULT_CONNECTION_TTL,
-                                            callTimeout,
-                                            DEFAULT_MAX_CONNECTIONS,
+                                            callTimeout,                                            
                                             DEFAULT_CACHE_LARGE_MESSAGE_CLIENT,
                                             DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                             DEFAULT_CONSUMER_WINDOW_SIZE,
@@ -223,6 +222,7 @@ public class JMSTestBase extends ServiceTestBase
                                             DEFAULT_THREAD_POOL_MAX_SIZE,
                                             retryInterval,
                                             retryIntervalMultiplier,
+                                            DEFAULT_MAX_RETRY_INTERVAL,
                                             reconnectAttempts,
                                             failoverOnServerShutdown,
                                             jndiBindings);

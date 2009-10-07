@@ -77,8 +77,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    public static final SimpleString HDR_RESET_QUEUE_DATA = new SimpleString("_HQ_RESET_QUEUE_DATA");
 
-   private HornetQServer server;
-
    private final AddressManager addressManager;
 
    private final QueueFactory queueFactory;
@@ -88,8 +86,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    private final PagingManager pagingManager;
 
    private volatile boolean started;
-
-   private volatile boolean backup;
 
    private final ManagementService managementService;
 
@@ -106,16 +102,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    private final int idCacheSize;
 
    private final boolean persistIDCache;
-
-   // Each queue has a transient ID which lasts the lifetime of its binding. This is used in clustering when routing
-   // messages to particular queues on nodes. We could
-   // use the queue name on the node to identify it. But sometimes we need to route to maybe 10s of thousands of queues
-   // on a particular node, and all would
-   // have to be specified in the message. Specify 10000 ints takes up a lot less space than 10000 arbitrary queue names
-   // The drawback of this approach is we only allow up to 2^32 queues in memory at any one time
-   private int transientIDSequence;
-
-   private Set<Integer> transientIDs = new HashSet<Integer>();
 
    private Map<SimpleString, QueueInfo> queueInfos = new HashMap<SimpleString, QueueInfo>();
 
@@ -135,15 +121,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                          final long reaperPeriod,
                          final int reaperPriority,
                          final boolean enableWildCardRouting,
-                         final boolean backup,
                          final int idCacheSize,
                          final boolean persistIDCache,
                          final ExecutorFactory orderedExecutorFactory,
                          HierarchicalRepository<AddressSettings> addressSettingsRepository)
 
    {
-      this.server = server;
-
       this.storageManager = storageManager;
 
       this.queueFactory = bindableFactory;
@@ -164,8 +147,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          addressManager = new SimpleAddressManager(this);
       }
-
-      this.backup = backup;
 
       this.idCacheSize = idCacheSize;
 
@@ -194,10 +175,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       // This is to avoid thread leakages where the Reaper would run beyong the life cycle of the PostOffice
       started = true;
 
-      if (!backup)
-      {
-         startExpiryScanner();
-      }
+      startExpiryScanner();
    }
 
    public synchronized void stop() throws Exception
@@ -218,9 +196,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       addressManager.clear();
 
       queueInfos.clear();
-
-      transientIDs.clear();
-
    }
 
    public boolean isStarted()
@@ -261,13 +236,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
                SimpleString address = (SimpleString)props.getProperty(ManagementHelper.HDR_ADDRESS);
 
-               Integer transientID = (Integer)props.getProperty(ManagementHelper.HDR_BINDING_ID);
+               Long id = (Long)props.getProperty(ManagementHelper.HDR_BINDING_ID);
 
                SimpleString filterString = (SimpleString)props.getProperty(ManagementHelper.HDR_FILTERSTRING);
 
                Integer distance = (Integer)props.getProperty(ManagementHelper.HDR_DISTANCE);
 
-               QueueInfo info = new QueueInfo(routingName, clusterName, address, filterString, transientID, distance);
+               QueueInfo info = new QueueInfo(routingName, clusterName, address, filterString, id, distance);
 
                queueInfos.put(clusterName, info);
 
@@ -359,9 +334,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
                      if (redistributionDelay != -1)
                      {
-                        queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor(),
-                                               server.getReplicatingChannel());
+                        queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -431,9 +404,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
                      if (redistributionDelay != -1)
                      {
-                        queue.addRedistributor(redistributionDelay,
-                                               redistributorExecutorFactory.getExecutor(),
-                                               server.getReplicatingChannel());
+                        queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
                }
@@ -457,29 +428,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    // even though failover is complete
    public synchronized void addBinding(final Binding binding) throws Exception
    {
-      binding.setID(generateTransientID());
-
-      boolean existed = addressManager.addBinding(binding);
-
-      // TODO - why is this code here?
-      // Shouldn't it be in HornetQServerImpl::createQueue??
-      if (binding.getType() == BindingType.LOCAL_QUEUE)
-      {
-         Queue queue = (Queue)binding.getBindable();
-
-         if (backup)
-         {
-            queue.setBackup();
-         }
-
-         managementService.registerQueue(queue, binding.getAddress(), storageManager);
-
-         if (!existed)
-         {
-            managementService.registerAddress(binding.getAddress());
-         }
-      }
-
+      addressManager.addBinding(binding);
+      
       TypedProperties props = new TypedProperties();
 
       props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, binding.getType().toInt());
@@ -490,7 +440,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       props.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, binding.getRoutingName());
 
-      props.putIntProperty(ManagementHelper.HDR_BINDING_ID, binding.getID());
+      props.putLongProperty(ManagementHelper.HDR_BINDING_ID, binding.getID());
 
       props.putIntProperty(ManagementHelper.HDR_DISTANCE, binding.getDistance());
 
@@ -546,8 +496,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       managementService.sendNotification(new Notification(null, NotificationType.BINDING_REMOVED, props));
 
-      releaseTransientID(binding.getID());
-
       return binding;
    }
 
@@ -576,7 +524,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    public void route(final ServerMessage message, Transaction tx) throws Exception
    {
       SimpleString address = message.getDestination();
-
+      
       byte[] duplicateIDBytes = null;
 
       Object duplicateID = message.getProperty(MessageImpl.HDR_DUPLICATE_DETECTION_ID);
@@ -633,6 +581,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          if (pagingManager.page(message, true))
          {
+            message.setStored();
             return;
          }
       }
@@ -652,9 +601,43 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       Bindings bindings = addressManager.getBindingsForRoutingAddress(address);
 
+      boolean routed;
+      
       if (bindings != null)
       {
-         bindings.route(message, tx);
+         routed = bindings.route(message, tx);
+      }
+      else
+      {
+         routed = false;
+      }
+
+      if (!routed)
+      {
+         AddressSettings addressSettings = addressSettingsRepository.getMatch(address.toString());
+         
+         boolean sendToDLA = addressSettings.isSendToDLAOnNoRoute();
+         
+         if (sendToDLA)
+         {
+            //Send to the DLA for the address
+            
+            SimpleString dlaAddress = addressSettings.getDeadLetterAddress();
+            
+            if (dlaAddress == null)
+            {
+               log.warn("Did not route to any bindings for address " + address + " and sendToDLAOnNoRoute is true " + 
+                        "but there is no DLA configured for the address, the message will be ignored.");
+            }
+            else
+            {
+               message.setOriginalHeaders(message, false);
+               
+               message.setDestination(dlaAddress);
+               
+               route(message, tx);
+            }
+         }
       }
 
       if (startedTx)
@@ -685,37 +668,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    public PagingManager getPagingManager()
    {
       return pagingManager;
-   }
-
-   public List<Queue> activate()
-   {
-
-      backup = false;
-
-      pagingManager.activate();
-
-      Map<SimpleString, Binding> nameMap = addressManager.getBindings();
-
-      List<Queue> queues = new ArrayList<Queue>();
-
-      for (Binding binding : nameMap.values())
-      {
-         if (binding.getType() == BindingType.LOCAL_QUEUE)
-         {
-            Queue queue = (Queue)binding.getBindable();
-
-            boolean activated = queue.activate();
-
-            if (!activated)
-            {
-               queues.add(queue);
-            }
-         }
-      }
-
-      startExpiryScanner();
-
-      return queues;
    }
 
    public DuplicateIDCache getDuplicateIDCache(final SimpleString address)
@@ -788,7 +740,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
                message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
                message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
-               message.putIntProperty(ManagementHelper.HDR_BINDING_ID, info.getID());
+               message.putLongProperty(ManagementHelper.HDR_BINDING_ID, info.getID());
                message.putStringProperty(ManagementHelper.HDR_FILTERSTRING, info.getFilterString());
                message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
 
@@ -870,30 +822,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return message;
    }
 
-   private int generateTransientID()
-   {
-      int start = transientIDSequence;
-      do
-      {
-         int id = transientIDSequence++;
-
-         if (!transientIDs.contains(id))
-         {
-            transientIDs.add(id);
-
-            return id;
-         }
-      }
-      while (transientIDSequence != start);
-
-      throw new IllegalStateException("Run out of queue ids!");
-   }
-
-   private void releaseTransientID(final int id)
-   {
-      transientIDs.remove(id);
-   }
-
    private final PageMessageOperation getPageOperation(final Transaction tx)
    {
       // you could have races on the case two sessions using the same XID
@@ -934,7 +862,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             log.warn("Reaper thread being restarted");
             closed = false;
          }
-         
+
          // The reaper thread should be finished case the PostOffice is gone
          // This is to avoid leaks on PostOffice between stops and starts
          while (PostOfficeImpl.this.isStarted())
@@ -1083,6 +1011,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             {
                if (pagingManager.page(message, tx.getID(), first))
                {
+                  message.setStored();
                   if (message.isDurable())
                   {
                      // We only create pageTransactions if using persistent messages

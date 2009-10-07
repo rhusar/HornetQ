@@ -25,11 +25,15 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.NotificationEmitter;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
+import javax.management.StandardMBean;
 
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.jms.server.JMSServerManager;
+import org.hornetq.jms.server.management.ConnectionFactoryControl;
+import org.hornetq.jms.server.management.JMSQueueControl;
 import org.hornetq.jms.server.management.JMSServerControl;
+import org.hornetq.jms.server.management.TopicControl;
 import org.hornetq.utils.Pair;
 
 /**
@@ -39,7 +43,7 @@ import org.hornetq.utils.Pair;
  * @version <tt>$Revision$</tt>
  * 
  */
-public class JMSServerControlImpl implements JMSServerControl, NotificationEmitter
+public class JMSServerControlImpl extends StandardMBean implements JMSServerControl, NotificationEmitter
 {
 
    // Constants -----------------------------------------------------
@@ -132,8 +136,9 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
 
    // Constructors --------------------------------------------------
 
-   public JMSServerControlImpl(final JMSServerManager server)
+   public JMSServerControlImpl(final JMSServerManager server) throws Exception
    {
+      super(JMSServerControl.class);
       this.server = server;
       broadcaster = new NotificationBroadcasterSupport();
    }
@@ -220,8 +225,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final String clientID,
                                        final long clientFailureCheckPeriod,
                                        final long connectionTTL,
-                                       final long callTimeout,
-                                       final int maxConnections,
+                                       final long callTimeout,                                  
                                        final boolean cacheLargeMessageClient,
                                        final int minLargeMessageSize,
                                        final int consumerWindowSize,
@@ -241,6 +245,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final int threadPoolMaxSize,
                                        final long retryInterval,
                                        final double retryIntervalMultiplier,
+                                       final long maxRetryInterval,
                                        final int reconnectAttempts,
                                        final boolean failoverOnServerShutdown,
                                        final Object[] jndiBindings) throws Exception
@@ -257,8 +262,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                      clientID,
                                      clientFailureCheckPeriod,
                                      connectionTTL,
-                                     callTimeout,
-                                     maxConnections,
+                                     callTimeout,                                    
                                      cacheLargeMessageClient,
                                      minLargeMessageSize,
                                      consumerWindowSize,
@@ -278,6 +282,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                      threadPoolMaxSize,
                                      retryInterval,
                                      retryIntervalMultiplier,
+                                     maxRetryInterval,
                                      reconnectAttempts,
                                      failoverOnServerShutdown,
                                      jndiBindingsList);
@@ -293,8 +298,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final String clientID,
                                        final long clientFailureCheckPeriod,
                                        final long connectionTTL,
-                                       final long callTimeout,
-                                       final int maxConnections,
+                                       final long callTimeout,                                   
                                        final boolean cacheLargeMessageClient,
                                        final int minLargeMessageSize,
                                        final int consumerWindowSize,
@@ -314,6 +318,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final int threadPoolMaxSize,
                                        final long retryInterval,
                                        final double retryIntervalMultiplier,
+                                       final long maxRetryInterval,
                                        final int reconnectAttempts,
                                        final boolean failoverOnServerShutdown,
                                        final String jndiBindings) throws Exception
@@ -332,8 +337,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                               clientID,
                               clientFailureCheckPeriod,
                               connectionTTL,
-                              callTimeout,
-                              maxConnections,
+                              callTimeout,                        
                               cacheLargeMessageClient,
                               minLargeMessageSize,
                               consumerWindowSize,
@@ -353,6 +357,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                               threadPoolMaxSize,
                               retryInterval,
                               retryIntervalMultiplier,
+                              maxRetryInterval,
                               reconnectAttempts,
                               failoverOnServerShutdown,
                               bindings);
@@ -389,8 +394,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final long discoveryRefreshTimeout,
                                        final long clientFailureCheckPeriod,
                                        final long connectionTTL,
-                                       final long callTimeout,
-                                       final int maxConnections,
+                                       final long callTimeout,                                   
                                        final boolean cacheLargeMessageClient,
                                        final int minLargeMessageSize,
                                        final int consumerWindowSize,
@@ -411,6 +415,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final int threadPoolMaxSize,
                                        final long retryInterval,
                                        final double retryIntervalMultiplier,
+                                       final long maxRetryInterval,
                                        final int reconnectAttempts,
                                        final boolean failoverOnServerShutdown,
                                        final Object[] jndiBindings) throws Exception
@@ -424,8 +429,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                      discoveryRefreshTimeout,
                                      clientFailureCheckPeriod,
                                      connectionTTL,
-                                     callTimeout,
-                                     maxConnections,
+                                     callTimeout,                                 
                                      cacheLargeMessageClient,
                                      minLargeMessageSize,
                                      consumerWindowSize,
@@ -446,6 +450,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                      threadPoolMaxSize,
                                      retryInterval,
                                      retryIntervalMultiplier,
+                                     maxRetryInterval,
                                      reconnectAttempts,
                                      failoverOnServerShutdown,
                                      jndiBindingsList);
@@ -460,8 +465,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final long discoveryRefreshTimeout,
                                        final long clientFailureCheckPeriod,
                                        final long connectionTTL,
-                                       final long callTimeout,
-                                       final int maxConnections,
+                                       final long callTimeout,                                      
                                        final boolean cacheLargeMessageClient,
                                        final int minLargeMessageSize,
                                        final int consumerWindowSize,
@@ -482,6 +486,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                                        final int threadPoolMaxSize,
                                        final long retryInterval,
                                        final double retryIntervalMultiplier,
+                                       final long maxRetryInterval,
                                        final int reconnectAttempts,
                                        final boolean failoverOnServerShutdown,
                                        final String jndiBindings) throws Exception
@@ -495,8 +500,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                               discoveryRefreshTimeout,
                               clientFailureCheckPeriod,
                               connectionTTL,
-                              callTimeout,
-                              maxConnections,
+                              callTimeout,                              
                               cacheLargeMessageClient,
                               minLargeMessageSize,
                               consumerWindowSize,
@@ -517,6 +521,7 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
                               threadPoolMaxSize,
                               retryInterval,
                               retryIntervalMultiplier,
+                              maxRetryInterval,
                               reconnectAttempts,
                               failoverOnServerShutdown,
                               bindings);
@@ -669,6 +674,42 @@ public class JMSServerControlImpl implements JMSServerControl, NotificationEmitt
       return server.getVersion();
    }
 
+   public String[] getQueueNames()
+   {
+      Object[] queueControls = server.getHornetQServer().getManagementService().getResources(JMSQueueControl.class);
+      String[] names = new String[queueControls.length];
+      for (int i = 0; i < queueControls.length; i++)
+      {
+         JMSQueueControl queueControl = (JMSQueueControl)queueControls[i];
+         names[i] = queueControl.getName();
+      }
+      return names;
+   }
+   
+   public String[] getTopicNames()
+   {
+      Object[] topicControls = server.getHornetQServer().getManagementService().getResources(TopicControl.class);
+      String[] names = new String[topicControls.length];
+      for (int i = 0; i < topicControls.length; i++)
+      {
+         TopicControl topicControl = (TopicControl)topicControls[i];
+         names[i] = topicControl.getName();
+      }
+      return names;
+   }
+   
+   public String[] getConnectionFactoryNames()
+   {
+      Object[] cfControls = server.getHornetQServer().getManagementService().getResources(ConnectionFactoryControl.class);
+      String[] names = new String[cfControls.length];
+      for (int i = 0; i < cfControls.length; i++)
+      {
+         ConnectionFactoryControl cfControl = (ConnectionFactoryControl)cfControls[i];
+         names[i] = cfControl.getName();
+      }
+      return names;
+   }
+   
    // NotificationEmitter implementation ----------------------------
 
    public void removeNotificationListener(final NotificationListener listener,

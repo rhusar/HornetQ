@@ -38,9 +38,7 @@ public interface Queue extends Bindable
 
    SimpleString getName();
 
-   long getPersistenceID();
-
-   void setPersistenceID(long id);
+   long getID();
 
    Filter getFilter();
 
@@ -121,17 +119,7 @@ public interface Queue extends Bindable
 
    int moveReferences(Filter filter, SimpleString toAddress) throws Exception;
 
-   void setBackup();
-
-   boolean activate();
-
-   void activateNow(Executor executor);
-
-   boolean isBackup();
-
-   boolean consumerFailedOver();
-
-   void addRedistributor(long delay, Executor executor, final Channel replicatingChannel);
+   void addRedistributor(long delay, Executor executor);
 
    void cancelRedistributor() throws Exception;
 
@@ -150,4 +138,22 @@ public interface Queue extends Bindable
    Iterator<MessageReference> iterator();
    
    void setExpiryAddress(SimpleString expiryAddress);
+   /**
+    * Pauses the queue. It will receive messages but won't give them to the consumers until resumed.
+    * If a queue is paused, pausing it again will only throw a warning. 
+    * To check if a queue is paused, invoke <i>isPaused()</i>
+    */
+   void pause();
+   /**
+    * Resumes the delivery of message for the queue. 
+    * If a queue is resumed, resuming it again will only throw a warning. 
+    * To check if a queue is resumed, invoke <i>isPaused()</i>
+    */
+   void resume();
+   /**
+    * 
+    * @return true if paused, false otherwise.
+    */
+   boolean isPaused();
+
 }

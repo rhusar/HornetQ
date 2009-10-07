@@ -88,8 +88,6 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final UUID nodeUUID;
    
-   private Channel replicatingChannel;
-
    private volatile boolean started;
    
    private boolean backup;
@@ -100,8 +98,7 @@ public class ClusterManagerImpl implements ClusterManager
                              final ScheduledExecutorService scheduledExecutor,
                              final ManagementService managementService,
                              final Configuration configuration,
-                             final UUID nodeUUID,
-                             final Channel replicatingChannel,
+                             final UUID nodeUUID,                            
                              final boolean backup)
    {
       if (nodeUUID == null)
@@ -122,8 +119,6 @@ public class ClusterManagerImpl implements ClusterManager
       this.configuration = configuration;
 
       this.nodeUUID = nodeUUID;
-      
-      this.replicatingChannel = replicatingChannel;
       
       this.backup = backup;
    }
@@ -244,8 +239,6 @@ public class ClusterManagerImpl implements ClusterManager
       {
          cc.activate();
       }
-      
-      replicatingChannel = null;
       
       backup = false;
    }
@@ -429,8 +422,7 @@ public class ClusterManagerImpl implements ClusterManager
                                  managementService.getManagementNotificationAddress(),
                                  managementService.getClusterUser(),
                                  managementService.getClusterPassword(),
-                                 null,
-                                 replicatingChannel,
+                                 null,                        
                                  !backup,
                                  server.getStorageManager());
       }
@@ -482,8 +474,7 @@ public class ClusterManagerImpl implements ClusterManager
                                  managementService.getManagementNotificationAddress(),
                                  managementService.getClusterUser(),
                                  managementService.getClusterPassword(),
-                                 null,
-                                 replicatingChannel,
+                                 null,                        
                                  !backup,
                                  server.getStorageManager());
       }
@@ -577,8 +568,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                        scheduledExecutor,                                            
                                                        connectors,
                                                        config.getMaxHops(),
-                                                       nodeUUID,
-                                                       replicatingChannel,
+                                                       nodeUUID,                                                       
                                                        backup);
       }
       else
@@ -603,8 +593,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                        scheduledExecutor,                                               
                                                        dg,
                                                        config.getMaxHops(),
-                                                       nodeUUID,
-                                                       replicatingChannel,
+                                                       nodeUUID,                                                      
                                                        backup);
       }
 

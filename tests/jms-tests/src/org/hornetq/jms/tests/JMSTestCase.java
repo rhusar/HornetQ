@@ -23,7 +23,7 @@ import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONN
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONSUMER_MAX_RATE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_CONSUMER_WINDOW_SIZE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
-import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS;
+import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRE_ACKNOWLEDGE;
 import static org.hornetq.core.client.impl.ClientSessionFactoryImpl.DEFAULT_PRODUCER_MAX_RATE;
@@ -87,8 +87,7 @@ public class JMSTestCase extends HornetQServerTestCase
                                                     null,
                                                     DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                                     DEFAULT_CONNECTION_TTL,
-                                                    DEFAULT_CALL_TIMEOUT,
-                                                    DEFAULT_MAX_CONNECTIONS,
+                                                    DEFAULT_CALL_TIMEOUT,                                                    
                                                     DEFAULT_CACHE_LARGE_MESSAGE_CLIENT,
                                                     DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                                     DEFAULT_CONSUMER_WINDOW_SIZE,
@@ -108,6 +107,7 @@ public class JMSTestCase extends HornetQServerTestCase
                                                     DEFAULT_THREAD_POOL_MAX_SIZE,                                                     
                                                     DEFAULT_RETRY_INTERVAL,
                                                     DEFAULT_RETRY_INTERVAL_MULTIPLIER,
+                                                    DEFAULT_MAX_RETRY_INTERVAL,
                                                     DEFAULT_RECONNECT_ATTEMPTS,
                                                     DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                     jndiBindings);
@@ -120,7 +120,9 @@ public class JMSTestCase extends HornetQServerTestCase
    protected void tearDown() throws Exception
    {
       super.tearDown();
+      
       getJmsServerManager().destroyConnectionFactory("testsuitecf");
+      
       cf = null;
 
       assertRemainingMessages(0);

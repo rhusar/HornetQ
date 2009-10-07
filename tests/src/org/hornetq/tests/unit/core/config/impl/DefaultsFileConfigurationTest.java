@@ -37,7 +37,7 @@ public class DefaultsFileConfigurationTest extends ConfigurationImplTest
 
       assertEquals(ConfigurationImpl.DEFAULT_BACKUP, conf.isBackup());
 
-      assertEquals(ConfigurationImpl.DEFAULT_QUEUE_ACTIVATION_TIMEOUT, conf.getQueueActivationTimeout());
+      assertEquals(ConfigurationImpl.DEFAULT_SHARED_STORE, conf.isSharedStore());
       
       assertEquals(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE, conf.getScheduledThreadPoolMaxSize());
       
@@ -48,6 +48,8 @@ public class DefaultsFileConfigurationTest extends ConfigurationImplTest
       assertEquals(ConfigurationImpl.DEFAULT_SECURITY_ENABLED, conf.isSecurityEnabled());
 
       assertEquals(ConfigurationImpl.DEFAULT_JMX_MANAGEMENT_ENABLED, conf.isJMXManagementEnabled());
+
+      assertEquals(ConfigurationImpl.DEFAULT_JMX_DOMAIN, conf.getJMXDomain());
 
       assertEquals(0, conf.getInterceptorClassNames().size());
   

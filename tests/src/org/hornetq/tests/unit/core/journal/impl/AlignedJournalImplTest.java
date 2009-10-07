@@ -15,6 +15,7 @@ package org.hornetq.tests.unit.core.journal.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,6 +28,7 @@ import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
+import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
@@ -61,6 +63,10 @@ public class AlignedJournalImplTest extends UnitTestCase
       public void updateRecord(RecordInfo info)
       {
       }
+
+      public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+      {
+      }
    };
 
    // Attributes ----------------------------------------------------
@@ -70,6 +76,8 @@ public class AlignedJournalImplTest extends UnitTestCase
    JournalImpl journalImpl = null;
 
    private ArrayList<RecordInfo> records = null;
+   
+   private ArrayList<Long> incompleteTransactions = null;
 
    private ArrayList<PreparedTransactionInfo> transactions = null;
 
@@ -156,7 +164,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.forceMoveNextFile();
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       setupAndLoadJournal(JOURNAL_SIZE, 10);
 
@@ -270,7 +278,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.setAutoReclaim(false);
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       journalImpl.debugWait();
 
@@ -316,7 +324,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.setAutoReclaim(false);
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       journalImpl.debugWait();
 
@@ -356,7 +364,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(1000, records.get(0).id);
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       log.debug(journalImpl.debug());
 
@@ -436,6 +444,9 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(0, records.size());
       assertEquals(0, transactions.size());
+      assertEquals(2, incompleteTransactions.size());
+      assertEquals((Long)77l, incompleteTransactions.get(0));
+      assertEquals((Long)78l, incompleteTransactions.get(1));
 
       try
       {
@@ -484,7 +495,7 @@ public class AlignedJournalImplTest extends UnitTestCase
       assertEquals(10, records.size());
       assertEquals(0, transactions.size());
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(10, journalImpl.getDataFilesCount());
 
@@ -504,7 +515,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendAddRecord(101, (byte)1, new SimpleEncoding(5, (byte)1), false);
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(1, journalImpl.getDataFilesCount());
 
@@ -595,7 +606,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(0, records.size());
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(0, journalImpl.getDataFilesCount());
 
@@ -660,7 +671,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(20, records.size());
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
    }
 
@@ -695,7 +706,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.forceMoveNextFile();
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       setupAndLoadJournal(JOURNAL_SIZE, 100, 2);
 
@@ -756,7 +767,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(0, records.size());
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(0, journalImpl.getDataFilesCount());
 
@@ -798,7 +809,7 @@ public class AlignedJournalImplTest extends UnitTestCase
       // the
       // file
       journalImpl.forceMoveNextFile();
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       setupAndLoadJournal(JOURNAL_SIZE, 100);
 
@@ -836,7 +847,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendCommitRecord(2l, false);
       journalImpl.forceMoveNextFile();
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       setupAndLoadJournal(JOURNAL_SIZE, 100);
 
@@ -931,7 +942,7 @@ public class AlignedJournalImplTest extends UnitTestCase
          assertEquals((byte)1, transactions.get(0).extraData[i]);
       }
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(10, journalImpl.getDataFilesCount());
 
@@ -943,7 +954,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(10, records.size());
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       for (int i = 0; i < 10; i++)
       {
@@ -980,7 +991,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       // Reclaiming should still be able to reclaim a file if a transaction was
       // ignored
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(2, factory.listFiles("tt").size());
 
@@ -1053,7 +1064,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.forceMoveNextFile();
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(0, journalImpl.getDataFilesCount());
 
@@ -1147,7 +1158,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.forceMoveNextFile();
       journalImpl.debugWait();
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(0, transactions.size());
       assertEquals(0, journalImpl.getDataFilesCount());
@@ -1238,7 +1249,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.debugWait();
 
-      journalImpl.checkAndReclaimFiles();
+      journalImpl.checkReclaimStatus();
 
       assertEquals(0, journalImpl.getDataFilesCount());
 
@@ -1284,7 +1295,7 @@ public class AlignedJournalImplTest extends UnitTestCase
       ArrayList<RecordInfo> info = new ArrayList<RecordInfo>();
       ArrayList<PreparedTransactionInfo> trans = new ArrayList<PreparedTransactionInfo>();
 
-      impl.load(info, trans);
+      impl.load(info, trans, null);
 
       assertEquals(0, info.size());
       assertEquals(0, trans.size());
@@ -1303,6 +1314,8 @@ public class AlignedJournalImplTest extends UnitTestCase
       records = new ArrayList<RecordInfo>();
 
       transactions = new ArrayList<PreparedTransactionInfo>();
+      
+      incompleteTransactions = new ArrayList<Long>();
 
       factory = null;
 
@@ -1327,6 +1340,8 @@ public class AlignedJournalImplTest extends UnitTestCase
       records = null;
 
       transactions = null;
+      
+      incompleteTransactions = null;
 
       factory = null;
 
@@ -1360,8 +1375,17 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       records.clear();
       transactions.clear();
+      incompleteTransactions.clear();
 
-      journalImpl.load(records, transactions);
+      journalImpl.load(records, transactions, new TransactionFailureCallback()
+      {
+         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+         {
+            System.out.println("records.length = " + records.size());
+            incompleteTransactions.add(transactionID);
+         }
+         
+      });
    }
 
    // Inner classes -------------------------------------------------

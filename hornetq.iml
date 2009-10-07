@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module relativePaths="true" type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5" inherit-compiler-output="true">
     <output url="file://$MODULE_DIR$/output/classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$">
@@ -38,10 +38,11 @@
       <excludeFolder url="file://$MODULE_DIR$/tests/lib/jdbc-drivers" />
       <excludeFolder url="file://$MODULE_DIR$/tests/output" />
     </content>
-    <orderEntry type="jdk" jdkName="1.5" jdkType="JavaSDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="messaging" level="project" />
     <orderEntry type="library" name="messaging_jars" level="project" />
+    <orderEntry type="library" name="ant 1.7.1" level="project" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ACTIVE_VCS_NAME" value="svn" />

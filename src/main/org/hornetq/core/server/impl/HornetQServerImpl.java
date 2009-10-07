@@ -32,11 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.client.impl.ConnectionManager;
-import org.hornetq.core.client.impl.ConnectionManagerImpl;
+import org.hornetq.core.client.impl.FailoverManager;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.cluster.QueueConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -50,6 +47,7 @@ import org.hornetq.core.deployers.impl.SecurityDeployer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
+import org.hornetq.core.logging.LogDelegateFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
@@ -68,12 +66,9 @@ import org.hornetq.core.postoffice.impl.DivertBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.remoting.Channel;
-import org.hornetq.core.remoting.FailureListener;
-import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReattachSessionResponseMessage;
-import org.hornetq.core.remoting.impl.wireformat.replication.ReplicateStartupInfoMessage;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.security.CheckType;
@@ -101,7 +96,6 @@ import org.hornetq.core.transaction.impl.ResourceManagerImpl;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.core.version.Version;
 import org.hornetq.utils.ExecutorFactory;
-import org.hornetq.utils.Future;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.OrderedExecutorFactory;
 import org.hornetq.utils.Pair;
@@ -141,8 +135,6 @@ public class HornetQServerImpl implements HornetQServer
    private final Configuration configuration;
 
    private final MBeanServer mbeanServer;
-
-   private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
    private volatile boolean started;
 
@@ -190,19 +182,17 @@ public class HornetQServerImpl implements HornetQServer
 
    private final Map<String, ServerSession> sessions = new ConcurrentHashMap<String, ServerSession>();
 
-   private RemotingConnection replicatingConnection;
-
-   private Channel replicatingChannel;
-
    private final Object initialiseLock = new Object();
 
    private boolean initialised;
 
-   private ConnectionManager replicatingConnectionManager;
-
    private int managementConnectorID;
 
    private static AtomicInteger managementConnectorSequence = new AtomicInteger(0);
+
+   private FailoverManager replicatingFailoverManager;
+
+   private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
    // Constructors
    // ---------------------------------------------------------------------------------
@@ -264,6 +254,8 @@ public class HornetQServerImpl implements HornetQServer
 
    public synchronized void start() throws Exception
    {
+      initialiseLogging();
+
       log.info((configuration.isBackup() ? "backup" : "live") + " server is starting..");
 
       if (started)
@@ -276,7 +268,7 @@ public class HornetQServerImpl implements HornetQServer
       if (configuration.isBackup())
       {
          // We defer actually initialisation until the live node has contacted the backup
-         log.info("Backup server will await live server before becoming operational");
+         log.info("Backup server initialised");
       }
       else
       {
@@ -286,6 +278,8 @@ public class HornetQServerImpl implements HornetQServer
       // We start the remoting service here - if the server is a backup remoting service needs to be started
       // so it can be initialised by the live node
       remotingService.start();
+
+      started = true;
 
       log.info("HornetQ Server version " + getVersion().getFullVersion() + " started");
    }
@@ -348,30 +342,25 @@ public class HornetQServerImpl implements HornetQServer
 
       managementService.stop();
 
-      storageManager.stop();
+      if (storageManager != null)
+      {
+         storageManager.stop();
+      }
 
       if (securityManager != null)
       {
          securityManager.stop();
       }
 
-      if (replicatingConnection != null)
+      if (resourceManager != null)
       {
-         try
-         {
-            replicatingConnection.destroy();
-         }
-         catch (Exception ignore)
-         {
-         }
-
-         replicatingConnection = null;
-         replicatingChannel = null;
-         replicatingConnectionManager = null;
+         resourceManager.stop();
       }
 
-      resourceManager.stop();
-      postOffice.stop();
+      if (postOffice != null)
+      {
+         postOffice.stop();
+      }
 
       // Need to shutdown pools before shutting down paging manager to make sure everything is written ok
 
@@ -398,7 +387,10 @@ public class HornetQServerImpl implements HornetQServer
       scheduledPool = null;
       threadPool = null;
 
-      pagingManager.stop();
+      if (pagingManager != null)
+      {
+         pagingManager.stop();
+      }
 
       memoryManager.stop();
 
@@ -419,7 +411,10 @@ public class HornetQServerImpl implements HornetQServer
       initialised = false;
       uuid = null;
       nodeID = null;
+
       log.info("HornetQ Server version " + getVersion().getFullVersion() + " stopped");
+
+      Logger.reset();
    }
 
    // HornetQServer implementation
@@ -496,57 +491,26 @@ public class HornetQServerImpl implements HornetQServer
    {
       ServerSession session = sessions.get(name);
 
-      // Need to activate the connection even if session can't be found - since otherwise response
-      // will never get back
-
-      checkActivate(connection);
+      if (!checkActivate())
+      {
+         return new ReattachSessionResponseMessage(-1, false);
+      }
 
       if (session == null)
       {
-         return new ReattachSessionResponseMessage(-1, true);
+         return new ReattachSessionResponseMessage(-1, false);
       }
       else
       {
          // Reconnect the channel to the new connection
          int serverLastReceivedCommandID = session.transferConnection(connection, lastReceivedCommandID);
 
-         return new ReattachSessionResponseMessage(serverLastReceivedCommandID, false);
+         return new ReattachSessionResponseMessage(serverLastReceivedCommandID, true);
       }
-   }
-
-   public void replicateCreateSession(final String name,
-                                      final long replicatedChannelID,
-                                      final long originalChannelID,
-                                      final String username,
-                                      final String password,
-                                      final int minLargeMessageSize,
-                                      final int incrementingVersion,
-                                      final RemotingConnection connection,
-                                      final boolean autoCommitSends,
-                                      final boolean autoCommitAcks,
-                                      final boolean preAcknowledge,
-                                      final boolean xa,
-                                      final int producerWindowSize) throws Exception
-   {
-      doCreateSession(name,
-                      replicatedChannelID,
-                      originalChannelID,
-                      username,
-                      password,
-                      minLargeMessageSize,
-                      incrementingVersion,
-                      connection,
-                      autoCommitSends,
-                      autoCommitAcks,
-                      preAcknowledge,
-                      xa,
-                      producerWindowSize,
-                      true);
    }
 
    public CreateSessionResponseMessage createSession(final String name,
                                                      final long channelID,
-                                                     final long replicatedChannelID,
                                                      final String username,
                                                      final String password,
                                                      final int minLargeMessageSize,
@@ -558,22 +522,69 @@ public class HornetQServerImpl implements HornetQServer
                                                      final boolean xa,
                                                      final int sendWindowSize) throws Exception
    {
-      checkActivate(connection);
+      if (version.getIncrementingVersion() != incrementingVersion)
+      {
+         log.warn("Client with version " + incrementingVersion +
+                  " and address " +
+                  connection.getRemoteAddress() +
+                  " is not compatible with server version " +
+                  version.getFullVersion() +
+                  ". " +
+                  "Please ensure all clients and servers are upgraded to the same version for them to " +
+                  "interoperate properly");
+         return null;
+      }
 
-      return doCreateSession(name,
-                             channelID,
-                             replicatedChannelID,
-                             username,
-                             password,
-                             minLargeMessageSize,
-                             incrementingVersion,
-                             connection,
-                             autoCommitSends,
-                             autoCommitAcks,
-                             preAcknowledge,
-                             xa,
-                             sendWindowSize,
-                             false);
+      if (!checkActivate())
+      {
+         // Backup server is not ready to accept connections
+
+         return new CreateSessionResponseMessage(false, version.getIncrementingVersion());
+      }
+
+      securityStore.authenticate(username, password);
+
+      ServerSession currentSession = sessions.remove(name);
+
+      if (currentSession != null)
+      {
+         // This session may well be on a different connection and different channel id, so we must get rid
+         // of it and create another
+         currentSession.getChannel().close();
+      }
+
+      Channel channel = connection.getChannel(channelID, sendWindowSize, false);
+
+      final ServerSessionImpl session = new ServerSessionImpl(name,
+                                                              username,
+                                                              password,
+                                                              minLargeMessageSize,
+                                                              autoCommitSends,
+                                                              autoCommitAcks,
+                                                              preAcknowledge,
+                                                              configuration.isPersistDeliveryCountBeforeDelivery(),
+                                                              xa,
+                                                              connection,
+                                                              storageManager,
+                                                              postOffice,
+                                                              resourceManager,
+                                                              securityStore,
+                                                              executorFactory.getExecutor(),
+                                                              channel,
+                                                              managementService,
+                                                              queueFactory,
+                                                              this,
+                                                              configuration.getManagementAddress());
+
+      sessions.put(name, session);
+
+      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session);
+
+      session.setHandler(handler);
+
+      channel.setHandler(handler);
+
+      return new CreateSessionResponseMessage(true, version.getIncrementingVersion());
    }
 
    public void removeSession(final String name) throws Exception
@@ -614,41 +625,118 @@ public class HornetQServerImpl implements HornetQServer
       }
    }
 
-   public void initialiseBackup(final UUID theUUID, final long liveUniqueID) throws Exception
-   {
-      if (theUUID == null)
-      {
-         throw new IllegalArgumentException("node id is null");
-      }
+   // public void initialiseBackup(final UUID theUUID, final long liveUniqueID) throws Exception
+   // {
+   // if (theUUID == null)
+   // {
+   // throw new IllegalArgumentException("node id is null");
+   // }
+   //
+   // synchronized (initialiseLock)
+   // {
+   // if (initialised)
+   // {
+   // throw new IllegalStateException("Server is already initialised");
+   // }
+   //
+   // this.uuid = theUUID;
+   //
+   // this.nodeID = new SimpleString(uuid.toString());
+   //
+   // initialisePart2();
+   //
+   // long backupID = storageManager.getCurrentUniqueID();
+   //
+   // if (liveUniqueID != backupID)
+   // {
+   // initialised = false;
+   //
+   // throw new IllegalStateException("Live and backup unique ids different (" + liveUniqueID +
+   // ":" +
+   // backupID +
+   // "). You're probably trying to restart a live backup pair after a crash");
+   // }
+   //
+   // log.info("Backup server is now operational");
+   // }
+   // }
 
-      synchronized (initialiseLock)
-      {
-         if (initialised)
-         {
-            throw new IllegalStateException("Server is already initialised");
-         }
-
-         this.uuid = theUUID;
-
-         this.nodeID = new SimpleString(uuid.toString());
-
-         initialisePart2();
-
-         long backupID = storageManager.getCurrentUniqueID();
-
-         if (liveUniqueID != backupID)
-         {
-            initialised = false;
-
-            throw new IllegalStateException("Live and backup unique ids different (" + liveUniqueID +
-                                            ":" +
-                                            backupID +
-                                            "). You're probably trying to restart a live backup pair after a crash");
-         }
-
-         log.info("Backup server is now operational");
-      }
-   }
+   // private boolean setupReplicatingConnection() throws Exception
+   // {
+   // String backupConnectorName = configuration.getBackupConnectorName();
+   //
+   // if (backupConnectorName != null)
+   // {
+   // TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
+   //
+   // if (backupConnector == null)
+   // {
+   // log.warn("connector with name '" + backupConnectorName + "' is not defined in the configuration.");
+   // }
+   // else
+   // {
+   // replicatingConnectionManager = new ConnectionManagerImpl(null,
+   // backupConnector,
+   // null,
+   // false,
+   // 1,
+   // ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
+   // ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+   // ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
+   // 0,
+   // 1.0d,
+   // 0,
+   // threadPool,
+   // scheduledPool);
+   //
+   // replicatingConnection = replicatingConnectionManager.getConnection(1);
+   //
+   // if (replicatingConnection != null)
+   // {
+   // replicatingChannel = replicatingConnection.getChannel(2, -1, false);
+   //
+   // replicatingConnection.addFailureListener(new FailureListener()
+   // {
+   // public void connectionFailed(HornetQException me)
+   // {
+   // replicatingChannel.executeOutstandingDelayedResults();
+   // }
+   // });
+   //
+   // // First time we get channel we send a message down it informing the backup of our node id -
+   // // backup and live must have the same node id
+   //
+   // Packet packet = new ReplicateStartupInfoMessage(uuid, storageManager.getCurrentUniqueID());
+   //
+   // final Future future = new Future();
+   //
+   // replicatingChannel.replicatePacket(packet, 1, new Runnable()
+   // {
+   // public void run()
+   // {
+   // future.run();
+   // }
+   // });
+   //
+   // // This may take a while especially if the journal is large
+   // boolean ok = future.await(60000);
+   //
+   // if (!ok)
+   // {
+   // throw new IllegalStateException("Timed out waiting for response from backup for initialisation");
+   // }
+   // }
+   // else
+   // {
+   // log.warn("Backup server MUST be started before live server. Initialisation will not proceed.");
+   //
+   // return false;
+   // }
+   // }
+   // }
+   //
+   // return true;
+   // }
 
    public HornetQServerControlImpl getHornetQServerControl()
    {
@@ -755,7 +843,7 @@ public class HornetQServerImpl implements HornetQServer
 
       if (queue.isDurable())
       {
-         storageManager.deleteQueueBinding(queue.getPersistenceID());
+         storageManager.deleteQueueBinding(queue.getID());
       }
 
       postOffice.removeBinding(queueName);
@@ -790,8 +878,29 @@ public class HornetQServerImpl implements HornetQServer
       return new PagingManagerImpl(new PagingStoreFactoryNIO(configuration.getPagingDirectory(), executorFactory),
                                    storageManager,
                                    addressSettingsRepository,
-                                   configuration.isJournalSyncNonTransactional(),
-                                   configuration.isBackup());
+                                   configuration.isJournalSyncNonTransactional());
+   }
+
+   /** for use on sub-classes */
+   protected ExecutorService getExecutor()
+   {
+      return threadPool;
+   }
+
+   /** 
+    * This method is protected as it may be used as a hook for creating a custom storage manager (on tests for instance) 
+    * @return
+    */
+   protected StorageManager createStorageManager()
+   {
+      if (configuration.isPersistenceEnabled())
+      {
+         return new JournalStorageManager(configuration, threadPool);
+      }
+      else
+      {
+         return new NullStorageManager();
+      }
    }
 
    // Private
@@ -805,77 +914,30 @@ public class HornetQServerImpl implements HornetQServer
       }
    }
 
-   private void checkActivate(final RemotingConnection connection) throws Exception
+   private synchronized boolean checkActivate() throws Exception
    {
       if (configuration.isBackup())
       {
-         log.info("A connection has been made to the backup server so it will be activated! This will result in the live server being considered failed.");
+         // Handle backup server activation
 
-         synchronized (this)
+         if (configuration.isSharedStore())
          {
-            freezeBackupConnection();
+            // Complete the startup procedure
 
-            List<Queue> toActivate = postOffice.activate();
-
-            for (Queue queue : toActivate)
-            {
-               scheduledPool.schedule(new ActivateRunner(queue),
-                                      configuration.getQueueActivationTimeout(),
-                                      TimeUnit.MILLISECONDS);
-            }
+            log.info("Activating server");
 
             configuration.setBackup(false);
 
-            if (clusterManager != null)
-            {
-               clusterManager.activate();
-            }
-
-            if (configuration.isFileDeploymentEnabled())
-            {
-               queueDeployer = new QueueDeployer(deploymentManager, messagingServerControl);
-
-               queueDeployer.start();
-            }
+            initialisePart2();
          }
-      }
-
-      connection.activate();
-   }
-
-   // We need to prevent any more packets being handled on replicating connection as soon as first live connection
-   // is created or re-attaches, to prevent a situation like the following:
-   // connection 1 create queue A
-   // connection 2 fails over
-   // A gets activated since no consumers
-   // connection 1 create consumer on A
-   // connection 1 delivery
-   // connection 1 delivery gets replicated
-   // can't find message in queue since active was delivered immediately
-   private void freezeBackupConnection()
-   {
-      // Sanity check
-      // All replicated sessions should be on the same connection
-      RemotingConnection replConnection = null;
-
-      for (ServerSession session : sessions.values())
-      {
-         RemotingConnection rc = session.getChannel().getConnection();
-
-         if (replConnection == null)
+         else
          {
-            replConnection = rc;
-         }
-         else if (replConnection != rc)
-         {
-            throw new IllegalStateException("More than one replicating connection!");
+            // TODO
+            // just load journal
          }
       }
 
-      if (replConnection != null)
-      {
-         replConnection.freeze();
-      }
+      return true;
    }
 
    private void initialisePart1() throws Exception
@@ -907,9 +969,18 @@ public class HornetQServerImpl implements HornetQServer
                                                 scheduledPool,
                                                 managementConnectorID);
 
-      memoryManager = new MemoryManagerImpl();
+      memoryManager = new MemoryManagerImpl(configuration.getMemoryWarningThreshold(),
+                                            configuration.getMemoryMeasureInterval());
 
       memoryManager.start();
+   }
+
+   private void initialiseLogging()
+   {
+      LogDelegateFactory logDelegateFactory =
+         (LogDelegateFactory)instantiateInstance(configuration.getLogDelegateFactoryClassName());
+      
+      Logger.setDelegateFactory(logDelegateFactory);
    }
 
    private void initialisePart2() throws Exception
@@ -921,14 +992,7 @@ public class HornetQServerImpl implements HornetQServer
          deploymentManager = new FileDeploymentManager(configuration.getFileDeployerScanPeriod());
       }
 
-      if (configuration.isPersistenceEnabled())
-      {
-         storageManager = new JournalStorageManager(configuration, threadPool);
-      }
-      else
-      {
-         storageManager = new NullStorageManager();
-      }
+      this.storageManager = createStorageManager();
 
       securityRepository = new HierarchicalObjectRepository<Set<Role>>();
       securityRepository.setDefault(new HashSet<Role>());
@@ -956,7 +1020,6 @@ public class HornetQServerImpl implements HornetQServer
                                       configuration.getMessageExpiryScanPeriod(),
                                       configuration.getMessageExpiryThreadPriority(),
                                       configuration.isWildcardRoutingEnabled(),
-                                      configuration.isBackup(),
                                       configuration.getIDCacheSize(),
                                       configuration.isPersistIDCache(),
                                       executorFactory,
@@ -1022,9 +1085,7 @@ public class HornetQServerImpl implements HornetQServer
 
       // Deploy any predefined queues
 
-      // We don't activate queue deployer on the backup - all queues deployed on live are deployed on backup by
-      // replicating them
-      if (configuration.isFileDeploymentEnabled() && !configuration.isBackup())
+      if (configuration.isFileDeploymentEnabled())
       {
          queueDeployer = new QueueDeployer(deploymentManager, messagingServerControl);
 
@@ -1032,17 +1093,11 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       // We need to call this here, this gives any dependent server a chance to deploy its own destinations
-      // this needs to be done before clustering is initialised, and in the same order on live and backup
+      // this needs to be done before clustering is initialised
       callActivateCallbacks();
 
       // Deply any pre-defined diverts
       deployDiverts();
-
-      // Set-up the replicating connection
-      if (!setupReplicatingConnection())
-      {
-         return;
-      }
 
       if (configuration.isClustered())
       {
@@ -1054,7 +1109,6 @@ public class HornetQServerImpl implements HornetQServer
                                                  managementService,
                                                  configuration,
                                                  uuid,
-                                                 replicatingChannel,
                                                  configuration.isBackup());
 
          clusterManager.start();
@@ -1068,7 +1122,9 @@ public class HornetQServerImpl implements HornetQServer
       pagingManager.resumeDepages();
 
       final ServerInfo dumper = new ServerInfo(this, pagingManager);
+
       long dumpInfoInterval = configuration.getServerDumpInterval();
+
       if (dumpInfoInterval > 0)
       {
          scheduledPool.scheduleWithFixedDelay(new Runnable()
@@ -1079,9 +1135,8 @@ public class HornetQServerImpl implements HornetQServer
             }
          }, 0, dumpInfoInterval, TimeUnit.MILLISECONDS);
       }
-      initialised = true;
 
-      started = true;
+      initialised = true;
    }
 
    private void deployQueuesFromConfiguration() throws Exception
@@ -1093,88 +1148,6 @@ public class HornetQServerImpl implements HornetQServer
                                             config.getFilterString(),
                                             config.isDurable());
       }
-   }
-
-   public Channel getReplicatingChannel()
-   {
-      return replicatingChannel;
-   }
-
-   private boolean setupReplicatingConnection() throws Exception
-   {
-      String backupConnectorName = configuration.getBackupConnectorName();
-
-      if (backupConnectorName != null)
-      {
-         TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
-
-         if (backupConnector == null)
-         {
-            log.warn("connector with name '" + backupConnectorName + "' is not defined in the configuration.");
-         }
-         else
-         {
-            replicatingConnectionManager = new ConnectionManagerImpl(null,
-                                                                     backupConnector,
-                                                                     null,
-                                                                     false,
-                                                                     1,
-                                                                     ClientSessionFactoryImpl.DEFAULT_CALL_TIMEOUT,
-                                                                     ClientSessionFactoryImpl.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                     ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL,
-                                                                     0,
-                                                                     1.0d,
-                                                                     0,
-                                                                     threadPool,
-                                                                     scheduledPool);
-
-            replicatingConnection = replicatingConnectionManager.getConnection(1);
-
-            if (replicatingConnection != null)
-            {
-               replicatingChannel = replicatingConnection.getChannel(2, -1, false);
-
-               replicatingConnection.addFailureListener(new FailureListener()
-               {
-                  public void connectionFailed(HornetQException me)
-                  {
-                     replicatingChannel.executeOutstandingDelayedResults();
-                  }
-               });
-
-               // First time we get channel we send a message down it informing the backup of our node id -
-               // backup and live must have the same node id
-
-               Packet packet = new ReplicateStartupInfoMessage(uuid, storageManager.getCurrentUniqueID());
-
-               final Future future = new Future();
-
-               replicatingChannel.replicatePacket(packet, 1, new Runnable()
-               {
-                  public void run()
-                  {
-                     future.run();
-                  }
-               });
-
-               // This may take a while especially if the journal is large
-               boolean ok = future.await(60000);
-
-               if (!ok)
-               {
-                  throw new IllegalStateException("Timed out waiting for response from backup for initialisation");
-               }
-            }
-            else
-            {
-               log.warn("Backup server MUST be started before live server. Initialisation will not proceed.");
-
-               return false;
-            }
-         }
-      }
-
-      return true;
    }
 
    private void loadJournal() throws Exception
@@ -1197,7 +1170,7 @@ public class HornetQServerImpl implements HornetQServer
             filter = new FilterImpl(queueBindingInfo.getFilterString());
          }
 
-         Queue queue = queueFactory.createQueue(queueBindingInfo.getPersistenceID(),
+         Queue queue = queueFactory.createQueue(queueBindingInfo.getId(),
                                                 queueBindingInfo.getAddress(),
                                                 queueBindingInfo.getQueueName(),
                                                 filter,
@@ -1206,9 +1179,12 @@ public class HornetQServerImpl implements HornetQServer
 
          Binding binding = new LocalQueueBinding(queueBindingInfo.getAddress(), queue, nodeID);
 
-         queues.put(queueBindingInfo.getPersistenceID(), queue);
+         queues.put(queueBindingInfo.getId(), queue);
 
          postOffice.addBinding(binding);
+
+         managementService.registerAddress(queueBindingInfo.getAddress());
+         managementService.registerQueue(queue, queueBindingInfo.getAddress(), storageManager);
       }
 
       Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap = new HashMap<SimpleString, List<Pair<byte[], Long>>>();
@@ -1281,7 +1257,7 @@ public class HornetQServerImpl implements HornetQServer
          }
          else
          {
-            throw new HornetQException(HornetQException.QUEUE_EXISTS);
+            throw new HornetQException(HornetQException.QUEUE_EXISTS, "Queue " + queueName + " already exists");
          }
       }
 
@@ -1292,8 +1268,8 @@ public class HornetQServerImpl implements HornetQServer
          filter = new FilterImpl(filterString);
       }
 
-      final Queue queue = queueFactory.createQueue(-1, address, queueName, filter, durable, temporary);
-
+      final Queue queue = queueFactory.createQueue(storageManager.generateUniqueID(), address, queueName, filter, durable, temporary);
+      
       binding = new LocalQueueBinding(address, queue, nodeID);
 
       if (durable)
@@ -1302,6 +1278,9 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       postOffice.addBinding(binding);
+
+      managementService.registerAddress(address);
+      managementService.registerQueue(queue, address, storageManager);
 
       return queue;
    }
@@ -1361,101 +1340,12 @@ public class HornetQServerImpl implements HornetQServer
                                         pagingManager,
                                         storageManager);
 
-         Binding binding = new DivertBinding(sAddress, divert);
+         Binding binding = new DivertBinding(storageManager.generateUniqueID(), sAddress, divert);
 
          postOffice.addBinding(binding);
 
          managementService.registerDivert(divert, config);
       }
-   }
-
-   private CreateSessionResponseMessage doCreateSession(final String name,
-                                                        final long channelID,
-                                                        final long oppositeChannelID,
-                                                        final String username,
-                                                        final String password,
-                                                        final int minLargeMessageSize,
-                                                        final int incrementingVersion,
-                                                        final RemotingConnection connection,
-                                                        final boolean autoCommitSends,
-                                                        final boolean autoCommitAcks,
-                                                        final boolean preAcknowledge,
-                                                        final boolean xa,
-                                                        final int sendWindowSize,
-                                                        final boolean backup) throws Exception
-   {
-      if (version.getIncrementingVersion() != incrementingVersion)
-      {
-         log.warn("Client with version " + incrementingVersion +
-                  " and address " +
-                  connection.getRemoteAddress() +
-                  " is not compatible with server version " +
-                  version.getFullVersion() +
-                  ". " +
-                  "Please ensure all clients and servers are upgraded to the same version for them to " +
-                  "interoperate properly");
-         return null;
-      }
-
-      // Is this comment relevant any more ?
-
-      // Authenticate. Successful autentication will place a new SubjectContext
-      // on thread local,
-      // which will be used in the authorization process. However, we need to
-      // make sure we clean
-      // up thread local immediately after we used the information, otherwise
-      // some other people
-      // security my be screwed up, on account of thread local security stack
-      // being corrupted.
-
-      securityStore.authenticate(username, password);
-
-      ServerSession currentSession = sessions.remove(name);
-
-      if (currentSession != null)
-      {
-         // This session may well be on a different connection and different channel id, so we must get rid
-         // of it and create another
-         currentSession.getChannel().close();
-      }
-
-      Channel channel = connection.getChannel(channelID, sendWindowSize, false);
-
-      Channel replicatingChannel = getReplicatingChannel();
-
-      final ServerSessionImpl session = new ServerSessionImpl(name,
-                                                              oppositeChannelID,
-                                                              username,
-                                                              password,
-                                                              minLargeMessageSize,
-                                                              autoCommitSends,
-                                                              autoCommitAcks,
-                                                              preAcknowledge,
-                                                              configuration.isPersistDeliveryCountBeforeDelivery(),
-                                                              xa,
-                                                              connection,
-                                                              storageManager,
-                                                              postOffice,
-                                                              resourceManager,
-                                                              securityStore,
-                                                              executorFactory.getExecutor(),
-                                                              channel,
-                                                              managementService,
-                                                              queueFactory,
-                                                              this,
-                                                              configuration.getManagementAddress(),
-                                                              replicatingChannel,
-                                                              backup);
-
-      sessions.put(name, session);
-
-      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session);
-
-      session.setHandler(handler);
-
-      channel.setHandler(handler);
-
-      return new CreateSessionResponseMessage(version.getIncrementingVersion());
    }
 
    private Transformer instantiateTransformer(final String transformerClassName)
@@ -1464,37 +1354,28 @@ public class HornetQServerImpl implements HornetQServer
 
       if (transformerClassName != null)
       {
-         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-         try
-         {
-            Class<?> clz = loader.loadClass(transformerClassName);
-            transformer = (Transformer)clz.newInstance();
-         }
-         catch (Exception e)
-         {
-            throw new IllegalArgumentException("Error instantiating transformer class \"" + transformerClassName + "\"",
-                                               e);
-         }
+         transformer = (Transformer)instantiateInstance(transformerClassName);
       }
+
       return transformer;
+   }
+
+   private Object instantiateInstance(final String className)
+   {
+      ClassLoader loader = Thread.currentThread().getContextClassLoader();
+      try
+      {
+         Class<?> clz = loader.loadClass(className);
+         Object object = clz.newInstance();
+
+         return object;
+      }
+      catch (Exception e)
+      {
+         throw new IllegalArgumentException("Error instantiating transformer class \"" + className + "\"", e);
+      }
    }
 
    // Inner classes
    // --------------------------------------------------------------------------------
-
-   private class ActivateRunner implements Runnable
-   {
-      private Queue queue;
-
-      ActivateRunner(final Queue queue)
-      {
-         this.queue = queue;
-      }
-
-      public void run()
-      {
-         queue.activateNow(threadPool);
-      }
-   }
-
 }

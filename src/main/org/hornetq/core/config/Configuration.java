@@ -58,6 +58,10 @@ public interface Configuration extends Serializable
 
    void setBackup(boolean backup);
    
+   boolean isSharedStore();
+   
+   void setSharedStore(boolean sharedStore);
+   
    boolean isFileDeploymentEnabled();
    
    void setFileDeploymentEnabled(boolean enable);
@@ -70,10 +74,6 @@ public interface Configuration extends Serializable
    
    void setFileDeployerScanPeriod(long period);
 
-   long getQueueActivationTimeout();
-
-   void setQueueActivationTimeout(long timeout);
-   
    int getThreadPoolMaxSize();
 
    void setThreadPoolMaxSize(int maxSize);
@@ -94,6 +94,10 @@ public interface Configuration extends Serializable
 
    void setJMXManagementEnabled(boolean enabled);
 
+   String getJMXDomain();
+   
+   void setJMXDomain(String domain);
+   
    List<String> getInterceptorClassNames();
 
    void setInterceptorClassNames(List<String> interceptors);
@@ -151,12 +155,20 @@ public interface Configuration extends Serializable
    void setManagementAddress(SimpleString address);
 
    SimpleString getManagementNotificationAddress();
+   
+   void setManagementNotificationAddress(SimpleString address);
 
    String getManagementClusterUser();
-
+   
+   void setManagementClusterUser(String user);
+   
    String getManagementClusterPassword();
+   
+   void setManagementClusterPassword(String password);
 
    long getManagementRequestTimeout();
+   
+   void setManagementRequestTimeout(long timeout);
 
    int getIDCacheSize();
 
@@ -165,6 +177,10 @@ public interface Configuration extends Serializable
    boolean isPersistIDCache();
 
    void setPersistIDCache(boolean persist);
+   
+   String getLogDelegateFactoryClassName();
+   
+   void setLogDelegateFactoryClassName(String className);
    
    // Journal related attributes ------------------------------------------------------------
 
@@ -238,8 +254,16 @@ public interface Configuration extends Serializable
 
    long getServerDumpInterval();
 
-   void getServerDumpInterval(long interval);
+   void setServerDumpInterval(long interval);
 
+   int getMemoryWarningThreshold();
+   
+   void setMemoryWarningThreshold(int memoryWarningThreshold);
+   
+   long getMemoryMeasureInterval();
+
+   void setMemoryMeasureInterval(long memoryMeasureInterval);
+   
    // Paging Properties --------------------------------------------------------------------
 
    String getPagingDirectory();
@@ -263,10 +287,14 @@ public interface Configuration extends Serializable
    void setTransactionTimeout(long timeout);
 
    boolean isMessageCounterEnabled();
+   
+   void setMessageCounterEnabled(boolean enabled);
 
    long getMessageCounterSamplePeriod();
 
    int getMessageCounterMaxDayHistory();
+   
+   void setMessageCounterMaxDayHistory(int maxDayHistory);
 
    long getTransactionTimeoutScanPeriod();
 
@@ -279,6 +307,7 @@ public interface Configuration extends Serializable
    int getMessageExpiryThreadPriority();
 
    void setMessageExpiryThreadPriority(int messageExpiryThreadPriority);
+
 
 
 }

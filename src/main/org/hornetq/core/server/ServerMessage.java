@@ -44,11 +44,14 @@ public interface ServerMessage extends Message, EncodingSupport
 
    int getMemoryEstimate();
 
-   void setStored();
+   void setStored() throws Exception;
 
    boolean isStored();
 
    int getRefCount();
+
+   ServerMessage makeCopyForExpiryOrDLA(long newID, boolean expiry) throws Exception;
    
-   //TODO - we might be able to put this in a better place
+   void setOriginalHeaders(ServerMessage other, boolean expiry);
+   
 }

@@ -36,6 +36,16 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
 
    // Static --------------------------------------------------------
 
+   private static String[] toStringArray(Object[] res)
+   {
+      String[] names = new String[res.length];
+      for (int i = 0; i < res.length; i++)
+      {
+         names[i] = res[i].toString();               
+      }
+      return names;
+   }
+
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
@@ -68,11 +78,15 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
    @Override
    protected HornetQServerControl createManagementControl() throws Exception
    {
-
       return new HornetQServerControl()
-      {
+      {         
          private final CoreMessagingProxy proxy = new CoreMessagingProxy(session,
                                                                          ResourceNames.CORE_SERVER);
+         
+         public boolean isSharedStore()
+         {
+            return (Boolean)proxy.retrieveAttributeValue("sharedStore");
+         }
          
          public boolean closeConnectionsForAddress(String ipAddress) throws Exception
          {
@@ -92,6 +106,11 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          public void createQueue(String address, String name, String filter, boolean durable) throws Exception
          {
             proxy.invokeOperation("createQueue", address, name, filter, durable);
+         }
+         
+         public void createQueue(String address, String name, boolean durable) throws Exception
+         {
+            proxy.invokeOperation("createQueue", address, name, durable);
          }
          
          public void deployQueue(String address, String name, String filter, boolean durable) throws Exception
@@ -153,6 +172,16 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          {
             return (String)proxy.retrieveAttributeValue("connectorsAsJSON");
          }
+         
+         public String[] getAddressNames()
+         {
+            return toStringArray((Object[])proxy.retrieveAttributeValue("addressNames"));
+         }
+         
+         public String[] getQueueNames()
+         {
+            return toStringArray((Object[])proxy.retrieveAttributeValue("queueNames"));
+         }
 
          public int getIDCacheSize()
          {
@@ -161,13 +190,7 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
 
          public String[] getInterceptorClassNames()
          {
-            Object[] res = (Object[])proxy.retrieveAttributeValue("interceptorClassNames");
-            String[] names = new String[res.length];
-            for (int i = 0; i < res.length; i++)
-            {
-               names[i] = res[i].toString();               
-            }
-            return names;
+            return toStringArray((Object[])proxy.retrieveAttributeValue("interceptorClassNames"));
          }
 
          public String getJournalDirectory()
@@ -238,16 +261,6 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          public String getPagingDirectory()
          {
             return (String)proxy.retrieveAttributeValue("pagingDirectory");
-         }
-
-         public int getGlobalPageSize()
-         {
-            return (Integer)proxy.retrieveAttributeValue("globalPageSize");
-         }
-
-         public long getPagingMaxGlobalSizeBytes()
-         {
-            return (Long)proxy.retrieveAttributeValue("pagingMaxGlobalSizeBytes", Long.class);
          }
 
          public long getQueueActivationTimeout()
@@ -354,6 +367,16 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          {
             return (String[])proxy.invokeOperation("listPreparedTransactions");
          }
+         
+         public String[] listHeuristicCommittedTransactions() throws Exception
+         {
+            return (String[])proxy.invokeOperation("listHeuristicCommittedTransactions");
+         }
+         
+         public String[] listHeuristicRolledBackTransactions() throws Exception
+         {
+            return (String[])proxy.invokeOperation("listHeuristicRolledBackTransactions");
+         }
 
          public String[] listRemoteAddresses() throws Exception
          {
@@ -408,6 +431,21 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          public int getAIOBufferTimeout()
          {
             return (Integer)proxy.retrieveAttributeValue("AIOBufferTimeout");
+         }
+
+         public int getJournalCompactMinFiles()
+         {
+            return (Integer)proxy.retrieveAttributeValue("JournalCompactMinFiles");
+         }
+
+         public int getJournalCompactPercentage()
+         {
+            return (Integer)proxy.retrieveAttributeValue("JournalCompactPercentage");
+         }
+
+         public boolean isPersistenceEnabled()
+         {
+            return (Boolean)proxy.retrieveAttributeValue("PersistenceEnabled");
          }
 
       };

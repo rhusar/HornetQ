@@ -25,6 +25,7 @@ import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.message.Message;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -47,9 +48,15 @@ public class CompactingTest extends ServiceTestBase
 
    private static final String AD2 = "ad2";
 
+   private static final String AD3 = "ad3";
+
    private static final String Q1 = "q1";
 
    private static final String Q2 = "q2";
+
+   private static final String Q3 = "q3";
+
+   private static final int TOT_AD3 = 5000;
 
    private HornetQServer server;
 
@@ -60,6 +67,101 @@ public class CompactingTest extends ServiceTestBase
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
+
+   public void testCleanupAIO() throws Throwable
+   {
+      for (int i = 0; i < 3; i++)
+      {
+         System.out.println("Test # " + i);
+         internalTestCleanup(JournalType.ASYNCIO);
+         tearDown();
+         setUp();
+      }
+   }
+
+   public void testCleanupNIO() throws Throwable
+   {
+      for (int i = 0; i < 3; i++)
+      {
+         System.out.println("Test # " + i);
+         internalTestCleanup(JournalType.NIO);
+         tearDown();
+         setUp();
+      }
+   }
+
+   private void internalTestCleanup(JournalType journalType) throws Throwable
+   {
+      setupServer(journalType);
+
+      ClientSession session = sf.createSession(false, true, true);
+
+      ClientProducer prod = session.createProducer(AD1);
+
+      for (int i = 0; i < 500; i++)
+      {
+         prod.send(session.createClientMessage(true));
+      }
+
+      session.commit();
+
+      prod.close();
+
+      ClientConsumer cons = session.createConsumer(Q2);
+      prod = session.createProducer(AD2);
+
+      session.start();
+
+      for (int i = 0; i < 200; i++)
+      {
+         System.out.println("Iteration " + i);
+         for (int j = 0; j < 1000; j++)
+         {
+            Message msg = session.createClientMessage(true);
+            msg.getBody().writeBytes(new byte[1024]);
+
+            prod.send(msg);
+         }
+
+         session.commit();
+
+         for (int j = 0; j < 1000; j++)
+         {
+            ClientMessage msg = cons.receive(2000);
+            assertNotNull(msg);
+            msg.acknowledge();
+         }
+
+         session.commit();
+
+      }
+
+      assertNull(cons.receiveImmediate());
+
+      session.close();
+
+      server.stop();
+
+      server.start();
+
+      session = sf.createSession(false, true, true);
+      cons = session.createConsumer(Q1);
+      session.start();
+
+      for (int i = 0; i < 500; i++)
+      {
+         ClientMessage msg = cons.receive(1000);
+         assertNotNull(msg);
+         msg.acknowledge();
+      }
+
+      assertNull(cons.receiveImmediate());
+
+      prod = session.createProducer(AD2);
+
+      session.close();
+
+   }
 
    public void testMultiProducerAndCompactAIO() throws Throwable
    {
@@ -73,6 +175,36 @@ public class CompactingTest extends ServiceTestBase
 
    public void internalTestMultiProducer(JournalType journalType) throws Throwable
    {
+
+      setupServer(journalType);
+
+      ClientSession session = sf.createSession(false, false);
+
+      try
+      {
+         ClientProducer producer = session.createProducer(AD3);
+
+         byte[] buffer = new byte[10 * 1024];
+
+         ClientMessage msg = session.createClientMessage(true);
+         msg.setBody(ChannelBuffers.wrappedBuffer(buffer));
+         for (int i = 0; i < TOT_AD3; i++)
+         {
+            producer.send(msg);
+            if (i % 100 == 0)
+            {
+               session.commit();
+            }
+         }
+
+         session.commit();
+      }
+      finally
+      {
+         session.close();
+      }
+
+      server.stop();
 
       setupServer(journalType);
 
@@ -224,7 +356,7 @@ public class CompactingTest extends ServiceTestBase
 
       try
       {
-         
+
          sess = sf.createSession(true, true);
 
          ClientConsumer cons = sess.createConsumer(Q1);
@@ -245,6 +377,19 @@ public class CompactingTest extends ServiceTestBase
          cons = sess.createConsumer(Q2);
 
          assertNull(cons.receive(100));
+
+         cons.close();
+
+         cons = sess.createConsumer(Q3);
+
+         for (int i = 0; i < TOT_AD3; i++)
+         {
+            ClientMessage msg = cons.receive(60000);
+            assertNotNull(msg);
+            msg.acknowledge();
+         }
+
+         assertNull(cons.receiveImmediate());
 
       }
       finally
@@ -278,7 +423,7 @@ public class CompactingTest extends ServiceTestBase
 
       config.setJournalType(journalType);
 
-      config.setJournalCompactMinFiles(3);
+      config.setJournalCompactMinFiles(10);
       config.setJournalCompactPercentage(50);
 
       server = createServer(true, config);
@@ -305,17 +450,36 @@ public class CompactingTest extends ServiceTestBase
       {
       }
 
-      sess.close();
+      try
+      {
+         sess.createQueue(AD3, Q3, true);
+      }
+      catch (Exception ignored)
+      {
+      }
 
-      sf = createInVMFactory();
+      sess.close();
    }
 
    @Override
    protected void tearDown() throws Exception
    {
-      sf.close();
+      try
+      {
+         if (sf != null)
+         {
+            sf.close();
+         }
 
-      server.stop();
+         if (server != null)
+         {
+            server.stop();
+         }
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace(); // system.out -> junit reports
+      }
 
       server = null;
 

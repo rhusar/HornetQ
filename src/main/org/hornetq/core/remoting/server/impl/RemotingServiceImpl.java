@@ -22,9 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.exception.HornetQException;
@@ -71,7 +73,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private final Set<TransportConfiguration> transportConfigs;
 
-   private final List<Interceptor> interceptors = new ArrayList<Interceptor>();
+   private final List<Interceptor> interceptors = new CopyOnWriteArrayList<Interceptor>();
 
    private final Set<Acceptor> acceptors = new HashSet<Acceptor>();
 
@@ -303,8 +305,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
       
       RemotingConnection rc = new RemotingConnectionImpl(connection,
-                                                         interceptors,
-                                                         !config.isBackup(),
+                                                         interceptors,                                                        
                                                          server.getConfiguration().isAsyncConnectionExecutionEnabled() ? server.getExecutorFactory()
                                                                                                                                .getExecutor()
                                                                                                                       : null);
@@ -315,9 +316,14 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
       channel1.setHandler(handler);
 
+      long ttl = ClientSessionFactoryImpl.DEFAULT_CONNECTION_TTL;
+      if (config.getConnectionTTLOverride() != -1)
+      {
+         ttl = config.getConnectionTTLOverride();
+      }
       final ConnectionEntry entry = new ConnectionEntry(rc,
                                                         System.currentTimeMillis(),
-                                                        config.getConnectionTTLOverride());
+                                                        ttl);
 
       connections.put(connection.getID(), entry);
 
@@ -461,7 +467,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       public void run()
-      {
+      {         
          while (!closed)
          {
             long now = System.currentTimeMillis();

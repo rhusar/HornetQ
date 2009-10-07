@@ -29,6 +29,7 @@ import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessag
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.utils.Future;
+import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TokenBucketLimiter;
 
 /**
@@ -60,7 +61,13 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    private final Channel channel;
 
    private final long id;
-
+   
+   private final SimpleString filterString;
+   
+   private final SimpleString queueName;
+   
+   private boolean browseOnly;
+   
    private final Executor sessionExecutor;
 
    private final int clientWindowSize;
@@ -106,6 +113,9 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
    public ClientConsumerImpl(final ClientSessionInternal session,
                              final long id,
+                             final SimpleString queueName,
+                             final SimpleString filterString,
+                             final boolean browseOnly,
                              final int clientWindowSize,
                              final int ackBatchSize,
                              final TokenBucketLimiter rateLimiter,
@@ -113,6 +123,12 @@ public class ClientConsumerImpl implements ClientConsumerInternal
                              final Channel channel)
    {
       this.id = id;
+      
+      this.queueName = queueName;
+      
+      this.filterString = filterString;
+      
+      this.browseOnly = browseOnly;
 
       this.channel = channel;
 
@@ -149,7 +165,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       if (handler != null)
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE,
-                                      "Cannot call receive(...) - a MessageHandler is set");
+                                    "Cannot call receive(...) - a MessageHandler is set");
       }
 
       if (clientWindowSize == 0)
@@ -210,7 +226,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
             {
                // if we have already pre acked we cant expire
                boolean expired = m.isExpired();
-               
+
                flowControlBeforeConsumption(m);
 
                if (expired)
@@ -279,7 +295,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       if (receiverThread != null)
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE,
-                                      "Cannot set MessageHandler - consumer is in receive(...)");
+                                    "Cannot set MessageHandler - consumer is in receive(...)");
       }
 
       boolean noPreviousHandler = handler == null;
@@ -329,7 +345,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    public void stop() throws HornetQException
    {
       waitForOnMessageToComplete();
-
+      
       synchronized (this)
       {
          if (stopped)
@@ -339,6 +355,15 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
          stopped = true;
       }
+   }
+   
+   public void clearAtFailover()
+   {
+      clearBuffer();
+      
+      lastAckedMessage = null;
+      
+      creditsToSend = 0;
    }
 
    public synchronized void start()
@@ -360,9 +385,24 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    {
       return id;
    }
+   
+   public SimpleString getFilterString()
+   {
+      return filterString;
+   }
+
+   public SimpleString getQueueName()
+   {
+      return queueName;
+   }
+
+   public boolean isBrowseOnly()
+   {
+      return browseOnly;
+   }
 
    public synchronized void handleMessage(final ClientMessageInternal message) throws Exception
-   {
+   {          
       if (closing)
       {
          // This is ok - we just ignore the message
@@ -400,7 +440,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
       // Flow control for the first packet, we will have others
       flowControl(packet.getPacketSize(), false);
-            
+
       ClientMessageInternal currentChunkMessage = new ClientMessageImpl(packet.getDeliveryCount());
 
       currentChunkMessage.decodeProperties(ChannelBuffers.wrappedBuffer(packet.getLargeMessageHeader()));
@@ -439,21 +479,21 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    {
       synchronized (this)
       {
-         //Need to send credits for the messages in the buffer
-         
-         for (ClientMessageInternal message: this.buffer)
+         // Need to send credits for the messages in the buffer
+
+         for (ClientMessageInternal message : this.buffer)
          {
             flowControlBeforeConsumption(message);
          }
 
-         buffer.clear();
+         clearBuffer();
       }
-      
-      //Need to send credits for the messages in the buffer
+
+      // Need to send credits for the messages in the buffer
 
       waitForOnMessageToComplete();
    }
-
+   
    public int getClientWindowSize()
    {
       return clientWindowSize;
@@ -584,7 +624,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
     * @param credits
     */
    private void sendCredits(final int credits)
-   {
+   {      
       channel.send(new SessionConsumerFlowCreditMessage(id, credits));
    }
 
@@ -742,18 +782,20 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
          flushAcks();
 
+         clearBuffer();
+
          if (sendCloseMessage)
          {
             channel.sendBlocking(new SessionConsumerCloseMessage(id));
          }
-
-         clearBuffer();
       }
-      finally
+      catch (Throwable t)
       {
-         session.removeConsumer(this);
+         // Consumer close should always return without exception
       }
-   }
+
+      session.removeConsumer(this);
+   }   
 
    private void clearBuffer()
    {

@@ -130,9 +130,9 @@ public class QueueControlUsingCoreTest extends QueueControlTest
             return (String)proxy.retrieveAttributeValue("name");
          }
 
-         public long getPersistenceID()
+         public long getID()
          {
-            return (Long)proxy.retrieveAttributeValue("persistenceID");
+            return (Long)proxy.retrieveAttributeValue("ID");
          }
 
          public long getScheduledCount()
@@ -250,6 +250,21 @@ public class QueueControlUsingCoreTest extends QueueControlTest
          public void setExpiryAddress(String expiryAddres) throws Exception
          {
             proxy.invokeOperation("setExpiryAddress", expiryAddres);
+         }
+
+         public void pause() throws Exception
+         {
+            proxy.invokeOperation("pause");
+         }
+
+         public void resume() throws Exception
+         {
+            proxy.invokeOperation("resume");
+         }
+
+         public boolean isPaused() throws Exception
+         {
+            return (Boolean)proxy.invokeOperation("isPaused");
          }
 
       };

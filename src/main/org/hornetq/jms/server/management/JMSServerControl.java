@@ -36,6 +36,12 @@ public interface JMSServerControl
 
    String getVersion();
 
+   String[] getTopicNames();
+   
+   String[] getQueueNames();
+   
+   String[] getConnectionFactoryNames();
+   
    // Operations ----------------------------------------------------
 
    @Operation(desc = "Create a JMS Queue", impact = ACTION)
@@ -92,8 +98,7 @@ public interface JMSServerControl
                                 String clientID,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
-                                long callTimeout,
-                                int maxConnections,
+                                long callTimeout,                                
                                 boolean cacheLargeMessageClient,
                                 int minLargeMessageSize,
                                 int consumerWindowSize,
@@ -113,6 +118,7 @@ public interface JMSServerControl
                                 int threadPoolMaxSize,
                                 long retryInterval,
                                 double retryIntervalMultiplier,
+                                long maxRetryInterval,
                                 int reconnectAttempts,
                                 boolean failoverOnServerShutdown,
                                 Object[] jndiBindings) throws Exception;
@@ -125,8 +131,7 @@ public interface JMSServerControl
                                 @Parameter(name = "clientID") String clientID,
                                 @Parameter(name = "clientFailureCheckPeriod") long clientFailureCheckPeriod,
                                 @Parameter(name = "connectionTTL") long connectionTTL,
-                                @Parameter(name = "callTimeout") long callTimeout,
-                                @Parameter(name = "maxConnections") int maxConnections,
+                                @Parameter(name = "callTimeout") long callTimeout,                               
                                 @Parameter(name = "cacheLargemessageClient") boolean cacheLargeMessageClient,
                                 @Parameter(name = "minLargeMessageSize") int minLargeMessageSize,
                                 @Parameter(name = "consumerWindowSize") int consumerWindowSize,
@@ -146,6 +151,7 @@ public interface JMSServerControl
                                 @Parameter(name = "threadPoolMaxSize") int threadPoolMaxSize,
                                 @Parameter(name = "retryInterval") long retryInterval,
                                 @Parameter(name = "retryIntervalMultiplier") double retryIntervalMultiplier,
+                                @Parameter(name = "maxRetryInterval") long maxRetryInterval,
                                 @Parameter(name = "reconnectAttempts") int reconnectAttempts,
                                 @Parameter(name = "failoverOnServerShutdown") boolean failoverOnServerShutdown,
                                 @Parameter(name = "jndiBindings", desc = "comma-separated list of JNDI bindings") String jndiBindings) throws Exception;
@@ -170,8 +176,7 @@ public interface JMSServerControl
                                 long discoveryRefreshTimeout,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
-                                long callTimeout,
-                                int maxConnections,
+                                long callTimeout,                              
                                 boolean cacheLargeMessageClient,
                                 int minLargeMessageSize,
                                 int consumerWindowSize,
@@ -192,6 +197,7 @@ public interface JMSServerControl
                                 int threadPoolMaxSize,
                                 long retryInterval,
                                 double retryIntervalMultiplier,
+                                long maxRetryInterval,
                                 int reconnectAttempts,
                                 boolean failoverOnServerShutdown,
                                 Object[] jndiBindings) throws Exception;
@@ -204,8 +210,7 @@ public interface JMSServerControl
                                 @Parameter(name = "discoveryRefreshTimeout") long discoveryRefreshTimeout,
                                 @Parameter(name = "clientFailureCheckPeriod") long clientFailureCheckPeriod,
                                 @Parameter(name = "connectionTTL") long connectionTTL,
-                                @Parameter(name = "callTimeout") long callTimeout,
-                                @Parameter(name = "maxConnections") int maxConnections,
+                                @Parameter(name = "callTimeout") long callTimeout,                                
                                 @Parameter(name = "cacheLargemessageClient") boolean cacheLargeMessageClient,
                                 @Parameter(name = "minLargeMessageSize") int minLargeMessageSize,
                                 @Parameter(name = "consumerWindowSize") int consumerWindowSize,
@@ -226,6 +231,7 @@ public interface JMSServerControl
                                 @Parameter(name = "threadPoolMaxSize") int threadPoolMaxSize,
                                 @Parameter(name = "retryInterval") long retryInterval,
                                 @Parameter(name = "retryIntervalMultiplier") double retryIntervalMultiplier,
+                                @Parameter(name = "maxRetryInterval") long maxRetryInterval,
                                 @Parameter(name = "reconnectAttempts") int reconnectAttempts,
                                 @Parameter(name = "failoverOnServerShutdown") boolean failoverOnServerShutdown,
                                 @Parameter(name = "jndiBindings", desc = "comma-separated list of JNDI bindings") String jndiBindings) throws Exception;

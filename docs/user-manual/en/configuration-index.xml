@@ -212,6 +212,13 @@
                             <entry>true</entry>
                         </row>
                         <row>
+                            <entry><link linkend="management.jmx.configuration"
+                                    >jmx-domain</link></entry>
+                            <entry>String</entry>
+                            <entry>the JMX domain used to registered HornetQ MBeans in the MBeanServer</entry>
+                            <entry>org.hornetq</entry>
+                        </row>
+                        <row>
                             <entry><link linkend="large.message.configuring"
                                     >large-messages-directory</link></entry>
                             <entry>String</entry>
@@ -323,14 +330,6 @@
                             <entry>Boolean</entry>
                             <entry>true means that id's are persisted to the journal</entry>
                             <entry>true</entry>
-                        </row>
-                        <row>
-                            <entry><link linkend="queue.activation.timeout"
-                                    >queue-activation-timeout</link></entry>
-                            <entry>Long</entry>
-                            <entry>after failover occurs, this timeout specifies how long (in ms) to
-                                wait for consumers to re-attach before starting delivery</entry>
-                            <entry>30000</entry>
                         </row>
                         <row>
                             <entry><link linkend="server.scheduled.thread.pool"
@@ -879,7 +878,7 @@
                                     >connection-factory.connection-ttl</link></entry>
                             <entry>Long</entry>
                             <entry>the time to live (in ms) for connections</entry>
-                            <entry>5 * 60000</entry>
+                            <entry>1 * 60000</entry>
                         </row>
                         <row>
                             <entry><link linkend="flow-control.rate.core.api"

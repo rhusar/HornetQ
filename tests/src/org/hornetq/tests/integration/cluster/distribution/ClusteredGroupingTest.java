@@ -522,8 +522,6 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          stopServers(1);
 
-         Thread.sleep(5000);
-
          sendInRange(2, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
 

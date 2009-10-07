@@ -39,6 +39,7 @@ import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
+import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
@@ -94,7 +95,7 @@ public class JournalStorageManager implements StorageManager
    public static final int SIZE_FIELDS = SIZE_INT + SIZE_LONG + SIZE_LONG + SIZE_BYTE;
 
    // Message journal record types
-   
+
    public static final byte ADD_LARGE_MESSAGE = 30;
 
    public static final byte ADD_MESSAGE = 31;
@@ -110,6 +111,8 @@ public class JournalStorageManager implements StorageManager
    public static final byte SET_SCHEDULED_DELIVERY_TIME = 36;
 
    public static final byte DUPLICATE_ID = 37;
+
+   public static final byte HEURISTIC_COMPLETION = 38;
 
    private UUID persistentID;
 
@@ -130,15 +133,15 @@ public class JournalStorageManager implements StorageManager
    private final boolean syncNonTransactional;
 
    private final int perfBlastPages;
-   
+
    private final boolean createBindingsDir;
-   
+
    private final String bindingsDir;
-   
+
    private final boolean createJournalDir;
-   
+
    private final String journalDir;
-   
+
    private final String largeMessagesDirectory;
 
    public JournalStorageManager(final Configuration config, final Executor executor)
@@ -156,7 +159,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new NullPointerException("bindings-dir is null");
       }
-      
+
       createBindingsDir = config.isCreateBindingsDir();
 
       journalDir = config.getJournalDirectory();
@@ -165,7 +168,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new NullPointerException("journal-dir is null");
       }
-      
+
       createJournalDir = config.isCreateJournalDir();
 
       SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDir);
@@ -212,8 +215,7 @@ public class JournalStorageManager implements StorageManager
       {
          throw new IllegalArgumentException("Unsupported journal type " + config.getJournalType());
       }
-      
-      
+
       this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
 
       messageJournal = new JournalImpl(config.getJournalFileSize(),
@@ -275,7 +277,7 @@ public class JournalStorageManager implements StorageManager
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "MessageId was not assigned to Message");
       }
 
-      // Note that we don't sync, the add reference that comes immediately after will sync
+      // Note that we don't sync, the add reference that comes immediately after will sync if appropriate
 
       if (message.isLargeMessage())
       {
@@ -308,7 +310,7 @@ public class JournalStorageManager implements StorageManager
    public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception
    {
       ScheduledDeliveryEncoding encoding = new ScheduledDeliveryEncoding(ref.getScheduledDeliveryTime(),
-                                                                         ref.getQueue().getPersistenceID());
+                                                                         ref.getQueue().getID());
 
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
                                         SET_SCHEDULED_DELIVERY_TIME,
@@ -350,7 +352,7 @@ public class JournalStorageManager implements StorageManager
       }
 
    }
-   
+
    public void storePageTransaction(final long txID, final PageTransactionInfo pageTransaction) throws Exception
    {
       if (pageTransaction.getRecordID() != 0)
@@ -378,6 +380,18 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendUpdateRecordTransactional(txID, messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID));
    }
 
+   public long storeHeuristicCompletion(Xid xid, boolean isCommit) throws Exception
+   {
+      long id = generateUniqueID();
+      messageJournal.appendAddRecord(id, HEURISTIC_COMPLETION, new HeuristicCompletionEncoding(xid, isCommit), true);
+      return id;
+   }
+   
+   public void deleteHeuristicCompletion(long id) throws Exception
+   {
+      messageJournal.appendDeleteRecord(id, true);
+   }
+   
    public void deletePageTransactional(final long txID, final long recordID) throws Exception
    {
       messageJournal.appendDeleteRecordTransactional(txID, recordID);
@@ -386,7 +400,7 @@ public class JournalStorageManager implements StorageManager
    public void updateScheduledDeliveryTimeTransactional(final long txID, final MessageReference ref) throws Exception
    {
       ScheduledDeliveryEncoding encoding = new ScheduledDeliveryEncoding(ref.getScheduledDeliveryTime(),
-                                                                         ref.getQueue().getPersistenceID());
+                                                                         ref.getQueue().getID());
 
       messageJournal.appendUpdateRecordTransactional(txID,
                                                      ref.getMessage().getMessageID(),
@@ -443,7 +457,7 @@ public class JournalStorageManager implements StorageManager
 
    public void updateDeliveryCount(final MessageReference ref) throws Exception
    {
-      DeliveryCountUpdateEncoding updateInfo = new DeliveryCountUpdateEncoding(ref.getQueue().getPersistenceID(),
+      DeliveryCountUpdateEncoding updateInfo = new DeliveryCountUpdateEncoding(ref.getQueue().getID(),
                                                                                ref.getDeliveryCount());
 
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
@@ -465,6 +479,44 @@ public class JournalStorageManager implements StorageManager
 
       int deliveryCount;
    }
+   
+   
+   private class LargeMessageTXFailureCallback implements TransactionFailureCallback
+   {
+      private final Map<Long, ServerMessage> messages;
+      
+      public LargeMessageTXFailureCallback(Map<Long, ServerMessage> messages)
+      {
+         super();
+         this.messages = messages;
+      }
+
+
+
+      public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+      {
+         for (RecordInfo record : records)
+         {
+            if (record.userRecordType == ADD_LARGE_MESSAGE)
+            {
+               byte[] data = record.data;
+
+               HornetQBuffer buff = ChannelBuffers.wrappedBuffer(data);
+
+               try
+               {
+                  LargeServerMessage serverMessage = parseLargeMessage(messages, buff);
+                  serverMessage.decrementRefCount();
+               }
+               catch (Exception e)
+               {
+                  log.warn(e.getMessage(), e);
+               }
+            }
+         }
+      }
+      
+   }
 
    public void loadMessageJournal(final PagingManager pagingManager,
                                   final ResourceManager resourceManager,
@@ -475,9 +527,11 @@ public class JournalStorageManager implements StorageManager
 
       List<PreparedTransactionInfo> preparedTransactions = new ArrayList<PreparedTransactionInfo>();
 
-      messageJournal.load(records, preparedTransactions);
-
       Map<Long, ServerMessage> messages = new HashMap<Long, ServerMessage>();
+      
+      messageJournal.load(records, preparedTransactions, new LargeMessageTXFailureCallback(messages));
+      
+      ArrayList<LargeServerMessage> largeMessages = new ArrayList<LargeServerMessage>();
 
       Map<Long, Map<Long, AddMessageRecord>> queueMap = new HashMap<Long, Map<Long, AddMessageRecord>>();
 
@@ -493,36 +547,11 @@ public class JournalStorageManager implements StorageManager
          {
             case ADD_LARGE_MESSAGE:
             {
-               LargeServerMessage largeMessage = createLargeMessage();
-
-               LargeMessageEncoding messageEncoding = new LargeMessageEncoding(largeMessage);
-
-               messageEncoding.decode(buff);
-               
-               Long originalMessageID = (Long)largeMessage.getProperties().getProperty(MessageImpl.HDR_ORIG_MESSAGE_ID);
-               
-               // Using the linked file by the original file
-               if (originalMessageID != null)
-               {
-                  LargeServerMessage originalMessage = (LargeServerMessage)messages.get(originalMessageID);
-                  
-                  if (originalMessage == null)
-                  {
-                     // this could happen if the message was deleted but the file still exists as the file still being used
-                      originalMessage = createLargeMessage();
-                     originalMessage.setMessageID(originalMessageID);
-                     originalMessage.setComplete(true);
-                     messages.put(originalMessageID, originalMessage);
-                  }
-                  
-                  originalMessage.incrementRefCount();
-                  
-                  largeMessage.setLinkedMessage(originalMessage);
-                  largeMessage.setComplete(true);
-               }
-               
+               LargeServerMessage largeMessage = parseLargeMessage(messages, buff);
 
                messages.put(record.id, largeMessage);
+
+               largeMessages.add(largeMessage);
 
                break;
             }
@@ -671,6 +700,13 @@ public class JournalStorageManager implements StorageManager
 
                break;
             }
+            case HEURISTIC_COMPLETION:
+            {
+               HeuristicCompletionEncoding encoding = new HeuristicCompletionEncoding();
+               encoding.decode(buff);
+               resourceManager.putHeuristicCompletion(record.id, encoding.xid, encoding.isCommit);
+               break;
+            }
             default:
             {
                throw new IllegalStateException("Invalid record type " + recordType);
@@ -708,10 +744,56 @@ public class JournalStorageManager implements StorageManager
 
       loadPreparedTransactions(pagingManager, resourceManager, queues, preparedTransactions, duplicateIDMap);
 
+      for (LargeServerMessage msg : largeMessages)
+      {
+         if (msg.getRefCount() == 0)
+         {
+            log.info("Large message: " + msg.getMessageID() + " didn't have any associated reference, file will be deleted");
+            msg.decrementRefCount();
+         }
+      }
+      
       if (perfBlastPages != -1)
       {
          messageJournal.perfBlast(perfBlastPages);
       }
+   }
+
+   /**
+    * @param messages
+    * @param buff
+    * @return
+    * @throws Exception
+    */
+   private LargeServerMessage parseLargeMessage(Map<Long, ServerMessage> messages, HornetQBuffer buff) throws Exception
+   {
+      LargeServerMessage largeMessage = createLargeMessage();
+
+      LargeMessageEncoding messageEncoding = new LargeMessageEncoding(largeMessage);
+
+      messageEncoding.decode(buff);
+      
+      Long originalMessageID = (Long)largeMessage.getProperties().getProperty(MessageImpl.HDR_ORIG_MESSAGE_ID);
+      
+      // Using the linked file by the original file
+      if (originalMessageID != null)
+      {
+         LargeServerMessage originalMessage = (LargeServerMessage)messages.get(originalMessageID);
+         
+         if (originalMessage == null)
+         {
+            // this could happen if the message was deleted but the file still exists as the file still being used
+            originalMessage = createLargeMessage();
+            originalMessage.setMessageID(originalMessageID);
+            originalMessage.setStored();
+            messages.put(originalMessageID, originalMessage);
+         }
+         
+         originalMessage.incrementRefCount();
+         
+         largeMessage.setLinkedMessage(originalMessage);
+      }
+      return largeMessage;
    }
 
    private void loadPreparedTransactions(final PagingManager pagingManager,
@@ -747,6 +829,12 @@ public class JournalStorageManager implements StorageManager
 
             switch (recordType)
             {
+               case ADD_LARGE_MESSAGE:
+               {
+                  messages.put(record.id, parseLargeMessage(messages, buff));
+                  
+                  break;
+               }
                case ADD_MESSAGE:
                {
                   ServerMessage message = new ServerMessageImpl(record.id);
@@ -915,11 +1003,7 @@ public class JournalStorageManager implements StorageManager
                                                                                           binding.getAddress(),
                                                                                           filterString);
 
-      long id = this.generateUniqueID();
-
-      queue.setPersistenceID(id);
-
-      bindingsJournal.appendAddRecord(id, QUEUE_BINDING_RECORD, bindingEncoding, true);
+      bindingsJournal.appendAddRecord(binding.getID(), QUEUE_BINDING_RECORD, bindingEncoding, true);
    }
 
    public void deleteQueueBinding(final long queueBindingID) throws Exception
@@ -933,7 +1017,7 @@ public class JournalStorageManager implements StorageManager
 
       List<PreparedTransactionInfo> preparedTransactions = new ArrayList<PreparedTransactionInfo>();
 
-      bindingsJournal.load(records, preparedTransactions);
+      bindingsJournal.load(records, preparedTransactions, null);
 
       for (RecordInfo record : records)
       {
@@ -949,9 +1033,9 @@ public class JournalStorageManager implements StorageManager
 
             bindingEncoding.decode(buffer);
 
-            bindingEncoding.setPersistenceID(id);
+            bindingEncoding.setId(id);
 
-            queueBindingInfos.add(bindingEncoding);
+            queueBindingInfos.add(bindingEncoding);          
          }
          else if (rec == PERSISTENT_ID_RECORD)
          {
@@ -985,7 +1069,7 @@ public class JournalStorageManager implements StorageManager
       checkAndCreateDir(bindingsDir, createBindingsDir);
 
       checkAndCreateDir(journalDir, createJournalDir);
-      
+
       checkAndCreateDir(largeMessagesDirectory, createJournalDir);
 
       cleanupIncompleteFiles();
@@ -1059,9 +1143,9 @@ public class JournalStorageManager implements StorageManager
     * @param messageID
     * @return
     */
-   SequentialFile createFileForLargeMessage(final long messageID, final boolean completeFile)
+   SequentialFile createFileForLargeMessage(final long messageID, final boolean stored)
    {
-      if (completeFile)
+      if (stored)
       {
          return largeMessagesFactory.createSequentialFile(messageID + ".msg", -1);
       }
@@ -1141,10 +1225,43 @@ public class JournalStorageManager implements StorageManager
          return XidCodecSupport.getXidEncodeLength(xid);
       }
    }
+   
+   private static class HeuristicCompletionEncoding implements EncodingSupport
+   {
+      Xid xid;
+      boolean isCommit;
+      
+      HeuristicCompletionEncoding(final Xid xid, final boolean isCommit)
+      {
+         this.xid = xid;
+         this.isCommit = isCommit;
+      }
+
+      HeuristicCompletionEncoding()
+      {
+      }
+
+      public void decode(final HornetQBuffer buffer)
+      {
+         xid = XidCodecSupport.decodeXid(buffer);
+         isCommit = buffer.readBoolean();
+      }
+
+      public void encode(final HornetQBuffer buffer)
+      {
+         XidCodecSupport.encodeXid(xid, buffer);
+         buffer.writeBoolean(isCommit);
+      }
+
+      public int getEncodeSize()
+      {
+         return XidCodecSupport.getXidEncodeLength(xid) + DataConstants.SIZE_BOOLEAN;
+      }
+   }
 
    private static class PersistentQueueBindingEncoding implements EncodingSupport, QueueBindingInfo
    {
-      long persistenceID;
+      long id;
 
       SimpleString name;
 
@@ -1165,14 +1282,14 @@ public class JournalStorageManager implements StorageManager
          this.filterString = filterString;
       }
 
-      public long getPersistenceID()
+      public long getId()
       {
-         return persistenceID;
+         return id;
       }
 
-      public void setPersistenceID(final long id)
+      public void setId(final long id)
       {
-         this.persistenceID = id;
+         this.id = id;
       }
 
       public SimpleString getAddress()

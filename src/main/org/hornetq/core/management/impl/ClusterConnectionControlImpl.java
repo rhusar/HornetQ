@@ -13,6 +13,11 @@
 
 package org.hornetq.core.management.impl;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.management.StandardMBean;
+
 import org.hornetq.core.config.cluster.ClusterConnectionConfiguration;
 import org.hornetq.core.management.ClusterConnectionControl;
 import org.hornetq.core.server.cluster.ClusterConnection;
@@ -25,7 +30,7 @@ import org.hornetq.utils.json.JSONObject;
  *
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
  */
-public class ClusterConnectionControlImpl implements ClusterConnectionControl
+public class ClusterConnectionControlImpl extends StandardMBean implements ClusterConnectionControl
 {
 
    // Constants -----------------------------------------------------
@@ -41,8 +46,9 @@ public class ClusterConnectionControlImpl implements ClusterConnectionControl
    // Constructors --------------------------------------------------
 
    public ClusterConnectionControlImpl(final ClusterConnection clusterConnection,
-                                   ClusterConnectionConfiguration configuration)
+                                       ClusterConnectionConfiguration configuration) throws Exception
    {
+      super(ClusterConnectionControl.class);
       this.clusterConnection = clusterConnection;
       this.configuration = configuration;
    }
@@ -63,7 +69,7 @@ public class ClusterConnectionControlImpl implements ClusterConnectionControl
    {
       return configuration.getMaxHops();
    }
-   
+
    public String getName()
    {
       return configuration.getName();
@@ -73,29 +79,49 @@ public class ClusterConnectionControlImpl implements ClusterConnectionControl
    {
       return configuration.getRetryInterval();
    }
+   
+   public String getNodeID()
+   {
+      return clusterConnection.getNodeID();
+   }
 
    public Object[] getStaticConnectorNamePairs()
    {
-      Object[] ret = new Object[configuration.getStaticConnectorNamePairs().size()];
+      List<Pair<String, String>> pairs = configuration.getStaticConnectorNamePairs();
       
+      if (pairs == null)
+      {
+         return null;
+      }
+         
+      Object[] ret = new Object[pairs.size()];
+
       int i = 0;
-      for (Pair<String, String> pair: configuration.getStaticConnectorNamePairs())
+      for (Pair<String, String> pair : configuration.getStaticConnectorNamePairs())
       {
          String[] opair = new String[2];
-         
+
          opair[0] = pair.a;
          opair[1] = pair.b != null ? pair.b : null;
-         
+
          ret[i++] = opair;
       }
-      
-      return ret;            
+
+      return ret;
    }
 
-   public String getStaticConnectorNamePairsAsJSON() throws Exception {
+   public String getStaticConnectorNamePairsAsJSON() throws Exception
+   {
+      List<Pair<String, String>> pairs = configuration.getStaticConnectorNamePairs();
+      
+      if (pairs == null)
+      {
+         return null;
+      }
+      
       JSONArray array = new JSONArray();
 
-      for (Pair<String, String> pair: configuration.getStaticConnectorNamePairs())
+      for (Pair<String, String> pair : pairs)
       {
          JSONObject p = new JSONObject();
          p.put("a", pair.a);
@@ -104,7 +130,7 @@ public class ClusterConnectionControlImpl implements ClusterConnectionControl
       }
       return array.toString();
    }
-   
+
    public boolean isDuplicateDetection()
    {
       return configuration.isDuplicateDetection();
@@ -115,6 +141,11 @@ public class ClusterConnectionControlImpl implements ClusterConnectionControl
       return configuration.isForwardWhenNoConsumers();
    }
 
+   public Map<String, String> getNodes() throws Exception
+   {
+      return clusterConnection.getNodes();
+   }
+   
    public boolean isStarted()
    {
       return clusterConnection.isStarted();

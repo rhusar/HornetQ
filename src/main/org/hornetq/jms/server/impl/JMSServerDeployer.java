@@ -139,11 +139,11 @@ public class JMSServerDeployer extends XmlDeployer
          boolean blockOnAcknowledge = getBoolean(e, "block-on-acknowledge", ClientSessionFactoryImpl.DEFAULT_BLOCK_ON_ACKNOWLEDGE);
          boolean blockOnNonPersistentSend = getBoolean(e, "block-on-non-persistent-send", ClientSessionFactoryImpl.DEFAULT_BLOCK_ON_NON_PERSISTENT_SEND);
          boolean blockOnPersistentSend = getBoolean(e, "block-on-persistent-send", ClientSessionFactoryImpl.DEFAULT_BLOCK_ON_PERSISTENT_SEND);
-         boolean autoGroup = getBoolean(e, "auto-group", ClientSessionFactoryImpl.DEFAULT_AUTO_GROUP);
-         int maxConnections = getInteger(e, "max-connections", ClientSessionFactoryImpl.DEFAULT_MAX_CONNECTIONS, GT_ZERO);
+         boolean autoGroup = getBoolean(e, "auto-group", ClientSessionFactoryImpl.DEFAULT_AUTO_GROUP);        
          boolean preAcknowledge = getBoolean(e, "pre-acknowledge", ClientSessionFactoryImpl.DEFAULT_PRE_ACKNOWLEDGE);
          long retryInterval = getLong(e, "retry-interval", ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL, GT_ZERO);
          double retryIntervalMultiplier = getDouble(e, "retry-interval-multiplier", ClientSessionFactoryImpl.DEFAULT_RETRY_INTERVAL_MULTIPLIER, GT_ZERO);
+         long maxRetryInterval = getLong(e, "max-retry-interval", ClientSessionFactoryImpl.DEFAULT_MAX_RETRY_INTERVAL, GT_ZERO);
          int reconnectAttempts = getInteger(e, "reconnect-attempts", ClientSessionFactoryImpl.DEFAULT_RECONNECT_ATTEMPTS, MINUS_ONE_OR_GE_ZERO);
          boolean failoverOnServerShutdown = getBoolean(e, "failover-on-server-shutdown", ClientSessionFactoryImpl.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
          boolean useGlobalPools = getBoolean(e, "use-global-pools", ClientSessionFactoryImpl.DEFAULT_USE_GLOBAL_POOLS);
@@ -235,8 +235,7 @@ public class JMSServerDeployer extends XmlDeployer
                                                      discoveryGroupConfiguration.getRefreshTimeout(),
                                                      clientFailureCheckPeriod,
                                                      connectionTTL,
-                                                     callTimeout,
-                                                     maxConnections,
+                                                     callTimeout,                                                
                                                      cacheLargeMessagesClient,
                                                      minLargeMessageSize,
                                                      consumerWindowSize,
@@ -257,6 +256,7 @@ public class JMSServerDeployer extends XmlDeployer
                                                      threadPoolMaxSize,
                                                      retryInterval,
                                                      retryIntervalMultiplier,
+                                                     maxRetryInterval,
                                                      reconnectAttempts,
                                                      failoverOnServerShutdown,
                                                      jndiBindings);
@@ -268,8 +268,7 @@ public class JMSServerDeployer extends XmlDeployer
                                                      clientID,
                                                      clientFailureCheckPeriod,
                                                      connectionTTL,
-                                                     callTimeout,
-                                                     maxConnections,
+                                                     callTimeout,                                            
                                                      cacheLargeMessagesClient,
                                                      minLargeMessageSize,
                                                      consumerWindowSize,
@@ -289,6 +288,7 @@ public class JMSServerDeployer extends XmlDeployer
                                                      threadPoolMaxSize,
                                                      retryInterval,
                                                      retryIntervalMultiplier,
+                                                     maxRetryInterval,
                                                      reconnectAttempts,
                                                      failoverOnServerShutdown,
                                                      jndiBindings);

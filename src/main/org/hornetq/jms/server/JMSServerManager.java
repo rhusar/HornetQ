@@ -19,6 +19,7 @@ import javax.naming.Context;
 
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.server.HornetQComponent;
+import org.hornetq.core.server.HornetQServer;
 import org.hornetq.utils.Pair;
 
 /**
@@ -140,8 +141,7 @@ public interface JMSServerManager extends HornetQComponent
                                 String clientID,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
-                                long callTimeout,
-                                int maxConnections,
+                                long callTimeout,                               
                                 boolean cacheLargeMessagesClient,
                                 int minLargeMessageSize,
                                 int consumerWindowSize,
@@ -161,6 +161,7 @@ public interface JMSServerManager extends HornetQComponent
                                 int threadPoolMaxSize,
                                 long retryInterval,
                                 double retryIntervalMultiplier,
+                                long maxRetryInterval,
                                 int reconnectAttempts,
                                 boolean failoverOnServerShutdown,
                                 List<String> jndiBindings) throws Exception;
@@ -172,8 +173,7 @@ public interface JMSServerManager extends HornetQComponent
                                 long discoveryRefreshTimeout,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
-                                long callTimeout,
-                                int maxConnections,
+                                long callTimeout,                                
                                 boolean cacheLargeMessagesClient,
                                 int minLargeMessageSize,
                                 int consumerWindowSize,
@@ -194,6 +194,7 @@ public interface JMSServerManager extends HornetQComponent
                                 int threadPoolMaxSize,
                                 long retryInterval,
                                 double retryIntervalMultiplier,
+                                long maxRetryInterval,
                                 int reconnectAttempts,
                                 boolean failoverOnServerShutdown,
                                 List<String> jndiBindings) throws Exception;
@@ -220,4 +221,9 @@ public interface JMSServerManager extends HornetQComponent
    String[] listSessions(String connectionID) throws Exception;
 
    void setContext(final Context context);
+
+   /**
+    * @return
+    */
+   HornetQServer getHornetQServer();
 }

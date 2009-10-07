@@ -75,14 +75,15 @@ public interface Journal extends HornetQComponent
 
    // Load
 
-   long load(List<RecordInfo> committedRecords, List<PreparedTransactionInfo> preparedTransactions) throws Exception;
+   long load(List<RecordInfo> committedRecords, List<PreparedTransactionInfo> preparedTransactions, TransactionFailureCallback transactionFailure) throws Exception;
 
    int getAlignment() throws Exception;
 
    void perfBlast(int pages) throws Exception;
 
-   /** This method is called automatically when a new file is opened  */
-   void checkAndReclaimFiles() throws Exception;
+   /** This method is called automatically when a new file is opened.
+    * @return true if it needs to re-check due to cleanup or other factors  */
+   boolean checkReclaimStatus() throws Exception;
 
    /** This method check for the need of compacting based on the minCompactPercentage 
     * This method is usually called automatically when new files are opened

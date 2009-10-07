@@ -1,9 +1,11 @@
 <html>
   <head>
     <title>HornetQ JAAS Example</title>
-    <link rel="stylesheet" type="text/css" href="../../common/common.css">
+    <link rel="stylesheet" type="text/css" href="../../common/common.css" />
+    <link rel="stylesheet" type="text/css" href="../../common/prettify.css" />
+    <script type="text/javascript" src="../../common/prettify.js"></script>
   </head>
-  <body>
+  <body onload="prettyPrint()">
      <h1>JAAS Example</h1>
 
      <p>This example shows you how to configure HornetQ to use JAAS for security.</p>
@@ -20,47 +22,46 @@
      </p>
      <h2>Example setup</h2>
      <p>HornetQ can use a JAAS security manager by specifying it in <a href="server0/hornetq-beans.xml">hornetq-beans.xml</a>:</p>
-     <pre>
-         <code>
-            &lt;!-- The security manager using JAAS --&gt;
-            &lt;bean name="HornetQSecurityManager" class="org.hornetq.integration.security.JAASSecurityManager"&gt;
-               &lt;property name="configurationName"&gt;org.hornetq.jms.example.ExampleLoginModule&lt;/property&gt;
-               &lt;property name="configuration"&gt;
-                  &lt;inject bean="ExampleConfiguration"/&gt;
-               &lt;/property&gt;
-               &lt;property name="callbackHandler"&gt;
-                 &lt;inject bean="ExampleCallbackHandler" /&gt;
-               &lt;/property&gt;
-            &lt;/bean&gt;
+     <pre class="prettyprint">
+             &lt;!-- The security manager using JAAS --&gt;
+             &lt;bean name=&quot;HornetQSecurityManager&quot; class=&quot;org.hornetq.integration.jboss.security.JAASSecurityManager&quot;&gt;
+             &lt;property name=&quot;configurationName&quot;&gt;org.hornetq.jms.example.ExampleLoginModule&lt;/property&gt;
+             &lt;property name=&quot;configuration&quot;&gt;
+             &lt;inject bean=&quot;ExampleConfiguration&quot;/&gt;
+             &lt;/property&gt;
+             &lt;property name=&quot;callbackHandler&quot;&gt;
+             &lt;inject bean=&quot;ExampleCallbackHandler&quot; /&gt;
+             &lt;/property&gt;
+             &lt;/bean&gt;
 
-            &lt;!-- JAAS uses a simple LoginModule where the user credentials and roles  are
-                 specified as options in the constructor --&gt;
-            &lt;bean name="ExampleConfiguration" class="org.hornetq.jms.example.ExampleConfiguration"&gt;
-               &lt;constructor&gt;
-                  &lt;parameter&gt;org.hornetq.jms.example.ExampleLoginModule&lt;/parameter&gt;
-                  &lt;parameter&gt;
-                    &lt;map class="java.util.HashMap" keyClass="java.lang.String"
-                                                   valueClass="java.lang.String"&gt;
-                        &lt;entry&gt;
-                           &lt;key&gt;user&lt;/key&gt;
-                           &lt;value&gt;jboss&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                           &lt;key&gt;pass&lt;/key&gt;
-                           &lt;value&gt;redhat&lt;/value&gt;
-                        &lt;/entry&gt;
-                        &lt;entry&gt;
-                           &lt;key&gt;role&lt;/key&gt;
-                           &lt;value&gt;guest&lt;/value&gt;
-                        &lt;/entry&gt;
-                     &lt;/map&gt; 
-                  &lt;/parameter&gt;
-               &lt;/constructor&gt;
-            &lt;/bean&gt;
+             &lt;!-- JAAS uses a simple LoginModule where the user credentials and roles are
+             specified as options in the constructor --&gt;
+             &lt;bean name=&quot;ExampleConfiguration&quot; class=&quot;org.hornetq.jms.example.ExampleConfiguration&quot;&gt;
+             &lt;constructor&gt;
+             &lt;parameter&gt;org.hornetq.jms.example.ExampleLoginModule&lt;/parameter&gt;
+             &lt;parameter&gt;
+             &lt;map class=&quot;java.util.HashMap&quot; keyClass=&quot;java.lang.String&quot;
+             valueClass=&quot;java.lang.String&quot;&gt;
+             &lt;entry&gt;
+             &lt;key&gt;user&lt;/key&gt;
+             &lt;value&gt;jboss&lt;/value&gt;
+             &lt;/entry&gt;
+             &lt;entry&gt;
+             &lt;key&gt;pass&lt;/key&gt;
+             &lt;value&gt;redhat&lt;/value&gt;
+             &lt;/entry&gt;
+             &lt;entry&gt;
+             &lt;key&gt;role&lt;/key&gt;
+             &lt;value&gt;guest&lt;/value&gt;
+             &lt;/entry&gt;
+             &lt;/map&gt;
+             &lt;/parameter&gt;
+             &lt;/constructor&gt;
+             &lt;/bean&gt;
 
-            &lt;!-- the CallbackHandler does nothing as we don't have any user interaction --&gt;
-            &lt;bean name="ExampleCallbackHandler" class="org.hornetq.jms.example.ExampleCallbackHandler" /&gt;                             
-         </code>
+             &lt;!-- the CallbackHandler does nothing as we don&apos;t have any user interaction --&gt;
+             &lt;bean name=&quot;ExampleCallbackHandler&quot; class=&quot;org.hornetq.jms.example.ExampleCallbackHandler&quot;
+             /&gt;
      </pre>
      
      <ul>
@@ -80,7 +81,7 @@
      <ol start="4">
         <li>We create a JMS Connection with user "jboss" and password "redhat". Any other
            combination of name and password won't be valid for the ExampleLoginModule</li>
-        <pre>
+        <pre class="prettyprint">
            <code>connection = cf.createConnection("jboss", "redhat");</code>
         </pre>  
      </ol>

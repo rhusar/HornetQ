@@ -12,6 +12,7 @@
  */
 package org.hornetq.ra;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,7 +44,7 @@ import org.hornetq.ra.inflow.HornetQActivationSpec;
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  * @version $Revision: $
  */
-public class HornetQResourceAdapter implements ResourceAdapter
+public class HornetQResourceAdapter implements ResourceAdapter, Serializable
 {
    /**
     * The logger
@@ -209,36 +210,6 @@ public class HornetQResourceAdapter implements ResourceAdapter
       activations.clear();
 
       log.info("HornetQ resource adapter stopped");
-   }
-
-   public void setTransactionManagerLocatorClass(final String transactionManagerLocatorClass)
-   {
-      if (trace)
-      {
-         log.trace("setTransactionManagerLocatorClass(" + transactionManagerLocatorClass + ")");
-      }
-
-      raProperties.setTransactionManagerLocatorClass(transactionManagerLocatorClass);
-   }
-
-   public String getTransactionManagerLocatorClass()
-   {
-      return raProperties.getTransactionManagerLocatorClass();
-   }
-
-   public void setTransactionManagerLocatorMethod(final String transactionManagerLocatorMethod)
-   {
-      if (trace)
-      {
-         log.trace("setTransactionManagerLocatorMethod(" + transactionManagerLocatorMethod + ")");
-      }
-
-      raProperties.setTransactionManagerLocatorMethod(transactionManagerLocatorMethod);
-   }
-
-   public String getTransactionManagerLocatorMethod()
-   {
-      return raProperties.getTransactionManagerLocatorMethod();
    }
 
    public void setConnectorClassName(final String connectorClassName)
@@ -865,37 +836,7 @@ public class HornetQResourceAdapter implements ResourceAdapter
 
       raProperties.setAutoGroup(autoGroup);
    }
-
-   /**
-    * Get max connections
-    *
-    * @return The value
-    */
-   public Integer getMaxConnections()
-   {
-      if (trace)
-      {
-         log.trace("getMaxConnections()");
-      }
-
-      return raProperties.getMaxConnections();
-   }
-
-   /**
-    * Set max connections
-    *
-    * @param maxConnections The value
-    */
-   public void setMaxConnections(final Integer maxConnections)
-   {
-      if (trace)
-      {
-         log.trace("setMaxConnections(" + maxConnections + ")");
-      }
-
-      raProperties.setMaxConnections(maxConnections);
-   }
-
+  
    /**
     * Get pre acknowledge
     *
@@ -1523,12 +1464,7 @@ public class HornetQResourceAdapter implements ResourceAdapter
       {
          cf.setDupsOKBatchSize(val2);
       }
-      val2 = overrideProperties.getMaxConnections() != null ? overrideProperties.getMaxConnections()
-                                                           : raProperties.getMaxConnections();
-      if (val2 != null)
-      {
-         cf.setMaxConnections(val2);
-      }
+      
       val2 = overrideProperties.getMinLargeMessageSize() != null ? overrideProperties.getMinLargeMessageSize()
                                                                 : raProperties.getMinLargeMessageSize();
       if (val2 != null)

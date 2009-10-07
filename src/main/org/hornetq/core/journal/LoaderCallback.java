@@ -13,18 +13,19 @@
 
 package org.hornetq.core.journal;
 
+
 /**
  * 
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  * 
  */
-public interface LoaderCallback
+public interface LoaderCallback extends TransactionFailureCallback
 {
+   void addPreparedTransaction(PreparedTransactionInfo preparedTransaction);
+
    void addRecord(RecordInfo info);
 
    void deleteRecord(long id);
 
    void updateRecord(RecordInfo info);
-
-   void addPreparedTransaction(PreparedTransactionInfo preparedTransaction);
 }
