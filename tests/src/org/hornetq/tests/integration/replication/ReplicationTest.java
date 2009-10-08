@@ -47,7 +47,7 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.core.replication.impl.ReplicatedJournalImpl;
+import org.hornetq.core.replication.impl.ReplicatedJournal;
 import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQServerImpl;
@@ -153,7 +153,7 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
 
-         Journal replicatedJournal = new ReplicatedJournalImpl((byte)1, new FakeJournal(), manager);
+         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
 
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
@@ -218,7 +218,7 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(connectionManager, executor);
          manager.start();
 
-         Journal replicatedJournal = new ReplicatedJournalImpl((byte)1, new FakeJournal(), manager);
+         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
 
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 

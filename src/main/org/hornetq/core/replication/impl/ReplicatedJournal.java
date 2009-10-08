@@ -33,7 +33,7 @@ import org.hornetq.core.replication.ReplicationManager;
  * @see JournalStorageManager
  *
  */
-public class ReplicatedJournalImpl implements Journal
+public class ReplicatedJournal implements Journal
 {
 
    // Constants -----------------------------------------------------
@@ -48,7 +48,7 @@ public class ReplicatedJournalImpl implements Journal
 
    private final byte journalID;
 
-   public ReplicatedJournalImpl(final byte journaID,
+   public ReplicatedJournal(final byte journaID,
                                 final Journal replicatedJournal,
                                 final ReplicationManager replicationManager)
    {

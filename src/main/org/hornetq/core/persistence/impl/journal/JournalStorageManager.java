@@ -57,7 +57,7 @@ import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.remoting.impl.wireformat.XidCodecSupport;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
-import org.hornetq.core.replication.impl.ReplicatedJournalImpl;
+import org.hornetq.core.replication.impl.ReplicatedJournal;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
@@ -192,7 +192,7 @@ public class JournalStorageManager implements StorageManager
       
       if (replicator != null)
       {
-         this.bindingsJournal = new ReplicatedJournalImpl((byte)0, localBindings, replicator);
+         this.bindingsJournal = new ReplicatedJournal((byte)0, localBindings, replicator);
       }
       else
       {
@@ -261,7 +261,7 @@ public class JournalStorageManager implements StorageManager
       
       if (replicator != null)
       {
-         this.messageJournal = new ReplicatedJournalImpl((byte)1, localMessage, replicator);
+         this.messageJournal = new ReplicatedJournal((byte)1, localMessage, replicator);
       }
       else
       {
