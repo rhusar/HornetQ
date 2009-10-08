@@ -12,6 +12,9 @@
  */
 
 package org.hornetq.core.remoting.impl;
+
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PAGE_EVENT;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PAGE_WRITE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PREPARE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_DELETE_TX;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_COMMIT_ROLLBACK;
@@ -401,6 +404,16 @@ public class PacketDecoder
             break;
          }
          case REPLICATION_RESPONSE:
+         {
+            packet = new ReplicationResponseMessage();
+            break;
+         }
+         case REPLICATION_PAGE_WRITE:
+         {
+            packet = new ReplicationResponseMessage();
+            break;
+         }
+         case REPLICATION_PAGE_EVENT:
          {
             packet = new ReplicationResponseMessage();
             break;

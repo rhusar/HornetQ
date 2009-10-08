@@ -155,6 +155,10 @@ public class PacketImpl implements Packet
    
    public static final byte REPLICATION_COMMIT_ROLLBACK = 86;
    
+   public static final byte REPLICATION_PAGE_WRITE = 87;
+
+   public static final byte REPLICATION_PAGE_EVENT = 88;
+   
    
 
    // Static --------------------------------------------------------

@@ -13,9 +13,17 @@
 
 package org.hornetq.core.replication.impl;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.Page;
+import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.impl.PagingManagerImpl;
+import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.Packet;
@@ -25,10 +33,14 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.ServerMessage;
+import org.hornetq.utils.SimpleString;
 
 /**
  *
@@ -57,6 +69,10 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
    private JournalStorageManager storage;
 
+   private PagingManager pageManager;
+
+   private final ConcurrentMap<SimpleString, ConcurrentMap<Integer, Page>> pageIndex = new ConcurrentHashMap<SimpleString, ConcurrentMap<Integer, Page>>();
+
    // Constructors --------------------------------------------------
    public ReplicationEndpointImpl(final HornetQServer server)
    {
@@ -74,28 +90,37 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       {
          if (packet.getType() == PacketImpl.REPLICATION_APPEND)
          {
-            handleAppendAddRecord(packet);
+            handleAppendAddRecord((ReplicationAddMessage)packet);
          }
          else if (packet.getType() == PacketImpl.REPLICATION_APPEND_TX)
          {
-            handleAppendAddTXRecord(packet);
+            handleAppendAddTXRecord((ReplicationAddTXMessage)packet);
          }
          else if (packet.getType() == PacketImpl.REPLICATION_DELETE)
          {
-            handleAppendDelete(packet);
+            handleAppendDelete((ReplicationDeleteMessage)packet);
          }
          else if (packet.getType() == PacketImpl.REPLICATION_DELETE_TX)
          {
-            handleAppendDeleteTX(packet);
+            handleAppendDeleteTX((ReplicationDeleteTXMessage)packet);
          }
          else if (packet.getType() == PacketImpl.REPLICATION_PREPARE)
          {
-            handlePrepare(packet);
+            handlePrepare((ReplicationPrepareMessage)packet);
          }
          else if (packet.getType() == PacketImpl.REPLICATION_COMMIT_ROLLBACK)
          {
-            handleCommitRollback(packet);
+            handleCommitRollback((ReplicationCommitMessage)packet);
          }
+         else if (packet.getType() == PacketImpl.REPLICATION_PAGE_WRITE)
+         {
+            handlePageWrite((ReplicationPageWriteMessage)packet);
+         }
+         else if (packet.getType() == PacketImpl.REPLICATION_PAGE_EVENT)
+         {
+            handlePageEvent((ReplicationPageEventMessage)packet);
+         }
+
       }
       catch (Exception e)
       {
@@ -120,8 +145,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    {
       Configuration config = server.getConfiguration();
 
-      // TODO: this needs an executor
-      storage = new JournalStorageManager(config, null);
+      storage = new JournalStorageManager(config, server.getExecutorFactory().getExecutor());
       storage.start();
 
       bindingsJournal = storage.getBindingsJournal();
@@ -129,6 +153,15 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       // We only need to load internal structures on the backup...
       storage.loadInternalOnly();
+
+      pageManager = new PagingManagerImpl(new PagingStoreFactoryNIO(config.getPagingDirectory(),
+                                                                    server.getExecutorFactory()),
+                                          storage,
+                                          server.getAddressSettingsRepository(),
+                                          false);
+
+      pageManager.start();
+
    }
 
    /* (non-Javadoc)
@@ -165,82 +198,70 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    /**
     * @param packet
     */
-   private void handleCommitRollback(final Packet packet) throws Exception
+   private void handleCommitRollback(final ReplicationCommitMessage packet) throws Exception
    {
-      ReplicationCommitMessage commitMessage = (ReplicationCommitMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(commitMessage.getJournalID());
-
-      if (commitMessage.isRollback())
+      if (packet.isRollback())
       {
-         journalToUse.appendRollbackRecord(commitMessage.getTxId(), false);
+         journalToUse.appendRollbackRecord(packet.getTxId(), false);
       }
       else
       {
-         journalToUse.appendCommitRecord(commitMessage.getTxId(), false);
+         journalToUse.appendCommitRecord(packet.getTxId(), false);
       }
    }
 
    /**
     * @param packet
     */
-   private void handlePrepare(final Packet packet) throws Exception
+   private void handlePrepare(final ReplicationPrepareMessage packet) throws Exception
    {
-      ReplicationPrepareMessage prepareMessage = (ReplicationPrepareMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(prepareMessage.getJournalID());
-
-      journalToUse.appendPrepareRecord(prepareMessage.getTxId(), prepareMessage.getRecordData(), false);
+      journalToUse.appendPrepareRecord(packet.getTxId(), packet.getRecordData(), false);
    }
 
    /**
     * @param packet
     */
-   private void handleAppendDeleteTX(final Packet packet) throws Exception
+   private void handleAppendDeleteTX(final ReplicationDeleteTXMessage packet) throws Exception
    {
-      ReplicationDeleteTXMessage deleteMessage = (ReplicationDeleteTXMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(deleteMessage.getJournalID());
-
-      journalToUse.appendDeleteRecordTransactional(deleteMessage.getTxId(),
-                                                   deleteMessage.getId(),
-                                                   deleteMessage.getRecordData());
+      journalToUse.appendDeleteRecordTransactional(packet.getTxId(), packet.getId(), packet.getRecordData());
    }
 
    /**
     * @param packet
     */
-   private void handleAppendDelete(final Packet packet) throws Exception
+   private void handleAppendDelete(final ReplicationDeleteMessage packet) throws Exception
    {
-      ReplicationDeleteMessage deleteMessage = (ReplicationDeleteMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(deleteMessage.getJournalID());
-
-      journalToUse.appendDeleteRecord(deleteMessage.getId(), false);
+      journalToUse.appendDeleteRecord(packet.getId(), false);
    }
 
    /**
     * @param packet
     */
-   private void handleAppendAddTXRecord(final Packet packet) throws Exception
+   private void handleAppendAddTXRecord(final ReplicationAddTXMessage packet) throws Exception
    {
-      ReplicationAddTXMessage addMessage = (ReplicationAddTXMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(addMessage.getJournalID());
-
-      if (addMessage.isUpdate())
+      if (packet.isUpdate())
       {
-         journalToUse.appendUpdateRecordTransactional(addMessage.getTxId(),
-                                                      addMessage.getId(),
-                                                      addMessage.getRecordType(),
-                                                      addMessage.getRecordData());
+         journalToUse.appendUpdateRecordTransactional(packet.getTxId(),
+                                                      packet.getId(),
+                                                      packet.getRecordType(),
+                                                      packet.getRecordData());
       }
       else
       {
-         journalToUse.appendAddRecordTransactional(addMessage.getTxId(),
-                                                   addMessage.getId(),
-                                                   addMessage.getRecordType(),
-                                                   addMessage.getRecordData());
+         journalToUse.appendAddRecordTransactional(packet.getTxId(),
+                                                   packet.getId(),
+                                                   packet.getRecordType(),
+                                                   packet.getRecordData());
       }
    }
 
@@ -248,31 +269,106 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
     * @param packet
     * @throws Exception
     */
-   private void handleAppendAddRecord(final Packet packet) throws Exception
+   private void handleAppendAddRecord(final ReplicationAddMessage packet) throws Exception
    {
-      ReplicationAddMessage addMessage = (ReplicationAddMessage)packet;
+      Journal journalToUse = getJournal(packet.getJournalID());
 
-      Journal journalToUse = getJournal(addMessage.getJournalID());
-
-      if (addMessage.isUpdate())
+      if (packet.isUpdate())
       {
          if (trace)
          {
-            System.out.println("Endpoint appendUpdate id = " + addMessage.getId());
+            System.out.println("Endpoint appendUpdate id = " + packet.getId());
          }
-         journalToUse.appendUpdateRecord(addMessage.getId(),
-                                         addMessage.getRecordType(),
-                                         addMessage.getRecordData(),
-                                         false);
+         journalToUse.appendUpdateRecord(packet.getId(), packet.getRecordType(), packet.getRecordData(), false);
       }
       else
       {
          if (trace)
          {
-            System.out.println("Endpoint append id = " + addMessage.getId());
+            System.out.println("Endpoint append id = " + packet.getId());
          }
-         journalToUse.appendAddRecord(addMessage.getId(), addMessage.getRecordType(), addMessage.getRecordData(), false);
+         journalToUse.appendAddRecord(packet.getId(), packet.getRecordType(), packet.getRecordData(), false);
       }
+   }
+
+   /**
+    * @param packet
+    */
+   private void handlePageEvent(final ReplicationPageEventMessage packet) throws Exception
+   {
+      ConcurrentMap<Integer, Page> pages = getPageMap(packet.getStoreName());
+
+      Page page = pages.remove(packet.getPageNumber());
+
+      if (page != null)
+      {
+         if (packet.isDelete())
+         {
+            page.delete();
+         }
+         else
+         {
+            page.close();
+         }
+      }
+
+   }
+
+   /**
+    * @param packet
+    */
+   private void handlePageWrite(final ReplicationPageWriteMessage packet) throws Exception
+   {
+      PagedMessage pgdMessage = packet.getPagedMessage();
+      ServerMessage msg = pgdMessage.getMessage(storage);
+      Page page = getPage(msg.getDestination(), packet.getPageNumber());
+      page.write(pgdMessage);
+   }
+
+   private ConcurrentMap<Integer, Page> getPageMap(final SimpleString storeName)
+   {
+      ConcurrentMap<Integer, Page> resultIndex = pageIndex.get(storeName);
+
+      if (resultIndex == null)
+      {
+         resultIndex = pageIndex.putIfAbsent(storeName, new ConcurrentHashMap<Integer, Page>());
+      }
+
+      return resultIndex;
+   }
+
+   private Page getPage(final SimpleString storeName, final int pageId) throws Exception
+   {
+      ConcurrentMap<Integer, Page> map = getPageMap(storeName);
+
+      Page page = map.get(pageId);
+
+      if (page == null)
+      {
+         page = newPage(pageId, storeName, map);
+      }
+
+      return page;
+   }
+
+   /**
+    * @param pageId
+    * @param map
+    * @return
+    */
+   private synchronized Page newPage(final int pageId,
+                                     final SimpleString storeName,
+                                     final ConcurrentMap<Integer, Page> map) throws Exception
+   {
+      Page page = map.get(pageId);
+
+      if (page == null)
+      {
+         page = pageManager.getPageStore(storeName).createPage(pageId);
+         map.put(pageId, page);
+      }
+
+      return page;
    }
 
    /**

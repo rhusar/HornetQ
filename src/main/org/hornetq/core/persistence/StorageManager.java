@@ -18,7 +18,9 @@ import java.util.Map;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.ChannelBuffer;
 import org.hornetq.core.paging.PageTransactionInfo;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.server.HornetQComponent;
@@ -43,6 +45,12 @@ import org.hornetq.utils.UUID;
 public interface StorageManager extends HornetQComponent
 {
    // Message related operations
+   
+   void pageClosed(SimpleString storeName, int pageNumber);
+   
+   void pageDeleted(SimpleString storeName, int pageNumber);
+   
+   void pageWrite(PagedMessage message, int pageNumber);
    
    boolean isReplicated();
    

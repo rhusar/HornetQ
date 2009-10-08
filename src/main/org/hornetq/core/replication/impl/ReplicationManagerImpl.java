@@ -21,6 +21,7 @@ import java.util.concurrent.Executor;
 import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
@@ -32,11 +33,14 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.ReplicationToken;
 import org.hornetq.utils.ConcurrentHashSet;
+import org.hornetq.utils.SimpleString;
 
 /**
  * A RepplicationManagerImpl
@@ -213,6 +217,39 @@ public class ReplicationManagerImpl implements ReplicationManager
       if (enabled)
       {
          sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#pageClosed(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageClosed(final SimpleString storeName, final int pageNumber)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationPageEventMessage(storeName, pageNumber, false));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#pageDeleted(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageDeleted(final SimpleString storeName, final int pageNumber)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationPageEventMessage(storeName, pageNumber, true));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#pageWrite(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageWrite(final PagedMessage message, final int pageNumber)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber));
       }
    }
 

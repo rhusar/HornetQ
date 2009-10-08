@@ -29,6 +29,7 @@ import java.util.concurrent.Executor;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.ChannelBuffer;
 import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
@@ -47,6 +48,7 @@ import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.PageTransactionInfo;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.persistence.QueueBindingInfo;
@@ -289,6 +291,47 @@ public class JournalStorageManager implements StorageManager
    {
       return replicator != null;
    }
+   
+
+   // TODO: shouldn't those page methods be on the PageManager?
+   
+   /* 
+    * 
+    * (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageClosed(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageClosed(SimpleString storeName, int pageNumber)
+   {
+      if (isReplicated())
+      {
+         replicator.pageClosed(storeName, pageNumber);
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageDeleted(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageDeleted(SimpleString storeName, int pageNumber)
+   {
+      if (isReplicated())
+      {
+         replicator.pageDeleted(storeName, pageNumber);
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageWrite(org.hornetq.utils.SimpleString, int, org.hornetq.core.buffers.ChannelBuffer)
+    */
+   public void pageWrite(PagedMessage message, int pageNumber)
+   {
+      if (isReplicated())
+      {
+         replicator.pageWrite(message, pageNumber);
+      }
+   }
+   
+   
+   // TODO: shouldn't those page methods be on the PageManager? ^^^^
    
    public void afterReplicated(Runnable run)
    {

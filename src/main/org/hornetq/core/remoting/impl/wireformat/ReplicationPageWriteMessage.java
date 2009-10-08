@@ -13,24 +13,24 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
+import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.paging.impl.PagedMessageImpl;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.utils.DataConstants;
+
 /**
- * A ReplicationPacket
+ * A ReplicationPageWrite
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public class ReplicationPacket extends PacketImpl
+public class ReplicationPageWriteMessage extends PacketImpl
 {
 
-   /**
-    * @param type
-    */
-   public ReplicationPacket(byte type)
-   {
-      super(type);
-      // TODO Auto-generated constructor stub
-   }
+   int pageNumber;
+
+   PagedMessage pagedMessage;
 
    // Constants -----------------------------------------------------
 
@@ -40,7 +40,61 @@ public class ReplicationPacket extends PacketImpl
 
    // Constructors --------------------------------------------------
 
+   public ReplicationPageWriteMessage()
+   {
+      super(REPLICATION_PAGE_WRITE);
+   }
+
+   public ReplicationPageWriteMessage(final PagedMessage pagedMessage, final int pageNumber)
+   {
+      this();
+      this.pageNumber = pageNumber;
+      this.pagedMessage = pagedMessage;
+   }
+
    // Public --------------------------------------------------------
+   
+   public int getRequiredBufferSize()
+   {
+      return BASIC_PACKET_SIZE + 
+             DataConstants.SIZE_INT +
+             pagedMessage.getEncodeSize();
+
+   }
+
+   @Override
+   public void encodeBody(final HornetQBuffer buffer)
+   {
+      buffer.writeInt(pageNumber);
+      pagedMessage.encode(buffer);
+   }
+
+   @Override
+   public void decodeBody(final HornetQBuffer buffer)
+   {
+      this.pageNumber = buffer.readInt();
+      pagedMessage = new PagedMessageImpl();
+      pagedMessage.decode(buffer);
+   }
+
+   /**
+    * @return the pageNumber
+    */
+   public int getPageNumber()
+   {
+      return pageNumber;
+   }
+
+   /**
+    * @return the pagedMessage
+    */
+   public PagedMessage getPagedMessage()
+   {
+      return pagedMessage;
+   }
+   
+   
+
 
    // Package protected ---------------------------------------------
 

@@ -16,7 +16,9 @@ package org.hornetq.core.replication;
 import java.util.Set;
 
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.server.HornetQComponent;
+import org.hornetq.utils.SimpleString;
 
 /**
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
@@ -52,5 +54,24 @@ public interface ReplicationManager extends HornetQComponent
    
    /** A list of tokens that are still waiting for replications to be completed */
    Set<ReplicationToken> getActiveTokens();
+
+   /**
+    * @param storeName
+    * @param pageNumber
+    */
+   void pageClosed(SimpleString storeName, int pageNumber);
+
+   /**
+    * @param storeName
+    * @param pageNumber
+    */
+   void pageDeleted(SimpleString storeName, int pageNumber);
+
+
+   /**
+    * @param storeName
+    * @param pageNumber
+    */
+   void pageWrite(PagedMessage message, int pageNumber);
 
 }

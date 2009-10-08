@@ -21,6 +21,7 @@ import javax.transaction.xa.Xid;
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
@@ -265,6 +266,27 @@ public class NullStorageManager implements StorageManager
     * @see org.hornetq.core.persistence.StorageManager#completeReplication()
     */
    public void completeReplication()
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageClosed(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageClosed(SimpleString storeName, int pageNumber)
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageDeleted(org.hornetq.utils.SimpleString, int)
+    */
+   public void pageDeleted(SimpleString storeName, int pageNumber)
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#pageWrite(org.hornetq.core.paging.PagedMessage, int)
+    */
+   public void pageWrite(PagedMessage message, int pageNumber)
    {
    }
 

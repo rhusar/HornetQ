@@ -607,6 +607,35 @@ public class PagingStoreImpl implements TestSupportPageStore
       return currentPage;
    }
 
+   
+   public Page createPage(final int page) throws Exception
+   {
+      String fileName = createFileName(page);
+
+      if (fileFactory == null)
+      {
+         fileFactory = storeFactory.newFileFactory(getStoreName());
+      }
+
+      SequentialFile file = fileFactory.createSequentialFile(fileName, 1000);
+
+      file.open();
+
+      long size = file.size();
+
+      if (fileFactory.isSupportsCallbacks() && size < pageSize)
+      {
+         file.fill((int)size, (int)(pageSize - size), (byte)0);
+      }
+
+      file.position(0);
+
+      file.close();
+
+      return new PageImpl(this.storeName, storageManager, fileFactory, file, page);
+   }
+
+   
    // TestSupportPageStore ------------------------------------------
 
    public void forceAnotherPage() throws Exception
@@ -699,36 +728,6 @@ public class PagingStoreImpl implements TestSupportPageStore
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
-
-   // In order to test failures, we need to be able to extend this class
-   // and replace the Page for another Page that will fail before the file is removed
-   // That's why createPage is not a private method
-   protected Page createPage(final int page) throws Exception
-   {
-      String fileName = createFileName(page);
-
-      if (fileFactory == null)
-      {
-         fileFactory = storeFactory.newFileFactory(getStoreName());
-      }
-
-      SequentialFile file = fileFactory.createSequentialFile(fileName, 1000);
-
-      file.open();
-
-      long size = file.size();
-
-      if (fileFactory.isSupportsCallbacks() && size < pageSize)
-      {
-         file.fill((int)size, (int)(pageSize - size), (byte)0);
-      }
-
-      file.position(0);
-
-      file.close();
-
-      return new PageImpl(fileFactory, file, page);
-   }
 
    // Private -------------------------------------------------------
 
@@ -931,8 +930,9 @@ public class PagingStoreImpl implements TestSupportPageStore
          {
             currentPage.close();
          }
-
+         
          currentPage = createPage(currentPageId);
+         
 
          currentPageSize.set(0);
 
