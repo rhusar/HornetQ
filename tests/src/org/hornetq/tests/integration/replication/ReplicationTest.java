@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ConnectionManager;
 import org.hornetq.core.client.impl.ConnectionManagerImpl;
@@ -40,6 +41,13 @@ import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.management.ManagementService;
+import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.PagingStore;
+import org.hornetq.core.paging.impl.PagedMessageImpl;
+import org.hornetq.core.paging.impl.PagingManagerImpl;
+import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Interceptor;
@@ -50,10 +58,15 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.impl.ReplicatedJournal;
 import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.HornetQServerImpl;
+import org.hornetq.core.server.impl.ServerMessageImpl;
+import org.hornetq.core.settings.HierarchicalRepository;
+import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
+import org.hornetq.utils.SimpleString;
 
 /**
  * A ReplicationTest
@@ -168,17 +181,8 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(3, new FakeData(), false);
          replicatedJournal.appendRollbackRecord(3, false);
 
-         final CountDownLatch latch = new CountDownLatch(1);
-         manager.afterReplicated(new Runnable()
-         {
+         blockOnReplication(manager);
 
-            public void run()
-            {
-               latch.countDown();
-            }
-
-         });
-         assertTrue(latch.await(1, TimeUnit.SECONDS));
          assertEquals(1, manager.getActiveTokens().size());
 
          manager.completeToken();
@@ -194,6 +198,47 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          assertEquals(0, manager.getActiveTokens().size());
+
+         ServerMessage msg = new ServerMessageImpl();
+
+         SimpleString dummy = new SimpleString("dummy");
+         msg.setDestination(dummy);
+         msg.setBody(ChannelBuffers.wrappedBuffer(new byte[10]));
+
+         replicatedJournal.appendAddRecordTransactional(23, 24, (byte)1, new FakeData());
+
+         PagedMessage pgmsg = new PagedMessageImpl(msg, -1);
+         manager.pageWrite(pgmsg, 1);
+         manager.pageWrite(pgmsg, 2);
+         manager.pageWrite(pgmsg, 3);
+         manager.pageWrite(pgmsg, 4);
+
+         blockOnReplication(manager);
+
+         PagingManager pagingManager = createPageManager(server.getStorageManager(),
+                                                         server.getConfiguration(),
+                                                         server.getExecutorFactory(),
+                                                         server.getAddressSettingsRepository());
+         
+         PagingStore store = pagingManager.getPageStore(dummy);
+         store.start();
+         assertEquals(5, store.getNumberOfPages());
+         store.stop();
+         
+         manager.pageDeleted(dummy, 1);
+         manager.pageDeleted(dummy, 2);
+         manager.pageDeleted(dummy, 3);
+         manager.pageDeleted(dummy, 4);
+         manager.pageDeleted(dummy, 5);
+         manager.pageDeleted(dummy, 6);
+         
+
+         blockOnReplication(manager);
+         
+         store.start();
+         
+         assertEquals(0, store.getNumberOfPages());
+
          manager.stop();
       }
       finally
@@ -201,7 +246,27 @@ public class ReplicationTest extends ServiceTestBase
          server.stop();
       }
    }
-   
+
+   /**
+    * @param manager
+    * @return
+    */
+   private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
+   {
+      final CountDownLatch latch = new CountDownLatch(1);
+      manager.afterReplicated(new Runnable()
+      {
+
+         public void run()
+         {
+            latch.countDown();
+         }
+
+      });
+      
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
+   }
+
    public void testNoActions() throws Exception
    {
 
@@ -357,6 +422,22 @@ public class ReplicationTest extends ServiceTestBase
 
       super.tearDown();
 
+   }
+
+   protected PagingManager createPageManager(StorageManager storageManager,
+                                             Configuration configuration,
+                                             ExecutorFactory executorFactory,
+                                             HierarchicalRepository<AddressSettings> addressSettingsRepository) throws Exception
+   {
+
+      PagingManager paging = new PagingManagerImpl(new PagingStoreFactoryNIO(configuration.getPagingDirectory(),
+                                                                             executorFactory),
+                                                   storageManager,
+                                                   addressSettingsRepository,
+                                                   false);
+
+      paging.start();
+      return paging;
    }
 
    // Private -------------------------------------------------------

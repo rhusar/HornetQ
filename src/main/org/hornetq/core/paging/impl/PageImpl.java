@@ -191,7 +191,10 @@ public class PageImpl implements Page
 
    public void close() throws Exception
    {
-      storageManager.pageClosed(storeName, pageId);
+      if (storageManager != null)
+      {
+         storageManager.pageClosed(storeName, pageId);
+      }
       file.close();
    }
 

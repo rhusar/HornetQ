@@ -87,6 +87,8 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.RollbackMessage;
@@ -410,12 +412,12 @@ public class PacketDecoder
          }
          case REPLICATION_PAGE_WRITE:
          {
-            packet = new ReplicationResponseMessage();
+            packet = new ReplicationPageWriteMessage();
             break;
          }
          case REPLICATION_PAGE_EVENT:
          {
-            packet = new ReplicationResponseMessage();
+            packet = new ReplicationPageEventMessage();
             break;
          }
          default:

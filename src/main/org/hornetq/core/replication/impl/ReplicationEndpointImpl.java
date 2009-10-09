@@ -299,6 +299,12 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       ConcurrentMap<Integer, Page> pages = getPageMap(packet.getStoreName());
 
       Page page = pages.remove(packet.getPageNumber());
+      
+      if (page == null)
+      {
+         page = getPage(packet.getStoreName(), packet.getPageNumber());
+      }
+      
 
       if (page != null)
       {
@@ -331,7 +337,12 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       if (resultIndex == null)
       {
-         resultIndex = pageIndex.putIfAbsent(storeName, new ConcurrentHashMap<Integer, Page>());
+         resultIndex = new ConcurrentHashMap<Integer, Page>();
+         ConcurrentMap<Integer, Page> mapResult = pageIndex.putIfAbsent(storeName, resultIndex);
+         if (mapResult != null)
+         {
+            resultIndex = mapResult;
+         }
       }
 
       return resultIndex;
@@ -365,6 +376,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       if (page == null)
       {
          page = pageManager.getPageStore(storeName).createPage(pageId);
+         page.open();
          map.put(pageId, page);
       }
 
