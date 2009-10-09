@@ -53,12 +53,11 @@ public class ReplicationPageWriteMessage extends PacketImpl
    }
 
    // Public --------------------------------------------------------
-   
+
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_INT +
-             pagedMessage.getEncodeSize();
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_INT + pagedMessage.getEncodeSize();
 
    }
 
@@ -72,7 +71,7 @@ public class ReplicationPageWriteMessage extends PacketImpl
    @Override
    public void decodeBody(final HornetQBuffer buffer)
    {
-      this.pageNumber = buffer.readInt();
+      pageNumber = buffer.readInt();
       pagedMessage = new PagedMessageImpl();
       pagedMessage.decode(buffer);
    }
@@ -92,9 +91,6 @@ public class ReplicationPageWriteMessage extends PacketImpl
    {
       return pagedMessage;
    }
-   
-   
-
 
    // Package protected ---------------------------------------------
 
