@@ -18,6 +18,7 @@ import static org.hornetq.utils.DataConstants.SIZE_INT;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -375,6 +376,34 @@ public class JournalStorageManager implements StorageManager
    public LargeServerMessage createLargeMessage()
    {
       return new JournalLargeServerMessage(this);
+   }
+   
+   public void addBytesToLargeMessage(SequentialFile file, long messageId, final byte[] bytes) throws Exception
+   {
+      file.position(file.size());
+
+      file.write(ByteBuffer.wrap(bytes), false);
+      
+      if (isReplicated())
+      {
+         this.replicator.largeMessageWrite(messageId, bytes);
+      }
+   }
+   
+   public LargeServerMessage createLargeMessage(byte [] header)
+   {
+      if (isReplicated())
+      {
+         replicator.largeMessageBegin(header);
+      }
+      
+      JournalLargeServerMessage largeMessage = new JournalLargeServerMessage(this);
+
+      HornetQBuffer headerBuffer = ChannelBuffers.wrappedBuffer(header);
+
+      largeMessage.decodeProperties(headerBuffer);
+      
+      return largeMessage;     
    }
 
    // Non transactional operations

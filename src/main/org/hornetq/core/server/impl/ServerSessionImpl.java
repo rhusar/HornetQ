@@ -164,7 +164,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    private final SimpleString nodeID;
 
    // The current currentLargeMessage being processed
-   // In case of replication, currentLargeMessage should only be accessed within the replication callbacks
    private volatile LargeServerMessage currentLargeMessage;
 
    private ServerSessionPacketHandler handler;
@@ -1688,13 +1687,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    private LargeServerMessage createLargeMessageStorage(final byte[] header) throws Exception
    {
-      LargeServerMessage largeMessage = storageManager.createLargeMessage();
-
-      HornetQBuffer headerBuffer = ChannelBuffers.wrappedBuffer(header);
-
-      largeMessage.decodeProperties(headerBuffer);
-
-      return largeMessage;
+      return storageManager.createLargeMessage(header);
    }
 
    private void doRollback(final boolean lastMessageAsDelived, final Transaction theTx) throws Exception

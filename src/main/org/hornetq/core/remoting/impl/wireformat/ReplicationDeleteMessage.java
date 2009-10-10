@@ -13,7 +13,6 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
-import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 
@@ -45,7 +44,7 @@ public class ReplicationDeleteMessage extends PacketImpl
       super(REPLICATION_DELETE);
    }
 
-   public ReplicationDeleteMessage(byte journalID, long id)
+   public ReplicationDeleteMessage(final byte journalID, final long id)
    {
       this();
       this.journalID = journalID;
@@ -54,11 +53,10 @@ public class ReplicationDeleteMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_BYTE +
-             DataConstants.SIZE_LONG;
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE + DataConstants.SIZE_LONG;
 
    }
 
@@ -91,7 +89,6 @@ public class ReplicationDeleteMessage extends PacketImpl
    {
       return journalID;
    }
-
 
    // Package protected ---------------------------------------------
 

@@ -17,41 +17,36 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 
 /**
- * A ReplicationAddMessage
+ * A ReplicationLargemessageEndMessage
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public class ReplicationCommitMessage extends PacketImpl
+public class ReplicationLargemessageEndMessage extends PacketImpl
 {
-
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
-   /** 0 - Bindings, 1 - MessagesJournal */
-   private byte journalID;
+   long messageId;
 
-   private boolean rollback;
-
-   private long txId;
+   boolean isDelete;
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public ReplicationCommitMessage()
+   public ReplicationLargemessageEndMessage()
    {
-      super(REPLICATION_COMMIT_ROLLBACK);
+      super(REPLICATION_LARGE_MESSAGE_END);
    }
 
-   public ReplicationCommitMessage(final byte journalID, final boolean rollback, final long txId)
+   public ReplicationLargemessageEndMessage(final long messageId, final boolean isDelete)
    {
       this();
-      this.journalID = journalID;
-      this.rollback = rollback;
-      this.txId = txId;
+      this.messageId = messageId;
+      this.isDelete = isDelete;
    }
 
    // Public --------------------------------------------------------
@@ -59,41 +54,37 @@ public class ReplicationCommitMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE + DataConstants.SIZE_BOOLEAN + DataConstants.SIZE_LONG;
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_BOOLEAN;
    }
 
    @Override
    public void encodeBody(final HornetQBuffer buffer)
    {
-      buffer.writeByte(journalID);
-      buffer.writeBoolean(rollback);
-      buffer.writeLong(txId);
+      buffer.writeLong(messageId);
+      buffer.writeBoolean(isDelete);
    }
 
    @Override
    public void decodeBody(final HornetQBuffer buffer)
    {
-      journalID = buffer.readByte();
-      rollback = buffer.readBoolean();
-      txId = buffer.readLong();
-   }
-
-   public boolean isRollback()
-   {
-      return rollback;
-   }
-
-   public long getTxId()
-   {
-      return txId;
+      messageId = buffer.readLong();
+      isDelete = buffer.readBoolean();
    }
 
    /**
-    * @return the journalID
+    * @return the messageId
     */
-   public byte getJournalID()
+   public long getMessageId()
    {
-      return journalID;
+      return messageId;
+   }
+
+   /**
+    * @return the isDelete
+    */
+   public boolean isDelete()
+   {
+      return isDelete;
    }
 
    // Package protected ---------------------------------------------

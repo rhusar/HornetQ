@@ -49,7 +49,7 @@ public class ReplicationPrepareMessage extends PacketImpl
       super(REPLICATION_PREPARE);
    }
 
-   public ReplicationPrepareMessage(byte journalID, long txId, EncodingSupport encodingData)
+   public ReplicationPrepareMessage(final byte journalID, final long txId, final EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
@@ -59,10 +59,10 @@ public class ReplicationPrepareMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_BYTE +
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_INT +
              (encodingData != null ? encodingData.getEncodeSize() : recordData.length);
@@ -100,7 +100,7 @@ public class ReplicationPrepareMessage extends PacketImpl
    {
       return journalID;
    }
-   
+
    /**
     * @return the recordData
     */

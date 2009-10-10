@@ -99,6 +99,8 @@ public interface StorageManager extends HornetQComponent
 
    LargeServerMessage createLargeMessage();
 
+   LargeServerMessage createLargeMessage(byte [] header);
+
    void prepare(long txID, Xid xid) throws Exception;
 
    void commit(long txID) throws Exception;

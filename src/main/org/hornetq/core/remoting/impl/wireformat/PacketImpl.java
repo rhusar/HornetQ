@@ -159,6 +159,12 @@ public class PacketImpl implements Packet
 
    public static final byte REPLICATION_PAGE_EVENT = 88;
    
+   public static final byte REPLICATION_LARGE_MESSAGE_BEGIN = 89;
+   
+   public static final byte REPLICATION_LARGE_MESSAGE_END = 90;
+   
+   public static final byte REPLICATION_LARGE_MESSAGE_WRITE = 91;
+   
    
 
    // Static --------------------------------------------------------

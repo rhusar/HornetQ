@@ -13,6 +13,9 @@
 
 package org.hornetq.core.remoting.impl;
 
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_BEGIN;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_END;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_WRITE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PAGE_EVENT;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PAGE_WRITE;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_PREPARE;
@@ -87,6 +90,9 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageBeingMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageWriteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargemessageEndMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
@@ -418,6 +424,21 @@ public class PacketDecoder
          case REPLICATION_PAGE_EVENT:
          {
             packet = new ReplicationPageEventMessage();
+            break;
+         }
+         case REPLICATION_LARGE_MESSAGE_BEGIN:
+         {
+            packet = new ReplicationLargeMessageBeingMessage();
+            break;
+         }
+         case REPLICATION_LARGE_MESSAGE_END:
+         {
+            packet = new ReplicationLargemessageEndMessage();
+            break;
+         }
+         case REPLICATION_LARGE_MESSAGE_WRITE:
+         {
+            packet = new ReplicationLargeMessageWriteMessage();
             break;
          }
          default:

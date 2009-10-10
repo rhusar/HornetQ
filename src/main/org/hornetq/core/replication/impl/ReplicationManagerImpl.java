@@ -33,6 +33,9 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageBeingMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageWriteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargemessageEndMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
@@ -252,6 +255,52 @@ public class ReplicationManagerImpl implements ReplicationManager
          sendReplicatePacket(new ReplicationPageWriteMessage(message, pageNumber));
       }
    }
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#largeMessageBegin(byte[])
+    */
+   public void largeMessageBegin(byte[] header)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationLargeMessageBeingMessage(header));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#largeMessageDelete(long)
+    */
+   public void largeMessageDelete(long messageId)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationLargemessageEndMessage(messageId, true));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#largeMessageEnd(long)
+    */
+   public void largeMessageEnd(long messageId)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationLargemessageEndMessage(messageId, false));
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#largeMessageWrite(long, byte[])
+    */
+   public void largeMessageWrite(long messageId, byte[] body)
+   {
+      if (enabled)
+      {
+         sendReplicatePacket(new ReplicationLargeMessageWriteMessage(messageId, body));
+      }
+   }
+
+   
 
    /* (non-Javadoc)
     * @see org.hornetq.core.server.HornetQComponent#isStarted()

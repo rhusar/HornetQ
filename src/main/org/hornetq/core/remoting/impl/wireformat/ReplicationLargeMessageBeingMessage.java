@@ -17,41 +17,34 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 
 /**
- * A ReplicationAddMessage
+ * A ReplicationLargeMessageBeingMessage
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public class ReplicationCommitMessage extends PacketImpl
+public class ReplicationLargeMessageBeingMessage extends PacketImpl
 {
 
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
-   /** 0 - Bindings, 1 - MessagesJournal */
-   private byte journalID;
-
-   private boolean rollback;
-
-   private long txId;
+   byte header[];
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public ReplicationCommitMessage()
-   {
-      super(REPLICATION_COMMIT_ROLLBACK);
-   }
-
-   public ReplicationCommitMessage(final byte journalID, final boolean rollback, final long txId)
+   public ReplicationLargeMessageBeingMessage(final byte[] header)
    {
       this();
-      this.journalID = journalID;
-      this.rollback = rollback;
-      this.txId = txId;
+      this.header = header;
+   }
+
+   public ReplicationLargeMessageBeingMessage()
+   {
+      super(REPLICATION_LARGE_MESSAGE_BEGIN);
    }
 
    // Public --------------------------------------------------------
@@ -59,41 +52,30 @@ public class ReplicationCommitMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE + DataConstants.SIZE_BOOLEAN + DataConstants.SIZE_LONG;
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_INT + header.length;
    }
 
    @Override
    public void encodeBody(final HornetQBuffer buffer)
    {
-      buffer.writeByte(journalID);
-      buffer.writeBoolean(rollback);
-      buffer.writeLong(txId);
+      buffer.writeInt(header.length);
+      buffer.writeBytes(header);
    }
 
    @Override
    public void decodeBody(final HornetQBuffer buffer)
    {
-      journalID = buffer.readByte();
-      rollback = buffer.readBoolean();
-      txId = buffer.readLong();
-   }
-
-   public boolean isRollback()
-   {
-      return rollback;
-   }
-
-   public long getTxId()
-   {
-      return txId;
+      int size = buffer.readInt();
+      header = new byte[size];
+      buffer.readBytes(header);
    }
 
    /**
-    * @return the journalID
+    * @return the header
     */
-   public byte getJournalID()
+   public byte[] getHeader()
    {
-      return journalID;
+      return header;
    }
 
    // Package protected ---------------------------------------------

@@ -13,6 +13,10 @@
 
 package org.hornetq.core.replication.impl;
 
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_BEGIN;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_END;
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.REPLICATION_LARGE_MESSAGE_WRITE;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -33,12 +37,16 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationAddTXMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationCommitMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationDeleteTXMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageBeingMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargeMessageWriteMessage;
+import org.hornetq.core.remoting.impl.wireformat.ReplicationLargemessageEndMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.SimpleString;
 
@@ -72,6 +80,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private PagingManager pageManager;
 
    private final ConcurrentMap<SimpleString, ConcurrentMap<Integer, Page>> pageIndex = new ConcurrentHashMap<SimpleString, ConcurrentMap<Integer, Page>>();
+   
+   private final ConcurrentMap<Long, LargeServerMessage> largeMessages = new ConcurrentHashMap<Long, LargeServerMessage>();
 
    // Constructors --------------------------------------------------
    public ReplicationEndpointImpl(final HornetQServer server)
@@ -120,7 +130,22 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
          {
             handlePageEvent((ReplicationPageEventMessage)packet);
          }
-
+         else if (packet.getType() == REPLICATION_LARGE_MESSAGE_BEGIN)
+         {
+            handleLargeMessageBegin((ReplicationLargeMessageBeingMessage)packet);
+         }
+         else if (packet.getType() == REPLICATION_LARGE_MESSAGE_WRITE)
+         {
+            handleLargeMessageWrite((ReplicationLargeMessageWriteMessage)packet);
+         }
+         else if (packet.getType() == REPLICATION_LARGE_MESSAGE_END)
+         {
+            handleLargeMessageEnd((ReplicationLargemessageEndMessage)packet);
+         }
+         else
+         {
+            log.warn("Packet " + packet + " can't be processed by the ReplicationEndpoint");
+         }
       }
       catch (Exception e)
       {
@@ -171,6 +196,31 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    {
       channel.close();
       storage.stop();
+      
+      for (ConcurrentMap<Integer, Page> map : pageIndex.values())
+      {
+         for (Page page : map.values())
+         {
+            try
+            {
+               page.close();
+            }
+            catch (Exception e)
+            {
+               log.warn("Error while closing the page on backup", e);
+            }
+         }
+      }
+      
+      pageIndex.clear();
+      
+      
+      for (LargeServerMessage largeMessage : largeMessages.values())
+      {
+         largeMessage.releaseResources();
+      }
+      
+      largeMessages.clear();
    }
 
    /* (non-Javadoc)
@@ -194,6 +244,83 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+   /**
+    * @param packet
+    */
+   private void handleLargeMessageEnd(ReplicationLargemessageEndMessage packet)
+   {
+      LargeServerMessage message = lookupLargeMessage(packet.getMessageId(), packet.isDelete());
+      if (message != null)
+      {
+         if (packet.isDelete())
+         {
+            try
+            {
+               message.deleteFile();
+            }
+            catch (Exception e)
+            {
+               log.warn("Error deleting large message ID = " + packet.getMessageId(), e);
+            }
+         }
+         else
+         {
+            try
+            {
+               message.setStored();
+            }
+            catch (Exception e)
+            {
+               log.warn("Error deleting large message ID = " + packet.getMessageId(), e);
+            }
+         }
+      }
+   }
+
+   /**
+    * @param packet
+    */
+   private void handleLargeMessageWrite(ReplicationLargeMessageWriteMessage packet) throws Exception
+   {
+      LargeServerMessage message = lookupLargeMessage(packet.getMessageId(), false);
+      if (message != null)
+      {
+         message.addBytes(packet.getBody());
+      }
+   }
+   
+   
+   private LargeServerMessage lookupLargeMessage(long messageId, boolean isDelete)
+   {
+      LargeServerMessage message;
+      
+      if (isDelete)
+      {
+         message = largeMessages.remove(messageId);
+      }
+      else
+      {
+         message = largeMessages.get(messageId);
+      }
+      
+      if (message == null)
+      {
+         log.warn("Large MessageID " + messageId + "  is not available on backup server. Ignoring replication message");
+      }
+      
+      return message;
+
+   }
+
+   /**
+    * @param packet
+    */
+   private void handleLargeMessageBegin(ReplicationLargeMessageBeingMessage packet)
+   {
+      LargeServerMessage largeMessage = storage.createLargeMessage(packet.getHeader());
+      this.largeMessages.put(largeMessage.getMessageID(), largeMessage);
+   }
+
 
    /**
     * @param packet

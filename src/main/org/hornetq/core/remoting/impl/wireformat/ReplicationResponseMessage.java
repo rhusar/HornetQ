@@ -13,7 +13,6 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
-
 /**
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @version <tt>$Revision$</tt>
@@ -32,18 +31,17 @@ public class ReplicationResponseMessage extends PacketImpl
    {
       super(REPLICATION_RESPONSE);
    }
-   
+
    // Public --------------------------------------------------------
 
    /* (non-Javadoc)
     * @see org.hornetq.core.remoting.Packet#getRequiredBufferSize()
     */
+   @Override
    public int getRequiredBufferSize()
    {
       return BASIC_PACKET_SIZE;
    }
-   
-   
 
    // Package protected ---------------------------------------------
 

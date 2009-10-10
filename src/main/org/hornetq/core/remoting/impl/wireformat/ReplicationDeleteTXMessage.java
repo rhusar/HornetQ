@@ -32,7 +32,7 @@ public class ReplicationDeleteTXMessage extends PacketImpl
    // Attributes ----------------------------------------------------
 
    private long txId;
-   
+
    private long id;
 
    /** 0 - Bindings, 1 - MessagesJournal */
@@ -51,7 +51,10 @@ public class ReplicationDeleteTXMessage extends PacketImpl
       super(REPLICATION_DELETE_TX);
    }
 
-   public ReplicationDeleteTXMessage(byte journalID, long txId, long id, EncodingSupport encodingData)
+   public ReplicationDeleteTXMessage(final byte journalID,
+                                     final long txId,
+                                     final long id,
+                                     final EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
@@ -62,10 +65,10 @@ public class ReplicationDeleteTXMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_BYTE +
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_INT +
@@ -101,7 +104,7 @@ public class ReplicationDeleteTXMessage extends PacketImpl
    {
       return id;
    }
-   
+
    public long getTxId()
    {
       return txId;
@@ -114,7 +117,7 @@ public class ReplicationDeleteTXMessage extends PacketImpl
    {
       return journalID;
    }
-   
+
    /**
     * @return the recordData
     */

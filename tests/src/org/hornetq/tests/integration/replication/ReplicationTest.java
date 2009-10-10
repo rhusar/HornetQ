@@ -67,6 +67,7 @@ import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.SimpleString;
+import org.jboss.netty.channel.Channels;
 
 /**
  * A ReplicationTest
@@ -231,8 +232,23 @@ public class ReplicationTest extends ServiceTestBase
          manager.pageDeleted(dummy, 4);
          manager.pageDeleted(dummy, 5);
          manager.pageDeleted(dummy, 6);
-         
 
+         blockOnReplication(manager);
+         
+         ServerMessageImpl serverMsg = new ServerMessageImpl();
+         serverMsg.setMessageID(500);
+         serverMsg.setDestination(new SimpleString("tttt"));
+         
+         
+         HornetQBuffer buffer = ChannelBuffers.dynamicBuffer(100);
+         serverMsg.encodeProperties(buffer);
+         
+         manager.largeMessageBegin(buffer.array());
+
+         manager.largeMessageWrite(500, new byte[1024]);
+         
+         manager.largeMessageEnd(500);
+         
          blockOnReplication(manager);
          
          store.start();

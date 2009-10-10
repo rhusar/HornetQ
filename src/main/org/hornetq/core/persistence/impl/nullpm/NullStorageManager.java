@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
@@ -26,6 +27,7 @@ import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -173,6 +175,18 @@ public class NullStorageManager implements StorageManager
    {
       return new NullStorageLargeServerMessage();
    }
+   
+   public LargeServerMessage createLargeMessage(byte [] header)
+   {
+      NullStorageLargeServerMessage largeMessage = new NullStorageLargeServerMessage();
+
+      HornetQBuffer headerBuffer = ChannelBuffers.wrappedBuffer(header);
+
+      largeMessage.decodeProperties(headerBuffer);
+      
+      return largeMessage;     
+   }
+   
    
    public long generateUniqueID()
    {

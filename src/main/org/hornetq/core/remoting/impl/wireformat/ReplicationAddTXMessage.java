@@ -32,12 +32,12 @@ public class ReplicationAddTXMessage extends PacketImpl
    // Attributes ----------------------------------------------------
 
    private long txId;
-   
+
    private long id;
 
    /** 0 - Bindings, 1 - MessagesJournal */
    private byte journalID;
-   
+
    private boolean isUpdate;
 
    private byte recordType;
@@ -55,7 +55,12 @@ public class ReplicationAddTXMessage extends PacketImpl
       super(REPLICATION_APPEND_TX);
    }
 
-   public ReplicationAddTXMessage(byte journalID, boolean isUpdate, long txId, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationAddTXMessage(final byte journalID,
+                                  final boolean isUpdate,
+                                  final long txId,
+                                  final long id,
+                                  final byte recordType,
+                                  final EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
@@ -68,10 +73,10 @@ public class ReplicationAddTXMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_BYTE +
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE +
              DataConstants.SIZE_BOOLEAN +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_LONG +
@@ -113,7 +118,7 @@ public class ReplicationAddTXMessage extends PacketImpl
    {
       return id;
    }
-   
+
    public long getTxId()
    {
       return txId;
@@ -126,7 +131,7 @@ public class ReplicationAddTXMessage extends PacketImpl
    {
       return journalID;
    }
-   
+
    public boolean isUpdate()
    {
       return isUpdate;

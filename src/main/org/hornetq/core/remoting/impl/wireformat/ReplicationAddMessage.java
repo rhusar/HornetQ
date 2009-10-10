@@ -35,7 +35,7 @@ public class ReplicationAddMessage extends PacketImpl
 
    /** 0 - Bindings, 1 - MessagesJournal */
    private byte journalID;
-   
+
    private boolean isUpdate;
 
    private byte recordType;
@@ -53,7 +53,11 @@ public class ReplicationAddMessage extends PacketImpl
       super(REPLICATION_APPEND);
    }
 
-   public ReplicationAddMessage(byte journalID, boolean isUpdate, long id, byte recordType, EncodingSupport encodingData)
+   public ReplicationAddMessage(final byte journalID,
+                                final boolean isUpdate,
+                                final long id,
+                                final byte recordType,
+                                final EncodingSupport encodingData)
    {
       this();
       this.journalID = journalID;
@@ -65,10 +69,10 @@ public class ReplicationAddMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
+   @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
-             DataConstants.SIZE_BYTE +
+      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE +
              DataConstants.SIZE_BOOLEAN +
              DataConstants.SIZE_LONG +
              DataConstants.SIZE_BYTE +
@@ -115,7 +119,7 @@ public class ReplicationAddMessage extends PacketImpl
    {
       return journalID;
    }
-   
+
    public boolean isUpdate()
    {
       return isUpdate;

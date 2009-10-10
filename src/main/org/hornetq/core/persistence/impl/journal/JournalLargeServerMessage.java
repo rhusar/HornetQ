@@ -17,6 +17,8 @@ import static org.hornetq.utils.DataConstants.SIZE_INT;
 
 import java.nio.ByteBuffer;
 
+import com.sun.org.apache.bcel.internal.generic.StoreInstruction;
+
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
@@ -91,10 +93,8 @@ public class JournalLargeServerMessage extends ServerMessageImpl implements Larg
       {
          file.open();
       }
-
-      file.position(file.size());
-
-      file.write(ByteBuffer.wrap(bytes), false);
+      
+      storageManager.addBytesToLargeMessage(file, this.getMessageID(), bytes);
 
       bodySize += bytes.length;
    }
@@ -232,6 +232,7 @@ public class JournalLargeServerMessage extends ServerMessageImpl implements Larg
    public synchronized void deleteFile() throws Exception
    {
       validateFile();
+      releaseResources();
       storageManager.deleteFile(file);
    }
    
