@@ -51,6 +51,7 @@ import org.hornetq.core.server.group.impl.RemoteGroupingHandler;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
+import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.integration.transports.netty.TransportConstants;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.Pair;
@@ -479,6 +480,117 @@ public class ClusterTestBase extends ServiceTestBase
    protected void verifyReceiveAllInRange(int msgStart, int msgEnd, int... consumerIDs) throws Exception
    {
       verifyReceiveAllInRangeNotBefore(false, -1, msgStart, msgEnd, consumerIDs);
+   }
+
+   protected void verifyReceiveAllWithGroupIDRoundRobin(
+                                                int msgStart,
+                                                int msgEnd,
+                                                int... consumerIDs) throws Exception
+   {
+      verifyReceiveAllWithGroupIDRoundRobin(true, -1, msgStart, msgEnd, consumerIDs);   
+   }
+
+   protected int verifyReceiveAllOnSingleConsumer(int msgStart,
+                                                int msgEnd,
+                                                int... consumerIDs) throws Exception
+   {
+      return verifyReceiveAllOnSingleConsumer(true, msgStart, msgEnd, consumerIDs);  
+   }
+
+   protected void verifyReceiveAllWithGroupIDRoundRobin(boolean ack,
+                                                long firstReceiveTime,
+                                                int msgStart,
+                                                int msgEnd,
+                                                int... consumerIDs) throws Exception
+   {
+      boolean outOfOrder = false;
+      HashMap<SimpleString, Integer> groupIdsReceived = new HashMap<SimpleString, Integer>();
+      for (int i = 0; i < consumerIDs.length; i++)
+      {
+         ConsumerHolder holder = consumers[consumerIDs[i]];
+
+         if (holder == null)
+         {
+            throw new IllegalArgumentException("No consumer at " + consumerIDs[i]);
+         }
+
+         for (int j = msgStart; j < msgEnd; j++)
+         {
+            ClientMessage message = holder.consumer.receive(2000);
+
+            if (message == null)
+            {
+               log.info("*** dumping consumers:");
+
+               dumpConsumers();
+
+               assertNotNull("consumer " + consumerIDs[i] + " did not receive message " + j, message);
+            }
+
+            if (ack)
+            {
+               message.acknowledge();
+            }
+
+            if (firstReceiveTime != -1)
+            {
+               assertTrue("Message received too soon", System.currentTimeMillis() >= firstReceiveTime);
+            }
+
+            SimpleString id = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
+            if(groupIdsReceived.get(id) == null)
+            {
+               groupIdsReceived.put(id, i);
+            }
+            else if (groupIdsReceived.get(id) != i)
+            {
+               fail("consumer " + groupIdsReceived.get(id) + " already bound to groupid " + id + " received on consumer " + i);
+            }
+
+         }
+
+      }
+
+
+   }
+
+   protected int verifyReceiveAllOnSingleConsumer(boolean ack,
+                                                int msgStart,
+                                                int msgEnd,
+                                                int... consumerIDs) throws Exception
+   {
+      int groupIdsReceived = -1;
+      for (int i = 0; i < consumerIDs.length; i++)
+      {
+         ConsumerHolder holder = consumers[consumerIDs[i]];
+
+         if (holder == null)
+         {
+            throw new IllegalArgumentException("No consumer at " + consumerIDs[i]);
+         }
+         ClientMessage message = holder.consumer.receive(2000);
+         if (message != null)
+         {
+            groupIdsReceived = i;
+            for (int j = msgStart + 1; j < msgEnd; j++)
+            {
+               message = holder.consumer.receive(2000);
+
+               if (message == null)
+               {
+                  fail("consumer " + i + " did not receive all messages");
+               }
+
+               if (ack)
+               {
+                  message.acknowledge();
+               }
+            }
+         }
+
+      }
+      return groupIdsReceived;
+
    }
 
    protected void verifyReceiveAllInRangeNotBefore(boolean ack,
