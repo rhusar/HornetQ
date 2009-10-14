@@ -21,18 +21,18 @@ public class Response
 {
    private final boolean accepted;
 
-   private final Object original;
+   private final SimpleString original;
 
-   private final Object alternative;
+   private final SimpleString alternative;
 
    private SimpleString responseType;
 
-   public Response(SimpleString responseType, Object original)
+   public Response(SimpleString responseType, SimpleString original)
    {
       this(responseType, original, null);
    }
 
-   public Response(SimpleString responseType, Object original, Object alternative)
+   public Response(SimpleString responseType, SimpleString original, SimpleString alternative)
    {
       this.responseType = responseType;
       this.accepted = alternative == null;
@@ -45,17 +45,17 @@ public class Response
       return accepted;
    }
 
-   public Object getOriginal()
+   public SimpleString getOriginal()
    {
       return original;
    }
 
-   public Object getAlternative()
+   public SimpleString getAlternative()
    {
       return alternative;
    }
 
-   public Object getChosen()
+   public SimpleString getChosen()
    {
       return alternative != null?alternative:original;
    }

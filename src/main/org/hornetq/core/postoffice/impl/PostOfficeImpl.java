@@ -698,6 +698,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    public void setGroupingHandler(GroupingHandler groupingHandler)
    {
       groupingGroupingHandler = groupingHandler;
+      managementService.addNotificationListener(groupingGroupingHandler);
    }
 
    public GroupingHandler getGroupingHandler()

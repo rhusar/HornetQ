@@ -50,6 +50,8 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    private int waitTime = 1000;
 
+   private HashMap<SimpleString, SimpleString> groupMap = new HashMap<SimpleString, SimpleString>();
+
    public RemoteGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address)
    {
       this.name = name;
@@ -78,7 +80,7 @@ public class RemoteGroupingHandler implements GroupingHandler
          lock.lock();
          TypedProperties props = new TypedProperties();
          props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getProposalType());
-         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)proposal.getProposal());
+         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getProposal());
          props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
          props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
          props.putIntProperty(ManagementHelper.HDR_DISTANCE, 0);
@@ -104,6 +106,7 @@ public class RemoteGroupingHandler implements GroupingHandler
       {
          lock.lock();
          responses.put(response.getResponseType(), response);
+         groupMap.put(response.getChosen(), response.getResponseType());
          sendCondition.signal();
       }
       finally
@@ -116,7 +119,7 @@ public class RemoteGroupingHandler implements GroupingHandler
    {
       TypedProperties props = new TypedProperties();
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getProposalType());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)proposal.getProposal());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getProposal());
       props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
       props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
       props.putIntProperty(ManagementHelper.HDR_DISTANCE, distance);
@@ -129,5 +132,18 @@ public class RemoteGroupingHandler implements GroupingHandler
    {
    }
 
+   public void onNotification(Notification notification)
+   {
+      if(notification.getType() == NotificationType.BINDING_REMOVED)
+      {
+         SimpleString clusterName = (SimpleString) notification.getProperties().getProperty(ManagementHelper.HDR_CLUSTER_NAME);
+         SimpleString val = groupMap.get(clusterName);
+         if(val != null)
+         {
+            groupMap.remove(clusterName);
+            responses.remove(val);
+         }
+      }
+   }
 }
 

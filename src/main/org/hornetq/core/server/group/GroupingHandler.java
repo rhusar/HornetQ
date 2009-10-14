@@ -15,11 +15,13 @@ package org.hornetq.core.server.group;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.core.server.group.impl.Proposal;
 import org.hornetq.core.server.group.impl.Response;
+import org.hornetq.core.management.NotificationListener;
+import org.hornetq.core.management.Notification;
 
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
-public interface GroupingHandler
+public interface GroupingHandler extends NotificationListener
 {
    SimpleString getName();
 
@@ -30,4 +32,6 @@ public interface GroupingHandler
    void send(Response response, int distance) throws Exception;
 
    Response receive(Proposal proposal, int distance) throws Exception;
+
+   void onNotification(Notification notification);
 }

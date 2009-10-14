@@ -26,6 +26,7 @@ import org.hornetq.utils.ConcurrentHashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
 
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
@@ -34,7 +35,9 @@ public class LocalGroupingHandler implements GroupingHandler
 {
    private static Logger log = Logger.getLogger(LocalGroupingHandler.class);
 
-   private ConcurrentHashMap<SimpleString, Object> map = new ConcurrentHashMap<SimpleString, Object>();
+   private ConcurrentHashMap<SimpleString, SimpleString> map = new ConcurrentHashMap<SimpleString, SimpleString>();
+
+   private HashMap<SimpleString, SimpleString> groupMap = new HashMap<SimpleString, SimpleString>();
 
    private final SimpleString name;
 
@@ -59,12 +62,13 @@ public class LocalGroupingHandler implements GroupingHandler
    {
       if(proposal.getProposal() == null)
       {
-         Object original = map.get(proposal.getProposalType());
+         SimpleString original = map.get(proposal.getProposalType());
          return original == null?null:new Response(proposal.getProposalType(), original);
       }
       Response response = new Response(proposal.getProposalType(), proposal.getProposal());
       if (map.putIfAbsent(response.getResponseType(), response.getChosen()) == null)
       {
+         groupMap.put(response.getChosen(), response.getResponseType());
          return response;
       }
       else
@@ -81,8 +85,8 @@ public class LocalGroupingHandler implements GroupingHandler
    {
       TypedProperties props = new TypedProperties();
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, response.getResponseType());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)response.getOriginal());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE, (SimpleString)response.getAlternative());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, response.getOriginal());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE, response.getAlternative());
       props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
       props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
       props.putIntProperty(ManagementHelper.HDR_DISTANCE, distance);
@@ -93,6 +97,20 @@ public class LocalGroupingHandler implements GroupingHandler
    public Response receive(Proposal proposal, int distance) throws Exception
    {
       return propose(proposal);
+   }
+
+   public void onNotification(Notification notification)
+   {
+      if(notification.getType() == NotificationType.BINDING_REMOVED)
+      {
+         SimpleString clusterName = (SimpleString) notification.getProperties().getProperty(ManagementHelper.HDR_CLUSTER_NAME);
+         SimpleString val = groupMap.get(clusterName);
+         if(val != null)
+         {
+            groupMap.remove(clusterName);
+            map.remove(val);
+         }
+      }
    }
 }
 

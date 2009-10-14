@@ -20,12 +20,12 @@ import org.hornetq.utils.SimpleString;
 public class Proposal
 {
    private final SimpleString proposalType;
-   private final Object proposal;
+   private final SimpleString proposal;
 
    public static final String PROPOSAL_TYPE_HEADER = "_JBM_PROPOSAL_TYPE";
    public static final String PROPOSAL_HEADER = "_JBM_PROPOSAL";
 
-   public Proposal(SimpleString proposalType, Object proposal)
+   public Proposal(SimpleString proposalType, SimpleString proposal)
    {
       this.proposal = proposal;
       this.proposalType = proposalType;
@@ -36,7 +36,7 @@ public class Proposal
       return proposalType;
    }
 
-   public Object getProposal()
+   public SimpleString getProposal()
    {
       return proposal;
    }

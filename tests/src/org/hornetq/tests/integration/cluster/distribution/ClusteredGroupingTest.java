@@ -434,34 +434,24 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          verifyReceiveAllInRange(20, 30, 0);
          removeConsumer(0);
+         removeConsumer(1);
+         removeConsumer(2);
          deleteQueue(0, "queue0");
-         try
-         {
-            sendInRange(0, "queues.testaddress", 30, 31, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
-            fail("should throw exception");
-         }
-         catch (HornetQException e)
-         {
-            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
-         }
-         try
-         {
-            sendInRange(1, "queues.testaddress", 31, 32, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
-            fail("should throw exception");
-         }
-         catch (HornetQException e)
-         {
-            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
-         }
-         try
-         {
-            sendInRange(2, "queues.testaddress", 32, 33, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
-            fail("should throw exception");
-         }
-         catch (HornetQException e)
-         {
-            assertEquals(e.getCode(), HornetQException.QUEUE_DOES_NOT_EXIST);
-         }
+         deleteQueue(1, "queue0");
+         deleteQueue(2, "queue0");
+         createQueue(0, "queues.testaddress", "queue1", null, false);
+         addConsumer(3, 0, "queue1", null);
+
+         waitForBindings(0, "queues.testaddress", 1, 1, true);
+         waitForBindings(1, "queues.testaddress", 1, 1, false);
+         waitForBindings(2, "queues.testaddress", 1, 1, false);
+
+         sendInRange(0, "queues.testaddress", 30, 40, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+
+         sendInRange(1, "queues.testaddress", 40, 50, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+
+         sendInRange(2, "queues.testaddress", 50, 60, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+         verifyReceiveAllInRange(30, 50, 3);
          System.out.println("*****************************************************************************");
       }
       finally
