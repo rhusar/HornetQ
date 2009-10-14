@@ -444,7 +444,6 @@ public class ClusterTestBase extends ServiceTestBase
 
          message.putStringProperty(key, val);
          message.putIntProperty(COUNT_PROP, i);
-         System.out.println("i = " + i);
          producer.send(message);
       }
 
@@ -511,7 +510,6 @@ public class ClusterTestBase extends ServiceTestBase
                                                 int msgEnd,
                                                 int... consumerIDs) throws Exception
    {
-      boolean outOfOrder = false;
       HashMap<SimpleString, Integer> groupIdsReceived = new HashMap<SimpleString, Integer>();
       for (int i = 0; i < consumerIDs.length; i++)
       {
@@ -546,6 +544,7 @@ public class ClusterTestBase extends ServiceTestBase
             }
 
             SimpleString id = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
+               System.out.println("received " + id + " on consumer " + i);
             if(groupIdsReceived.get(id) == null)
             {
                groupIdsReceived.put(id, i);
