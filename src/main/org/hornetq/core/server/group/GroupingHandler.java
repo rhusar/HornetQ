@@ -30,6 +30,4 @@ public interface GroupingHandler
    void send(Response response, int distance) throws Exception;
 
    Response receive(Proposal proposal, int distance) throws Exception;
-
-   Response rePropose(Proposal proposal) throws Exception;
 }

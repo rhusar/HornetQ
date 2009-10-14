@@ -100,7 +100,6 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    public void proposed(Response response) throws Exception
    {
-      Object value = response.getAlternative() != null ? response.getAlternative() : response.getOriginal();
       try
       {
          lock.lock();
@@ -128,11 +127,6 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    public void send(Response response, int distance) throws Exception
    {
-   }
-
-   public Response rePropose(Proposal proposal)
-   {
-      return null;
    }
 
 }

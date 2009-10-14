@@ -42,16 +42,11 @@ public class LocalGroupingHandler implements GroupingHandler
 
    private SimpleString address;
 
-   private ScheduledExecutorService scheduledExecutor;
-
-   private ConcurrentHashSet<SimpleString> reProposals = new ConcurrentHashSet<SimpleString>();
-
-   public LocalGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address, ScheduledExecutorService scheduledExecutor)
+   public LocalGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address)
    {
       this.managementService = managementService;
       this.name = name;
       this.address = address;
-      this.scheduledExecutor = scheduledExecutor;
    }
 
    public SimpleString getName()
@@ -84,7 +79,6 @@ public class LocalGroupingHandler implements GroupingHandler
 
    public void send(Response response, int distance) throws Exception
    {
-      Object value = response.getAlternative() != null ? response.getAlternative() : response.getOriginal();
       TypedProperties props = new TypedProperties();
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, response.getResponseType());
       props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, (SimpleString)response.getOriginal());
@@ -99,28 +93,6 @@ public class LocalGroupingHandler implements GroupingHandler
    public Response receive(Proposal proposal, int distance) throws Exception
    {
       return propose(proposal);
-   }
-
-   public Response rePropose(final Proposal proposal) throws Exception
-   {
-      if(reProposals.addIfAbsent(proposal.getProposalType()))
-      {
-         Response response = new Response(proposal.getProposalType(), proposal.getProposal());
-         map.replace(proposal.getProposalType(), response);
-         send(response, 0);
-         scheduledExecutor.schedule(new Runnable()
-         {
-            public void run()
-            {
-               reProposals.remove(proposal.getProposalType());
-            }
-         }, 2000, TimeUnit.MILLISECONDS);
-         return response;
-      }
-      else
-      {
-         return new Response(proposal.getProposalType(), map.get(proposal.getProposalType()));
-      }
    }
 }
 

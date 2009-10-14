@@ -458,7 +458,7 @@ public class ClusterTestBase extends ServiceTestBase
       GroupingHandler groupingHandler;
       if(type == GroupingHandlerConfiguration.TYPE.LOCAL)
       {
-         groupingHandler = new LocalGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"), null);
+         groupingHandler = new LocalGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"));
       }
       else
       {

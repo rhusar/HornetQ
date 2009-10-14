@@ -462,12 +462,12 @@ public class BindingsImpl implements Bindings
 
             resp = groupingGroupingHandler.propose(new Proposal(fullID, chosen.getClusterName()));
 
-            if (!resp.getChosen().equals(chosen.getClusterName()))
+            if (resp.getAlternative() != null)
             {
                chosen = null;
                for (Binding binding : bindings)
                {
-                  if (binding.getClusterName().equals(resp.getChosen()))
+                  if (binding.getClusterName().equals(resp.getAlternative()))
                   {
                      chosen = binding;
                      break;

@@ -491,7 +491,7 @@ public class ClusterManagerImpl implements ClusterManager
       GroupingHandler groupingHandler;
       if (config.getType() == GroupingHandlerConfiguration.TYPE.LOCAL)
       {
-         groupingHandler = new LocalGroupingHandler(managementService, config.getName(), config.getAddress(), scheduledExecutor);
+         groupingHandler = new LocalGroupingHandler(managementService, config.getName(), config.getAddress());
       }
       else
       {
