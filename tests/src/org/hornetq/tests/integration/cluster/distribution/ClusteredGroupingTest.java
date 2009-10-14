@@ -39,9 +39,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -95,9 +95,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -154,9 +154,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -216,9 +216,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -276,9 +276,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -340,9 +340,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -359,6 +359,10 @@ public class ClusteredGroupingTest extends ClusterTestBase
          waitForBindings(0, "queues.testaddress", 1, 1, true);
          waitForBindings(1, "queues.testaddress", 1, 1, true);
          waitForBindings(2, "queues.testaddress", 1, 1, true);
+
+         waitForBindings(0, "queues.testaddress", 2, 2, false);
+         waitForBindings(1, "queues.testaddress", 2, 2, false);
+         waitForBindings(2, "queues.testaddress", 2, 2, false);
 
 
          sendInRange(0, "queues.testaddress", 0, 10, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
@@ -396,9 +400,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -486,9 +490,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -516,9 +520,6 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          sendInRange(2, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
-
-         sendInRange(0, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
-
          startServers(1);
 
          addConsumer(1, 1, "queue0", null);
@@ -526,7 +527,6 @@ public class ClusteredGroupingTest extends ClusterTestBase
          
 
          verifyReceiveAllInRange(10, 20, 1);
-         verifyReceiveAllInRange(20, 30, 1);
 
          System.out.println("*****************************************************************************");
       }
@@ -556,9 +556,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          try
          {
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
             setupSessionFactory(0, isNetty());
             setupSessionFactory(1, isNetty());
@@ -630,9 +630,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -665,13 +665,14 @@ public class ClusteredGroupingTest extends ClusterTestBase
          sendInRange(2, "queues.testaddress", 10, 20, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
 
-         sendInRange(0, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
-
          addConsumer(1, 1, "queue0", null);
          waitForBindings(1, "queues.testaddress", 1, 1, true);
 
 
          verifyReceiveAllInRange(10, 20, 1);
+
+
+         sendInRange(0, "queues.testaddress", 20, 30, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
          verifyReceiveAllInRange(20, 30, 1);
 
          System.out.println("*****************************************************************************");
@@ -702,9 +703,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
       try
       {
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-         setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -771,9 +772,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          try
          {
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
-            setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 0);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1);
+            setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2);
 
             setupSessionFactory(0, isNetty());
             setupSessionFactory(1, isNetty());

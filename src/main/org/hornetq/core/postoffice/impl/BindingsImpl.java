@@ -438,29 +438,33 @@ public class BindingsImpl implements Bindings
          throws Exception
    {
       SimpleString groupId = (SimpleString) message.getProperty(MessageImpl.HDR_GROUP_ID);
-      Response resp = groupingGroupingHandler.propose(new Proposal(groupId, null));
-      if (resp == null)
+
+      for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
       {
-         for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+         SimpleString routingName = entry.getKey();
+
+         List<Binding> bindings = entry.getValue();
+
+         if (bindings == null)
          {
-            SimpleString routingName = entry.getKey();
+            // The value can become null if it's concurrently removed while we're iterating - this is expected
+            // ConcurrentHashMap behaviour!
+            continue;
+         }
 
-            List<Binding> bindings = entry.getValue();
+         SimpleString fullID = groupId.concat(".").concat(routingName);
 
-            if (bindings == null)
-            {
-               // The value can become null if it's concurrently removed while we're iterating - this is expected
-               // ConcurrentHashMap behaviour!
-               continue;
-            }
+         Response resp = groupingGroupingHandler.propose(new Proposal(fullID, null));
 
-
+         if (resp == null)
+         {
             Binding chosen = getNextBinding(message, routingName, bindings);
-            
-            resp = groupingGroupingHandler.propose(new Proposal(groupId, chosen.getClusterName()));
-            
+
+            resp = groupingGroupingHandler.propose(new Proposal(fullID, chosen.getClusterName()));
+
             if (!resp.getChosen().equals(chosen.getClusterName()))
             {
+               chosen = null;
                for (Binding binding : bindings)
                {
                   if (binding.getClusterName().equals(resp.getChosen()))
@@ -477,15 +481,13 @@ public class BindingsImpl implements Bindings
                chosen.getBindable().preroute(message, tx);
                chosen.getBindable().route(message, tx);
             }
+            else
+            {
+               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
+            }
          }
-      }
-      else
-      {
-         for (Map.Entry<SimpleString, List<Binding>> entry : routingNameBindingMap.entrySet())
+         else
          {
-            SimpleString routingName = entry.getKey();
-
-            List<Binding> bindings = entry.getValue();
             Binding chosen = null;
             for (Binding binding : bindings)
             {
@@ -506,7 +508,11 @@ public class BindingsImpl implements Bindings
                throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
             }
          }
+
+
       }
+
+
    }
 
    private final int incrementPos(int pos, int length)

@@ -453,7 +453,7 @@ public class ClusterTestBase extends ServiceTestBase
    }
 
 
-   protected void setUpGroupArbitrator(GroupingHandlerConfiguration.TYPE type,  int node)
+   protected void setUpGroupHandler(GroupingHandlerConfiguration.TYPE type,  int node)
    {
       GroupingHandler groupingHandler;
       if(type == GroupingHandlerConfiguration.TYPE.LOCAL)
