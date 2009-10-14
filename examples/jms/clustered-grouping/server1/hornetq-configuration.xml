@@ -51,6 +51,7 @@
    <grouping-handler name="my-grouping-handler">
       <type>REMOTE</type>
       <address>jms</address>
+      <timeout>5000</timeout>
    </grouping-handler>
 
    <!-- Other config -->

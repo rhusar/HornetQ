@@ -397,6 +397,7 @@
       <xsd:sequence>
          <xsd:element maxOccurs="1" minOccurs="1" name="type" type="groupingHandlerTypeType"/>
          <xsd:element maxOccurs="1" minOccurs="1" name="address" type="xsd:string"/>
+         <xsd:element maxOccurs="1" minOccurs="0" name="timeout" type="xsd:int"/>
       </xsd:sequence>
        <xsd:attribute name="name" type="xsd:string" use="required"/>
    </xsd:complexType>

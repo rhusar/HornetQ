@@ -581,10 +581,12 @@ public class FileConfiguration extends ConfigurationImpl
          String name = node.getAttribute("name");
          String type = getString(node, "type", null, NOT_NULL_OR_EMPTY);
          String address = getString(node, "address",null, NOT_NULL_OR_EMPTY);
+         Integer timeout = getInteger(node, "timeout", GroupingHandlerConfiguration.DEFAULT_TIMEOUT, GT_ZERO);
          GroupingHandlerConfiguration arbitratorConfiguration =
                new GroupingHandlerConfiguration(new SimpleString(name),
                                            type.equals(GroupingHandlerConfiguration.TYPE.LOCAL.getType())? GroupingHandlerConfiguration.TYPE.LOCAL: GroupingHandlerConfiguration.TYPE.REMOTE,
-                                           new SimpleString(address));
+                                           new SimpleString(address),
+                                           timeout);
          System.out.println("arbitratorConfiguration = " + arbitratorConfiguration);
          groupingHandlerConfiguration.add(arbitratorConfiguration);
       }

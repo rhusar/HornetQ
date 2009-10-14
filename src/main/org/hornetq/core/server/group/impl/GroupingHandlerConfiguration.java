@@ -25,11 +25,21 @@ public class GroupingHandlerConfiguration
 
    private final SimpleString address;
 
+   private final int timeout;
+
+   public static final int DEFAULT_TIMEOUT = 5000;
+
    public GroupingHandlerConfiguration(final SimpleString name, final TYPE type, SimpleString address)
+   {
+      this(name, type, address, DEFAULT_TIMEOUT);
+   }
+
+   public GroupingHandlerConfiguration(final SimpleString name, final TYPE type, SimpleString address, int timeout)
    {
       this.type = type;
       this.name = name;
       this.address = address;
+      this.timeout = timeout;
    }
 
    public SimpleString getName()
@@ -45,6 +55,11 @@ public class GroupingHandlerConfiguration
    public SimpleString getAddress()
    {
       return address;
+   }
+
+   public int getTimeout()
+   {
+      return timeout;
    }
 
    public enum TYPE
