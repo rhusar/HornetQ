@@ -29,7 +29,6 @@ import org.hornetq.core.client.ClientProducer;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.client.impl.FailoverManagerImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.cluster.BroadcastGroupConfiguration;
@@ -452,8 +451,12 @@ public class ClusterTestBase extends ServiceTestBase
       session.close();
    }
 
-
    protected void setUpGroupHandler(GroupingHandlerConfiguration.TYPE type,  int node)
+   {
+      setUpGroupHandler(type, node, 5000);
+   }
+
+   protected void setUpGroupHandler(GroupingHandlerConfiguration.TYPE type,  int node, int timeout)
    {
       GroupingHandler groupingHandler;
       if(type == GroupingHandlerConfiguration.TYPE.LOCAL)
@@ -462,8 +465,13 @@ public class ClusterTestBase extends ServiceTestBase
       }
       else
       {
-         groupingHandler = new RemoteGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"));
+         groupingHandler = new RemoteGroupingHandler(servers[node].getManagementService(), new SimpleString("grouparbitrator"), new SimpleString("queues"), timeout);
       }
+      this.servers[node].getPostOffice().setGroupingHandler(groupingHandler);
+   }
+
+   protected void setUpGroupHandler(GroupingHandler groupingHandler,  int node)
+   {
       this.servers[node].getPostOffice().setGroupingHandler(groupingHandler);
    }
 

@@ -495,7 +495,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
       else
       {
-         groupingHandler = new RemoteGroupingHandler(managementService, config.getName(), config.getAddress());
+         groupingHandler = new RemoteGroupingHandler(managementService, config.getName(), config.getAddress(), config.getTimeout());
       }
       log.info("deploying grouping handler: " + groupingHandler);
       postOffice.setGroupingHandler(groupingHandler);

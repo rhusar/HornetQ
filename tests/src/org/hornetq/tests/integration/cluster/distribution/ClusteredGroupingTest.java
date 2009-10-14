@@ -14,7 +14,11 @@ package org.hornetq.tests.integration.cluster.distribution;
 
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
+import org.hornetq.core.server.group.impl.Response;
+import org.hornetq.core.server.group.impl.Proposal;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.management.Notification;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -66,6 +70,100 @@ public class ClusteredGroupingTest extends ClusterTestBase
          sendWithProperty(0, "queues.testaddress", 10, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
 
          verifyReceiveAll(10, 0);
+
+         System.out.println("*****************************************************************************");
+      }
+      finally
+      {
+         closeAllConsumers();
+
+         closeAllSessionFactories();
+
+         stopServers(0, 1, 2);
+      }
+   }
+
+   public void testGroupingTimeout() throws Exception
+   {
+      setupServer(0, isFileStorage(), isNetty());
+      setupServer(1, isFileStorage(), isNetty());
+      setupServer(2, isFileStorage(), isNetty());
+
+      setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1, 2);
+
+      setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 0, 2);
+
+      setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 0, 1);
+
+      startServers(0, 1, 2);
+
+      try
+      {
+         setUpGroupHandler(new GroupingHandler()
+         {
+            public SimpleString getName()
+            {
+               return null;
+            }
+
+            public Response propose(Proposal proposal) throws Exception
+            {
+               return null;
+            }
+
+            public void proposed(Response response) throws Exception
+            {
+
+            }
+
+            public void send(Response response, int distance) throws Exception
+            {
+
+            }
+
+            public Response receive(Proposal proposal, int distance) throws Exception
+            {
+               return null;
+            }
+
+            public void onNotification(Notification notification)
+            {
+               
+            }
+         }, 0);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 1, 1);
+         setUpGroupHandler(GroupingHandlerConfiguration.TYPE.REMOTE, 2, 1);
+
+         setupSessionFactory(0, isNetty());
+         setupSessionFactory(1, isNetty());
+         setupSessionFactory(2, isNetty());
+
+         createQueue(0, "queues.testaddress", "queue0", null, false);
+         createQueue(1, "queues.testaddress", "queue0", null, false);
+         createQueue(2, "queues.testaddress", "queue0", null, false);
+
+         addConsumer(0, 0, "queue0", null);
+         addConsumer(1, 1, "queue0", null);
+         addConsumer(2, 2, "queue0", null);
+
+         waitForBindings(0, "queues.testaddress", 1, 1, true);
+         waitForBindings(1, "queues.testaddress", 1, 1, true);
+         waitForBindings(2, "queues.testaddress", 1, 1, true);
+
+         /*waitForBindings(0, "queues.testaddress", 2, 2, false);
+         waitForBindings(1, "queues.testaddress", 2, 2, false);
+         waitForBindings(2, "queues.testaddress", 2, 2, false);*/
+
+         try
+         {
+            sendWithProperty(1, "queues.testaddress", 10, false, MessageImpl.HDR_GROUP_ID, new SimpleString("id1"));
+            fail("should timeout");
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+         }
+
 
          System.out.println("*****************************************************************************");
       }

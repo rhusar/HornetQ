@@ -48,15 +48,16 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    private final Condition sendCondition = lock.newCondition();
 
-   private int waitTime = 1000;
+   private final int timeout;
 
    private HashMap<SimpleString, SimpleString> groupMap = new HashMap<SimpleString, SimpleString>();
 
-   public RemoteGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address)
+   public RemoteGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address, int timeout)
    {
       this.name = name;
       this.address = address;
       this.managementService = managementService;
+      this.timeout = timeout;
    }
 
    public SimpleString getName()
@@ -86,7 +87,7 @@ public class RemoteGroupingHandler implements GroupingHandler
          props.putIntProperty(ManagementHelper.HDR_DISTANCE, 0);
          Notification notification = new Notification(null, NotificationType.PROPOSAL, props);
          managementService.sendNotification(notification);
-         sendCondition.await(waitTime, TimeUnit.MILLISECONDS);
+         sendCondition.await(timeout, TimeUnit.MILLISECONDS);
          response = responses.get(proposal.getProposalType());
       }
       finally
