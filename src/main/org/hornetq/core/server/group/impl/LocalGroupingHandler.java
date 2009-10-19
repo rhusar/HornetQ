@@ -19,13 +19,11 @@ import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.group.GroupingHandler;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
-import org.hornetq.utils.ConcurrentHashSet;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 
 /**
@@ -35,21 +33,23 @@ public class LocalGroupingHandler implements GroupingHandler
 {
    private static Logger log = Logger.getLogger(LocalGroupingHandler.class);
 
-   private ConcurrentHashMap<SimpleString, SimpleString> map = new ConcurrentHashMap<SimpleString, SimpleString>();
+   private ConcurrentHashMap<SimpleString, GroupBinding> map = new ConcurrentHashMap<SimpleString, GroupBinding>();
 
-   private HashMap<SimpleString, SimpleString> groupMap = new HashMap<SimpleString, SimpleString>();
+   private HashMap<SimpleString, GroupBinding> groupMap = new HashMap<SimpleString, GroupBinding>();
 
    private final SimpleString name;
 
    private final ManagementService managementService;
 
    private SimpleString address;
+   private StorageManager storageManager;
 
-   public LocalGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address)
+   public LocalGroupingHandler(final ManagementService managementService, final SimpleString name, final SimpleString address, StorageManager storageManager)
    {
       this.managementService = managementService;
       this.name = name;
       this.address = address;
+      this.storageManager = storageManager;
    }
 
    public SimpleString getName()
@@ -60,20 +60,23 @@ public class LocalGroupingHandler implements GroupingHandler
 
    public Response propose(Proposal proposal) throws Exception
    {
-      if(proposal.getProposal() == null)
+      if(proposal.getClusterName() == null)
       {
-         SimpleString original = map.get(proposal.getProposalType());
-         return original == null?null:new Response(proposal.getProposalType(), original);
+         GroupBinding original = map.get(proposal.getGroupId());
+         return original == null?null:new Response(proposal.getGroupId(), original.getClusterName());
       }
-      Response response = new Response(proposal.getProposalType(), proposal.getProposal());
-      if (map.putIfAbsent(response.getResponseType(), response.getChosen()) == null)
+      GroupBinding groupBinding = new GroupBinding(proposal.getGroupId(), proposal.getClusterName());
+      if (map.putIfAbsent(groupBinding.getGroupId(), groupBinding) == null)
       {
-         groupMap.put(response.getChosen(), response.getResponseType());
-         return response;
+         groupBinding.setId(storageManager.generateUniqueID());
+         groupMap.put(groupBinding.getClusterName(), groupBinding);
+         storageManager.addGrouping(groupBinding);
+         return new Response(groupBinding.getGroupId(), groupBinding.getClusterName());
       }
       else
       {
-         return new Response(proposal.getProposalType(), proposal.getProposal(), map.get(proposal.getProposalType()));
+         groupBinding = map.get(proposal.getGroupId());
+         return new Response(groupBinding.getGroupId(), proposal.getClusterName(), groupBinding.getClusterName());
       }
    }
 
@@ -84,9 +87,9 @@ public class LocalGroupingHandler implements GroupingHandler
    public void send(Response response, int distance) throws Exception
    {
       TypedProperties props = new TypedProperties();
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, response.getResponseType());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, response.getOriginal());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE, response.getAlternative());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, response.getGroupId());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, response.getClusterName());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_ALT_VALUE, response.getAlternativeClusterName());
       props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
       props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
       props.putIntProperty(ManagementHelper.HDR_DISTANCE, distance);
@@ -99,16 +102,30 @@ public class LocalGroupingHandler implements GroupingHandler
       return propose(proposal);
    }
 
+   public void addGroupBinding(GroupBinding groupBinding)
+   {
+      map.put(groupBinding.getGroupId(), groupBinding);
+      groupMap.put(groupBinding.getClusterName(), groupBinding);
+   }
+
    public void onNotification(Notification notification)
    {
       if(notification.getType() == NotificationType.BINDING_REMOVED)
       {
          SimpleString clusterName = (SimpleString) notification.getProperties().getProperty(ManagementHelper.HDR_CLUSTER_NAME);
-         SimpleString val = groupMap.get(clusterName);
+         GroupBinding val = groupMap.get(clusterName);
          if(val != null)
          {
             groupMap.remove(clusterName);
-            map.remove(val);
+            map.remove(val.getGroupId());
+            try
+            {
+               storageManager.deleteGrouping(val);
+            }
+            catch (Exception e)
+            {
+               log.warn("Unable to delete group binding info " + val.getGroupId(), e);
+            }
          }
       }
    }

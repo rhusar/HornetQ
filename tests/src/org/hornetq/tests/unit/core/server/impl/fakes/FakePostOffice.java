@@ -150,13 +150,4 @@ public class FakePostOffice implements PostOffice
    {
 
    }
-
-   public void setGroupingHandler(GroupingHandler groupingHandler)
-   {
-   }
-
-   public GroupingHandler getGroupingHandler()
-   {
-      return null;
-   }
 }

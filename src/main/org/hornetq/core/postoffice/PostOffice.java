@@ -64,8 +64,4 @@ public interface PostOffice extends HornetQComponent
    void sendQueueInfoToQueue(SimpleString queueName, SimpleString address) throws Exception;
    
    Object getNotificationLock();
-
-   void setGroupingHandler(GroupingHandler groupingHandler);
-
-   GroupingHandler getGroupingHandler();
 }

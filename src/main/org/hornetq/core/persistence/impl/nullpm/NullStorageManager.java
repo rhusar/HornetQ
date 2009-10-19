@@ -24,11 +24,13 @@ import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.persistence.GroupingInfo;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
@@ -74,7 +76,7 @@ public class NullStorageManager implements StorageManager
    {
    }
 
-   public void loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos) throws Exception
+   public void loadBindingJournal(List<QueueBindingInfo> queueBindingInfos, List<GroupingInfo> groupingInfos) throws Exception
    {
 
    }
@@ -245,6 +247,16 @@ public class NullStorageManager implements StorageManager
 
    public void deleteDuplicateID(final long recordID) throws Exception
    {
+   }
+
+   public void addGrouping(GroupBinding groupBinding) throws Exception
+   {
+      //To change body of implemented methods use File | Settings | File Templates.
+   }
+
+   public void deleteGrouping(GroupBinding groupBinding) throws Exception
+   {
+      //To change body of implemented methods use File | Settings | File Templates.
    }
 
 }

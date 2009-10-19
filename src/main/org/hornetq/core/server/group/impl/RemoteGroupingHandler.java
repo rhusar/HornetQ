@@ -67,12 +67,12 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    public Response propose(final Proposal proposal) throws Exception
    {
-      Response response = responses.get(proposal.getProposalType());
+      Response response = responses.get(proposal.getGroupId());
       if( response != null)
       {
          return response;
       }
-      if (proposal.getProposal() == null)
+      if (proposal.getClusterName() == null)
       {
          return null;
       }
@@ -80,15 +80,15 @@ public class RemoteGroupingHandler implements GroupingHandler
       {
          lock.lock();
          TypedProperties props = new TypedProperties();
-         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getProposalType());
-         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getProposal());
+         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getGroupId());
+         props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getClusterName());
          props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
          props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
          props.putIntProperty(ManagementHelper.HDR_DISTANCE, 0);
          Notification notification = new Notification(null, NotificationType.PROPOSAL, props);
          managementService.sendNotification(notification);
          sendCondition.await(timeout, TimeUnit.MILLISECONDS);
-         response = responses.get(proposal.getProposalType());
+         response = responses.get(proposal.getGroupId());
       }
       finally
       {
@@ -96,7 +96,7 @@ public class RemoteGroupingHandler implements GroupingHandler
       }
       if(response == null)
       {
-         throw new IllegalStateException("no response received from group handler for " + proposal.getProposalType());
+         throw new IllegalStateException("no response received from group handler for " + proposal.getGroupId());
       }
       return response;
    }
@@ -106,8 +106,8 @@ public class RemoteGroupingHandler implements GroupingHandler
       try
       {
          lock.lock();
-         responses.put(response.getResponseType(), response);
-         groupMap.put(response.getChosen(), response.getResponseType());
+         responses.put(response.getGroupId(), response);
+         groupMap.put(response.getChosenClusterName(), response.getGroupId());
          sendCondition.signal();
       }
       finally
@@ -119,8 +119,8 @@ public class RemoteGroupingHandler implements GroupingHandler
    public Response receive(Proposal proposal, int distance) throws Exception
    {
       TypedProperties props = new TypedProperties();
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getProposalType());
-      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getProposal());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_TYPE, proposal.getGroupId());
+      props.putStringProperty(ManagementHelper.HDR_PROPOSAL_VALUE, proposal.getClusterName());
       props.putIntProperty(ManagementHelper.HDR_BINDING_TYPE, BindingType.LOCAL_QUEUE_INDEX);
       props.putStringProperty(ManagementHelper.HDR_ADDRESS, address);
       props.putIntProperty(ManagementHelper.HDR_DISTANCE, distance);
@@ -131,6 +131,11 @@ public class RemoteGroupingHandler implements GroupingHandler
 
    public void send(Response response, int distance) throws Exception
    {
+   }
+
+   public void addGroupBinding(GroupBinding groupBinding)
+   {
+      
    }
 
    public void onNotification(Notification notification)

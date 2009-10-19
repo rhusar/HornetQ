@@ -15,6 +15,7 @@ package org.hornetq.core.server;
 
 import java.util.List;
 import java.util.Set;
+import java.nio.channels.DatagramChannel;
 
 import javax.management.MBeanServer;
 
@@ -30,6 +31,7 @@ import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.security.HornetQSecurityManager;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.cluster.ClusterManager;
+import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.ResourceManager;
@@ -126,4 +128,8 @@ public interface HornetQServer extends HornetQComponent
    void destroyQueue(SimpleString queueName, ServerSession session) throws Exception;
 
    ExecutorFactory getExecutorFactory();
+
+   void setGroupingHandler(GroupingHandler groupingHandler);
+
+   GroupingHandler getGroupingHandler();
 }

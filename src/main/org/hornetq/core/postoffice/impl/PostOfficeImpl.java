@@ -111,7 +111,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
-   private GroupingHandler groupingGroupingHandler;
+   private final HornetQServer server;
 
    public PostOfficeImpl(final HornetQServer server,
                          final StorageManager storageManager,
@@ -124,7 +124,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                          final int idCacheSize,
                          final boolean persistIDCache,
                          final ExecutorFactory orderedExecutorFactory,
-                         HierarchicalRepository<AddressSettings> addressSettingsRepository)
+                         final HierarchicalRepository<AddressSettings> addressSettingsRepository)
 
    {
       this.storageManager = storageManager;
@@ -155,6 +155,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       this.redistributorExecutorFactory = orderedExecutorFactory;
 
       this.addressSettingsRepository = addressSettingsRepository;
+
+      this.server = server;
    }
 
    // HornetQComponent implementation ---------------------------------------
@@ -694,18 +696,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return notificationLock;
    }
 
-
-   public void setGroupingHandler(GroupingHandler groupingHandler)
-   {
-      groupingGroupingHandler = groupingHandler;
-      managementService.addNotificationListener(groupingGroupingHandler);
-   }
-
-   public GroupingHandler getGroupingHandler()
-   {
-      return groupingGroupingHandler;
-   }
-
    public void sendQueueInfoToQueue(final SimpleString queueName, final SimpleString address) throws Exception
    {
       // We send direct to the queue so we can send it to the same queue that is bound to the notifications adress -
@@ -1047,6 +1037,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    public Bindings createBindings()
    {
-      return new BindingsImpl(this);
+      return new BindingsImpl(server.getGroupingHandler());
    }
 }

@@ -130,9 +130,9 @@ public interface Configuration extends Serializable
 
    void setDiscoveryGroupConfigurations(Map<String, DiscoveryGroupConfiguration> configs);
 
-   List<GroupingHandlerConfiguration> getGroupingHandlerConfigurations();
+   GroupingHandlerConfiguration getGroupingHandlerConfiguration();
 
-   void setGroupingHandlerConfigurationConfigurations(List<GroupingHandlerConfiguration> groupingHandlerConfiguration);
+   void setGroupingHandlerConfiguration(GroupingHandlerConfiguration groupingHandlerConfiguration);
 
    List<BridgeConfiguration> getBridgeConfigurations();
 
@@ -307,7 +307,6 @@ public interface Configuration extends Serializable
    int getMessageExpiryThreadPriority();
 
    void setMessageExpiryThreadPriority(int messageExpiryThreadPriority);
-
 
 
 }

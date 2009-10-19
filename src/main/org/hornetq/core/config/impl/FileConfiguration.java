@@ -577,19 +577,16 @@ public class FileConfiguration extends ConfigurationImpl
    }
 
    private void parseGroupingHandlerConfiguration(final Element node)
-      {
-         String name = node.getAttribute("name");
-         String type = getString(node, "type", null, NOT_NULL_OR_EMPTY);
-         String address = getString(node, "address",null, NOT_NULL_OR_EMPTY);
-         Integer timeout = getInteger(node, "timeout", GroupingHandlerConfiguration.DEFAULT_TIMEOUT, GT_ZERO);
-         GroupingHandlerConfiguration arbitratorConfiguration =
-               new GroupingHandlerConfiguration(new SimpleString(name),
-                                           type.equals(GroupingHandlerConfiguration.TYPE.LOCAL.getType())? GroupingHandlerConfiguration.TYPE.LOCAL: GroupingHandlerConfiguration.TYPE.REMOTE,
-                                           new SimpleString(address),
-                                           timeout);
-         System.out.println("arbitratorConfiguration = " + arbitratorConfiguration);
-         groupingHandlerConfiguration.add(arbitratorConfiguration);
-      }
+   {
+      String name = node.getAttribute("name");
+      String type = getString(node, "type", null, NOT_NULL_OR_EMPTY);
+      String address = getString(node, "address",null, NOT_NULL_OR_EMPTY);
+      Integer timeout = getInteger(node, "timeout", GroupingHandlerConfiguration.DEFAULT_TIMEOUT, GT_ZERO);
+      groupingHandlerConfiguration = new GroupingHandlerConfiguration(new SimpleString(name),
+                                  type.equals(GroupingHandlerConfiguration.TYPE.LOCAL.getType())? GroupingHandlerConfiguration.TYPE.LOCAL: GroupingHandlerConfiguration.TYPE.REMOTE,
+                                  new SimpleString(address),
+                                  timeout);
+   }
 
 
    private void parseBridgeConfiguration(final Element brNode)

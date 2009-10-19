@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.QueueBindingInfo;
+import org.hornetq.core.persistence.GroupingInfo;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.Queue;
@@ -70,7 +71,7 @@ public class RestartSMTest extends ServiceTestBase
 
          List<QueueBindingInfo> queueBindingInfos = new ArrayList<QueueBindingInfo>();
 
-         journal.loadBindingJournal(queueBindingInfos);
+         journal.loadBindingJournal(queueBindingInfos, new ArrayList<GroupingInfo>());
 
          Map<Long, Queue> queues = new HashMap<Long, Queue>();
 
@@ -88,7 +89,7 @@ public class RestartSMTest extends ServiceTestBase
 
          queueBindingInfos = new ArrayList<QueueBindingInfo>();
 
-         journal.loadBindingJournal(queueBindingInfos);
+         journal.loadBindingJournal(queueBindingInfos, new ArrayList<GroupingInfo>());
 
          journal.start();
       }

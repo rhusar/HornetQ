@@ -19,26 +19,26 @@ import org.hornetq.utils.SimpleString;
  */
 public class Proposal
 {
-   private final SimpleString proposalType;
-   private final SimpleString proposal;
+   private final SimpleString groupId;
+   private final SimpleString clusterName;
 
    public static final String PROPOSAL_TYPE_HEADER = "_JBM_PROPOSAL_TYPE";
    public static final String PROPOSAL_HEADER = "_JBM_PROPOSAL";
 
-   public Proposal(SimpleString proposalType, SimpleString proposal)
+   public Proposal(SimpleString groupId, SimpleString clusterName)
    {
-      this.proposal = proposal;
-      this.proposalType = proposalType;
+      this.clusterName = clusterName;
+      this.groupId = groupId;
    }
 
-   public SimpleString getProposalType()
+   public SimpleString getGroupId()
    {
-      return proposalType;
+      return groupId;
    }
 
-   public SimpleString getProposal()
+   public SimpleString getClusterName()
    {
-      return proposal;
+      return clusterName;
    }
 }
 

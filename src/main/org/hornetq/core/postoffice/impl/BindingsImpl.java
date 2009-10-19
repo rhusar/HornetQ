@@ -28,7 +28,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
-import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.Bindable;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
@@ -60,11 +59,11 @@ public class BindingsImpl implements Bindings
 
    private volatile boolean routeWhenNoConsumers;
 
-   private final PostOffice postOffice;
+   private final GroupingHandler groupingHandler;
 
-   public BindingsImpl(PostOffice postOffice)
+   public BindingsImpl(GroupingHandler groupingHandler)
    {
-      this.postOffice = postOffice;
+      this.groupingHandler = groupingHandler;
    }
 
    public void setRouteWhenNoConsumers(final boolean routeWhenNoConsumers)
@@ -278,15 +277,13 @@ public class BindingsImpl implements Bindings
 
       if (!routed)
       {
-         GroupingHandler groupingGroupingHandler = postOffice.getGroupingHandler();
-
          if (message.getProperty(MessageImpl.HDR_FROM_CLUSTER) != null)
          {
             routed = routeFromCluster(message, tx);
          }
-         else if (groupingGroupingHandler != null && message.getProperty(MessageImpl.HDR_GROUP_ID) != null)
+         else if (groupingHandler != null && message.getProperty(MessageImpl.HDR_GROUP_ID) != null)
          {
-            routeUsingStrictOrdering(message, tx, groupingGroupingHandler);
+            routeUsingStrictOrdering(message, tx, groupingHandler);
          }
          else
          {
@@ -462,12 +459,12 @@ public class BindingsImpl implements Bindings
 
             resp = groupingGroupingHandler.propose(new Proposal(fullID, chosen.getClusterName()));
 
-            if (resp.getAlternative() != null)
+            if (resp.getAlternativeClusterName() != null)
             {
                chosen = null;
                for (Binding binding : bindings)
                {
-                  if (binding.getClusterName().equals(resp.getAlternative()))
+                  if (binding.getClusterName().equals(resp.getAlternativeClusterName()))
                   {
                      chosen = binding;
                      break;
@@ -483,7 +480,7 @@ public class BindingsImpl implements Bindings
             }
             else
             {
-               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
+               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosenClusterName() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
             }
          }
          else
@@ -491,7 +488,7 @@ public class BindingsImpl implements Bindings
             Binding chosen = null;
             for (Binding binding : bindings)
             {
-               if (binding.getClusterName().equals(resp.getChosen()))
+               if (binding.getClusterName().equals(resp.getChosenClusterName()))
                {
                   chosen = binding;
                   break;
@@ -505,7 +502,7 @@ public class BindingsImpl implements Bindings
             }
             else
             {
-               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosen() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
+               throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "queue " + resp.getChosenClusterName() + " has been removed cannot deliver message, queues should not be removed when grouping is used");
             }
          }
 

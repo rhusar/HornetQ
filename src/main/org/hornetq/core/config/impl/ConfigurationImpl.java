@@ -230,7 +230,7 @@ public class ConfigurationImpl implements Configuration
 
    protected Map<String, DiscoveryGroupConfiguration> discoveryGroupConfigurations = new LinkedHashMap<String, DiscoveryGroupConfiguration>();
 
-   protected List<GroupingHandlerConfiguration> groupingHandlerConfiguration = new ArrayList<GroupingHandlerConfiguration>();
+   protected GroupingHandlerConfiguration groupingHandlerConfiguration;
 
    // Paging related attributes ------------------------------------------------------------
 
@@ -484,12 +484,12 @@ public class ConfigurationImpl implements Configuration
       this.backupConnectorName = backupConnectorName;
    }
 
-   public List<GroupingHandlerConfiguration> getGroupingHandlerConfigurations()
+   public GroupingHandlerConfiguration getGroupingHandlerConfiguration()
    {
       return groupingHandlerConfiguration;
    }
 
-   public void setGroupingHandlerConfigurationConfigurations(List<GroupingHandlerConfiguration> groupingHandlerConfiguration)
+   public void setGroupingHandlerConfiguration(GroupingHandlerConfiguration groupingHandlerConfiguration)
    {
       this.groupingHandlerConfiguration = groupingHandlerConfiguration;
    }

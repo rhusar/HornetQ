@@ -26,6 +26,7 @@ import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
@@ -111,5 +112,11 @@ public interface StorageManager extends HornetQComponent
    
    void deleteQueueBinding(long queueBindingID) throws Exception;
    
-   void loadBindingJournal(List<QueueBindingInfo> queueBindingInfos) throws Exception;
+   void loadBindingJournal(List<QueueBindingInfo> queueBindingInfos, List<GroupingInfo> groupingInfos) throws Exception;
+
+   //grouping relateed operations
+   void addGrouping(GroupBinding groupBinding) throws Exception;
+
+
+   void deleteGrouping(GroupBinding groupBinding) throws Exception;
 }

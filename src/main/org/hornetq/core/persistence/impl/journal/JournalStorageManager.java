@@ -50,6 +50,7 @@ import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.persistence.GroupingInfo;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.remoting.impl.wireformat.XidCodecSupport;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
@@ -58,6 +59,7 @@ import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.core.transaction.Transaction;
@@ -85,6 +87,8 @@ public class JournalStorageManager implements StorageManager
 
    private static final long CHECKPOINT_BATCH_SIZE = Integer.MAX_VALUE;
 
+   //grouping journal record type
+   public static final byte GROUP_RECORD = 41;
    // Bindings journal record type
 
    public static final byte QUEUE_BINDING_RECORD = 21;
@@ -988,6 +992,18 @@ public class JournalStorageManager implements StorageManager
          resourceManager.putTransaction(xid, tx);
       }
    }
+   //grouping handler operations
+   public void addGrouping(GroupBinding groupBinding) throws Exception
+   {
+      GroupingEncoding groupingEncoding = new GroupingEncoding(groupBinding.getId(), groupBinding.getGroupId(), groupBinding.getClusterName());
+
+      bindingsJournal.appendAddRecord(groupBinding.getId(), GROUP_RECORD, groupingEncoding, true);
+   }
+
+   public void deleteGrouping(GroupBinding groupBinding) throws Exception
+   {
+      bindingsJournal.appendDeleteRecord(groupBinding.getId(), true);
+   }
 
    // Bindings operations
 
@@ -1011,7 +1027,7 @@ public class JournalStorageManager implements StorageManager
       bindingsJournal.appendDeleteRecord(queueBindingID, true);
    }
 
-   public void loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos) throws Exception
+   public void loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos, final List<GroupingInfo> groupingInfos) throws Exception
    {
       List<RecordInfo> records = new ArrayList<RecordInfo>();
 
@@ -1044,6 +1060,13 @@ public class JournalStorageManager implements StorageManager
             encoding.decode(buffer);
 
             persistentID = encoding.uuid;
+         }
+         else if(rec == GROUP_RECORD)
+         {
+            GroupingEncoding encoding = new GroupingEncoding();
+            encoding.decode(buffer);
+            encoding.setId(id);
+            groupingInfos.add(encoding);
          }
          else if (rec == BatchingIDGenerator.ID_COUNTER_RECORD)
          {
@@ -1256,6 +1279,63 @@ public class JournalStorageManager implements StorageManager
       public int getEncodeSize()
       {
          return XidCodecSupport.getXidEncodeLength(xid) + DataConstants.SIZE_BOOLEAN;
+      }
+   }
+
+   private static class GroupingEncoding implements EncodingSupport, GroupingInfo
+   {
+      long id;
+
+      SimpleString groupId;
+
+      SimpleString clusterName;
+
+      public GroupingEncoding(long id, SimpleString groupId, SimpleString clusterName)
+      {
+         this.id = id;
+         this.groupId = groupId;
+         this.clusterName = clusterName;
+      }
+
+      public GroupingEncoding()
+      {
+      }
+
+      public int getEncodeSize()
+      {
+         return SimpleString.sizeofString(groupId) + SimpleString.sizeofString(clusterName);
+      }
+
+      public void encode(HornetQBuffer buffer)
+      {
+         buffer.writeSimpleString(groupId);
+         buffer.writeSimpleString(clusterName);
+      }
+
+      public void decode(HornetQBuffer buffer)
+      {
+         groupId = buffer.readSimpleString();
+         clusterName = buffer.readSimpleString();
+      }
+
+      public long getId()
+      {
+         return id;
+      }
+
+      public void setId(long id)
+      {
+         this.id = id;
+      }
+
+      public SimpleString getGroupId()
+      {
+         return groupId;
+      }
+
+      public SimpleString getClusterName()
+      {
+         return clusterName;
       }
    }
 

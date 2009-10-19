@@ -21,23 +21,23 @@ public class Response
 {
    private final boolean accepted;
 
-   private final SimpleString original;
+   private final SimpleString clusterName;
 
-   private final SimpleString alternative;
+   private final SimpleString alternativeClusterName;
 
-   private SimpleString responseType;
+   private SimpleString groupId;
 
-   public Response(SimpleString responseType, SimpleString original)
+   public Response(SimpleString groupId, SimpleString clusterName)
    {
-      this(responseType, original, null);
+      this(groupId, clusterName, null);
    }
 
-   public Response(SimpleString responseType, SimpleString original, SimpleString alternative)
+   public Response(SimpleString groupId, SimpleString clusterName, SimpleString alternativeClusterName)
    {
-      this.responseType = responseType;
-      this.accepted = alternative == null;
-      this.original = original;
-      this.alternative = alternative;
+      this.groupId = groupId;
+      this.accepted = alternativeClusterName == null;
+      this.clusterName = clusterName;
+      this.alternativeClusterName = alternativeClusterName;
    }
 
    public boolean isAccepted()
@@ -45,29 +45,29 @@ public class Response
       return accepted;
    }
 
-   public SimpleString getOriginal()
+   public SimpleString getClusterName()
    {
-      return original;
+      return clusterName;
    }
 
-   public SimpleString getAlternative()
+   public SimpleString getAlternativeClusterName()
    {
-      return alternative;
+      return alternativeClusterName;
    }
 
-   public SimpleString getChosen()
+   public SimpleString getChosenClusterName()
    {
-      return alternative != null?alternative:original;
+      return alternativeClusterName != null? alternativeClusterName : clusterName;
    }
 
    @Override
    public String toString()
    {
-      return "accepted = " + accepted + " original = " + original + " alternative = " + alternative;
+      return "accepted = " + accepted + " clusterName = " + clusterName + " alternativeClusterName = " + alternativeClusterName;
    }
 
-   public SimpleString getResponseType()
+   public SimpleString getGroupId()
    {
-      return responseType;
+      return groupId;
    }
 }

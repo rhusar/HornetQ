@@ -15,6 +15,7 @@ package org.hornetq.core.server.group;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.core.server.group.impl.Proposal;
 import org.hornetq.core.server.group.impl.Response;
+import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.management.NotificationListener;
 import org.hornetq.core.management.Notification;
 
@@ -33,5 +34,5 @@ public interface GroupingHandler extends NotificationListener
 
    Response receive(Proposal proposal, int distance) throws Exception;
 
-   void onNotification(Notification notification);
+   void addGroupBinding(GroupBinding groupBinding);
 }

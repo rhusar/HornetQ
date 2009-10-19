@@ -43,6 +43,7 @@ import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.persistence.GroupingInfo;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
@@ -50,6 +51,7 @@ import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -842,7 +844,15 @@ public class PagingStoreImplTest extends UnitTestCase
       {
       }
 
-      /* (non-Javadoc)
+      public void addGrouping(GroupBinding groupBinding) throws Exception
+      {
+         //To change body of implemented methods use File | Settings | File Templates.
+      }
+
+      public void deleteGrouping(GroupBinding groupBinding) throws Exception
+      {
+         //To change body of implemented methods use File | Settings | File Templates.
+      }/* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#addQueueBinding(org.hornetq.core.postoffice.Binding)
        */
       public void addQueueBinding(final Binding binding) throws Exception
@@ -933,13 +943,14 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#loadBindingJournal(java.util.List)
        */
-      public void loadBindingJournal(final List<QueueBindingInfo> queueBindingInfos) throws Exception
+      public void loadBindingJournal(List<QueueBindingInfo> queueBindingInfos, List<GroupingInfo> groupingInfos) throws Exception
       {
+         
       }
 
       /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#loadMessageJournal(org.hornetq.core.paging.PagingManager, java.util.Map, org.hornetq.core.transaction.ResourceManager, java.util.Map)
-       */
+      * @see org.hornetq.core.persistence.StorageManager#loadMessageJournal(org.hornetq.core.paging.PagingManager, java.util.Map, org.hornetq.core.transaction.ResourceManager, java.util.Map)
+      */
       public void loadMessageJournal(PagingManager pagingManager,
                                      ResourceManager resourceManager,
                                      Map<Long, Queue> queues,
