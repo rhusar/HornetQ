@@ -1553,6 +1553,8 @@ public class JournalImpl implements TestableJournal
             // Need to make sure everything is out of executors and on the disk before backing it up
             flush();
             
+            copier.setProxyMode(true);
+            
             List<JournalFile> newDataFilesToProcess = getSnapshotFilesToProcess();
             Collections.sort(newDataFilesToProcess, new JournalFileComparator());
             

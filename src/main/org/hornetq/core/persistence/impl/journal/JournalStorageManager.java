@@ -184,7 +184,7 @@ public class JournalStorageManager implements StorageManager
 
       SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDir);
 
-      Journal localBindings = new JournalImpl(1024 * 1024,
+      JournalImpl localBindings = new JournalImpl(1024 * 1024,
                                               2,
                                               config.getJournalCompactMinFiles(),
                                               config.getJournalCompactPercentage(),
@@ -252,7 +252,7 @@ public class JournalStorageManager implements StorageManager
          this.idGenerator = new BatchingIDGenerator(0, CHECKPOINT_BATCH_SIZE, bindingsJournal);
       }
 
-      Journal localMessage = new JournalImpl(config.getJournalFileSize(),
+      JournalImpl localMessage = new JournalImpl(config.getJournalFileSize(),
                                              config.getJournalMinFiles(),
                                              config.getJournalCompactMinFiles(),
                                              config.getJournalCompactPercentage(),

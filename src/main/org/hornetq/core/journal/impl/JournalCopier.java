@@ -36,7 +36,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
    /** enable some trace at development. */
    private static final boolean DEV_TRACE = true;
 
-   private static final boolean isTraceEnabled = log.isTraceEnabled();
+   private static final boolean isTrace = log.isTraceEnabled();
 
    private static void trace(final String msg)
    {
@@ -49,7 +49,8 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    private final Journal journalTo;
 
-   /** Proxy mode means, everything will be copied over without any evaluations such as */
+   /** Proxy mode means, everything will be copied over without any evaluations.
+    *  This is useful at the end of copying when everything needs to be copied. */
    private boolean proxyMode = false;
 
    // Static --------------------------------------------------------
