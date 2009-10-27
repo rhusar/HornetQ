@@ -1476,8 +1476,6 @@ public class JournalImpl implements TestableJournal
       compactMinFiles = 0;
       autoReclaim = false;
 
-      flushExecutor();
-
       // Wait the compactor and cleanup to finish case they are running
       // This will also set the compactorRunning, as clean up and compact can't happen at the same time
       while (!compactorRunning.compareAndSet(false, true))
@@ -1517,8 +1515,6 @@ public class JournalImpl implements TestableJournal
                return;
             }
 
-            dataFiles.clear();
-
             HashSet<Long> txSet = new HashSet<Long>();
 
             for (Map.Entry<Long, JournalTransaction> entry : transactions.entrySet())
@@ -1535,6 +1531,9 @@ public class JournalImpl implements TestableJournal
 
          Collections.sort(dataFilesToProcess, new JournalFileComparator());
 
+         // Need to make sure everything is out of executors and on the disk before backing it up
+         flush();
+
          // This is where most of the work is done, taking most of the time of the compacting routine.
          // Notice there are no locks while this is being done.
 
@@ -1544,8 +1543,47 @@ public class JournalImpl implements TestableJournal
          {
             readJournalFile(fileFactory, file, copier);
          }
+         
+         
+         // Final Freeze.... Sending the left over files (including the next file)
+         globalLock.writeLock().lock();
+         
+         try
+         {
+            // Need to make sure everything is out of executors and on the disk before backing it up
+            flush();
+            
+            List<JournalFile> newDataFilesToProcess = getSnapshotFilesToProcess();
+            Collections.sort(newDataFilesToProcess, new JournalFileComparator());
+            
+            Iterator<JournalFile> newDataIterator = newDataFilesToProcess.iterator();
+            for (JournalFile alreadyProcessed : dataFilesToProcess)
+            {
+               JournalFile newFile = newDataIterator.next();
+               
+               if (newFile.getFileID() != alreadyProcessed.getFileID())
+               {
+                  log.warn("Processed FileID " + alreadyProcessed.getFileID() + " inconsistent with previous processed " + newFile.getFileID());
+               }
+            }
 
-         copier.flush();
+            while (newDataIterator.hasNext())
+            {
+               JournalFile newFile = newDataIterator.next();
+               
+               log.info("processing " + newFile.getFileID());
+               
+               readJournalFile(fileFactory, newFile, copier);
+
+            }
+            
+         }
+         finally
+         {
+            globalLock.writeLock().unlock();
+         }
+         
+
 
       }
       finally
@@ -1756,6 +1794,8 @@ public class JournalImpl implements TestableJournal
     */
    private List<JournalFile> getSnapshotFilesToProcess() throws Exception
    {
+      flush();
+      
       // We need to move to the next file, as we need a clear start for negatives and positives counts
       moveNextFile(true);
 

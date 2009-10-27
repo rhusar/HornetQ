@@ -18,9 +18,7 @@ import java.util.Set;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFileFactory;
-import org.hornetq.core.journal.impl.JournalImpl.JournalRecord;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.utils.DataConstants;
 
 /**
  * This will read records 
@@ -35,13 +33,12 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    private static final Logger log = Logger.getLogger(JournalCopier.class);
 
-   
    /** enable some trace at development. */
    private static final boolean DEV_TRACE = true;
-   
+
    private static final boolean isTraceEnabled = log.isTraceEnabled();
-   
-   private static void trace(String msg)
+
+   private static void trace(final String msg)
    {
       System.out.println("JournalCopier::" + msg);
    }
@@ -51,6 +48,9 @@ public class JournalCopier extends AbstractJournalUpdateTask
    private final Set<Long> pendingTransactions;
 
    private final Journal journalTo;
+
+   /** Proxy mode means, everything will be copied over without any evaluations such as */
+   private boolean proxyMode = false;
 
    // Static --------------------------------------------------------
 
@@ -62,14 +62,14 @@ public class JournalCopier extends AbstractJournalUpdateTask
     * @param recordsSnapshot
     * @param nextOrderingID
     */
-   public JournalCopier(SequentialFileFactory fileFactory,
-                        JournalImpl journalFrom,
-                        Journal journalTo,
-                        Set<Long> recordsSnapshot,
-                        Set<Long> pendingTransactionsSnapshot)
+   public JournalCopier(final SequentialFileFactory fileFactory,
+                        final JournalImpl journalFrom,
+                        final Journal journalTo,
+                        final Set<Long> recordsSnapshot,
+                        final Set<Long> pendingTransactionsSnapshot)
    {
       super(fileFactory, journalFrom, recordsSnapshot, -1);
-      this.pendingTransactions = pendingTransactionsSnapshot;
+      pendingTransactions = pendingTransactionsSnapshot;
       this.journalTo = journalTo;
    }
 
@@ -81,7 +81,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadAddRecord(final RecordInfo info) throws Exception
    {
-      if (lookupRecord(info.id))
+      if (proxyMode || lookupRecord(info.id))
       {
          if (DEV_TRACE)
          {
@@ -100,7 +100,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadAddRecordTX(final long transactionID, final RecordInfo info) throws Exception
    {
-      if (pendingTransactions.contains(transactionID))
+      if (proxyMode || pendingTransactions.contains(transactionID))
       {
          if (DEV_TRACE)
          {
@@ -118,7 +118,11 @@ public class JournalCopier extends AbstractJournalUpdateTask
    public void onReadCommitRecord(final long transactionID, final int numberOfRecords) throws Exception
    {
 
-      if (pendingTransactions.contains(transactionID))
+      if (proxyMode)
+      {
+         journalTo.appendCommitRecord(transactionID, false);
+      }
+      else if (pendingTransactions.contains(transactionID))
       {
          // Sanity check, this should never happen
          log.warn("Inconsistency during compacting: CommitRecord ID = " + transactionID +
@@ -128,12 +132,17 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadDeleteRecord(final long recordID) throws Exception
    {
+      if (proxyMode)
+      {
+         journalTo.appendDeleteRecord(recordID, false);
+      }
+      // else....
       // Nothing to be done here, we don't copy deleted records
    }
 
    public void onReadDeleteRecordTX(final long transactionID, final RecordInfo info) throws Exception
    {
-      if (pendingTransactions.contains(transactionID))
+      if (proxyMode || pendingTransactions.contains(transactionID))
       {
          journalTo.appendDeleteRecordTransactional(transactionID, info.id, info.data);
       }
@@ -147,7 +156,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadPrepareRecord(final long transactionID, final byte[] extraData, final int numberOfRecords) throws Exception
    {
-      if (pendingTransactions.contains(transactionID))
+      if (proxyMode || pendingTransactions.contains(transactionID))
       {
          journalTo.appendPrepareRecord(transactionID, extraData, false);
       }
@@ -155,6 +164,10 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadRollbackRecord(final long transactionID) throws Exception
    {
+      if (proxyMode)
+      {
+         journalTo.appendRollbackRecord(transactionID, false);
+      }
       if (pendingTransactions.contains(transactionID))
       {
          // Sanity check, this should never happen
@@ -165,7 +178,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadUpdateRecord(final RecordInfo info) throws Exception
    {
-      if (lookupRecord(info.id))
+      if (proxyMode || lookupRecord(info.id))
       {
          journalTo.appendUpdateRecord(info.id, info.userRecordType, info.data, false);
       }
@@ -173,7 +186,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
 
    public void onReadUpdateRecordTX(final long transactionID, final RecordInfo info) throws Exception
    {
-      if (pendingTransactions.contains(transactionID))
+      if (proxyMode || pendingTransactions.contains(transactionID))
       {
          journalTo.appendUpdateRecordTransactional(transactionID, info.id, info.userRecordType, info.data);
       }
@@ -181,6 +194,11 @@ public class JournalCopier extends AbstractJournalUpdateTask
       {
          onReadUpdateRecord(info);
       }
+   }
+
+   public void setProxyMode(final boolean proxyMode)
+   {
+      this.proxyMode = proxyMode;
    }
 
    // Package protected ---------------------------------------------
