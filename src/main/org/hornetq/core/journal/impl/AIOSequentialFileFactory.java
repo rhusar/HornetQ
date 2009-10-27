@@ -102,7 +102,7 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
       }
    }
 
-   public void testFlush()
+   public void flushBuffers()
    {
       timedBuffer.flush();
    }

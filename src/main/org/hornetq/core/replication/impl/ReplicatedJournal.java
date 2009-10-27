@@ -397,6 +397,23 @@ public class ReplicatedJournal implements Journal
       return localJournal.isStarted();
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal)
+    */
+   public void copyTo(Journal destJournal) throws Exception
+   {
+      // This would be a nonsense operation. Only the real journal can copyTo
+      throw new IllegalStateException("Operation Not Implemeted!");
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#flush()
+    */
+   public void flush() throws Exception
+   {
+      localJournal.flush();
+   }
+
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

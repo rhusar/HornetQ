@@ -280,7 +280,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.checkReclaimStatus();
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(2, factory.listFiles("tt").size());
 
@@ -297,7 +297,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       // as the request to a new file is asynchronous, we need to make sure the
       // async requests are done
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(3, factory.listFiles("tt").size());
 
@@ -306,7 +306,7 @@ public class AlignedJournalImplTest extends UnitTestCase
          journalImpl.appendDeleteRecord(i, false);
       }
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       setupAndLoadJournal(JOURNAL_SIZE, 100);
 
@@ -326,7 +326,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.checkReclaimStatus();
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(2, factory.listFiles("tt").size());
 
@@ -341,7 +341,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       // as the request to a new file is asynchronous, we need to make sure the
       // async requests are done
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(2, factory.listFiles("tt").size());
 
@@ -354,7 +354,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendAddRecord(1000, (byte)1, new SimpleEncoding(1, (byte)'x'), false);
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(3, factory.listFiles("tt").size());
 
@@ -368,7 +368,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       log.debug(journalImpl.debug());
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       log.debug("Final:--> " + journalImpl.debug());
 
@@ -432,7 +432,7 @@ public class AlignedJournalImplTest extends UnitTestCase
          journalImpl.forceMoveNextFile();
       }
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(12, factory.listFiles("tt").size());
 
@@ -486,7 +486,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendCommitRecord(1l, false);
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       assertEquals(12, factory.listFiles("tt").size());
 
@@ -542,7 +542,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendCommitRecord(1l, false);
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       setupAndLoadJournal(JOURNAL_SIZE, 100);
 
@@ -872,7 +872,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendPrepareRecord(1, xid, false);
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       setupAndLoadJournal(JOURNAL_SIZE, 1);
 
@@ -899,7 +899,7 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       journalImpl.appendCommitRecord(1l, false);
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       setupAndLoadJournal(JOURNAL_SIZE, 1);
 
@@ -923,7 +923,7 @@ public class AlignedJournalImplTest extends UnitTestCase
          journalImpl.forceMoveNextFile();
       }
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       SimpleEncoding xid1 = new SimpleEncoding(10, (byte)1);
 
@@ -1157,7 +1157,7 @@ public class AlignedJournalImplTest extends UnitTestCase
       setupAndLoadJournal(JOURNAL_SIZE, 0);
 
       journalImpl.forceMoveNextFile();
-      journalImpl.debugWait();
+      journalImpl.flush();
       journalImpl.checkReclaimStatus();
 
       assertEquals(0, transactions.size());
@@ -1243,11 +1243,11 @@ public class AlignedJournalImplTest extends UnitTestCase
 
       assertEquals(2, finishedOK.intValue());
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       journalImpl.forceMoveNextFile();
 
-      journalImpl.debugWait();
+      journalImpl.flush();
 
       journalImpl.checkReclaimStatus();
 

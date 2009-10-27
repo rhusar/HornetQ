@@ -44,6 +44,7 @@ import org.hornetq.core.buffers.ChannelBuffer;
 import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.IOCallback;
+import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.LoaderCallback;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
@@ -173,7 +174,7 @@ public class JournalImpl implements TestableJournal
 
    private final float compactPercentage;
 
-   private final int compactMinFiles;
+   private volatile int compactMinFiles;
 
    private final SequentialFileFactory fileFactory;
 
@@ -209,8 +210,8 @@ public class JournalImpl implements TestableJournal
    // After a record is appended, the usedFile can't be changed until the positives and negatives are updated
    private final ReentrantLock lockAppend = new ReentrantLock();
 
-   /** We don't lock the journal while compacting, however we need to lock it while taking and updating snapshots */
-   private final ReadWriteLock compactingLock = new ReentrantReadWriteLock();
+   /** We never lock the journal, however we need to lock it while taking and updating snapshots */
+   private final ReadWriteLock globalLock = new ReentrantReadWriteLock();
 
    private volatile JournalFile currentFile;
 
@@ -852,7 +853,7 @@ public class JournalImpl implements TestableJournal
 
       IOCallback callback = null;
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       try
       {
@@ -878,7 +879,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       if (callback != null)
@@ -901,7 +902,7 @@ public class JournalImpl implements TestableJournal
 
       IOCallback callback = null;
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       try
       {
@@ -947,7 +948,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       if (callback != null)
@@ -963,7 +964,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       IOCallback callback = null;
 
@@ -1012,7 +1013,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       if (callback != null)
@@ -1037,7 +1038,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       try
       {
@@ -1064,7 +1065,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
    }
 
@@ -1086,7 +1087,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       try
       {
@@ -1113,7 +1114,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
    }
 
@@ -1129,7 +1130,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       try
       {
@@ -1155,7 +1156,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
    }
 
@@ -1163,7 +1164,7 @@ public class JournalImpl implements TestableJournal
    {
       appendDeleteRecordTransactional(txID, id, NullEncoding.instance);
    }
-   
+
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, byte[], boolean)
     */
@@ -1171,8 +1172,6 @@ public class JournalImpl implements TestableJournal
    {
       appendPrepareRecord(txID, new ByteArrayEncoding(transactionData), sync);
    }
-
-
 
    /** 
     * 
@@ -1194,7 +1193,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       JournalTransaction tx = getTransactionInfo(txID);
 
@@ -1226,7 +1225,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       // We should wait this outside of the lock, to increase throughput
@@ -1257,7 +1256,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       JournalTransaction tx = transactions.remove(txID);
 
@@ -1294,7 +1293,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       if (sync)
@@ -1311,7 +1310,7 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
 
       JournalTransaction tx = null;
 
@@ -1343,7 +1342,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       // We should wait this outside of the lock, to increase throuput
@@ -1432,6 +1431,105 @@ public class JournalImpl implements TestableJournal
       return maxID;
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal)
+    */
+   public void copyTo(Journal journal) throws Exception
+   {
+      if (state != STATE_LOADED)
+      {
+         return;
+      }
+
+      int originalCompact = this.compactMinFiles;
+      boolean originalAutoReclaim = this.autoReclaim;
+
+      compactMinFiles = 0;
+      autoReclaim = false;
+
+      flushExecutor();
+
+      // Wait the compactor and cleanup to finish case they are running
+      while (!compactorRunning.compareAndSet(false, true))
+      {
+         final CountDownLatch latch = new CountDownLatch(1);
+         compactorExecutor.execute(new Runnable()
+         {
+            public void run()
+            {
+               latch.countDown();
+            }
+         });
+         latch.await();
+      }
+
+      JournalCopier copier = null;
+
+      try
+      {
+
+         // begin ********************************************
+
+         List<JournalFile> dataFilesToProcess = null;
+
+         // Journal, Say cheese... I need to take a snapshot from your transactions and records now, freeze please!
+         globalLock.writeLock().lock();
+
+         try
+         {
+
+            // Take the snapshots and replace the structures
+
+            dataFilesToProcess = getSnapshotFilesToProcess();
+
+            if (dataFilesToProcess.size() == 0)
+            {
+               return;
+            }
+
+            dataFiles.clear();
+
+            HashSet<Long> txSet = new HashSet<Long>();
+
+            for (Map.Entry<Long, JournalTransaction> entry : transactions.entrySet())
+            {
+               txSet.add(entry.getKey());
+            }
+
+            copier = new JournalCopier(fileFactory, this, journal, records.keySet(), txSet);
+         }
+         finally
+         {
+            globalLock.writeLock().unlock();
+         }
+
+         Collections.sort(dataFilesToProcess, new JournalFileComparator());
+
+         // This is where most of the work is done, taking most of the time of the compacting routine.
+         // Notice there are no locks while this is being done.
+
+         // Read the files, and use the JournalCompactor class to create the new outputFiles, and the new collections as
+         // well
+         for (final JournalFile file : dataFilesToProcess)
+         {
+            readJournalFile(fileFactory, file, copier);
+         }
+
+         compactor.flush();
+
+      }
+      finally
+      {
+         this.compactMinFiles = originalCompact;
+         this.autoReclaim = originalAutoReclaim;
+         compactorRunning.set(false);
+
+         // since we disabled Reclaiming during the copy, we will do a check on everything as soon as the backup is
+         // done
+         scheduleReclaim();
+      }
+   }
+
    /**
     * 
     *  Note: This method can't be called from the main executor, as it will invoke other methods depending on it.
@@ -1442,20 +1540,21 @@ public class JournalImpl implements TestableJournal
 
       if (compactor != null)
       {
-         throw new IllegalStateException("There is pending compacting operation");
+         throw new IllegalStateException("There is a pending compacting operation");
       }
 
-      ArrayList<JournalFile> dataFilesToProcess = new ArrayList<JournalFile>(dataFiles.size());
+      List<JournalFile> dataFilesToProcess = null;
 
       boolean previousReclaimValue = autoReclaim;
+
+      globalLock.readLock().lock();
 
       try
       {
          log.debug("Starting compacting operation on journal");
 
-         // We need to guarantee that the journal is frozen for this short time
-         // We don't freeze the journal as we compact, only for the short time where we replace records
-         compactingLock.writeLock().lock();
+         // Journal, Say cheese... I need to take a snapshot from your transactions and records now, freeze please!
+         globalLock.writeLock().lock();
          try
          {
             if (state != STATE_LOADED)
@@ -1465,34 +1564,25 @@ public class JournalImpl implements TestableJournal
 
             autoReclaim = false;
 
-            // We need to move to the next file, as we need a clear start for negatives and positives counts
-            moveNextFile(true);
-
             // Take the snapshots and replace the structures
 
-            dataFilesToProcess.addAll(dataFiles);
-
-            for (JournalFile file : pendingCloseFiles)
-            {
-               file.getFile().close();
-            }
-
-            dataFilesToProcess.addAll(pendingCloseFiles);
-            pendingCloseFiles.clear();
-
-            dataFiles.clear();
+            dataFilesToProcess = getSnapshotFilesToProcess();
 
             if (dataFilesToProcess.size() == 0)
             {
                return;
             }
 
+            dataFiles.clear();
+
+            List<Pair<Long, JournalTransaction>> pendingTransactions = getSnapshoPendingTransactions();
+
             compactor = new JournalCompactor(fileFactory, this, records.keySet(), dataFilesToProcess.get(0).getFileID());
 
-            for (Map.Entry<Long, JournalTransaction> entry : transactions.entrySet())
+            for (Pair<Long, JournalTransaction> tx : pendingTransactions)
             {
-               compactor.addPendingTransaction(entry.getKey(), entry.getValue().getPositiveArray());
-               entry.getValue().setCompacting();
+               compactor.addPendingTransaction(tx.a, tx.b.getPositiveArray());
+               tx.b.setCompacting();
             }
 
             // We will calculate the new records during compacting, what will take the position the records will take
@@ -1501,7 +1591,7 @@ public class JournalImpl implements TestableJournal
          }
          finally
          {
-            compactingLock.writeLock().unlock();
+            globalLock.writeLock().unlock();
          }
 
          Collections.sort(dataFilesToProcess, new JournalFileComparator());
@@ -1529,7 +1619,7 @@ public class JournalImpl implements TestableJournal
 
          SequentialFile controlFile = createControlFile(dataFilesToProcess, compactor.getNewDataFiles(), null);
 
-         compactingLock.writeLock().lock();
+         globalLock.writeLock().lock();
          try
          {
             // Need to clear the compactor here, or the replay commands will send commands back (infinite loop)
@@ -1584,7 +1674,7 @@ public class JournalImpl implements TestableJournal
          }
          finally
          {
-            compactingLock.writeLock().unlock();
+            globalLock.writeLock().unlock();
          }
 
          // At this point the journal is unlocked. We keep renaming files while the journal is already operational
@@ -1596,6 +1686,8 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
+         globalLock.readLock().unlock();
+
          // An Exception was probably thrown, and the compactor was not cleared
          if (compactor != null)
          {
@@ -1612,6 +1704,40 @@ public class JournalImpl implements TestableJournal
          autoReclaim = previousReclaimValue;
       }
 
+   }
+
+   /**
+    * @return
+    */
+   private List<Pair<Long, JournalTransaction>> getSnapshoPendingTransactions()
+   {
+      List<Pair<Long, JournalTransaction>> pendingTransactions = new ArrayList<Pair<Long, JournalTransaction>>();
+
+      for (Map.Entry<Long, JournalTransaction> entry : transactions.entrySet())
+      {
+         pendingTransactions.add(new Pair<Long, JournalTransaction>(entry.getKey(), entry.getValue()));
+      }
+      return pendingTransactions;
+   }
+
+   /**
+    * Requires full lock (WriteLock)
+    * @param dataFilesToProcess
+    */
+   private List<JournalFile> getSnapshotFilesToProcess() throws Exception
+   {
+      // We need to move to the next file, as we need a clear start for negatives and positives counts
+      moveNextFile(true);
+
+      List<JournalFile> dataFilesToProcess = new ArrayList<JournalFile>();
+      for (JournalFile file : pendingCloseFiles)
+      {
+         this.closeFile(file, true);
+      }
+
+      dataFilesToProcess.addAll(dataFiles);
+
+      return dataFilesToProcess;
    }
 
    /** 
@@ -2034,8 +2160,10 @@ public class JournalImpl implements TestableJournal
 
             // Remove the transactionInfo
             transactions.remove(transaction.transactionID);
-            
-            loadManager.failedTransaction(transaction.transactionID, transaction.recordInfos, transaction.recordsToDelete);
+
+            loadManager.failedTransaction(transaction.transactionID,
+                                          transaction.recordInfos,
+                                          transaction.recordsToDelete);
          }
          else
          {
@@ -2062,7 +2190,7 @@ public class JournalImpl implements TestableJournal
    public boolean checkReclaimStatus() throws Exception
    {
       // We can't start reclaim while compacting is working
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
       try
       {
          reclaimer.scan(getDataFiles());
@@ -2144,7 +2272,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
 
       return false;
@@ -2165,12 +2293,15 @@ public class JournalImpl implements TestableJournal
          return;
       }
 
-      compactingLock.readLock().lock();
+      // Journal, Say cheese... I need to take a snapshot from your transactions and records now, freeze please!
+      globalLock.readLock().lock();
 
       try
       {
          JournalCleaner cleaner = null;
          ArrayList<JournalFile> dependencies = new ArrayList<JournalFile>();
+
+         // getting the lockAppend as the counters are being changed
          lockAppend.lock();
 
          try
@@ -2229,7 +2360,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
          log.debug("Clean up on file " + file + " done");
       }
 
@@ -2263,7 +2394,7 @@ public class JournalImpl implements TestableJournal
             return;
          }
 
-         // We can't use the executor for the compacting... or we would dead lock because of file open and creation
+         // We can't use the main executor for the compacting... or we would dead lock because of file open and creation
          // operations (that will use the executor)
          compactorExecutor.execute(new Runnable()
          {
@@ -2347,21 +2478,25 @@ public class JournalImpl implements TestableJournal
       return builder.toString();
    }
 
-   /** Method for use on testcases.
-    *  It will call waitComplete on every transaction, so any assertions on the file system will be correct after this */
-   public void debugWait() throws Exception
+   public void flush() throws Exception
    {
-      fileFactory.testFlush();
+      fileFactory.flushBuffers();
 
       for (JournalTransaction tx : transactions.values())
       {
          tx.waitCallbacks();
       }
 
+      flushExecutor();
+   }
+
+   /**
+    * @throws InterruptedException
+    */
+   private void flushExecutor() throws InterruptedException
+   {
       if (filesExecutor != null && !filesExecutor.isShutdown())
       {
-         // Send something to the closingExecutor, just to make sure we went
-         // until its end
          final CountDownLatch latch = new CountDownLatch(1);
 
          filesExecutor.execute(new Runnable()
@@ -2374,7 +2509,6 @@ public class JournalImpl implements TestableJournal
 
          latch.await();
       }
-
    }
 
    public int getDataFilesCount()
@@ -2430,7 +2564,7 @@ public class JournalImpl implements TestableJournal
    // In some tests we need to force the journal to move to a next file
    public void forceMoveNextFile() throws Exception
    {
-      compactingLock.readLock().lock();
+      globalLock.readLock().lock();
       try
       {
          lockAppend.lock();
@@ -2441,7 +2575,7 @@ public class JournalImpl implements TestableJournal
             {
                checkReclaimStatus();
             }
-            debugWait();
+            flush();
          }
          finally
          {
@@ -2450,7 +2584,7 @@ public class JournalImpl implements TestableJournal
       }
       finally
       {
-         compactingLock.readLock().unlock();
+         globalLock.readLock().unlock();
       }
    }
 
@@ -2854,7 +2988,7 @@ public class JournalImpl implements TestableJournal
             currentFile.getFile().write(bb, sync);
          }
 
-         return currentFile;         
+         return currentFile;
       }
       finally
       {
@@ -3115,7 +3249,7 @@ public class JournalImpl implements TestableJournal
       {
          public void run()
          {
-            compactingLock.readLock().lock();
+            globalLock.readLock().lock();
             try
             {
                // The file could be closed by compacting. On this case we need to check if the close still pending
@@ -3135,7 +3269,7 @@ public class JournalImpl implements TestableJournal
             }
             finally
             {
-               compactingLock.readLock().unlock();
+               globalLock.readLock().unlock();
             }
          }
       };
@@ -3355,7 +3489,7 @@ public class JournalImpl implements TestableJournal
    {
 
       private static NullEncoding instance = new NullEncoding();
-      
+
       public static NullEncoding getInstance()
       {
          return instance;

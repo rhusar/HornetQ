@@ -103,9 +103,9 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
    protected void checkAndReclaimFiles() throws Exception
    {
-      journal.debugWait();
+      journal.flush();
       journal.checkReclaimStatus();
-      journal.debugWait();
+      journal.flush();
    }
 
    protected abstract SequentialFileFactory getFileFactory() throws Exception;
@@ -218,7 +218,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
          records.add(new RecordInfo(element, (byte)0, record, false));
       }
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void update(final long... arguments) throws Exception
@@ -232,7 +232,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
          records.add(new RecordInfo(element, (byte)0, updateRecord, true));
       }
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void delete(final long... arguments) throws Exception
@@ -244,7 +244,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
          removeRecordsForID(element);
       }
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void addTx(final long txID, final long... arguments) throws Exception
@@ -263,7 +263,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
       }
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void updateTx(final long txID, final long... arguments) throws Exception
@@ -278,7 +278,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
          tx.records.add(new RecordInfo(element, (byte)0, updateRecord, true));
       }
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void deleteTx(final long txID, final long... arguments) throws Exception
@@ -292,7 +292,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
          tx.deletes.add(new RecordInfo(element, (byte)0, null, true));
       }
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void prepare(final long txID, final EncodingSupport xid) throws Exception
@@ -313,7 +313,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
       tx.prepared = true;
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void commit(final long txID) throws Exception
@@ -329,7 +329,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
       commitTx(txID);
 
-      journal.debugWait();
+      journal.flush();
    }
 
    protected void rollback(final long txID) throws Exception
@@ -343,7 +343,7 @@ public abstract class JournalImplTestBase extends UnitTestCase
 
       journal.appendRollbackRecord(txID, sync);
 
-      journal.debugWait();
+      journal.flush();
    }
 
    private void commitTx(final long txID)

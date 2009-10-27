@@ -85,6 +85,11 @@ public interface Journal extends HornetQComponent
    int getAlignment() throws Exception;
 
    void perfBlast(int pages) throws Exception;
+   
+   /** Read the entire content of the journal and copy it to another Journal */
+   void copyTo(Journal destJournal) throws Exception;
 
+   /** This method will flush everything and make a hard sync on the journal. Use it with caution. (on tests mainly) */
+   void flush() throws Exception;
 
 }

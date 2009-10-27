@@ -35,8 +35,6 @@ public interface TestableJournal extends Journal
 
    String debug() throws Exception;
 
-   void debugWait() throws Exception;
-
    int getFileSize();
 
    int getMinFiles();

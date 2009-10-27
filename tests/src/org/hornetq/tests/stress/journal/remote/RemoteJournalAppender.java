@@ -236,7 +236,7 @@ public class RemoteJournalAppender
 
             if (transactionSize == 0)
             {
-               journal.debugWait();
+               journal.flush();
             }
          }
          catch (Exception e)

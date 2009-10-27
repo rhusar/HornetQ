@@ -985,7 +985,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase
 
       deleteTx(1, 1); // in file 1
 
-      journal.debugWait();
+      journal.flush();
 
       System.out.println("journal tmp :" + journal.debug());
 
@@ -1002,7 +1002,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase
 
       addWithSize(recordLength - JournalImpl.SIZE_ADD_RECORD, 2); // in file 2
 
-      journal.debugWait();
+      journal.flush();
 
       System.out.println("journal tmp2 :" + journal.debug());
 
@@ -1875,7 +1875,7 @@ public abstract class JournalImplTestUnit extends JournalImplTestBase
 
       journal.forceMoveNextFile();
 
-      journal.debugWait();
+      journal.flush();
 
       addWithSize(recordLength - JournalImpl.SIZE_ADD_RECORD, 2); // in file 1
 
