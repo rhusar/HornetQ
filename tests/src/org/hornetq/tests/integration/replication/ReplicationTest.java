@@ -713,5 +713,12 @@ public class ReplicationTest extends ServiceTestBase
       {
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#loadInternalOnly()
+       */
+      public void loadInternalOnly() throws Exception
+      {
+      }
+
    }
 }

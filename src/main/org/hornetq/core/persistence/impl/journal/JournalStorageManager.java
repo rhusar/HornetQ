@@ -1263,32 +1263,8 @@ public class JournalStorageManager implements StorageManager
     */
    public void loadInternalOnly() throws Exception
    {
-      LoaderCallback dummyLoader = new LoaderCallback()
-      {
-
-         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
-         {
-         }
-
-         public void updateRecord(RecordInfo info)
-         {
-         }
-
-         public void deleteRecord(long id)
-         {
-         }
-
-         public void addRecord(RecordInfo info)
-         {
-         }
-
-         public void addPreparedTransaction(PreparedTransactionInfo preparedTransaction)
-         {
-         }
-      };
-
-      bindingsJournal.load(dummyLoader);
-      messageJournal.load(dummyLoader);
+      bindingsJournal.loadInternalOnly();
+      messageJournal.loadInternalOnly();
    }
 
    // Public -----------------------------------------------------------------------------------

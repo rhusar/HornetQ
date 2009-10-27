@@ -26,7 +26,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.replication.ReplicationManager;
 
-
 /**
  * Used by the {@link JournalStorageManager} to replicate journal calls. 
  *
@@ -52,9 +51,7 @@ public class ReplicatedJournal implements Journal
 
    private final byte journalID;
 
-   public ReplicatedJournal(final byte journaID,
-                                final Journal localJournal,
-                                final ReplicationManager replicationManager)
+   public ReplicatedJournal(final byte journaID, final Journal localJournal, final ReplicationManager replicationManager)
    {
       super();
       journalID = journaID;
@@ -62,9 +59,17 @@ public class ReplicatedJournal implements Journal
       this.replicationManager = replicationManager;
    }
 
+   public ReplicatedJournal(final byte journaID, final ReplicationManager replicationManager)
+   {
+      super();
+      journalID = journaID;
+      localJournal = null;
+      this.replicationManager = replicationManager;
+   }
+
    // Static --------------------------------------------------------
-   
-   private static void trace(String message)
+
+   private static void trace(final String message)
    {
       log.trace(message);
    }
@@ -100,7 +105,10 @@ public class ReplicatedJournal implements Journal
          trace("Append record id = " + id + " recordType = " + recordType);
       }
       replicationManager.appendAddRecord(journalID, id, recordType, record);
-      localJournal.appendAddRecord(id, recordType, record, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendAddRecord(id, recordType, record, sync);
+      }
    }
 
    /**
@@ -134,7 +142,10 @@ public class ReplicatedJournal implements Journal
          trace("Append record TXid = " + id + " recordType = " + recordType);
       }
       replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
-      localJournal.appendAddRecordTransactional(txID, id, recordType, record);
+      if (localJournal != null)
+      {
+         localJournal.appendAddRecordTransactional(txID, id, recordType, record);
+      }
    }
 
    /**
@@ -150,7 +161,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendCommit " + txID);
       }
       replicationManager.appendCommitRecord(journalID, txID);
-      localJournal.appendCommitRecord(txID, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendCommitRecord(txID, sync);
+      }
    }
 
    /**
@@ -166,7 +180,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendDelete " + id);
       }
       replicationManager.appendDeleteRecord(journalID, id);
-      localJournal.appendDeleteRecord(id, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendDeleteRecord(id, sync);
+      }
    }
 
    /**
@@ -195,7 +212,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendDelete txID=" + txID + " id=" + id);
       }
       replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
-      localJournal.appendDeleteRecordTransactional(txID, id, record);
+      if (localJournal != null)
+      {
+         localJournal.appendDeleteRecordTransactional(txID, id, record);
+      }
    }
 
    /**
@@ -211,7 +231,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendDelete (noencoding) txID=" + txID + " id=" + id);
       }
       replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
-      localJournal.appendDeleteRecordTransactional(txID, id);
+      if (localJournal != null)
+      {
+         localJournal.appendDeleteRecordTransactional(txID, id);
+      }
    }
 
    /**
@@ -240,7 +263,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendPrepare txID=" + txID);
       }
       replicationManager.appendPrepareRecord(journalID, txID, transactionData);
-      localJournal.appendPrepareRecord(txID, transactionData, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendPrepareRecord(txID, transactionData, sync);
+      }
    }
 
    /**
@@ -256,7 +282,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendRollback " + txID);
       }
       replicationManager.appendRollbackRecord(journalID, txID);
-      localJournal.appendRollbackRecord(txID, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendRollbackRecord(txID, sync);
+      }
    }
 
    /**
@@ -287,7 +316,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendUpdateRecord id = " + id + " , recordType = " + recordType);
       }
       replicationManager.appendUpdateRecord(journalID, id, recordType, record);
-      localJournal.appendUpdateRecord(id, recordType, record, sync);
+      if (localJournal != null)
+      {
+         localJournal.appendUpdateRecord(id, recordType, record, sync);
+      }
    }
 
    /**
@@ -324,7 +356,10 @@ public class ReplicatedJournal implements Journal
          trace("AppendUpdateRecord txid=" + txID + " id = " + id + " , recordType = " + recordType);
       }
       replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
-      localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+      if (localJournal != null)
+      {
+         localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+      }
    }
 
    /**
@@ -339,7 +374,14 @@ public class ReplicatedJournal implements Journal
                     final List<PreparedTransactionInfo> preparedTransactions,
                     final TransactionFailureCallback transactionFailure) throws Exception
    {
-      return localJournal.load(committedRecords, preparedTransactions, transactionFailure);
+      if (localJournal != null)
+      {
+         return localJournal.load(committedRecords, preparedTransactions, transactionFailure);
+      }
+      else
+      {
+         return -1;
+      }
    }
 
    /**
@@ -350,7 +392,14 @@ public class ReplicatedJournal implements Journal
     */
    public long load(final LoaderCallback reloadManager) throws Exception
    {
-      return localJournal.load(reloadManager);
+      if (localJournal != null)
+      {
+         return localJournal.load(reloadManager);
+      }
+      else
+      {
+         return -1;
+      }
    }
 
    /**
@@ -360,7 +409,10 @@ public class ReplicatedJournal implements Journal
     */
    public void perfBlast(final int pages) throws Exception
    {
-      localJournal.perfBlast(pages);
+      if (localJournal != null)
+      {
+         localJournal.perfBlast(pages);
+      }
    }
 
    /**
@@ -369,7 +421,10 @@ public class ReplicatedJournal implements Journal
     */
    public void start() throws Exception
    {
-      localJournal.start();
+      if (localJournal != null)
+      {
+         localJournal.start();
+      }
    }
 
    /**
@@ -378,7 +433,10 @@ public class ReplicatedJournal implements Journal
     */
    public void stop() throws Exception
    {
-      localJournal.stop();
+      if (localJournal != null)
+      {
+         localJournal.stop();
+      }
    }
 
    /* (non-Javadoc)
@@ -386,7 +444,14 @@ public class ReplicatedJournal implements Journal
     */
    public int getAlignment() throws Exception
    {
-      return localJournal.getAlignment();
+      if (localJournal != null)
+      {
+         return localJournal.getAlignment();
+      }
+      else
+      {
+         return 1;
+      }
    }
 
    /* (non-Javadoc)
@@ -394,13 +459,20 @@ public class ReplicatedJournal implements Journal
     */
    public boolean isStarted()
    {
-      return localJournal.isStarted();
+      if (localJournal != null)
+      {
+         return localJournal.isStarted();
+      }
+      else
+      {
+         return true;
+      }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal)
     */
-   public void copyTo(Journal destJournal) throws Exception
+   public void copyTo(final Journal destJournal) throws Exception
    {
       // This would be a nonsense operation. Only the real journal can copyTo
       throw new IllegalStateException("Operation Not Implemeted!");
@@ -411,7 +483,17 @@ public class ReplicatedJournal implements Journal
     */
    public void flush() throws Exception
    {
-      localJournal.flush();
+      if (localJournal != null)
+      {
+         localJournal.flush();
+      }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#loadInternalOnly()
+    */
+   public void loadInternalOnly() throws Exception
+   {
    }
 
    // Package protected ---------------------------------------------

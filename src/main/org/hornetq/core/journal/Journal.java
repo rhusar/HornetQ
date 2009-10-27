@@ -78,6 +78,11 @@ public interface Journal extends HornetQComponent
    // Load
    
    long load(LoaderCallback reloadManager) throws Exception;
+   
+   /** Load internal data structures and not expose any data.
+    *  This is only useful if you're using the journal but not interested on the current data.
+    *  Useful in situations where the journal is being replicated, copied... etc. */
+   void loadInternalOnly() throws Exception;
 
 
    long load(List<RecordInfo> committedRecords, List<PreparedTransactionInfo> preparedTransactions, TransactionFailureCallback transactionFailure) throws Exception;

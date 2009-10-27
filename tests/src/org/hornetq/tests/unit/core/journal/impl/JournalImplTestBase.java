@@ -13,6 +13,7 @@
 
 package org.hornetq.tests.unit.core.journal.impl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -26,6 +27,7 @@ import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.TestableJournal;
+import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.tests.util.UnitTestCase;
@@ -465,10 +467,13 @@ public abstract class JournalImplTestBase extends UnitTestCase
    protected void printJournalLists(final List<RecordInfo> expected, final List<RecordInfo> actual)
    {
       System.out.println("***********************************************");
-      System.out.println("Expected list:");
-      for (RecordInfo info : expected)
+      if (expected != null)
       {
-         System.out.println("Record " + info.id + " isUpdate = " + info.isUpdate);
+         System.out.println("Expected list:");
+         for (RecordInfo info : expected)
+         {
+            System.out.println("Record " + info.id + " isUpdate = " + info.isUpdate);
+         }
       }
       if (actual != null)
       {

@@ -23,7 +23,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.utils.DataConstants;
 
 /**
- * A JournalCopier
+ * This will read records 
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
@@ -34,6 +34,17 @@ public class JournalCopier extends AbstractJournalUpdateTask
    // Constants -----------------------------------------------------
 
    private static final Logger log = Logger.getLogger(JournalCopier.class);
+
+   
+   /** enable some trace at development. */
+   private static final boolean DEV_TRACE = true;
+   
+   private static final boolean isTraceEnabled = log.isTraceEnabled();
+   
+   private static void trace(String msg)
+   {
+      System.out.println("JournalCopier::" + msg);
+   }
 
    // Attributes ----------------------------------------------------
 
@@ -72,7 +83,18 @@ public class JournalCopier extends AbstractJournalUpdateTask
    {
       if (lookupRecord(info.id))
       {
+         if (DEV_TRACE)
+         {
+            trace("Backing add ID = " + info.id);
+         }
          journalTo.appendAddRecord(info.id, info.userRecordType, info.data, false);
+      }
+      else
+      {
+         if (DEV_TRACE)
+         {
+            trace("Ignoring add ID = " + info.id);
+         }
       }
    }
 
@@ -80,6 +102,10 @@ public class JournalCopier extends AbstractJournalUpdateTask
    {
       if (pendingTransactions.contains(transactionID))
       {
+         if (DEV_TRACE)
+         {
+            trace("Backing add TXID = " + transactionID + " id = " + info.id);
+         }
          journalTo.appendAddRecordTransactional(transactionID, info.id, info.userRecordType, info.data);
       }
       else
@@ -132,7 +158,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
       if (pendingTransactions.contains(transactionID))
       {
          // Sanity check, this should never happen
-         log.warn("Inconsistency during compacting: RollbackRecord ID = " + transactionID +
+         log.warn("Inconsistency during copying: RollbackRecord ID = " + transactionID +
                   " for an already rolled back transaction during compacting");
       }
    }

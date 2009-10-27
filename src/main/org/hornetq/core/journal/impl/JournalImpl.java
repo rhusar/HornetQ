@@ -83,7 +83,7 @@ public class JournalImpl implements TestableJournal
 
    private static final Logger log = Logger.getLogger(JournalImpl.class);
 
-   private static final boolean trace = false;
+   private static final boolean trace = log.isTraceEnabled();
 
    /** This is to be set to true at DEBUG & development only */
    private static final boolean LOAD_TRACE = false;
@@ -1358,6 +1358,35 @@ public class JournalImpl implements TestableJournal
    {
       return fileFactory.getAlignment();
    }
+   
+   public synchronized void loadInternalOnly() throws Exception
+   {
+      LoaderCallback dummyLoader = new LoaderCallback()
+      {
+
+         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+         {
+         }
+
+         public void updateRecord(RecordInfo info)
+         {
+         }
+
+         public void deleteRecord(long id)
+         {
+         }
+
+         public void addRecord(RecordInfo info)
+         {
+         }
+
+         public void addPreparedTransaction(PreparedTransactionInfo preparedTransaction)
+         {
+         }
+      };
+      
+      this.load(dummyLoader);
+   }
 
    /**
     * @see JournalImpl#load(LoaderCallback)
@@ -1450,6 +1479,7 @@ public class JournalImpl implements TestableJournal
       flushExecutor();
 
       // Wait the compactor and cleanup to finish case they are running
+      // This will also set the compactorRunning, as clean up and compact can't happen at the same time
       while (!compactorRunning.compareAndSet(false, true))
       {
          final CountDownLatch latch = new CountDownLatch(1);
@@ -1515,7 +1545,7 @@ public class JournalImpl implements TestableJournal
             readJournalFile(fileFactory, file, copier);
          }
 
-         compactor.flush();
+         copier.flush();
 
       }
       finally
