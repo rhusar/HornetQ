@@ -291,7 +291,6 @@ public class ReplicationTest extends ServiceTestBase
 
          Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), new FakeJournal(), manager);
 
-         Thread.sleep(100);
          TestInterceptor.value.set(false);
 
          for (int i = 0; i < 500; i++)
@@ -320,24 +319,20 @@ public class ReplicationTest extends ServiceTestBase
       }
    }
 
-   /**
-    * @param manager
-    * @return
-    */
-   private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
+   public void testNoServer() throws Exception
    {
-      final CountDownLatch latch = new CountDownLatch(1);
-      manager.afterReplicated(new Runnable()
+      FailoverManager failoverManager = createFailoverManager();
+
+      try
       {
-
-         public void run()
-         {
-            latch.countDown();
-         }
-
-      });
-
-      assertTrue(latch.await(30, TimeUnit.SECONDS));
+         ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager, executor);
+         manager.start();
+         fail("Exception expected");
+      }
+      catch (HornetQException expected)
+      {
+         assertEquals(HornetQException.ILLEGAL_STATE , expected.getCode());
+      }
    }
 
    public void testNoActions() throws Exception
@@ -459,6 +454,26 @@ public class ReplicationTest extends ServiceTestBase
                                      executor,
                                      scheduledExecutor,
                                      interceptors);
+   }
+
+   /**
+    * @param manager
+    * @return
+    */
+   private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
+   {
+      final CountDownLatch latch = new CountDownLatch(1);
+      manager.afterReplicated(new Runnable()
+      {
+
+         public void run()
+         {
+            latch.countDown();
+         }
+
+      });
+
+      assertTrue(latch.await(30, TimeUnit.SECONDS));
    }
 
    protected void tearDown() throws Exception

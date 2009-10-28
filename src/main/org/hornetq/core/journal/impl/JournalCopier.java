@@ -50,7 +50,7 @@ public class JournalCopier extends AbstractJournalUpdateTask
    private final Journal journalTo;
 
    /** Proxy mode means, everything will be copied over without any evaluations.
-    *  This is useful at the end of copying when everything needs to be copied. */
+    *  This is used at the end of copying when everything needs to be copied. */
    private boolean proxyMode = false;
 
    // Static --------------------------------------------------------

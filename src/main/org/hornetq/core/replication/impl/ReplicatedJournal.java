@@ -46,7 +46,7 @@ public class ReplicatedJournal implements Journal
 
    private static final boolean trace = log.isTraceEnabled();
 
-   private final ReplicationManager replicationManager;
+   private volatile ReplicationManager replicationManager;
 
    private final Journal localJournal;
 
@@ -54,6 +54,7 @@ public class ReplicatedJournal implements Journal
 
    private final byte journalID;
 
+   /** The server is started with the backup */
    public ReplicatedJournal(final byte journaID,
                             final JournalLock journalLock,
                             final Journal localJournal,
@@ -66,6 +67,7 @@ public class ReplicatedJournal implements Journal
       this.journalLock = journalLock;
    }
 
+   /** Used by the backup process, to send the backup over */
    public ReplicatedJournal(final byte journaID, final ReplicationManager replicationManager)
    {
       super();
@@ -115,7 +117,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendAddRecord(journalID, id, recordType, record);
+         if (replicationManager != null)
+         {
+            replicationManager.appendAddRecord(journalID, id, recordType, record);
+         }
          if (localJournal != null)
          {
             localJournal.appendAddRecord(id, recordType, record, sync);
@@ -160,7 +165,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
+         if (replicationManager != null)
+         {
+            replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
+         }
          if (localJournal != null)
          {
             localJournal.appendAddRecordTransactional(txID, id, recordType, record);
@@ -188,7 +196,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendCommitRecord(journalID, txID);
+         if (replicationManager != null)
+         {
+            replicationManager.appendCommitRecord(journalID, txID);
+         }
          if (localJournal != null)
          {
             localJournal.appendCommitRecord(txID, sync);
@@ -216,7 +227,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendDeleteRecord(journalID, id);
+         if (replicationManager != null)
+         {
+            replicationManager.appendDeleteRecord(journalID, id);
+         }
          if (localJournal != null)
          {
             localJournal.appendDeleteRecord(id, sync);
@@ -257,7 +271,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
+         if (replicationManager != null)
+         {
+            replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
+         }
          if (localJournal != null)
          {
             localJournal.appendDeleteRecordTransactional(txID, id, record);
@@ -285,7 +302,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
+         if (replicationManager != null)
+         {
+            replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
+         }
          if (localJournal != null)
          {
             localJournal.appendDeleteRecordTransactional(txID, id);
@@ -326,7 +346,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendPrepareRecord(journalID, txID, transactionData);
+         if (replicationManager != null)
+         {
+            replicationManager.appendPrepareRecord(journalID, txID, transactionData);
+         }
          if (localJournal != null)
          {
             localJournal.appendPrepareRecord(txID, transactionData, sync);
@@ -354,7 +377,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendRollbackRecord(journalID, txID);
+         if (replicationManager != null)
+         {
+            replicationManager.appendRollbackRecord(journalID, txID);
+         }
          if (localJournal != null)
          {
             localJournal.appendRollbackRecord(txID, sync);
@@ -397,7 +423,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendUpdateRecord(journalID, id, recordType, record);
+         if (replicationManager != null)
+         {
+            replicationManager.appendUpdateRecord(journalID, id, recordType, record);
+         }
          if (localJournal != null)
          {
             localJournal.appendUpdateRecord(id, recordType, record, sync);
@@ -446,7 +475,10 @@ public class ReplicatedJournal implements Journal
       preAppend();
       try
       {
-         replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
+         if (replicationManager != null)
+         {
+            replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
+         }
          if (localJournal != null)
          {
             localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
@@ -591,6 +623,10 @@ public class ReplicatedJournal implements Journal
     */
    public void loadInternalOnly() throws Exception
    {
+      if (localJournal != null)
+      {
+         localJournal.loadInternalOnly();
+      }
    }
 
    // Package protected ---------------------------------------------

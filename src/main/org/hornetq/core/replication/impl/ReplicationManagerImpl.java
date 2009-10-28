@@ -317,6 +317,13 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       connection = failoverManager.getConnection();
 
+      if (connection == null)
+      {
+         log.warn("Backup server MUST be started before live server. Initialisation will not proceed.");
+         throw new HornetQException(HornetQException.ILLEGAL_STATE,
+                                    "Backup server MUST be started before live server. Initialisation will not proceed.");
+      }
+
       long channelID = connection.generateChannelID();
 
       Channel mainChannel = connection.getChannel(1, -1, false);
@@ -357,15 +364,15 @@ public class ReplicationManagerImpl implements ReplicationManager
    public void stop() throws Exception
    {
       enabled = false;
-      
+
       for (ReplicationContext ctx : activeContexts)
       {
          ctx.complete();
          ctx.flush();
       }
-      
+
       activeContexts.clear();
-      
+
       if (replicatingChannel != null)
       {
          replicatingChannel.close();

@@ -129,9 +129,9 @@ public class JournalStorageManager implements StorageManager
 
    private final ReplicationManager replicator;
 
-   private final Journal messageJournal;
+   private final ReplicatedJournal messageJournal;
 
-   private final Journal bindingsJournal;
+   private final ReplicatedJournal bindingsJournal;
 
    private final SequentialFileFactory largeMessagesFactory;
 
@@ -193,14 +193,7 @@ public class JournalStorageManager implements StorageManager
                                               "bindings",
                                               1);
 
-      if (replicator != null)
-      {
-         this.bindingsJournal = new ReplicatedJournal((byte)0, localBindings, localBindings, replicator);
-      }
-      else
-      {
-         this.bindingsJournal = localBindings;
-      }
+      this.bindingsJournal = new ReplicatedJournal((byte)0, localBindings, localBindings, replicator);
 
       if (journalDir == null)
       {
@@ -261,14 +254,7 @@ public class JournalStorageManager implements StorageManager
                                              "hq",
                                              config.getJournalMaxAIO());
 
-      if (replicator != null)
-      {
-         this.messageJournal = new ReplicatedJournal((byte)1, localMessage, localMessage, replicator);
-      }
-      else
-      {
-         this.messageJournal = localMessage;
-      }
+      this.messageJournal = new ReplicatedJournal((byte)1, localMessage, localMessage, replicator);
 
       largeMessagesDirectory = config.getLargeMessagesDirectory();
 
