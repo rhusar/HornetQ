@@ -195,7 +195,7 @@ public class JournalStorageManager implements StorageManager
 
       if (replicator != null)
       {
-         this.bindingsJournal = new ReplicatedJournal((byte)0, localBindings, replicator);
+         this.bindingsJournal = new ReplicatedJournal((byte)0, localBindings, localBindings, replicator);
       }
       else
       {
@@ -263,7 +263,7 @@ public class JournalStorageManager implements StorageManager
 
       if (replicator != null)
       {
-         this.messageJournal = new ReplicatedJournal((byte)1, localMessage, replicator);
+         this.messageJournal = new ReplicatedJournal((byte)1, localMessage, localMessage, replicator);
       }
       else
       {

@@ -21,6 +21,7 @@ import org.hornetq.core.journal.LoaderCallback;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.TransactionFailureCallback;
+import org.hornetq.core.journal.impl.JournalLock;
 import org.hornetq.core.journal.impl.JournalImpl.ByteArrayEncoding;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
@@ -49,14 +50,20 @@ public class ReplicatedJournal implements Journal
 
    private final Journal localJournal;
 
+   private final JournalLock journalLock;
+
    private final byte journalID;
 
-   public ReplicatedJournal(final byte journaID, final Journal localJournal, final ReplicationManager replicationManager)
+   public ReplicatedJournal(final byte journaID,
+                            final JournalLock journalLock,
+                            final Journal localJournal,
+                            final ReplicationManager replicationManager)
    {
       super();
       journalID = journaID;
       this.localJournal = localJournal;
       this.replicationManager = replicationManager;
+      this.journalLock = journalLock;
    }
 
    public ReplicatedJournal(final byte journaID, final ReplicationManager replicationManager)
@@ -64,6 +71,7 @@ public class ReplicatedJournal implements Journal
       super();
       journalID = journaID;
       localJournal = null;
+      journalLock = null;
       this.replicationManager = replicationManager;
    }
 
@@ -104,10 +112,18 @@ public class ReplicatedJournal implements Journal
       {
          trace("Append record id = " + id + " recordType = " + recordType);
       }
-      replicationManager.appendAddRecord(journalID, id, recordType, record);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendAddRecord(id, recordType, record, sync);
+         replicationManager.appendAddRecord(journalID, id, recordType, record);
+         if (localJournal != null)
+         {
+            localJournal.appendAddRecord(id, recordType, record, sync);
+         }
+      }
+      finally
+      {
+         afterAppend();
       }
    }
 
@@ -141,11 +157,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("Append record TXid = " + id + " recordType = " + recordType);
       }
-      replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendAddRecordTransactional(txID, id, recordType, record);
+         replicationManager.appendAddRecordTransactional(journalID, txID, id, recordType, record);
+         if (localJournal != null)
+         {
+            localJournal.appendAddRecordTransactional(txID, id, recordType, record);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -160,11 +185,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendCommit " + txID);
       }
-      replicationManager.appendCommitRecord(journalID, txID);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendCommitRecord(txID, sync);
+         replicationManager.appendCommitRecord(journalID, txID);
+         if (localJournal != null)
+         {
+            localJournal.appendCommitRecord(txID, sync);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -179,11 +213,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendDelete " + id);
       }
-      replicationManager.appendDeleteRecord(journalID, id);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendDeleteRecord(id, sync);
+         replicationManager.appendDeleteRecord(journalID, id);
+         if (localJournal != null)
+         {
+            localJournal.appendDeleteRecord(id, sync);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -211,11 +254,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendDelete txID=" + txID + " id=" + id);
       }
-      replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendDeleteRecordTransactional(txID, id, record);
+         replicationManager.appendDeleteRecordTransactional(journalID, txID, id, record);
+         if (localJournal != null)
+         {
+            localJournal.appendDeleteRecordTransactional(txID, id, record);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -230,11 +282,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendDelete (noencoding) txID=" + txID + " id=" + id);
       }
-      replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendDeleteRecordTransactional(txID, id);
+         replicationManager.appendDeleteRecordTransactional(journalID, txID, id);
+         if (localJournal != null)
+         {
+            localJournal.appendDeleteRecordTransactional(txID, id);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -262,11 +323,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendPrepare txID=" + txID);
       }
-      replicationManager.appendPrepareRecord(journalID, txID, transactionData);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendPrepareRecord(txID, transactionData, sync);
+         replicationManager.appendPrepareRecord(journalID, txID, transactionData);
+         if (localJournal != null)
+         {
+            localJournal.appendPrepareRecord(txID, transactionData, sync);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -281,11 +351,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendRollback " + txID);
       }
-      replicationManager.appendRollbackRecord(journalID, txID);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendRollbackRecord(txID, sync);
+         replicationManager.appendRollbackRecord(journalID, txID);
+         if (localJournal != null)
+         {
+            localJournal.appendRollbackRecord(txID, sync);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -315,11 +394,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendUpdateRecord id = " + id + " , recordType = " + recordType);
       }
-      replicationManager.appendUpdateRecord(journalID, id, recordType, record);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendUpdateRecord(id, recordType, record, sync);
+         replicationManager.appendUpdateRecord(journalID, id, recordType, record);
+         if (localJournal != null)
+         {
+            localJournal.appendUpdateRecord(id, recordType, record, sync);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -355,11 +443,20 @@ public class ReplicatedJournal implements Journal
       {
          trace("AppendUpdateRecord txid=" + txID + " id = " + id + " , recordType = " + recordType);
       }
-      replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
-      if (localJournal != null)
+      preAppend();
+      try
       {
-         localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+         replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
+         if (localJournal != null)
+         {
+            localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+         }
       }
+      finally
+      {
+         afterAppend();
+      }
+
    }
 
    /**
@@ -501,6 +598,22 @@ public class ReplicatedJournal implements Journal
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+
+   private void preAppend()
+   {
+      if (journalLock != null)
+      {
+         journalLock.readLock();
+      }
+   }
+
+   private void afterAppend()
+   {
+      if (journalLock != null)
+      {
+         journalLock.readUnlock();
+      }
+   }
 
    // Inner classes -------------------------------------------------
 

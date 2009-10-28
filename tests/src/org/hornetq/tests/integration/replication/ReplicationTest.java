@@ -41,6 +41,7 @@ import org.hornetq.core.journal.LoaderCallback;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.TransactionFailureCallback;
+import org.hornetq.core.journal.impl.JournalLock;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
@@ -169,7 +170,7 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager, executor);
          manager.start();
 
-         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
+         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), new FakeJournal(), manager);
 
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
@@ -272,11 +273,11 @@ public class ReplicationTest extends ServiceTestBase
       config.setBackup(true);
 
       ArrayList<String> intercepts = new ArrayList<String>();
-      
+
       intercepts.add(TestInterceptor.class.getName());
-      
+
       config.setInterceptorClassNames(intercepts);
-      
+
       HornetQServer server = new HornetQServerImpl(config);
 
       server.start();
@@ -288,7 +289,7 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager, executor);
          manager.start();
 
-         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
+         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), new FakeJournal(), manager);
 
          Thread.sleep(100);
          TestInterceptor.value.set(false);
@@ -308,7 +309,7 @@ public class ReplicationTest extends ServiceTestBase
          });
 
          manager.closeContext();
-         
+
          server.stop();
 
          assertTrue(latch.await(50, TimeUnit.SECONDS));
@@ -357,7 +358,7 @@ public class ReplicationTest extends ServiceTestBase
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager, executor);
          manager.start();
 
-         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
+         Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), new FakeJournal(), manager);
 
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
@@ -505,8 +506,7 @@ public class ReplicationTest extends ServiceTestBase
 
    };
 
-
-   static class FakeJournal implements Journal
+   static class FakeJournal implements Journal, JournalLock
    {
 
       /* (non-Javadoc)
@@ -717,6 +717,34 @@ public class ReplicationTest extends ServiceTestBase
        * @see org.hornetq.core.journal.Journal#loadInternalOnly()
        */
       public void loadInternalOnly() throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.impl.JournalLock#readLock()
+       */
+      public void readLock()
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.impl.JournalLock#readUnlock()
+       */
+      public void readUnlock()
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.impl.JournalLock#writeLock()
+       */
+      public void writeLock()
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.impl.JournalLock#writeUnLock()
+       */
+      public void writeUnLock()
       {
       }
 

@@ -69,7 +69,7 @@ import org.hornetq.utils.concurrent.LinkedBlockingDeque;
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  *
  */
-public class JournalImpl implements TestableJournal
+public class JournalImpl implements TestableJournal, JournalLock
 {
 
    // Constants -----------------------------------------------------
@@ -2736,6 +2736,43 @@ public class JournalImpl implements TestableJournal
          lockAppend.unlock();
       }
    }
+   
+   // JournalLock Interface ------------------------------------------------------
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.impl.JournalLock#readLock()
+    */
+   public void readLock()
+   {
+      globalLock.readLock().lock();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.impl.JournalLock#readUnlock()
+    */
+   public void readUnlock()
+   {
+      globalLock.readLock().unlock();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.impl.JournalLock#writeLock()
+    */
+   public void writeLock()
+   {
+      globalLock.writeLock().lock();
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.impl.JournalLock#writeUnLock()
+    */
+   public void writeUnLock()
+   {
+      globalLock.writeLock().unlock();
+   }
+
+
 
    // Public
    // -----------------------------------------------------------------------------
