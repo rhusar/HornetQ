@@ -91,8 +91,11 @@ public interface Journal extends HornetQComponent
 
    void perfBlast(int pages) throws Exception;
    
-   /** Read the entire content of the journal and copy it to another Journal */
-   void copyTo(Journal destJournal) throws Exception;
+   /** Read the entire content of the journal and copy it to another Journal.
+    *  @param destJournal the journal where the records are being copied to
+    *  @param afterCopy An action that should be executed right before the end of the copy while the journal is in lock mode
+    *  */
+   void copyTo(Journal destJournal, Runnable afterCopy) throws Exception;
 
    /** This method will flush everything and make a hard sync on the journal. Use it with caution. (on tests mainly) */
    void flush() throws Exception;

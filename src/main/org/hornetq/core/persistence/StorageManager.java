@@ -23,6 +23,7 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
+import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
@@ -115,6 +116,8 @@ public interface StorageManager extends HornetQComponent
    /** This method is only useful at the backup side. We only load internal structures making the journals ready for
     *  append mode on the backup side. */
    void loadInternalOnly() throws Exception;
+   
+   void initiateReplication(ReplicationManager replication) throws Exception;
 
    
    public void loadMessageJournal(final PostOffice postOffice,

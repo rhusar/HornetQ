@@ -763,5 +763,12 @@ public class ReplicationTest extends ServiceTestBase
       {
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal, java.lang.Runnable)
+       */
+      public void copyTo(Journal destJournal, Runnable afterCopy) throws Exception
+      {
+      }
+
    }
 }

@@ -20,6 +20,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -102,6 +103,8 @@ public class CopyJournalTest extends JournalImplTestBase
       final Journal proxyJournal = (Journal)Proxy.newProxyInstance(this.getClass().getClassLoader(),
                                                                    new Class[] { Journal.class },
                                                                    handler);
+      
+      final AtomicBoolean copied = new AtomicBoolean(false);
 
       Thread copier = new Thread()
       {
@@ -110,7 +113,13 @@ public class CopyJournalTest extends JournalImplTestBase
          {
             try
             {
-               journal.copyTo(proxyJournal);
+               journal.copyTo(proxyJournal, new Runnable()
+               {
+                  public void run()
+                  {
+                     copied.set(true);
+                  }
+               });
             }
             catch (Exception e)
             {
@@ -149,6 +158,8 @@ public class CopyJournalTest extends JournalImplTestBase
       handler.unlock();
 
       copier.join();
+      
+      assertTrue(copied.get());
 
       stopJournal();
 

@@ -87,6 +87,45 @@ public class ReplicatedJournal implements Journal
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
+
+   /**
+    * @param replication
+    */
+   public void initiateReplication(final ReplicationManager replication) throws Exception
+   {
+      if (replicationManager != null)
+      {
+         journalLock.writeLock();
+         try
+         {
+            replicationManager = null;
+         }
+         finally
+         {
+            journalLock.writeUnLock();
+         }
+      }
+      
+      // Instantiate a new Replicated Journal that won't have any local journal associated.
+      // This will happen in parallele while the current journal still being used.
+      ReplicatedJournal proxy = new ReplicatedJournal(this.journalID,
+                                                  null,
+                                                  null,
+                                                  replication);
+      
+      localJournal.copyTo(proxy, new Runnable()
+      {
+         public void run()
+         {
+            // This needs to be done right after the copy is finished
+            // But while the journal still locked on its final stage, 
+            // so after this point all the journal appends are going to be replicated
+            ReplicatedJournal.this.replicationManager = replication;
+         }
+      });
+   }
+
+   // Journal implementation ----------------------------------------
    /**
     * @param id
     * @param recordType
@@ -601,7 +640,7 @@ public class ReplicatedJournal implements Journal
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal)
     */
-   public void copyTo(final Journal destJournal) throws Exception
+   public void copyTo(final Journal destJournal, Runnable aferCopy) throws Exception
    {
       // This would be a nonsense operation. Only the real journal can copyTo
       throw new IllegalStateException("Operation Not Implemeted!");

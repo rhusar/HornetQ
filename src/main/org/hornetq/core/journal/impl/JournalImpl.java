@@ -1463,7 +1463,7 @@ public class JournalImpl implements TestableJournal, JournalLock
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#copyTo(org.hornetq.core.journal.Journal)
     */
-   public void copyTo(Journal journal) throws Exception
+   public void copyTo(Journal journal, Runnable afterCopy) throws Exception
    {
       if (state != STATE_LOADED)
       {
@@ -1579,6 +1579,7 @@ public class JournalImpl implements TestableJournal, JournalLock
 
             }
             
+            afterCopy.run();
          }
          finally
          {

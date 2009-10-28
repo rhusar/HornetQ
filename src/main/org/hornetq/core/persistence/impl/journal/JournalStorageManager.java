@@ -127,7 +127,7 @@ public class JournalStorageManager implements StorageManager
 
    private final BatchingIDGenerator idGenerator;
 
-   private final ReplicationManager replicator;
+   private volatile ReplicationManager replicator;
 
    private final ReplicatedJournal messageJournal;
 
@@ -600,6 +600,16 @@ public class JournalStorageManager implements StorageManager
       }
       SequentialFile fileToRename = createFileForLargeMessage(message.getMessageID(), true);
       message.getFile().renameTo(fileToRename.getFileName());
+   }
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#setReplicationNode(org.hornetq.core.replication.ReplicationManager)
+    */
+   public void initiateReplication(ReplicationManager replication) throws Exception
+   {
+      this.replicator = replication;
+      bindingsJournal.initiateReplication(replication);
+      messageJournal.initiateReplication(replication);
    }
 
    private static final class AddMessageRecord

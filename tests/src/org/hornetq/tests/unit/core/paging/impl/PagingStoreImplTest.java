@@ -46,6 +46,7 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -1175,6 +1176,13 @@ public class PagingStoreImplTest extends UnitTestCase
       {
          
          
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#initiateReplication(org.hornetq.core.replication.ReplicationManager)
+       */
+      public void initiateReplication(ReplicationManager replication) throws Exception
+      {
       }
 
    }
