@@ -15,7 +15,6 @@ package org.hornetq.core.journal;
 
 import java.util.List;
 
-import org.hornetq.core.journal.impl.JournalFile;
 import org.hornetq.core.server.HornetQComponent;
 
 /**
