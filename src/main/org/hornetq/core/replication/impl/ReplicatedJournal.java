@@ -113,6 +113,8 @@ public class ReplicatedJournal implements Journal
                                                   null,
                                                   replication);
       
+      // TODO: the connection used here should have a hook to enable nagling
+      
       localJournal.copyTo(proxy, new Runnable()
       {
          public void run()
