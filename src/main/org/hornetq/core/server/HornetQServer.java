@@ -126,6 +126,8 @@ public interface HornetQServer extends HornetQComponent
                      SimpleString filterString,
                      boolean durable,
                      boolean temporary) throws Exception;
+   
+   void configureBackup(String connectorClassName, String properties, boolean replicated) throws Exception;
 
    void destroyQueue(SimpleString queueName, ServerSession session) throws Exception;
 

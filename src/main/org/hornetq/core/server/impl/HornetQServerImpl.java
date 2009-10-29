@@ -100,6 +100,7 @@ import org.hornetq.core.settings.impl.HierarchicalObjectRepository;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.core.transaction.impl.ResourceManagerImpl;
 import org.hornetq.core.version.Version;
+import org.hornetq.ra.Util;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.OrderedExecutorFactory;
@@ -506,6 +507,19 @@ public class HornetQServerImpl implements HornetQServer
       return clusterManager;
    }
 
+   /** TODO: Update Client CFs
+    *        This should also work with shared storage 
+    */
+   public void configureBackup(String connectorClassName, String config, boolean replicated) throws Exception
+   {
+      // TODO: The use of ra.Util is temporary, this class should be moved somewhere else after the merge.
+      TransportConfiguration transport = new TransportConfiguration(connectorClassName, Util.parseConfig(config));
+      this.createReplication(transport);
+      this.replicationManager.start();
+      storageManager.initiateReplication(replicationManager);
+
+   }
+   
    public ReattachSessionResponseMessage reattachSession(final RemotingConnection connection,
                                                          final String name,
                                                          final int lastReceivedCommandID) throws Exception
@@ -844,15 +858,23 @@ public class HornetQServerImpl implements HornetQServer
          else
          {
 
-            replicationFailoverManager = createBackupConnection(backupConnector, threadPool, scheduledPool);
-
-            this.replicationManager = new ReplicationManagerImpl(replicationFailoverManager,
-                                                                 this.executorFactory.getExecutor());
+            createReplication(backupConnector);
             replicationManager.start();
          }
       }
 
       return true;
+   }
+
+   /**
+    * @param backupConnector
+    */
+   private void createReplication(TransportConfiguration backupConnector)
+   {
+      replicationFailoverManager = createBackupConnection(backupConnector, threadPool, scheduledPool);
+
+      this.replicationManager = new ReplicationManagerImpl(replicationFailoverManager,
+                                                           this.executorFactory.getExecutor());
    }
 
 
