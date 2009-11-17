@@ -26,6 +26,8 @@ public interface ReplicationContext
 {
    /** To be called by the replication manager, when new replication is added to the queue */
    void linedUp();
+   
+   boolean hasReplication();
 
    /** To be called by the replication manager, when data is confirmed on the channel */
    void replicated();
@@ -37,5 +39,9 @@ public interface ReplicationContext
    
    /** Flush all pending callbacks on the Context */
    void flush();
+   
+   boolean isSync();
+   
+   void setSync(boolean sync);
 
 }

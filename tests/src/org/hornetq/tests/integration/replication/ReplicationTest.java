@@ -539,10 +539,6 @@ public class ReplicationTest extends ServiceTestBase
             {
                replicatedJournal.appendPrepareRecord(i, new FakeData(), false);
             }
-            else
-            {
-               manager.sync();
-            }
 
 
             manager.afterReplicated(new Runnable()

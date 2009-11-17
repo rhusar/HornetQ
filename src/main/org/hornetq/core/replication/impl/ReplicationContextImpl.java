@@ -29,11 +29,15 @@ import org.hornetq.core.replication.ReplicationContext;
 public class ReplicationContextImpl implements ReplicationContext
 {
    private List<Runnable> tasks;
-   
-   private AtomicInteger pendings = new AtomicInteger(0);
-   
+
+   private int linedup = 0;
+
+   private int replicated = 0;
+
+   private boolean sync = false;
+
    private volatile boolean complete = false;
-   
+
    /**
     * @param executor
     */
@@ -45,7 +49,12 @@ public class ReplicationContextImpl implements ReplicationContext
    /** To be called by the replication manager, when new replication is added to the queue */
    public void linedUp()
    {
-      pendings.incrementAndGet();
+      linedup++;
+   }
+
+   public boolean hasReplication()
+   {
+      return linedup > 0;
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
@@ -63,19 +72,19 @@ public class ReplicationContextImpl implements ReplicationContext
          // We don't add any more Runnables after it is complete
          tasks = new ArrayList<Runnable>();
       }
-      
+
       tasks.add(runnable);
    }
 
    /** To be called by the replication manager, when data is confirmed on the channel */
    public synchronized void replicated()
    {
-      if (pendings.decrementAndGet() == 0 && complete)
+      // roundtrip packets won't have lined up packets
+      if (++replicated == linedup && complete)
       {
          flush();
       }
    }
-
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationToken#complete()
@@ -83,12 +92,12 @@ public class ReplicationContextImpl implements ReplicationContext
    public synchronized void complete()
    {
       complete = true;
-      if (pendings.get() == 0 && complete)
+      if (replicated == linedup && complete)
       {
          flush();
       }
-  }
-   
+   }
+
    public synchronized void flush()
    {
       if (tasks != null)
@@ -100,6 +109,18 @@ public class ReplicationContextImpl implements ReplicationContext
          tasks.clear();
       }
    }
-   
-   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationContext#isRoundtrip()
+    */
+   public boolean isSync()
+   {
+      return sync;
+   }
+
+   public void setSync(final boolean sync)
+   {
+      this.sync = sync;
+   }
+
 }
