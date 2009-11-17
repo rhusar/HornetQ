@@ -13,14 +13,17 @@
 
 package org.hornetq.core.replication.impl;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.hornetq.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.FailoverManager;
+import org.hornetq.core.completion.CompletionContext;
+import org.hornetq.core.completion.impl.CompletionContextImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -45,9 +48,7 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationPageEventMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.core.replication.ReplicationContext;
 import org.hornetq.core.replication.ReplicationManager;
-import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -81,9 +82,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private final Object replicationLock = new Object();
 
-   private final ThreadLocal<ReplicationContext> tlReplicationContext = new ThreadLocal<ReplicationContext>();
-
-   private final Queue<ReplicationContext> pendingTokens = new ConcurrentLinkedQueue<ReplicationContext>();
+   private final Queue<CompletionContext> pendingTokens = new ConcurrentLinkedQueue<CompletionContext>();
 
    // Static --------------------------------------------------------
 
@@ -360,17 +359,17 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       enabled = false;
       
-      LinkedHashSet<ReplicationContext> activeContexts = new LinkedHashSet<ReplicationContext>();
+      LinkedHashSet<CompletionContext> activeContexts = new LinkedHashSet<CompletionContext>();
       
       // The same context will be replicated on the pending tokens...
       // as the multiple operations will be replicated on the same context
       while (!pendingTokens.isEmpty())
       {
-         ReplicationContext ctx = pendingTokens.poll();
+         CompletionContext ctx = pendingTokens.poll();
          activeContexts.add(ctx);
       }
 
-      for (ReplicationContext ctx : activeContexts)
+      for (CompletionContext ctx : activeContexts)
       {
          ctx.complete();
          ctx.flush();
@@ -393,38 +392,17 @@ public class ReplicationManagerImpl implements ReplicationManager
       started = false;
    }
 
-   public ReplicationContext getContext()
-   {
-      ReplicationContext token = tlReplicationContext.get();
-      if (token == null)
-      {
-         token = new ReplicationContextImpl();
-         tlReplicationContext.set(token);
-      }
-      return token;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#addReplicationAction(java.lang.Runnable)
-    */
-   public void afterReplicated(final Runnable runnable)
-   {
-      getContext().addReplicationAction(runnable);
-   }
-
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#completeToken()
     */
    public void closeContext()
    {
-      final ReplicationContext token = tlReplicationContext.get();
+      final CompletionContext token = getContext();
 
       if (token != null)
       {
-         // Disassociate thread local
-         tlReplicationContext.set(null);
          // Remove from pending tokens as soon as this is complete
-         if (!token.hasReplication())
+         if (!token.hasData())
          {
             sync(token);
          }
@@ -432,18 +410,19 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
+
    /* method for testcases only
     * @see org.hornetq.core.replication.ReplicationManager#getPendingTokens()
     */
-   public Set<ReplicationContext> getActiveTokens()
+   public Set<CompletionContext> getActiveTokens()
    {
       
-      LinkedHashSet<ReplicationContext> activeContexts = new LinkedHashSet<ReplicationContext>();
+      LinkedHashSet<CompletionContext> activeContexts = new LinkedHashSet<CompletionContext>();
       
       // The same context will be replicated on the pending tokens...
       // as the multiple operations will be replicated on the same context
       
-      for (ReplicationContext ctx : pendingTokens)
+      for (CompletionContext ctx : pendingTokens)
       {
          activeContexts.add(ctx);
       }
@@ -456,7 +435,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       boolean runItNow = false;
 
-      ReplicationContext repliToken = getContext();
+      CompletionContext repliToken = getContext();
       repliToken.linedUp();
 
       synchronized (replicationLock)
@@ -493,9 +472,9 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private void replicated()
    {
-      ArrayList<ReplicationContext> tokensToExecute = getTokens();
+      List<CompletionContext> tokensToExecute = getTokens();
 
-      for (ReplicationContext ctx : tokensToExecute)
+      for (CompletionContext ctx : tokensToExecute)
       {
          ctx.replicated();
       }
@@ -507,13 +486,13 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    // Private -------------------------------------------------------
 
-   private void sync(ReplicationContext context)
+   private void sync(CompletionContext context)
    {
       boolean executeNow = false;
       synchronized (replicationLock)
       {
          context.linedUp();
-         context.setSync(true);
+         context.setEmpty(true);
          if (pendingTokens.isEmpty())
          {
             // this means the list is empty and we should process it now
@@ -532,6 +511,11 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
+   
+   public CompletionContext getContext()
+   {
+      return CompletionContextImpl.getContext();
+   }
 
    /**
     * This method will first get all the sync tokens (that won't go to the backup node)
@@ -539,11 +523,11 @@ public class ReplicationManagerImpl implements ReplicationManager
     * At last, if the list is empty, it will verify if there are any future tokens that are sync tokens, to avoid a case where no more replication is done due to inactivity.
     * @return
     */
-   private ArrayList<ReplicationContext> getTokens()
+   private List<CompletionContext> getTokens()
    {
-      ArrayList<ReplicationContext> retList = new ArrayList<ReplicationContext>(1);
+      List<CompletionContext> retList = new LinkedList<CompletionContext>();
 
-      ReplicationContext tokenPolled = null;
+      CompletionContext tokenPolled = null;
 
       // First will get all the non replicated tokens up to the first one that is not replicated
       do
@@ -558,16 +542,16 @@ public class ReplicationManagerImpl implements ReplicationManager
          retList.add(tokenPolled);
 
       }
-      while (tokenPolled.isSync());
+      while (tokenPolled.isEmpty());
 
       // This is to avoid a situation where we won't have more replicated packets
-      // all the packets will need to be processed
+      // We need to make sure we process any pending sync packet up to the next non empty packet
       synchronized (replicationLock)
       {
-         while (!pendingTokens.isEmpty() && pendingTokens.peek().isSync())
+         while (!pendingTokens.isEmpty() && pendingTokens.peek().isEmpty())
          {
             tokenPolled = pendingTokens.poll();
-            if (!tokenPolled.isSync())
+            if (!tokenPolled.isEmpty())
             {
                throw new IllegalStateException("Replicatoin context is not a roundtrip token as expected");
             }

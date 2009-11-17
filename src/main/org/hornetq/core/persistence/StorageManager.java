@@ -56,7 +56,7 @@ public interface StorageManager extends HornetQComponent
 
    boolean isReplicated();
 
-   void afterReplicated(Runnable run);
+   void afterCompletion(Runnable run);
    
    /** Block until the replication is done. 
     * @throws Exception */

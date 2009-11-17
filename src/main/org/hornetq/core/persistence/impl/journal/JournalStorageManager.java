@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.completion.impl.CompletionContextImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
@@ -310,7 +311,7 @@ public class JournalStorageManager implements StorageManager
    public void waitOnReplication(final long timeout) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      afterReplicated(new Runnable()
+      afterCompletion(new Runnable()
       {
          public void run()
          {
@@ -363,13 +364,9 @@ public class JournalStorageManager implements StorageManager
 
    // TODO: shouldn't those page methods be on the PageManager? ^^^^
 
-   public void afterReplicated(Runnable run)
+   public void afterCompletion(Runnable run)
    {
-      if (replicator == null)
-      {
-         throw new IllegalStateException("StorageManager is not replicated");
-      }
-      replicator.afterReplicated(run);
+      CompletionContextImpl.getContext().afterCompletion(run);
    }
 
    public UUID getPersistentID()

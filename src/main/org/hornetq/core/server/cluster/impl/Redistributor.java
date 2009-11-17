@@ -146,7 +146,7 @@ public class Redistributor implements Consumer
 
       if (storageManager.isReplicated())
       {
-         storageManager.afterReplicated(new Runnable()
+         storageManager.afterCompletion(new Runnable()
          {
             public void run()
             {

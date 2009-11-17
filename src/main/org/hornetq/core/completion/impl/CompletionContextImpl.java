@@ -11,37 +11,50 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.replication.impl;
+package org.hornetq.core.completion.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hornetq.core.replication.ReplicationContext;
+import org.hornetq.core.completion.CompletionContext;
 
 /**
  * A ReplicationToken
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
+ * TODO: Maybe I should move this to persistence.journal. I need to check a few dependencies first.
  *
  */
-public class ReplicationContextImpl implements ReplicationContext
+public class CompletionContextImpl implements CompletionContext
 {
+   private static final ThreadLocal<CompletionContext> tlReplicationContext = new ThreadLocal<CompletionContext>();
+
+   public static CompletionContext getContext()
+   {
+      CompletionContext token = tlReplicationContext.get();
+      if (token == null)
+      {
+         token = new CompletionContextImpl();
+         tlReplicationContext.set(token);
+      }
+      return token;
+   }
+
    private List<Runnable> tasks;
 
    private int linedup = 0;
 
    private int replicated = 0;
 
-   private boolean sync = false;
+   private boolean empty = false;
 
    private volatile boolean complete = false;
 
    /**
     * @param executor
     */
-   public ReplicationContextImpl()
+   public CompletionContextImpl()
    {
       super();
    }
@@ -52,13 +65,13 @@ public class ReplicationContextImpl implements ReplicationContext
       linedup++;
    }
 
-   public boolean hasReplication()
+   public boolean hasData()
    {
       return linedup > 0;
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
-   public void addReplicationAction(Runnable runnable)
+   public void afterCompletion(Runnable runnable)
    {
       if (complete)
       {
@@ -79,7 +92,6 @@ public class ReplicationContextImpl implements ReplicationContext
    /** To be called by the replication manager, when data is confirmed on the channel */
    public synchronized void replicated()
    {
-      // roundtrip packets won't have lined up packets
       if (++replicated == linedup && complete)
       {
          flush();
@@ -91,6 +103,7 @@ public class ReplicationContextImpl implements ReplicationContext
     */
    public synchronized void complete()
    {
+      tlReplicationContext.set(null);
       complete = true;
       if (replicated == linedup && complete)
       {
@@ -113,14 +126,14 @@ public class ReplicationContextImpl implements ReplicationContext
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationContext#isRoundtrip()
     */
-   public boolean isSync()
+   public boolean isEmpty()
    {
-      return sync;
+      return empty;
    }
 
-   public void setSync(final boolean sync)
+   public void setEmpty(final boolean sync)
    {
-      this.sync = sync;
+      this.empty = sync;
    }
 
 }

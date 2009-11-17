@@ -244,7 +244,7 @@ public class TransactionImpl implements Transaction
             {
                if (storageManager.isReplicated())
                {
-                  storageManager.afterReplicated(execAfterCommit);
+                  storageManager.afterCompletion(execAfterCommit);
                }
                else
                {

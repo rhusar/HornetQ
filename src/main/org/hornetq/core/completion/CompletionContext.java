@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.replication;
+package org.hornetq.core.completion;
 
 
 /**
@@ -22,17 +22,17 @@ package org.hornetq.core.replication;
  *
  *
  */
-public interface ReplicationContext
+public interface CompletionContext
 {
    /** To be called by the replication manager, when new replication is added to the queue */
    void linedUp();
    
-   boolean hasReplication();
+   boolean hasData();
 
    /** To be called by the replication manager, when data is confirmed on the channel */
    void replicated();
    
-   void addReplicationAction(Runnable runnable);
+   void afterCompletion(Runnable runnable);
    
    /** To be called when there are no more operations pending */
    void complete();
@@ -40,8 +40,12 @@ public interface ReplicationContext
    /** Flush all pending callbacks on the Context */
    void flush();
    
-   boolean isSync();
+   /** Replication may need some extra controls to guarantee ordering
+    *  when nothing is persisted through the contexts 
+    * @return The context is empty
+    */
+   boolean isEmpty();
    
-   void setSync(boolean sync);
+   void setEmpty(boolean empty);
 
 }

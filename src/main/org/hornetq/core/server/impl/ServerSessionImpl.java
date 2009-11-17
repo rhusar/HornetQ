@@ -1720,7 +1720,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    {
       if (storageManager.isReplicated())
       {
-         storageManager.afterReplicated(new Runnable()
+         storageManager.afterCompletion(new Runnable()
          {
             public void run()
             {

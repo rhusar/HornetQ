@@ -32,6 +32,7 @@ import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.FailoverManager;
 import org.hornetq.core.client.impl.FailoverManagerImpl;
+import org.hornetq.core.completion.impl.CompletionContextImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -272,19 +273,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(3, new FakeData(), false);
          replicatedJournal.appendRollbackRecord(3, false);
 
-         assertEquals(1, manager.getActiveTokens().size());
-
          blockOnReplication(manager);
-
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
 
          assertEquals(0, manager.getActiveTokens().size());
 
@@ -386,7 +375,7 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.afterReplicated(new Runnable()
+         CompletionContextImpl.getContext().afterCompletion(new Runnable()
          {
             public void run()
             {
@@ -413,7 +402,7 @@ public class ReplicationTest extends ServiceTestBase
    private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      manager.afterReplicated(new Runnable()
+      CompletionContextImpl.getContext().afterCompletion(new Runnable()
       {
 
          public void run()
@@ -469,7 +458,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.afterReplicated(new Runnable()
+         CompletionContextImpl.getContext().afterCompletion(new Runnable()
          {
 
             public void run()
@@ -541,7 +530,7 @@ public class ReplicationTest extends ServiceTestBase
             }
 
 
-            manager.afterReplicated(new Runnable()
+            CompletionContextImpl.getContext().afterCompletion(new Runnable()
             {
 
                public void run()
