@@ -11,18 +11,16 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.journal;
-
-import org.hornetq.core.asyncio.AIOCallback;
+package org.hornetq.core.completion;
 
 /**
- * 
- * This class is just a direct extension of AIOCallback.
- * Just to avoid the direct dependency of org.hornetq.core.asynciio.AIOCallback from the journal.
- * 
- * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
+ * A OperationExceptionCallback
+ *
+ * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
+ *
  *
  */
-public interface IOCompletion extends AIOCallback
+public interface OperationExceptionCallback
 {
+   void onError(int errorCode, String errorMessage);
 }

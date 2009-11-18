@@ -31,15 +31,27 @@ public class TransactionCallback implements IOCompletion
    private volatile String errorMessage = null;
 
    private volatile int errorCode = 0;
+   
+   private volatile int up = 0;
+   
+   private volatile int done = 0;
+   
+   private volatile IOCompletion delegateCompletion;
 
    public void countUp()
    {
+      up++;
       countLatch.up();
    }
 
    public void done()
    {
       countLatch.down();
+      if (++done == up && delegateCompletion != null)
+      {
+         delegateCompletion.done();
+         delegateCompletion = null;
+      }
    }
 
    public void waitCompletion() throws InterruptedException
@@ -59,6 +71,27 @@ public class TransactionCallback implements IOCompletion
       this.errorCode = errorCode;
 
       countLatch.down();
+      
+      if (delegateCompletion != null)
+      {
+         delegateCompletion.onError(errorCode, errorMessage);
+      }
+   }
+
+   /**
+    * @return the delegateCompletion
+    */
+   public IOCompletion getDelegateCompletion()
+   {
+      return delegateCompletion;
+   }
+
+   /**
+    * @param delegateCompletion the delegateCompletion to set
+    */
+   public void setDelegateCompletion(IOCompletion delegateCompletion)
+   {
+      this.delegateCompletion = delegateCompletion;
    }
 
    /**

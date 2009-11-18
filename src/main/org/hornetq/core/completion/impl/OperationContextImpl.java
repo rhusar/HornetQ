@@ -13,10 +13,11 @@
 
 package org.hornetq.core.completion.impl;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
-import org.hornetq.core.completion.CompletionContext;
+import org.hornetq.core.completion.OperationContext;
+import org.hornetq.core.journal.IOCompletion;
 
 /**
  * A ReplicationToken
@@ -26,23 +27,23 @@ import org.hornetq.core.completion.CompletionContext;
  * TODO: Maybe I should move this to persistence.journal. I need to check a few dependencies first.
  *
  */
-public class CompletionContextImpl implements CompletionContext
+public class OperationContextImpl implements OperationContext
 {
-   private static final ThreadLocal<CompletionContext> tlReplicationContext = new ThreadLocal<CompletionContext>();
+   private static final ThreadLocal<OperationContext> tlContext = new ThreadLocal<OperationContext>();
 
-   public static CompletionContext getContext()
+   public static OperationContext getContext()
    {
-      CompletionContext token = tlReplicationContext.get();
+      OperationContext token = tlContext.get();
       if (token == null)
       {
-         token = new CompletionContextImpl();
-         tlReplicationContext.set(token);
+         token = new OperationContextImpl();
+         tlContext.set(token);
       }
       return token;
    }
 
-   private List<Runnable> tasks;
-
+   private List<IOCompletion> tasks;
+   
    private int linedup = 0;
 
    private int replicated = 0;
@@ -54,7 +55,7 @@ public class CompletionContextImpl implements CompletionContext
    /**
     * @param executor
     */
-   public CompletionContextImpl()
+   public OperationContextImpl()
    {
       super();
    }
@@ -71,7 +72,7 @@ public class CompletionContextImpl implements CompletionContext
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
-   public void afterCompletion(Runnable runnable)
+   public void executeOnCompletion(IOCompletion completion)
    {
       if (complete)
       {
@@ -83,14 +84,14 @@ public class CompletionContextImpl implements CompletionContext
       {
          // No need to use Concurrent, we only add from a single thread.
          // We don't add any more Runnables after it is complete
-         tasks = new ArrayList<Runnable>();
+         tasks = new LinkedList<IOCompletion>();
       }
 
-      tasks.add(runnable);
+      tasks.add(completion);
    }
 
    /** To be called by the replication manager, when data is confirmed on the channel */
-   public synchronized void replicated()
+   public synchronized void done()
    {
       if (++replicated == linedup && complete)
       {
@@ -103,7 +104,7 @@ public class CompletionContextImpl implements CompletionContext
     */
    public synchronized void complete()
    {
-      tlReplicationContext.set(null);
+      tlContext.set(null);
       complete = true;
       if (replicated == linedup && complete)
       {
@@ -115,9 +116,9 @@ public class CompletionContextImpl implements CompletionContext
    {
       if (tasks != null)
       {
-         for (Runnable run : tasks)
+         for (IOCompletion run : tasks)
          {
-            run.run();
+            run.done();
          }
          tasks.clear();
       }
@@ -134,6 +135,21 @@ public class CompletionContextImpl implements CompletionContext
    public void setEmpty(final boolean sync)
    {
       this.empty = sync;
+   }
+
+   
+   /* (non-Javadoc)
+    * @see org.hornetq.core.asyncio.AIOCallback#onError(int, java.lang.String)
+    */
+   public void onError(int errorCode, String errorMessage)
+   {
+      if (tasks != null)
+      {
+         for (IOCompletion run : tasks)
+         {
+            run.onError(errorCode, errorMessage);
+         }
+      }
    }
 
 }

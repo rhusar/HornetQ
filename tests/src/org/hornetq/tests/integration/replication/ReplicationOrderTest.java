@@ -92,7 +92,7 @@ public class ReplicationOrderTest extends FailoverTestBase
       }
       session.createQueue(address, queue, true);
       ClientProducer producer = session.createProducer(address);
-      boolean durable = true;
+      boolean durable = false;
       for (int i = 0; i < NUM; i++)
       {
          ClientMessage msg = session.createClientMessage(durable);

@@ -178,7 +178,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
    {
       if (sync)
       {
-         IOCompletion completion = SimpleWaitIOCallback.getInstance();
+         SimpleWaitIOCallback completion = new SimpleWaitIOCallback();
 
          write(bytes, true, completion);
 

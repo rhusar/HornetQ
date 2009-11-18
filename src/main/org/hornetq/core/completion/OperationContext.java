@@ -13,6 +13,8 @@
 
 package org.hornetq.core.completion;
 
+import org.hornetq.core.journal.IOCompletion;
+
 
 /**
  * This represents a set of operations done as part of replication. 
@@ -22,17 +24,14 @@ package org.hornetq.core.completion;
  *
  *
  */
-public interface CompletionContext
+public interface OperationContext extends IOCompletion
 {
    /** To be called by the replication manager, when new replication is added to the queue */
    void linedUp();
    
    boolean hasData();
 
-   /** To be called by the replication manager, when data is confirmed on the channel */
-   void replicated();
-   
-   void afterCompletion(Runnable runnable);
+   void executeOnCompletion(IOCompletion runnable);
    
    /** To be called when there are no more operations pending */
    void complete();

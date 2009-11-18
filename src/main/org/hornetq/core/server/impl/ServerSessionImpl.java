@@ -1718,23 +1718,16 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
                              final boolean flush,
                              final boolean closeChannel)
    {
-      if (storageManager.isReplicated())
+      storageManager.afterCompleteOperations(new Runnable()
       {
-         storageManager.afterCompletion(new Runnable()
+         public void run()
          {
-            public void run()
-            {
-               doSendResponse(confirmPacket, response, flush, closeChannel);
-            }
+            doSendResponse(confirmPacket, response, flush, closeChannel);
+         }
 
-         });
-         
-         storageManager.completeReplication();
-      }
-      else
-      {
-         doSendResponse(confirmPacket, response, flush, closeChannel);
-      }
+      });
+      
+      storageManager.completeOperations();
    }
 
    /**

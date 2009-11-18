@@ -997,8 +997,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
       depageTransaction.commit();
 
-      // StorageManager does the check: if (replicated) -> do the proper cleanup already
-      storageManager.completeReplication();
+      storageManager.completeOperations();
 
       if (isTrace)
       {

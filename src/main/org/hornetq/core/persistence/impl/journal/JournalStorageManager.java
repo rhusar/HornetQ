@@ -33,11 +33,12 @@ import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
-import org.hornetq.core.completion.impl.CompletionContextImpl;
+import org.hornetq.core.completion.impl.OperationContextImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.PreparedTransactionInfo;
@@ -48,6 +49,7 @@ import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
+import org.hornetq.core.journal.impl.SimpleWaitIOCallback;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.PageTransactionInfo;
@@ -292,7 +294,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#completeReplication()
     */
-   public void completeReplication()
+   public void completeOperations()
    {
       if (replicator != null)
       {
@@ -308,18 +310,11 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#blockOnReplication()
     */
-   public void waitOnReplication(final long timeout) throws Exception
+   public void waitOnOperations(final long timeout) throws Exception
    {
-      final CountDownLatch latch = new CountDownLatch(1);
-      afterCompletion(new Runnable()
-      {
-         public void run()
-         {
-            latch.countDown();
-         }
-      });
-      completeReplication();
-      if (!latch.await(timeout, TimeUnit.MILLISECONDS))
+      SimpleWaitIOCallback waitCallback = new SimpleWaitIOCallback();
+      afterCompleteOperations(waitCallback);
+      if (!waitCallback.waitCompletion(timeout))
       {
          throw new IllegalStateException("no response received from replication");
       }
@@ -364,9 +359,9 @@ public class JournalStorageManager implements StorageManager
 
    // TODO: shouldn't those page methods be on the PageManager? ^^^^
 
-   public void afterCompletion(Runnable run)
+   public void afterCompleteOperations(IOCompletion run)
    {
-      CompletionContextImpl.getContext().afterCompletion(run);
+      OperationContextImpl.getContext().executeOnCompletion(run);
    }
 
    public UUID getPersistentID()

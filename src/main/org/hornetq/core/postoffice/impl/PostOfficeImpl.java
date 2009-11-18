@@ -924,20 +924,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
       else
       {
-         if (storageManager.isReplicated())
+         storageManager.afterCompleteOperations(new Runnable()
          {
-            storageManager.afterCompletion(new Runnable()
+            public void run()
             {
-               public void run()
-               {
-                  addReferences(refs);
-               }
-            });
-         }
-         else
-         {
-            addReferences(refs);
-         }
+               addReferences(refs);
+            }
+         });
       }
    }
 

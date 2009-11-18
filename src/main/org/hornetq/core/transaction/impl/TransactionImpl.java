@@ -98,7 +98,7 @@ public class TransactionImpl implements Transaction
    {
       this.containsPersistent = true;
    }
-   
+
    public long getID()
    {
       return id;
@@ -209,53 +209,35 @@ public class TransactionImpl implements Transaction
             }
          }
 
-         Runnable execAfterCommit = null;
-
-         if (operations != null)
-         {
-            execAfterCommit = new Runnable()
-            {
-               public void run()
-               {
-                  for (TransactionOperation operation : operations)
-                  {
-                     try
-                     {
-                        operation.afterCommit(TransactionImpl.this);
-                     }
-                     catch (Exception e)
-                     {
-                        // https://jira.jboss.org/jira/browse/HORNETQ-188
-                        // After commit shouldn't throw an exception
-                        log.warn(e.getMessage(), e);
-                     }
-                  }
-               }
-            };
-         }
-
          if (containsPersistent || (xid != null && state == State.PREPARED))
          {
             storageManager.commit(id);
 
             state = State.COMMITTED;
+         }
 
-            if (execAfterCommit != null)
+         // We use the Callback even for non persistence
+         // If we are using non-persistence with replication, the replication manager will have
+         // to execute this runnable in the correct order
+         storageManager.afterCompleteOperations(new Runnable()
+         {
+            public void run()
             {
-               if (storageManager.isReplicated())
+               for (TransactionOperation operation : operations)
                {
-                  storageManager.afterCompletion(execAfterCommit);
-               }
-               else
-               {
-                  execAfterCommit.run();
+                  try
+                  {
+                     operation.afterCommit(TransactionImpl.this);
+                  }
+                  catch (Exception e)
+                  {
+                     // https://jira.jboss.org/jira/browse/HORNETQ-188
+                     // After commit shouldn't throw an exception
+                     log.warn(e.getMessage(), e);
+                  }
                }
             }
-         }
-         else if (execAfterCommit != null)
-         {
-            execAfterCommit.run();
-         }
+         });
       }
    }
 

@@ -22,8 +22,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.hornetq.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.FailoverManager;
-import org.hornetq.core.completion.CompletionContext;
-import org.hornetq.core.completion.impl.CompletionContextImpl;
+import org.hornetq.core.completion.OperationContext;
+import org.hornetq.core.completion.impl.OperationContextImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -82,7 +82,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private final Object replicationLock = new Object();
 
-   private final Queue<CompletionContext> pendingTokens = new ConcurrentLinkedQueue<CompletionContext>();
+   private final Queue<OperationContext> pendingTokens = new ConcurrentLinkedQueue<OperationContext>();
 
    // Static --------------------------------------------------------
 
@@ -359,17 +359,17 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       enabled = false;
       
-      LinkedHashSet<CompletionContext> activeContexts = new LinkedHashSet<CompletionContext>();
+      LinkedHashSet<OperationContext> activeContexts = new LinkedHashSet<OperationContext>();
       
       // The same context will be replicated on the pending tokens...
       // as the multiple operations will be replicated on the same context
       while (!pendingTokens.isEmpty())
       {
-         CompletionContext ctx = pendingTokens.poll();
+         OperationContext ctx = pendingTokens.poll();
          activeContexts.add(ctx);
       }
 
-      for (CompletionContext ctx : activeContexts)
+      for (OperationContext ctx : activeContexts)
       {
          ctx.complete();
          ctx.flush();
@@ -397,7 +397,7 @@ public class ReplicationManagerImpl implements ReplicationManager
     */
    public void closeContext()
    {
-      final CompletionContext token = getContext();
+      final OperationContext token = getContext();
 
       if (token != null)
       {
@@ -414,15 +414,15 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* method for testcases only
     * @see org.hornetq.core.replication.ReplicationManager#getPendingTokens()
     */
-   public Set<CompletionContext> getActiveTokens()
+   public Set<OperationContext> getActiveTokens()
    {
       
-      LinkedHashSet<CompletionContext> activeContexts = new LinkedHashSet<CompletionContext>();
+      LinkedHashSet<OperationContext> activeContexts = new LinkedHashSet<OperationContext>();
       
       // The same context will be replicated on the pending tokens...
       // as the multiple operations will be replicated on the same context
       
-      for (CompletionContext ctx : pendingTokens)
+      for (OperationContext ctx : pendingTokens)
       {
          activeContexts.add(ctx);
       }
@@ -435,7 +435,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       boolean runItNow = false;
 
-      CompletionContext repliToken = getContext();
+      OperationContext repliToken = getContext();
       repliToken.linedUp();
 
       synchronized (replicationLock)
@@ -458,7 +458,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       if (runItNow)
       {
-         repliToken.replicated();
+         repliToken.done();
       }
    }
 
@@ -472,11 +472,11 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private void replicated()
    {
-      List<CompletionContext> tokensToExecute = getTokens();
+      List<OperationContext> tokensToExecute = getTokens();
 
-      for (CompletionContext ctx : tokensToExecute)
+      for (OperationContext ctx : tokensToExecute)
       {
-         ctx.replicated();
+         ctx.done();
       }
    }
 
@@ -486,7 +486,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    // Private -------------------------------------------------------
 
-   private void sync(CompletionContext context)
+   private void sync(OperationContext context)
    {
       boolean executeNow = false;
       synchronized (replicationLock)
@@ -507,14 +507,14 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
       if (executeNow)
       {
-         context.replicated();
+         context.done();
       }
    }
 
    
-   public CompletionContext getContext()
+   public OperationContext getContext()
    {
-      return CompletionContextImpl.getContext();
+      return OperationContextImpl.getContext();
    }
 
    /**
@@ -523,11 +523,11 @@ public class ReplicationManagerImpl implements ReplicationManager
     * At last, if the list is empty, it will verify if there are any future tokens that are sync tokens, to avoid a case where no more replication is done due to inactivity.
     * @return
     */
-   private List<CompletionContext> getTokens()
+   private List<OperationContext> getTokens()
    {
-      List<CompletionContext> retList = new LinkedList<CompletionContext>();
+      List<OperationContext> retList = new LinkedList<OperationContext>();
 
-      CompletionContext tokenPolled = null;
+      OperationContext tokenPolled = null;
 
       // First will get all the non replicated tokens up to the first one that is not replicated
       do

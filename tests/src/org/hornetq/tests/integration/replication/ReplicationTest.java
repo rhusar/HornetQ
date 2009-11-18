@@ -32,7 +32,7 @@ import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.FailoverManager;
 import org.hornetq.core.client.impl.FailoverManagerImpl;
-import org.hornetq.core.completion.impl.CompletionContextImpl;
+import org.hornetq.core.completion.impl.OperationContextImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -375,7 +375,7 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         CompletionContextImpl.getContext().afterCompletion(new Runnable()
+         OperationContextImpl.getContext().executeOnCompletion(new Runnable()
          {
             public void run()
             {
@@ -402,7 +402,7 @@ public class ReplicationTest extends ServiceTestBase
    private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      CompletionContextImpl.getContext().afterCompletion(new Runnable()
+      OperationContextImpl.getContext().executeOnCompletion(new Runnable()
       {
 
          public void run()
@@ -458,7 +458,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         CompletionContextImpl.getContext().afterCompletion(new Runnable()
+         OperationContextImpl.getContext().executeOnCompletion(new Runnable()
          {
 
             public void run()
@@ -468,21 +468,9 @@ public class ReplicationTest extends ServiceTestBase
 
          });
 
-         assertEquals(1, manager.getActiveTokens().size());
-
          manager.closeContext();
 
          assertTrue(latch.await(1, TimeUnit.SECONDS));
-
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
 
          assertEquals(0, manager.getActiveTokens().size());
          manager.stop();
@@ -530,7 +518,7 @@ public class ReplicationTest extends ServiceTestBase
             }
 
 
-            CompletionContextImpl.getContext().afterCompletion(new Runnable()
+            OperationContextImpl.getContext().executeOnCompletion(new Runnable()
             {
 
                public void run()
@@ -552,17 +540,6 @@ public class ReplicationTest extends ServiceTestBase
             assertEquals(i, executions.get(i).intValue());
          }
          
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
-
-
          assertEquals(0, manager.getActiveTokens().size());
          manager.stop();
       }

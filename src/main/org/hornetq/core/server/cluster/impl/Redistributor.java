@@ -144,21 +144,14 @@ public class Redistributor implements Consumer
 
       tx.commit();
 
-      if (storageManager.isReplicated())
+      storageManager.afterCompleteOperations(new Runnable()
       {
-         storageManager.afterCompletion(new Runnable()
+         public void run()
          {
-            public void run()
-            {
-               execPrompter();
-            }
-         });
-         storageManager.completeReplication();
-      }
-      else
-      {
-         execPrompter();
-      }
+            execPrompter();
+         }
+      });
+      storageManager.completeOperations();
    }
    
    private void execPrompter()

@@ -15,7 +15,7 @@ package org.hornetq.core.replication;
 
 import java.util.Set;
 
-import org.hornetq.core.completion.CompletionContext;
+import org.hornetq.core.completion.OperationContext;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -53,7 +53,7 @@ public interface ReplicationManager extends HornetQComponent
    void closeContext();
    
    /** A list of tokens that are still waiting for replications to be completed */
-   Set<CompletionContext> getActiveTokens();
+   Set<OperationContext> getActiveTokens();
 
    /**
     * @param storeName

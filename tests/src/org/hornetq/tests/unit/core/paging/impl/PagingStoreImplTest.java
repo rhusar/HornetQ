@@ -1155,7 +1155,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#afterReplicated(java.lang.Runnable)
        */
-      public void afterCompletion(Runnable run)
+      public void afterCompleteOperations(Runnable run)
       {
 
       }
@@ -1163,7 +1163,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#completeReplication()
        */
-      public void completeReplication()
+      public void completeOperations()
       {
 
       }
@@ -1221,7 +1221,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#blockOnReplication(long)
        */
-      public void waitOnReplication(long timeout) throws Exception
+      public void waitOnOperations(long timeout) throws Exception
       {
       }
 
