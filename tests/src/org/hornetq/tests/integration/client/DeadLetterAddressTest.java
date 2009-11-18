@@ -61,7 +61,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       ClientMessage m = clientConsumer.receive(500);
       m.acknowledge();
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
       // force a cancel
       clientSession.rollback();
       m = clientConsumer.receiveImmediate();
@@ -70,7 +70,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       clientConsumer = clientSession.createConsumer(dlq);
       m = clientConsumer.receive(500);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
    }
 
    public void testBasicSendToMultipleQueues() throws Exception
@@ -93,7 +93,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       ClientMessage m = clientConsumer.receive(500);
       m.acknowledge();
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
       // force a cancel
       clientSession.rollback();
       m = clientConsumer.receiveImmediate();
@@ -103,13 +103,13 @@ public class DeadLetterAddressTest extends UnitTestCase
       m = clientConsumer.receive(500);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
       clientConsumer.close();
       clientConsumer = clientSession.createConsumer(dlq2);
       m = clientConsumer.receive(500);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
       clientConsumer.close();
    }
 
@@ -127,7 +127,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       ClientMessage m = clientConsumer.receive(500);
       m.acknowledge();
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
       // force a cancel
       clientSession.rollback();
       m = clientConsumer.receiveImmediate();
@@ -174,7 +174,7 @@ public class DeadLetterAddressTest extends UnitTestCase
             {
                origIds.put("Message:" + j, tm.getMessageID());
             }
-            assertEquals("Message:" + j, tm.getBody().readString());
+            assertEquals("Message:" + j, tm.getBuffer().readString());
          }
          clientSession.rollback();
       }
@@ -192,7 +192,7 @@ public class DeadLetterAddressTest extends UnitTestCase
 
          assertNotNull(tm);
 
-         String text = tm.getBody().readString();
+         String text = tm.getBuffer().readString();
          assertEquals("Message:" + i, text);
 
          // Check the headers
@@ -248,7 +248,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       clientConsumer = clientSession.createConsumer(deadLetterQueue);
       m = clientConsumer.receive(500);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
    }
 
    public void testDeadlLetterAddressWithWildcardAddressSettings() throws Exception
@@ -288,7 +288,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       clientConsumer = clientSession.createConsumer(deadLetterQueue);
       m = clientConsumer.receive(500);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "heyho!");
+      assertEquals(m.getBuffer().readString(), "heyho!");
    }
 
    public void testDeadLetterAddressWithOverridenSublevelAddressSettings() throws Exception

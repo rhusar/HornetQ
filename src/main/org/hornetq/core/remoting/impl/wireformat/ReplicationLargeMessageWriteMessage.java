@@ -58,11 +58,11 @@ public class ReplicationLargeMessageWriteMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_INT + body.length;
+      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_INT + body.length;
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeLong(messageId);
       buffer.writeInt(body.length);
@@ -70,7 +70,7 @@ public class ReplicationLargeMessageWriteMessage extends PacketImpl
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       messageId = buffer.readLong();
       int size = buffer.readInt();

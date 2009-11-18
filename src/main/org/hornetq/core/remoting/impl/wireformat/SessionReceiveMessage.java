@@ -16,6 +16,7 @@ package org.hornetq.core.remoting.impl.wireformat;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.client.impl.ClientMessageInternal;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.DataConstants;
@@ -37,37 +38,11 @@ public class SessionReceiveMessage extends PacketImpl
 
    private long consumerID;
 
-   private boolean largeMessage;
-
-   private byte[] largeMessageHeader;
-
    private ClientMessageInternal clientMessage;
 
    private ServerMessage serverMessage;
 
    private int deliveryCount;
-   
-   /** Since we receive the message before the entire message was received, */
-   private long largeMessageSize;
-
-   // Static --------------------------------------------------------
-
-   // Constructors --------------------------------------------------
-
-   public SessionReceiveMessage(final long consumerID, final byte[] largeMessageHeader, final long largeMessageSize, final int deliveryCount)
-   {
-      super(SESS_RECEIVE_MSG);
-
-      this.consumerID = consumerID;
-
-      this.largeMessageHeader = largeMessageHeader;
-
-      this.deliveryCount = deliveryCount;
-
-      this.largeMessage = true;
-      
-      this.largeMessageSize = largeMessageSize;
-   }
 
    public SessionReceiveMessage(final long consumerID, final ServerMessage message, final int deliveryCount)
    {
@@ -80,8 +55,6 @@ public class SessionReceiveMessage extends PacketImpl
       this.clientMessage = null;
 
       this.deliveryCount = deliveryCount;
-
-      this.largeMessage = false;
    }
 
    public SessionReceiveMessage()
@@ -106,103 +79,98 @@ public class SessionReceiveMessage extends PacketImpl
       return serverMessage;
    }
 
-   public byte[] getLargeMessageHeader()
-   {
-      return largeMessageHeader;
-   }
-
-   /**
-    * @return the largeMessage
-    */
-   public boolean isLargeMessage()
-   {
-      return largeMessage;
-   }
-
    public int getDeliveryCount()
    {
       return deliveryCount;
    }
 
-   /**
-    * @return the largeMessageSize
-    */
-   public long getLargeMessageSize()
-   {
-      return largeMessageSize;
-   }
-
    public int getRequiredBufferSize()
    {
-      if (largeMessage)
-      {
-         return BASIC_PACKET_SIZE + 
-                // consumerID
-                DataConstants.SIZE_LONG +
-                // deliveryCount
-                DataConstants.SIZE_INT +
-                // largeMessage (boolean)
-                DataConstants.SIZE_BOOLEAN +
-                // LargeMessageSize (Long)
-                DataConstants.SIZE_LONG +
-                // largeMessageHeader.length (int)
-                DataConstants.SIZE_INT +
-                // ByteArray size
-                largeMessageHeader.length;
-      }
-      else
-      {
-         return BASIC_PACKET_SIZE + 
-                // consumerID
-                DataConstants.SIZE_LONG +
-                // deliveryCount
-                DataConstants.SIZE_INT +
-                // isLargeMessage
-                DataConstants.SIZE_BOOLEAN +
-                // message.encoding
-                (serverMessage != null ? serverMessage.getEncodeSize() : clientMessage.getEncodeSize());
-      }
+      return PACKET_HEADERS_SIZE +
+             // consumerID
+             DataConstants.SIZE_LONG +
+             // deliveryCount
+             DataConstants.SIZE_INT +
+             // isLargeMessage
+             DataConstants.SIZE_BOOLEAN +
+             // message.encoding
+             (serverMessage != null ? serverMessage.getEncodeSize() : clientMessage.getEncodeSize());
+
    }
-   public void encodeBody(final HornetQBuffer buffer)
+   
+   @Override
+   public HornetQBuffer encode(final RemotingConnection connection)
    {
+      log.info("Encoding session send message, consumer id is " + consumerID + " delivery count is " + deliveryCount);
+      
+      HornetQBuffer buffer = serverMessage.getBuffer();
+      
+      log.info("** DELIVERING writer index is " + buffer.writerIndex());
+                  
+      
+      log.info("** WRITING CONSUMER ID AT POS " + buffer.writerIndex());
+      
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
-      buffer.writeBoolean(largeMessage);
-      if (largeMessage)
-      {
-         buffer.writeLong(largeMessageSize);
-         buffer.writeInt(largeMessageHeader.length);
-         buffer.writeBytes(largeMessageHeader);
-      }
-      else
-      {
-         serverMessage.encode(buffer);
-      }
+
+      // At this point, the rest of the message has already been encoded into the buffer
+      size = buffer.writerIndex();
+      
+      log.info("size is " + size);
+
+      buffer.setIndex(0, 0);
+
+      // The standard header fields
+
+      int len = size - DataConstants.SIZE_INT;
+      buffer.writeInt(len);
+      buffer.writeByte(type);
+      buffer.writeLong(channelID);
+      
+      buffer.setIndex(0, size);
+
+      return buffer;
    }
 
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
-      // TODO can be optimised
-
+      clientMessage = new ClientMessageImpl();
+      
+      //fast forward past the size byte
+      buffer.readInt();
+      
+      clientMessage.decode(buffer);
+      
+      int bodyBeginning = buffer.readerIndex();
+      
+      clientMessage.setBuffer(buffer);
+      
+      //Now we need to fast forward past the body part
+      
+      int size = buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
+      
+      buffer.setIndex(size, buffer.writerIndex());
+                  
+      log.info("decoded receive message");
+      
+      log.info("*** READING CONSUMER ID AT POS " + buffer.readerIndex());
+      
       consumerID = buffer.readLong();
+      
+      log.info("consumer id is " + consumerID);
 
       deliveryCount = buffer.readInt();
-
-      largeMessage = buffer.readBoolean();
-
-      if (largeMessage)
-      {
-         largeMessageSize = buffer.readLong();
-         int size = buffer.readInt();
-         largeMessageHeader = new byte[size];
-         buffer.readBytes(largeMessageHeader);
-      }
-      else
-      {
-         clientMessage = new ClientMessageImpl(deliveryCount);
-         clientMessage.decode(buffer);
-         clientMessage.getBody().resetReaderIndex();
-      }
+      
+      log.info("delivery count is " + deliveryCount);
+      
+      clientMessage.setDeliveryCount(deliveryCount);
+      
+      //clientMessage.getBuffer().resetReaderIndex();
+      
+      //Reset buffer to beginning of body
+      buffer.setIndex(bodyBeginning, buffer.writerIndex());
+      
+      clientMessage.setBuffer(buffer);
    }
 
    // Package protected ---------------------------------------------

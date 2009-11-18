@@ -84,7 +84,7 @@ public class SelfExpandingBufferTest extends ServiceTestBase
 
          ClientMessage msg = session.createClientMessage(true);
 
-         HornetQBuffer buffer = msg.getBody();
+         HornetQBuffer buffer = msg.getBuffer();
 
          for (int i = 0; i < 10; i++)
          {

@@ -151,7 +151,7 @@ public class PageCrashTest extends ServiceTestBase
          ClientMessage message = null;
 
          message = session.createClientMessage(true);
-         message.getBody().writeBytes(new byte[1024]);
+         message.getBuffer().writeBytes(new byte[1024]);
 
          PagingStore store = server.getPostOffice().getPagingManager().getPageStore(ADDRESS);
 

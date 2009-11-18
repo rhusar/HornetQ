@@ -13,16 +13,20 @@
 
 package org.hornetq.core.server.impl;
 
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.message.Message;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.PagingStore;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.SimpleString;
+import org.hornetq.utils.TypedProperties;
 
 /**
  * 
@@ -61,29 +65,46 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    {
       super(messageID);
    }
-
-   public ServerMessageImpl(final ServerMessageImpl other)
-   {
-      super(other);
-   }
-
-   public ServerMessageImpl(final ServerMessage other)
-   {
-      super(other);
-   }
-
-   /**
-    * Only used in testing
+   
+   /*
+    * Constructor when creating a ServerMessage for sending - e.g. notification
     */
-   public ServerMessageImpl(final byte type,
-                            final boolean durable,
-                            final long expiration,
-                            final long timestamp,
-                            final byte priority,
-                            final HornetQBuffer buffer)
+   public ServerMessageImpl(final long messageID, final HornetQBuffer buffer)
    {
-      super(type, durable, expiration, timestamp, priority, buffer);
+      super(messageID);
+      
+      this.buffer = buffer;
    }
+      
+   /*
+    * Copy constructor
+    */
+   protected ServerMessageImpl(final Message other)
+   {
+      this();
+      messageID = other.getMessageID();
+      destination = other.getDestination();
+      type = other.getType();
+      durable = other.isDurable();
+      expiration = other.getExpiration();
+      timestamp = other.getTimestamp();
+      priority = other.getPriority();
+      properties = new TypedProperties(other.getProperties());
+      buffer = other.getBuffer();
+   }
+
+//   /**
+//    * Only used in testing
+//    */
+//   public ServerMessageImpl(final byte type,
+//                            final boolean durable,
+//                            final long expiration,
+//                            final long timestamp,
+//                            final byte priority,
+//                            final HornetQBuffer buffer)
+//   {
+//      super(type, durable, expiration, timestamp, priority, buffer);
+//   }
 
    public void setMessageID(final long id)
    {
@@ -283,6 +304,27 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
          return false;
       }
    }
+   
+   // EncodingSupport implementation
+   
+   // Used when storing to/from journal
+   
+   //TODO - this can be further optimised, so when writing into the journal, we just write the message's already existing
+   //buffer directly into the timed buffer, the journal specific headers can be added in the timed buffer when the smaller
+   //buffer is copied into the timed buffer's larger buffer
+   
+   public void encode(HornetQBuffer buffer)
+   {
+      //FIXME - this won't work
+      buffer.writeBytes(buffer, PacketImpl.PACKET_HEADERS_SIZE, 0);  
+   }
+   
+//   public void decode(HornetQBuffer buffer)
+//   {
+//      this.decodeHeadersAndProperties(buffer);
+//      
+//      this.buffer = buffer;
+//   }
 
    @Override
    public String toString()
@@ -293,6 +335,14 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
              ", destination=" +
              getDestination() +
              "]";
+   }
+   
+   //FIXME - this is stuff that is only used in large messages
+   
+   //This is only valid on the client side - why is it here?
+   public InputStream getBodyInputStream()
+   {
+      return null;
    }
 
 }

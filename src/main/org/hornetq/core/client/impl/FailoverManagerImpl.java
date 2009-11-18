@@ -1013,6 +1013,7 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
       public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
       {
          RemotingConnection theConn = connection;
+         
          if (theConn != null && connectionID == theConn.getID())
          {
             theConn.bufferReceived(connectionID, buffer);

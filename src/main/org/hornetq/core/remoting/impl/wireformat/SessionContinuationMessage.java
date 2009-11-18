@@ -30,7 +30,7 @@ public abstract class SessionContinuationMessage extends PacketImpl
 
    // Constants -----------------------------------------------------
 
-   public static final int SESSION_CONTINUATION_BASE_SIZE = BASIC_PACKET_SIZE + DataConstants.SIZE_INT +
+   public static final int SESSION_CONTINUATION_BASE_SIZE = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT +
                                                             DataConstants.SIZE_BOOLEAN;
 
    // Attributes ----------------------------------------------------
@@ -80,7 +80,7 @@ public abstract class SessionContinuationMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(body.length);
       buffer.writeBytes(body);
@@ -88,7 +88,7 @@ public abstract class SessionContinuationMessage extends PacketImpl
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       int size = buffer.readInt();
       body = new byte[size];

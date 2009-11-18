@@ -13,10 +13,12 @@
 
 package org.hornetq.core.client;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.message.Message;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * 
@@ -32,7 +34,17 @@ public interface ClientMessage extends Message
    
    void setDeliveryCount(int deliveryCount);
    
-  /** Sets the OutputStream that will receive the content of a message received in a non blocking way
+   void acknowledge() throws HornetQException;   
+   
+   void encodeToBuffer();
+   
+   void decode(HornetQBuffer buffer);
+   
+   
+   
+   //FIXME - the following are only used for large messages - they should be put somewhere else:
+   
+   /** Sets the OutputStream that will receive the content of a message received in a non blocking way
     * @throws HornetQException */
    void setOutputStream(OutputStream out) throws HornetQException;
    
@@ -46,6 +58,8 @@ public interface ClientMessage extends Message
     * @throws HornetQException
     */
    boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException;
-
-   void acknowledge() throws HornetQException;   
+   
+   void decodeHeadersAndProperties(HornetQBuffer buffer);
+      
+   void setBodyInputStream(InputStream bodyInputStream);
 }

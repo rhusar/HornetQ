@@ -30,6 +30,7 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.wireformat.SessionBindingQueryResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionQueueQueryResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
+import org.hornetq.core.remoting.impl.wireformat.SessionReceiveLargeMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.ConcurrentHashSet;
@@ -46,27 +47,27 @@ import org.hornetq.utils.SimpleString;
  *
  */
 public class DelegatingSession implements ClientSessionInternal
-{   
+{
    private static final Logger log = Logger.getLogger(DelegatingSession.class);
 
    private final ClientSessionInternal session;
 
    private Exception creationStack;
-   
+
    private static Set<DelegatingSession> sessions = new ConcurrentHashSet<DelegatingSession>();
 
    public static volatile boolean debug;
-   
+
    public static void dumpSessionCreationStacks()
    {
       log.info("**** Dumping session creation stacks ****");
-      
-      for (DelegatingSession session: sessions)
+
+      for (DelegatingSession session : sessions)
       {
          log.info("session created", session.creationStack);
       }
    }
-   
+
    @Override
    protected void finalize() throws Throwable
    {
@@ -87,7 +88,7 @@ public class DelegatingSession implements ClientSessionInternal
       this.session = session;
 
       this.creationStack = new Exception();
-      
+
       if (debug)
       {
          sessions.add(this);
@@ -123,7 +124,7 @@ public class DelegatingSession implements ClientSessionInternal
    {
       session.forceDelivery(consumerID, sequence);
    }
-   
+
    public void cleanUp() throws Exception
    {
       session.cleanUp();
@@ -135,7 +136,7 @@ public class DelegatingSession implements ClientSessionInternal
       {
          sessions.remove(this);
       }
-      
+
       session.close();
    }
 
@@ -163,22 +164,6 @@ public class DelegatingSession implements ClientSessionInternal
    {
       return session.createClientMessage(type, durable);
    }
-   
-   public ClientMessage createClientMessage(boolean durable, HornetQBuffer buffer)
-   {
-      return session.createClientMessage(durable, buffer);
-   }    
-   
-   public HornetQBuffer createBuffer(byte[] bytes)
-   {
-      return session.createBuffer(bytes);
-   }
-
-   public HornetQBuffer createBuffer(int size)
-   {
-      return session.createBuffer(size);
-   }
-
 
    public ClientConsumer createConsumer(SimpleString queueName, SimpleString filterString, boolean browseOnly) throws HornetQException
    {
@@ -227,7 +212,7 @@ public class DelegatingSession implements ClientSessionInternal
    {
       return session.createConsumer(queueName);
    }
-   
+
    public ClientConsumer createConsumer(SimpleString queueName, boolean browseOnly) throws HornetQException
    {
       return session.createConsumer(queueName, browseOnly);
@@ -283,7 +268,7 @@ public class DelegatingSession implements ClientSessionInternal
    {
       session.createQueue(address, queueName);
    }
-   
+
    public void createQueue(SimpleString address, SimpleString queueName, boolean durable) throws HornetQException
    {
       session.createQueue(address, queueName, durable);
@@ -383,13 +368,13 @@ public class DelegatingSession implements ClientSessionInternal
    {
       session.handleFailover(backupConnection);
    }
-   
+
    public void handleReceiveContinuation(long consumerID, SessionReceiveContinuationMessage continuation) throws Exception
    {
       session.handleReceiveContinuation(consumerID, continuation);
    }
 
-   public void handleReceiveLargeMessage(long consumerID, SessionReceiveMessage message) throws Exception
+   public void handleReceiveLargeMessage(long consumerID, SessionReceiveLargeMessage message) throws Exception
    {
       session.handleReceiveLargeMessage(consumerID, message);
    }
@@ -473,7 +458,7 @@ public class DelegatingSession implements ClientSessionInternal
    {
       session.rollback();
    }
-   
+
    public boolean isRollbackOnly()
    {
       return session.isRollbackOnly();
@@ -523,7 +508,7 @@ public class DelegatingSession implements ClientSessionInternal
    {
       session.setForceNotSameRM(force);
    }
-   
+
    public void workDone()
    {
       session.workDone();
@@ -542,5 +527,5 @@ public class DelegatingSession implements ClientSessionInternal
    public void handleReceiveProducerCredits(SimpleString address, int credits, int offset)
    {
       session.handleReceiveProducerCredits(address, credits, offset);
-   }  
+   }
 }

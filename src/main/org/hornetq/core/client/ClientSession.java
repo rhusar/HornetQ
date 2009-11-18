@@ -148,12 +148,6 @@ public interface ClientSession extends XAResource
 
    ClientMessage createClientMessage(boolean durable);
 
-   ClientMessage createClientMessage(boolean durable, HornetQBuffer buffer);
-
-   HornetQBuffer createBuffer(byte[] bytes);
-
-   HornetQBuffer createBuffer(int size);
-
    void start() throws HornetQException;
 
    void stop() throws HornetQException;
@@ -164,5 +158,5 @@ public interface ClientSession extends XAResource
 
    int getVersion();
 
-   void setSendAcknowledgementHandler(SendAcknowledgementHandler handler);
+   void setSendAcknowledgementHandler(SendAcknowledgementHandler handler);     
 }

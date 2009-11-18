@@ -40,7 +40,7 @@ public class ReplicationResponseMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE;
+      return PACKET_HEADERS_SIZE;
    }
 
    // Package protected ---------------------------------------------

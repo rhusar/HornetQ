@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 
+import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.FailoverManager;
@@ -66,6 +67,7 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.persistence.impl.nullpm.NullStorageManager;
 import org.hornetq.core.postoffice.Binding;
+import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.impl.DivertBinding;
@@ -92,6 +94,7 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.MemoryManager;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
+import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.Transformer;
@@ -591,7 +594,7 @@ public class HornetQServerImpl implements HornetQServer
                                                      final boolean preAcknowledge,
                                                      final boolean xa,
                                                      final int sendWindowSize) throws Exception
-   {      
+   {
       if (!started)
       {
          throw new HornetQException(HornetQException.SESSION_CREATION_REJECTED, "Server not started");
@@ -1161,6 +1164,11 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       initialised = true;
+
+      if (System.getProperty("org.hornetq.opt.routeblast") != null)
+      {
+         runRouteBlast();
+      }
    }
 
    /**
@@ -1445,6 +1453,82 @@ public class HornetQServerImpl implements HornetQServer
       catch (Exception e)
       {
          throw new IllegalArgumentException("Error instantiating transformer class \"" + className + "\"", e);
+      }
+   }
+
+   private void runRouteBlast() throws Exception
+   {
+      final int numThreads = 20;
+
+      List<Thread> threads = new ArrayList<Thread>();
+      for (int i = 0; i < numThreads; i++)
+      {
+         RouteBlastRunner runner = new RouteBlastRunner(new SimpleString("rbrunneraddress" + i));
+         
+         threads.add(runner);
+         
+         runner.start();
+      }
+      
+      for (Thread t: threads)
+      {
+         t.join();
+      }
+   }
+
+   class RouteBlastRunner extends Thread
+   {
+      private SimpleString address;
+
+      RouteBlastRunner(SimpleString address)
+      {
+         this.address = address;
+      }
+
+      private void runRouteBlast(final SimpleString address) throws Exception
+      {
+         log.info("**** RUNNING ROUTE BLAST ****");
+
+         final int numQueues = 1;
+
+         for (int i = 0; i < numQueues; i++)
+         {
+            createQueue(address, new SimpleString(address + ".hq.route_blast_queue" + i), null, true, false, true);
+         }
+
+         final int numMessages = 10000000;
+
+         final int bodySize = 1024;
+
+         byte[] body = new byte[bodySize];
+
+         for (int i = 0; i < numMessages; i++)
+         {
+            ServerMessage msg = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.wrappedBuffer(body));
+
+            msg.setDestination(address);
+
+            msg.setDurable(true);
+
+            postOffice.route(msg);
+
+            //log.info("** routed " + i);
+            
+         }
+
+         log.info("*** END ROUTE BLAST TEST *****");
+      }
+
+      public void run()
+      {
+         try
+         {
+            this.runRouteBlast(address);
+         }
+         catch (Exception e)
+         {
+            log.error("Failed to run routeblast", e);
+         }
       }
    }
 

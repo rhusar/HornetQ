@@ -87,7 +87,7 @@ public class MessagePriorityTest extends UnitTestCase
          ClientMessage m = consumer.receive(500);
          assertNotNull(m);
          assertEquals(messages[i].getPriority(), m.getPriority());
-         assertEquals(m.getBody().readString(), messages[i].getBody().readString());
+         assertEquals(m.getBuffer().readString(), messages[i].getBuffer().readString());
       }
 
       consumer.close();
@@ -131,7 +131,7 @@ public class MessagePriorityTest extends UnitTestCase
          ClientMessage m = consumer.receive(500);
          assertNotNull(m);
          assertEquals(messages[i].getPriority(), m.getPriority());
-         assertEquals(m.getBody().readString(), messages[i].getBody().readString());
+         assertEquals(m.getBuffer().readString(), messages[i].getBuffer().readString());
       }
 
       consumer.close();
@@ -252,7 +252,7 @@ public class MessagePriorityTest extends UnitTestCase
       ClientMessage m = consumer.receive(500);
       assertNotNull(m);
       assertEquals(expectedPriority, m.getPriority());
-      assertEquals(expectedStringInBody, m.getBody().readString());
+      assertEquals(expectedStringInBody, m.getBuffer().readString());
    }
 
    // Inner classes -------------------------------------------------

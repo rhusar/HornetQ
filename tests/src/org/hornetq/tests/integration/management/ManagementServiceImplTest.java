@@ -69,7 +69,7 @@ public class ManagementServiceImplTest extends UnitTestCase
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
       HornetQBuffer body = ChannelBuffers.buffer(2048);
-      message.setBody(body);
+      message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               ResourceNames.CORE_SERVER,
                                               "createQueue",
@@ -94,7 +94,7 @@ public class ManagementServiceImplTest extends UnitTestCase
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
       HornetQBuffer body = ChannelBuffers.buffer(2048);
-      message.setBody(body);
+      message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               ResourceNames.CORE_SERVER,
                                               "thereIsNoSuchOperation");
@@ -118,7 +118,7 @@ public class ManagementServiceImplTest extends UnitTestCase
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
       HornetQBuffer body = ChannelBuffers.buffer(2048);
-      message.setBody(body);
+      message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               "Resouce.Does.Not.Exist",
                                               "toString");
@@ -142,7 +142,7 @@ public class ManagementServiceImplTest extends UnitTestCase
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
       HornetQBuffer body = ChannelBuffers.buffer(2048);
-      message.setBody(body);
+      message.setBuffer(body);
       ManagementHelper.putAttribute(message, ResourceNames.CORE_SERVER, "attribute.Does.Not.Exist");
       
       ServerMessage reply = server.getManagementService().handleMessage(message);

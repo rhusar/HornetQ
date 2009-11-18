@@ -247,7 +247,12 @@ public class JournalStorageManager implements StorageManager
       else if (config.getJournalType() == JournalType.NIO)
       {
          log.info("NIO Journal selected");
-         journalFF = new NIOSequentialFileFactory(journalDir);
+         journalFF = new NIOSequentialFileFactory(journalDir,
+                                                  true,
+                                                  config.getJournalBufferSize(),
+                                                  config.getJournalBufferTimeout(),
+                                                  config.isJournalFlushOnSync(),
+                                                  config.isLogJournalWriteRate());
       }
       else
       {
@@ -440,10 +445,13 @@ public class JournalStorageManager implements StorageManager
 
    public void storeMessage(final ServerMessage message) throws Exception
    {
+      //TODO - how can this be less than zero?
       if (message.getMessageID() <= 0)
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "MessageId was not assigned to Message");
       }
+      
+     // log.info("calling store msg");
 
       // Note that we don't sync, the add reference that comes immediately after will sync if appropriate
 
@@ -460,23 +468,27 @@ public class JournalStorageManager implements StorageManager
       }
    }
 
-   public void storeReference(final long queueID, final long messageID) throws Exception
+   public void storeReference(final long queueID, final long messageID, final boolean last) throws Exception
    {
-      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), syncNonTransactional);
+      //log.info("calling store reference " + syncNonTransactional);
+      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), last && syncNonTransactional);
    }
 
    public void storeAcknowledge(final long queueID, final long messageID) throws Exception
    {
+      log.info("calling acknowledge");
       messageJournal.appendUpdateRecord(messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional);
    }
 
    public void deleteMessage(final long messageID) throws Exception
    {
+      log.info("calling delete message");
       messageJournal.appendDeleteRecord(messageID, syncNonTransactional);
    }
 
    public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception
    {
+      log.info("calling update sched delivery");
       ScheduledDeliveryEncoding encoding = new ScheduledDeliveryEncoding(ref.getScheduledDeliveryTime(), ref.getQueue()
                                                                                                             .getID());
 
@@ -488,6 +500,7 @@ public class JournalStorageManager implements StorageManager
 
    public void storeDuplicateID(final SimpleString address, final byte[] duplID, final long recordID) throws Exception
    {
+      log.info("calling store dupl id");
       DuplicateIDEncoding encoding = new DuplicateIDEncoding(address, duplID);
 
       messageJournal.appendAddRecord(recordID, DUPLICATE_ID, encoding, syncNonTransactional);
@@ -495,6 +508,7 @@ public class JournalStorageManager implements StorageManager
 
    public void deleteDuplicateID(long recordID) throws Exception
    {
+      log.info("calling delete dupl id");
       messageJournal.appendDeleteRecord(recordID, syncNonTransactional);
    }
 

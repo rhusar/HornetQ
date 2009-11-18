@@ -112,7 +112,7 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
+      return PACKET_HEADERS_SIZE + 
       DataConstants.SIZE_BOOLEAN + // buffer.writeBoolean(exists);
       DataConstants.SIZE_BOOLEAN + // buffer.writeBoolean(durable);
       DataConstants.SIZE_INT + // buffer.writeInt(consumerCount);
@@ -121,7 +121,7 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
       SimpleString.sizeofNullableString(address); // buffer.writeNullableSimpleString(address);
    }
 
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeBoolean(exists);
       buffer.writeBoolean(durable);
@@ -131,7 +131,7 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
       buffer.writeNullableSimpleString(address);
    }
 
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       exists = buffer.readBoolean();
       durable = buffer.readBoolean();

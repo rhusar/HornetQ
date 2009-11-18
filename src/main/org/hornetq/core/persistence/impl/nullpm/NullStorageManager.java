@@ -97,7 +97,7 @@ public class NullStorageManager implements StorageManager
    {
    }
 
-   public void storeReference(final long queueID, final long messageID) throws Exception
+   public void storeReference(final long queueID, final long messageID, boolean last) throws Exception
    {
    }
 

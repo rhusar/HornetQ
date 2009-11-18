@@ -13,12 +13,11 @@
 
 package org.hornetq.core.message.impl;
 
+import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.PACKET_HEADERS_SIZE;
 import static org.hornetq.utils.DataConstants.SIZE_BOOLEAN;
 import static org.hornetq.utils.DataConstants.SIZE_BYTE;
-import static org.hornetq.utils.DataConstants.SIZE_INT;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -83,18 +82,17 @@ public abstract class MessageImpl implements Message
    protected boolean durable;
 
    /** GMT milliseconds at which this message expires. 0 means never expires * */
-   private long expiration;
+   protected long expiration;
 
-   private long timestamp;
+   protected long timestamp;
 
-   private TypedProperties properties;
+   protected TypedProperties properties;
 
-   private byte priority;
+   protected byte priority;
 
-   private HornetQBuffer body;
+   protected HornetQBuffer buffer;
 
-   /** Used on LargeMessages */
-   private InputStream bodyInputStream;
+   //private int encodeSize = -1;
 
    // Constructors --------------------------------------------------
 
@@ -117,7 +115,7 @@ public abstract class MessageImpl implements Message
                          final long expiration,
                          final long timestamp,
                          final byte priority,
-                         final HornetQBuffer body)
+                         final HornetQBuffer buffer)
    {
       this();
       this.type = type;
@@ -125,43 +123,9 @@ public abstract class MessageImpl implements Message
       this.expiration = expiration;
       this.timestamp = timestamp;
       this.priority = priority;
-      this.body = body;
+      this.buffer = buffer;
    }
-
-   /*
-    * Copy constructor
-    */
-   protected MessageImpl(final MessageImpl other)
-   {
-      this();
-      messageID = other.messageID;
-      destination = other.destination;
-      type = other.type;
-      durable = other.durable;
-      expiration = other.expiration;
-      timestamp = other.timestamp;
-      priority = other.priority;
-      properties = new TypedProperties(other.properties);
-      body = other.body;
-   }
-
-   /*
-    * Copy constructor
-    */
-   protected MessageImpl(final Message other)
-   {
-      this();
-      messageID = other.getMessageID();
-      destination = other.getDestination();
-      type = other.getType();
-      durable = other.isDurable();
-      expiration = other.getExpiration();
-      timestamp = other.getTimestamp();
-      priority = other.getPriority();
-      properties = new TypedProperties(other.getProperties());
-      body = other.getBody();
-   }
-
+   
    protected MessageImpl(final long messageID)
    {
       this();
@@ -170,32 +134,25 @@ public abstract class MessageImpl implements Message
 
    // Message implementation ----------------------------------------
 
-   public void encode(final HornetQBuffer buffer)
-   {
-      encodeHeadersAndProperties(buffer);
-      buffer.writeInt(getBodySize());
-      encodeBody(buffer);
-   }
+//   public void encode(final HornetQBuffer buffer)
+//   {
+//      encodeHeadersAndProperties(buffer);
+//      buffer.writeInt(getBodySize());
+//      encodeBody(buffer);
+//   }
 
    public int getEncodeSize()
    {
-      return getHeadersAndPropertiesEncodeSize() + SIZE_INT + getBodySize();
+//      return getHeadersAndPropertiesEncodeSize() + SIZE_INT + getBodySize();
+      
+      //log.info("getting encode size, writer index is " + buffer.writerIndex(), new Exception());
+      
+      return buffer.writerIndex() - PACKET_HEADERS_SIZE;
    }
-
-   public int getHeadersAndPropertiesEncodeSize()
-   {
-      return SIZE_LONG + /* Destination */SimpleString.sizeofString(destination) +
-      /* Type */SIZE_BYTE +
-      /* Durable */SIZE_BOOLEAN +
-      /* Expiration */SIZE_LONG +
-      /* Timestamp */SIZE_LONG +
-      /* Priority */SIZE_BYTE +
-      /* PropertySize and Properties */properties.getEncodeSize();
-   }
-
+  
    public int getBodySize()
    {
-      return body.writerIndex();
+      return buffer.writerIndex();
    }
 
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
@@ -209,40 +166,34 @@ public abstract class MessageImpl implements Message
       buffer.writeByte(priority);
       properties.encode(buffer);
    }
-
-   public void encodeBody(final HornetQBuffer buffer)
-   {
-      HornetQBuffer localBody = getBody();
-      buffer.writeBytes(localBody.array(), 0, localBody.writerIndex());
-   }
+   
+//   public void encodeBody(final HornetQBuffer buffer)
+//   {
+//      HornetQBuffer localBody = getBuffer();
+//      buffer.writeBytes(localBody.array(), 0, localBody.writerIndex());
+//   }
 
    public void decode(final HornetQBuffer buffer)
    {
       decodeHeadersAndProperties(buffer);
 
-      decodeBody(buffer);
+      this.buffer = buffer;
    }
+   
+ 
 
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
    {
       messageID = buffer.readLong();
+      log.info("message id is " + messageID);
       destination = buffer.readSimpleString();
+      log.info("destination is " + destination);
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();
       timestamp = buffer.readLong();
       priority = buffer.readByte();
       properties.decode(buffer);
-   }
-
-   public void decodeBody(final HornetQBuffer buffer)
-   {
-      int len = buffer.readInt();
-      byte[] bytes = new byte[len];
-      buffer.readBytes(bytes);
-
-      // Reuse the same body on the initial body created
-      body = ChannelBuffers.dynamicBuffer(bytes);
    }
 
    public long getMessageID()
@@ -315,21 +266,7 @@ public abstract class MessageImpl implements Message
       return System.currentTimeMillis() - expiration >= 0;
    }
 
-   /**
-    * @return the bodyInputStream
-    */
-   public InputStream getBodyInputStream()
-   {
-      return bodyInputStream;
-   }
-
-   /**
-    * @param bodyInputStream the bodyInputStream to set
-    */
-   public void setBodyInputStream(final InputStream bodyInputStream)
-   {
-      this.bodyInputStream = bodyInputStream;
-   }
+ 
 
    public Map<String, Object> toMap()
    {
@@ -647,19 +584,11 @@ public abstract class MessageImpl implements Message
       return properties;
    }
 
-   // Body
-   // -------------------------------------------------------------------------------------
-
-   public HornetQBuffer getBody()
+   public HornetQBuffer getBuffer()
    {
-      return body;
+      return buffer;
    }
 
-   public void setBody(final HornetQBuffer body)
-   {
-      this.body = body;
-   }
-   
    public BodyEncoder getBodyEncoder()
    {
       return new DecodingContext();
@@ -700,10 +629,23 @@ public abstract class MessageImpl implements Message
 
       public int encode(HornetQBuffer bufferOut, int size)
       {
-         bufferOut.writeBytes(getBody(), lastPos, size);
+         bufferOut.writeBytes(getBuffer(), lastPos, size);
          lastPos += size;
          return size;
       }
+   }
+   
+   //FIXME - all this stuff only used by large messages, move it!
+   
+   public int getHeadersAndPropertiesEncodeSize()
+   {
+      return SIZE_LONG + /* Destination */SimpleString.sizeofString(destination) +
+      /* Type */SIZE_BYTE +
+      /* Durable */SIZE_BOOLEAN +
+      /* Expiration */SIZE_LONG +
+      /* Timestamp */SIZE_LONG +
+      /* Priority */SIZE_BYTE +
+      /* PropertySize and Properties */properties.getEncodeSize();
    }
 
 }

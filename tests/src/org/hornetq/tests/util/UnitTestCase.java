@@ -842,7 +842,7 @@ public class UnitTestCase extends TestCase
 
       message.setMessageID(id);
 
-      message.getBody().writeString(UUID.randomUUID().toString());
+      message.getBuffer().writeString(UUID.randomUUID().toString());
       
       message.setDestination(new SimpleString("foo"));
 
@@ -873,7 +873,7 @@ public class UnitTestCase extends TestCase
                                                                 0,
                                                                 System.currentTimeMillis(),
                                                                 (byte)1);
-      message.getBody().writeString(s);
+      message.getBuffer().writeString(s);
       return message;
    }
    

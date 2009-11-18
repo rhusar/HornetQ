@@ -102,7 +102,7 @@ public class FilterTest  extends UnitTestCase
    public void testHQSize() throws Exception
    {
       message.setDestination(RandomUtil.randomSimpleString());      
-      message.setBody(ChannelBuffers.wrappedBuffer(RandomUtil.randomBytes(1)));
+      message.setBuffer(ChannelBuffers.wrappedBuffer(RandomUtil.randomBytes(1)));
       assertTrue(message.getEncodeSize() < 1024);
       
       Filter moreThan128 = FilterImpl.createFilter(new SimpleString("HQSize > 128"));
@@ -111,7 +111,7 @@ public class FilterTest  extends UnitTestCase
       assertFalse(moreThan128.match(message));
       assertTrue(lessThan1024.match(message));
       
-      message.setBody(ChannelBuffers.wrappedBuffer(RandomUtil.randomBytes(1024)));
+      message.setBuffer(ChannelBuffers.wrappedBuffer(RandomUtil.randomBytes(1024)));
 
       assertTrue(moreThan128.match(message));
       assertFalse(lessThan1024.match(message));

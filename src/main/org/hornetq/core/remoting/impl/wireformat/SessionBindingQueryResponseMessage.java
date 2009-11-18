@@ -64,7 +64,7 @@ public class SessionBindingQueryResponseMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeBoolean(exists);
       buffer.writeInt(queueNames.size());
@@ -75,7 +75,7 @@ public class SessionBindingQueryResponseMessage extends PacketImpl
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       exists = buffer.readBoolean();
       int numQueues = buffer.readInt();
@@ -88,7 +88,7 @@ public class SessionBindingQueryResponseMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      int size = BASIC_PACKET_SIZE + DataConstants.SIZE_BOOLEAN + DataConstants.SIZE_INT;
+      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_BOOLEAN + DataConstants.SIZE_INT;
       for (SimpleString queueName : queueNames)
       {
          size += queueName.sizeof();

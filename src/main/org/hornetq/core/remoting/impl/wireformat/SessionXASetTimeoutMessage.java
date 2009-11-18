@@ -54,17 +54,17 @@ public class SessionXASetTimeoutMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_INT;
+      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(timeoutSeconds);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       timeoutSeconds = buffer.readInt();
    }

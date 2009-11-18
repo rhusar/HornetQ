@@ -75,7 +75,7 @@ public class SessionSendLargeMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(largeMessageHeader.length);
       buffer.writeBytes(largeMessageHeader);
@@ -83,7 +83,7 @@ public class SessionSendLargeMessage extends PacketImpl
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       int largeMessageLength = buffer.readInt();
 
@@ -96,7 +96,7 @@ public class SessionSendLargeMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      int size = BASIC_PACKET_SIZE + DataConstants.SIZE_INT +
+      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT +
                  largeMessageHeader.length +
                  DataConstants.SIZE_LONG;
 

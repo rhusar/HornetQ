@@ -36,7 +36,7 @@ public class SessionCloseMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE;
+      return PACKET_HEADERS_SIZE;
    }
 
    @Override

@@ -894,7 +894,8 @@ public class JournalImpl implements TestableJournal
       appendUpdateRecord(id, recordType, new ByteArrayEncoding(record), sync);
    }
 
-   public void appendUpdateRecord(final long id, final byte recordType, final EncodingSupport record, final boolean sync) throws Exception
+   public void appendUpdateRecord(final long id, final byte recordType, final EncodingSupport record, final boolean sync
+                                  ) throws Exception
    {
       if (state != STATE_LOADED)
       {
@@ -907,7 +908,6 @@ public class JournalImpl implements TestableJournal
 
       try
       {
-
          JournalRecord jrnRecord = records.get(id);
 
          if (jrnRecord == null)
@@ -925,6 +925,8 @@ public class JournalImpl implements TestableJournal
          writeUpdateRecord(-1, id, recordType, record, size, bb);
 
          callback = getSyncCallback(sync);
+         
+        // log.info("callback is " + callback);
 
          lockAppend.lock();
          try
@@ -955,6 +957,7 @@ public class JournalImpl implements TestableJournal
       if (callback != null)
       {
          callback.waitCompletion();
+        // log.info("waited completion");
       }
    }
 
@@ -1393,8 +1396,8 @@ public class JournalImpl implements TestableJournal
     * @see JournalImpl#load(LoaderCallback)
     */
    public synchronized JournalLoadInformation load(final List<RecordInfo> committedRecords,
-                                               final List<PreparedTransactionInfo> preparedTransactions,
-                                               final TransactionFailureCallback failureCallback) throws Exception
+                                                   final List<PreparedTransactionInfo> preparedTransactions,
+                                                   final TransactionFailureCallback failureCallback) throws Exception
    {
       final Set<Long> recordsToDelete = new HashSet<Long>();
       final List<RecordInfo> records = new ArrayList<RecordInfo>();
@@ -2570,7 +2573,7 @@ public class JournalImpl implements TestableJournal
          {
             file.getFile().close();
          }
-         
+
          fileFactory.stop();
 
          currentFile = null;
@@ -2776,7 +2779,6 @@ public class JournalImpl implements TestableJournal
 
    private List<JournalFile> orderFiles() throws Exception
    {
-
       List<String> fileNames = fileFactory.listFiles(fileExtension);
 
       List<JournalFile> orderedFiles = new ArrayList<JournalFile>(fileNames.size());
@@ -2856,7 +2858,9 @@ public class JournalImpl implements TestableJournal
          if (!currentFile.getFile().fits(size))
          {
             currentFile.getFile().enableAutoFlush();
+
             moveNextFile(false);
+
             currentFile.getFile().disableAutoFlush();
 
             // The same check needs to be done at the new file also
@@ -3239,7 +3243,7 @@ public class JournalImpl implements TestableJournal
       {
          if (sync)
          {
-            return SimpleWaitIOCallback.getInstance();
+            return new SimpleWaitIOCallback();
          }
          else
          {
@@ -3507,7 +3511,7 @@ public class JournalImpl implements TestableJournal
       private PerfBlast(final int pages)
       {
          super("hornetq-perfblast-thread");
-         
+
          this.pages = pages;
       }
 
@@ -3517,11 +3521,11 @@ public class JournalImpl implements TestableJournal
          {
             lockAppend.lock();
 
-            HornetQBuffer bb = newBuffer(128 * 1024);
+            HornetQBuffer bb = newBuffer(490 * 1024);
 
             for (int i = 0; i < pages; i++)
             {
-               appendRecord(bb, false, false, null, null);
+               appendRecord(bb, false, true, null, null);
             }
 
             lockAppend.unlock();

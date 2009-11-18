@@ -295,7 +295,7 @@ public class PagingStoreImplTest extends UnitTestCase
       for (int i = 0; i < 10; i++)
       {
          assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-         assertEqualsByteArrays(buffers.get(i).array(), msg.get(i).getMessage(null).getBody().array());
+         assertEqualsByteArrays(buffers.get(i).array(), msg.get(i).getMessage(null).getBuffer().array());
       }
 
    }
@@ -366,7 +366,7 @@ public class PagingStoreImplTest extends UnitTestCase
          for (int i = 0; i < 5; i++)
          {
             assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-            assertEqualsByteArrays(buffers.get(pageNr * 5 + i).array(), msg.get(i).getMessage(null).getBody().array());
+            assertEqualsByteArrays(buffers.get(pageNr * 5 + i).array(), msg.get(i).getMessage(null).getBuffer().array());
          }
       }
 
@@ -410,7 +410,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(0l, msgs.get(0).getMessage(null).getMessageID());
 
-      assertEqualsByteArrays(buffers.get(0).array(), msgs.get(0).getMessage(null).getBody().array());
+      assertEqualsByteArrays(buffers.get(0).array(), msgs.get(0).getMessage(null).getBuffer().array());
 
       assertEquals(1, storeImpl.getNumberOfPages());
 
@@ -589,14 +589,14 @@ public class PagingStoreImplTest extends UnitTestCase
 
          for (PagedMessage msg : msgs)
          {
-            long id = msg.getMessage(null).getBody().readLong();
-            msg.getMessage(null).getBody().resetReaderIndex();
+            long id = msg.getMessage(null).getBuffer().readLong();
+            msg.getMessage(null).getBuffer().resetReaderIndex();
 
             ServerMessage msgWritten = buffers.remove(id);
             buffers2.put(id, msg.getMessage(null));
             assertNotNull(msgWritten);
             assertEquals(msg.getMessage(null).getDestination(), msgWritten.getDestination());
-            assertEqualsByteArrays(msgWritten.getBody().array(), msg.getMessage(null).getBody().array());
+            assertEqualsByteArrays(msgWritten.getBuffer().array(), msg.getMessage(null).getBuffer().array());
          }
       }
 
@@ -662,11 +662,11 @@ public class PagingStoreImplTest extends UnitTestCase
          for (PagedMessage msg : msgs)
          {
 
-            long id = msg.getMessage(null).getBody().readLong();
+            long id = msg.getMessage(null).getBuffer().readLong();
             ServerMessage msgWritten = buffers2.remove(id);
             assertNotNull(msgWritten);
             assertEquals(msg.getMessage(null).getDestination(), msgWritten.getDestination());
-            assertEqualsByteArrays(msgWritten.getBody().array(), msg.getMessage(null).getBody().array());
+            assertEqualsByteArrays(msgWritten.getBuffer().array(), msg.getMessage(null).getBuffer().array());
          }
       }
 
@@ -675,9 +675,9 @@ public class PagingStoreImplTest extends UnitTestCase
       lastPage.close();
       assertEquals(1, lastMessages.size());
 
-      lastMessages.get(0).getMessage(null).getBody().resetReaderIndex();
-      assertEquals(lastMessages.get(0).getMessage(null).getBody().readLong(), lastMessageId);
-      assertEqualsByteArrays(lastMessages.get(0).getMessage(null).getBody().array(), lastMsg.getBody().array());
+      lastMessages.get(0).getMessage(null).getBuffer().resetReaderIndex();
+      assertEquals(lastMessages.get(0).getMessage(null).getBuffer().readLong(), lastMessageId);
+      assertEqualsByteArrays(lastMessages.get(0).getMessage(null).getBuffer().array(), lastMsg.getBuffer().array());
 
       assertEquals(0, buffers2.size());
 

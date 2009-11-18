@@ -115,8 +115,8 @@ public class MessageImplTest extends UnitTestCase
          message.setPriority(priority2);
          assertEquals(priority2, message.getPriority());
          
-         message.setBody(body);
-         assertTrue(body == message.getBody());
+         message.setBuffer(body);
+         assertTrue(body == message.getBuffer());
       }      
    }
    
@@ -149,7 +149,7 @@ public class MessageImplTest extends UnitTestCase
       Message msg = new ClientMessageImpl(false); 
 
       byte[] bytes = new byte[]{(byte)1, (byte)2, (byte)3};
-      msg.setBody(ChannelBuffers.wrappedBuffer(bytes));
+      msg.setBuffer(ChannelBuffers.wrappedBuffer(bytes));
          
       msg.setDestination(address);
       msg.putStringProperty(new SimpleString("Key"), new SimpleString("This String is worthless!"));
@@ -300,7 +300,7 @@ public class MessageImplTest extends UnitTestCase
 
       assertEquals(msg1.getType(), msg2.getType());         
 
-      assertEqualsByteArrays(msg1.getBody().array(), msg2.getBody().array());      
+      assertEqualsByteArrays(msg1.getBuffer().array(), msg2.getBuffer().array());      
 
       assertEquals(msg1.getDestination(), msg2.getDestination());
       

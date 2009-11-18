@@ -237,8 +237,10 @@ public class ClientProducerImpl implements ClientProducerInternal
       session.workDone();
 
       boolean isLarge;
+      
+      int encodeSize = msg.getEncodeSize();
 
-      if (msg.getBodyInputStream() != null || msg.getEncodeSize() >= minLargeMessageSize || msg.isLargeMessage())
+      if (msg.getBodyInputStream() != null || encodeSize >= minLargeMessageSize || msg.isLargeMessage())
       {
          isLarge = true;
       }
@@ -270,7 +272,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
          if (!isLarge)
          {
-            theCredits.acquireCredits(msg.getEncodeSize());
+            theCredits.acquireCredits(encodeSize);
          }
       }
       catch (InterruptedException e)
@@ -303,9 +305,9 @@ public class ClientProducerImpl implements ClientProducerInternal
       }
 
       // msg.getBody() could be Null on LargeServerMessage
-      if (msg.getBodyInputStream() == null && msg.getBody() != null)
+      if (msg.getBodyInputStream() == null && msg.getBuffer() != null)
       {
-         msg.getBody().readerIndex(0);
+         msg.getBuffer().readerIndex(0);
       }
 
       HornetQBuffer headerBuffer = ChannelBuffers.buffer(headerSize);

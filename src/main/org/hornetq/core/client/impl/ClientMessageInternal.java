@@ -14,6 +14,7 @@
 package org.hornetq.core.client.impl;
 
 import org.hornetq.core.client.ClientMessage;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * A ClientMessageInternal
@@ -40,4 +41,7 @@ public interface ClientMessageInternal extends ClientMessage
     * Discard unused packets (used on large-message)
     */
    void discardLargeBody();    
+   
+
+   void setBuffer(HornetQBuffer buffer);
 }

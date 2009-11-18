@@ -13,7 +13,9 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
@@ -30,11 +32,13 @@ public class SessionSendMessage extends PacketImpl
 {
    // Constants -----------------------------------------------------
 
+   private static final Logger log = Logger.getLogger(SessionSendMessage.class);
+   
    // Attributes ----------------------------------------------------
 
-   private Message clientMessage;
+   private Message sentMessage;
 
-   private ServerMessage serverMessage;
+   private ServerMessage receivedMessage;
 
    private boolean requiresResponse;
 
@@ -46,7 +50,7 @@ public class SessionSendMessage extends PacketImpl
    {
       super(SESS_SEND);
 
-      clientMessage = message;
+      sentMessage = message;
 
       this.requiresResponse = requiresResponse;
    }
@@ -60,12 +64,12 @@ public class SessionSendMessage extends PacketImpl
 
    public Message getClientMessage()
    {
-      return clientMessage;
+      return sentMessage;
    }
 
    public ServerMessage getServerMessage()
    {
-      return serverMessage;
+      return receivedMessage;
    }
 
    public boolean isRequiresResponse()
@@ -74,40 +78,63 @@ public class SessionSendMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public HornetQBuffer encode(final RemotingConnection connection)
    {
-      if (clientMessage != null)
-      {
-         clientMessage.encode(buffer);
-      }
-      else
-      {
-         // If we're replicating a buffer to a backup node then we encode the serverMessage not the clientMessage
-         serverMessage.encode(buffer);
-      }
-
+      log.info("Encoding session send message");
+      
+      HornetQBuffer buffer = sentMessage.getBuffer();
+      
+      log.info("ENCODE ** size is " + buffer.writerIndex());
+      
       buffer.writeBoolean(requiresResponse);
+
+      // At this point, the rest of the message has already been encoded into the buffer
+      size = buffer.writerIndex();
+            
+
+      buffer.setIndex(0, 0);
+
+      // The standard header fields
+
+      int len = size - DataConstants.SIZE_INT;
+      buffer.writeInt(len);
+      buffer.writeByte(type);
+      buffer.writeLong(channelID);
+      buffer.writeInt(size);
+      
+      buffer.setIndex(0, size);
+
+      return buffer;
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
-      // TODO can be optimised
+      receivedMessage = new ServerMessageImpl();
 
-      serverMessage = new ServerMessageImpl();
+      sentMessage = receivedMessage;
+      
+      //fast forward past the size byte
+      buffer.readInt();
 
-      clientMessage = serverMessage;
-
-      serverMessage.decode(buffer);
-
-      serverMessage.getBody().resetReaderIndex();
+      log.info("********** server message ");
+                 
+      receivedMessage.decode(buffer);
+            
+      receivedMessage.getBuffer().resetReaderIndex();
 
       requiresResponse = buffer.readBoolean();
+      
+      //reset the writer index back one boolean since when we deliver to the client we will write the extra fields on here
+      
+      //buffer.setIndex(0, buffer.writerIndex() - DataConstants.SIZE_BOOLEAN);
+      
+      log.info("SEND MESSAGE DECODE, WRITER INDEX IS " + buffer.writerIndex());
    }
 
    public int getRequiredBufferSize()
    {
-      int size = BASIC_PACKET_SIZE + clientMessage.getEncodeSize() + DataConstants.SIZE_BOOLEAN;
+      int size = PACKET_HEADERS_SIZE + sentMessage.getEncodeSize() + DataConstants.SIZE_BOOLEAN;
 
       return size;
    }

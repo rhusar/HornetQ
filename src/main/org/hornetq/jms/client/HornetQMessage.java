@@ -232,31 +232,7 @@ public class HornetQMessage implements javax.jms.Message
    private String jmsType;
 
    // Constructors --------------------------------------------------
-   /**
-    * constructors for test purposes only
-    */
-   public HornetQMessage()
-   {
-      message = new ClientMessageImpl(HornetQMessage.TYPE,
-                                      true,
-                                      0,
-                                      System.currentTimeMillis(),
-                                      (byte)4,
-                                      ChannelBuffers.dynamicBuffer(1024));
-
-   }
-
-   public HornetQMessage(final byte type)
-   {
-      message = new ClientMessageImpl(type,
-                                      true,
-                                      0,
-                                      System.currentTimeMillis(),
-                                      (byte)4,
-                                      ChannelBuffers.dynamicBuffer(1024));
-
-   }
-
+   
    /*
     * Create a new message prior to sending
     */
@@ -351,6 +327,7 @@ public class HornetQMessage implements javax.jms.Message
       {
          throw new JMSException("JMSMessageID must start with ID:");
       }
+      
       if (jmsMessageID == null)
       {
          message.removeProperty(HORNETQ_MESSAGE_ID);
@@ -359,6 +336,7 @@ public class HornetQMessage implements javax.jms.Message
       {
          message.putStringProperty(HORNETQ_MESSAGE_ID, new SimpleString(jmsMessageID));
       }
+      
       msgID = jmsMessageID;
    }
 
@@ -755,6 +733,7 @@ public class HornetQMessage implements javax.jms.Message
    public void setBooleanProperty(final String name, final boolean value) throws JMSException
    {
       checkProperty(name, value);
+      
       message.putBooleanProperty(new SimpleString(name), value);
    }
 
@@ -878,12 +857,13 @@ public class HornetQMessage implements javax.jms.Message
 
    public void doBeforeSend() throws Exception
    {
-      message.getBody().resetReaderIndex();
+      message.getBuffer().resetReaderIndex();
    }
 
    public void doBeforeReceive() throws Exception
    {
-      HornetQBuffer body = message.getBody();
+      HornetQBuffer body = message.getBuffer();
+      
       if (body != null)
       {
          body.resetReaderIndex();
@@ -985,10 +965,10 @@ public class HornetQMessage implements javax.jms.Message
       }
    }
 
-   protected HornetQBuffer getBody()
-   {
-      return message.getBody();
-   }
+//   protected HornetQBuffer getBody()
+//   {
+//      return message.getBody();
+//   }
 
    // Private ------------------------------------------------------------
 

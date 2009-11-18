@@ -158,11 +158,11 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
       return getHeadersAndPropertiesEncodeSize();
    }
 
-   @Override
-   public void encode(final HornetQBuffer buffer)
-   {
-      encodeHeadersAndProperties(buffer);
-   }
+//   @Override
+//   public void encode(final HornetQBuffer buffer)
+//   {
+//      encodeHeadersAndProperties(buffer);
+//   }
 
    @Override
    public void decode(final HornetQBuffer buffer)
@@ -186,6 +186,7 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
       }
    }
 
+   @Override
    public BodyEncoder getBodyEncoder()
    {
       return new DecodingContext();

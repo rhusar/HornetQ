@@ -229,7 +229,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    public int read(final ByteBuffer bytes) throws Exception
    {
-      IOCompletion waitCompletion = SimpleWaitIOCallback.getInstance();
+      IOCompletion waitCompletion = new SimpleWaitIOCallback();
 
       int bytesRead = read(bytes, waitCompletion);
 
@@ -281,7 +281,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
    {
       if (sync)
       {
-         IOCompletion completion = SimpleWaitIOCallback.getInstance();
+         IOCompletion completion = new SimpleWaitIOCallback();
   
          writeDirect(bytes, true, completion);
   

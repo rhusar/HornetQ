@@ -488,7 +488,7 @@ public class BindingsImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.message.Message#getBody()
        */
-      public HornetQBuffer getBody()
+      public HornetQBuffer getBuffer()
       {
 
          return null;
@@ -737,7 +737,7 @@ public class BindingsImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.message.Message#setBody(org.hornetq.core.remoting.spi.HornetQBuffer)
        */
-      public void setBody(final HornetQBuffer body)
+      public void setBuffer(final HornetQBuffer body)
       {
 
       }

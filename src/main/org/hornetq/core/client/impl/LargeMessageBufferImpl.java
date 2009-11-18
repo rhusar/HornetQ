@@ -835,7 +835,13 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       readerIndex += 4;
       return v;
    }
-
+   
+   public int readInt(final int pos)
+   {
+      int v = getInt(pos);
+      return v;
+   }
+   
    public long readUnsignedInt()
    {
       return readInt() & 0xFFFFFFFFL;

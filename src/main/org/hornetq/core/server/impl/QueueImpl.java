@@ -132,6 +132,8 @@ public class QueueImpl implements Queue
    private volatile SimpleString expiryAddress;
 
    private int pos;
+   
+   private final boolean dontAdd;
 
    public QueueImpl(final long id,
                     final SimpleString address,
@@ -176,6 +178,8 @@ public class QueueImpl implements Queue
       {
          expiryAddress = null;
       }
+      
+      this.dontAdd = System.getProperty("org.hornetq.opt.dontadd") != null;
    }
 
    // Bindable implementation -------------------------------------------------------------------------------------
@@ -1286,6 +1290,11 @@ public class QueueImpl implements Queue
 
    protected synchronized void add(final MessageReference ref, final boolean first)
    {
+      if (dontAdd)
+      {
+         return;
+      }
+      
       if (!first)
       {
          messagesAdded.incrementAndGet();

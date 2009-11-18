@@ -67,6 +67,8 @@ public interface HornetQBuffer
    void readBytes(byte[] bytes, int offset, int length);
 
    int readInt();
+   
+   int readInt(int pos);
 
    long readLong();
 

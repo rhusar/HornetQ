@@ -36,6 +36,7 @@ import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
+import org.hornetq.core.remoting.impl.wireformat.SessionReceiveLargeMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HandleStatus;
@@ -315,7 +316,8 @@ public class ServerConsumerImpl implements ServerConsumer
 
          props.putSimpleStringProperty(ManagementHelper.HDR_ROUTING_NAME, binding.getRoutingName());
 
-         props.putSimpleStringProperty(ManagementHelper.HDR_FILTERSTRING, filter == null ? null : filter.getFilterString());
+         props.putSimpleStringProperty(ManagementHelper.HDR_FILTERSTRING, filter == null ? null
+                                                                                        : filter.getFilterString());
 
          props.putIntProperty(ManagementHelper.HDR_DISTANCE, binding.getDistance());
 
@@ -344,8 +346,9 @@ public class ServerConsumerImpl implements ServerConsumer
          {
             promptDelivery(false);
 
-            ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID());
-            forcedDeliveryMessage.setBody(ChannelBuffers.EMPTY_BUFFER);
+            ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
+                                                                        ChannelBuffers.EMPTY_BUFFER);
+
             forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
             forcedDeliveryMessage.setDestination(messageQueue.getName());
 
@@ -581,6 +584,8 @@ public class ServerConsumerImpl implements ServerConsumer
          availableCredits.addAndGet(-packet.getRequiredBufferSize());
       }
 
+      log.info("*** delivering message to client");
+      
       channel.send(packet);
    }
 
@@ -668,10 +673,10 @@ public class ServerConsumerImpl implements ServerConsumer
 
                largeMessage.encodeHeadersAndProperties(headerBuffer);
 
-               SessionReceiveMessage initialPacket = new SessionReceiveMessage(id,
-                                                                               headerBuffer.array(),
-                                                                               largeMessage.getLargeBodySize(),
-                                                                               ref.getDeliveryCount());
+               SessionReceiveLargeMessage initialPacket = new SessionReceiveLargeMessage(id,
+                                                                                         headerBuffer.array(),
+                                                                                         largeMessage.getLargeBodySize(),
+                                                                                         ref.getDeliveryCount());
 
                context = largeMessage.getBodyEncoder();
 

@@ -78,7 +78,7 @@ public class ReplicatedDistributionTest extends ClusterTestBase
          {
             ClientMessage msg = sessionOne.createClientMessage(true);
             
-            msg.setBody(ChannelBuffers.wrappedBuffer(new byte[1024]));
+            msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
             
             msg.putIntProperty(new SimpleString("key"), i);
             
@@ -182,7 +182,7 @@ public class ReplicatedDistributionTest extends ClusterTestBase
          for (int i = 0; i < 100; i++)
          {
             ClientMessage msg = sessionOne.createClientMessage(true);
-            msg.setBody(ChannelBuffers.wrappedBuffer(new byte[1024]));
+            msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
             msg.putIntProperty(new SimpleString("key"), i);
             producer.send(msg);
          }

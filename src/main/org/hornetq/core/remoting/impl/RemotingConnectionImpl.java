@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
@@ -124,7 +125,9 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
       this.client = client;
 
-      this.executor = executor;
+      //this.executor = executor;
+      
+      this.executor = null;
    }
 
    // RemotingConnection implementation
@@ -326,7 +329,9 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
    // ----------------------------------------------------
 
    public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
-   {
+   {                 
+      log.info("decoding packet " + buffer);
+      
       final Packet packet = decoder.decode(buffer);
       
       if (executor == null || packet.getType() == PacketImpl.PING)

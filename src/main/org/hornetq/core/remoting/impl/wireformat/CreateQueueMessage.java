@@ -106,7 +106,7 @@ public class CreateQueueMessage extends PacketImpl
       return temporary;
    }
    
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeSimpleString(address);
       buffer.writeSimpleString(queueName);
@@ -115,7 +115,7 @@ public class CreateQueueMessage extends PacketImpl
       buffer.writeBoolean(temporary);
    }
 
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       address = buffer.readSimpleString();
       queueName = buffer.readSimpleString();
@@ -145,7 +145,7 @@ public class CreateQueueMessage extends PacketImpl
     */
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + address.sizeof() +
+      return PACKET_HEADERS_SIZE + address.sizeof() +
              queueName.sizeof() +
              SimpleString.sizeofNullableString(filterString) +
              DataConstants.SIZE_BOOLEAN +

@@ -114,7 +114,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          try
          {
-            msg1.getBody().readByte();
+            msg1.getBuffer().readByte();
             fail("Exception was expected");
          }
          catch (Throwable ignored)
@@ -200,7 +200,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          session.close();
@@ -224,7 +224,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          msg1.acknowledge();
@@ -241,7 +241,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          msg1.acknowledge();
@@ -307,7 +307,7 @@ public class LargeMessageTest extends LargeMessageTestBase
          assertEquals(1, msg.getDeliveryCount());
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg.getBuffer().readByte());
          }
          session.rollback();
 
@@ -322,7 +322,7 @@ public class LargeMessageTest extends LargeMessageTestBase
          msg.acknowledge();
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg.getBuffer().readByte());
          }
          assertEquals(2, msg.getDeliveryCount());
          msg.acknowledge();
@@ -410,7 +410,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int j = 0; j < messageSize; j++)
          {
-            assertEquals(getSamplebyte(j), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(j), msg1.getBuffer().readByte());
          }
 
          consumerExpiry.close();
@@ -428,7 +428,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
             for (int j = 0; j < messageSize; j++)
             {
-               assertEquals(getSamplebyte(j), msg1.getBody().readByte());
+               assertEquals(getSamplebyte(j), msg1.getBuffer().readByte());
             }
 
             consumerExpiry.close();
@@ -450,7 +450,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          session.commit();
@@ -545,7 +545,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int j = 0; j < messageSize; j++)
          {
-            assertEquals(getSamplebyte(j), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(j), msg1.getBuffer().readByte());
          }
 
          consumerExpiry.close();
@@ -562,7 +562,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
             for (int j = 0; j < messageSize; j++)
             {
-               assertEquals(getSamplebyte(j), msg1.getBody().readByte());
+               assertEquals(getSamplebyte(j), msg1.getBuffer().readByte());
             }
 
             consumerExpiry.close();
@@ -589,7 +589,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          session.commit();
@@ -674,7 +674,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          session.close();
@@ -698,7 +698,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg1.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg1.getBuffer().readByte());
          }
 
          msg1.acknowledge();
@@ -802,7 +802,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < messageSize; i++)
          {
-            assertEquals(getSamplebyte(i), msg2.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg2.getBuffer().readByte());
          }
 
          session.close();
@@ -1668,7 +1668,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
                assertNotNull(clientMessage);
 
-               assertEquals(numberOfBytes, clientMessage.getBody().writerIndex());
+               assertEquals(numberOfBytes, clientMessage.getBuffer().writerIndex());
 
                clientMessage.acknowledge();
 
@@ -1782,7 +1782,7 @@ public class LargeMessageTest extends LargeMessageTestBase
                {
                   for (int byteRead = 0; byteRead < SIZE; byteRead++)
                   {
-                     assertEquals(getSamplebyte(byteRead), msg.getBody().readByte());
+                     assertEquals(getSamplebyte(byteRead), msg.getBuffer().readByte());
                   }
                }
 
@@ -1883,7 +1883,7 @@ public class LargeMessageTest extends LargeMessageTestBase
                {
                   for (int byteRead = 0; byteRead < SIZE; byteRead++)
                   {
-                     assertEquals(getSamplebyte(byteRead), msg.getBody().readByte());
+                     assertEquals(getSamplebyte(byteRead), msg.getBuffer().readByte());
                   }
                }
 
@@ -2128,7 +2128,7 @@ public class LargeMessageTest extends LargeMessageTestBase
          
          for (int i = 0 ; i < LARGE_MESSAGE_SIZE; i++)
          {
-            assertEquals(getSamplebyte(i), msg.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg.getBuffer().readByte());
          }
          
          msg.acknowledge();
@@ -2223,7 +2223,7 @@ public class LargeMessageTest extends LargeMessageTestBase
             }
 
             message = session.createClientMessage(true);
-            message.setBody(bodyLocal);
+            message.setBuffer(bodyLocal);
 
             producer.send(message);
          }
@@ -2262,12 +2262,12 @@ public class LargeMessageTest extends LargeMessageTestBase
 
             try
             {
-               assertEqualsByteArrays(body.writerIndex(), body.array(), message2.getBody().array());
+               assertEqualsByteArrays(body.writerIndex(), body.array(), message2.getBuffer().array());
             }
             catch (AssertionFailedError e)
             {
                log.info("Expected buffer:" + dumbBytesHex(body.array(), 40));
-               log.info("Arriving buffer:" + dumbBytesHex(message2.getBody().array(), 40));
+               log.info("Arriving buffer:" + dumbBytesHex(message2.getBuffer().array(), 40));
                throw e;
             }
          }

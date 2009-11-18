@@ -63,7 +63,7 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
    }
 
    public void testMultipleMessages() throws Exception
@@ -88,11 +88,11 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
    }
 
    public void testFirstMessageReceivedButAckedAfter() throws Exception
@@ -110,11 +110,11 @@ public class LVQTest extends UnitTestCase
       assertNotNull(m);
       producer.send(m2);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
    }
 
    public void testFirstMessageReceivedAndCancelled() throws Exception
@@ -130,13 +130,13 @@ public class LVQTest extends UnitTestCase
       clientSession.start();
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       producer.send(m2);
       consumer.close();
       consumer = clientSession.createConsumer(qName1);
       m = consumer.receive(1000);
       assertNotNull(m);      
-      assertEquals("m2", m.getBody().readString());
+      assertEquals("m2", m.getBuffer().readString());
       m.acknowledge();      
       m = consumer.receiveImmediate();
       assertNull(m);
@@ -164,33 +164,33 @@ public class LVQTest extends UnitTestCase
       producer.send(m1);
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       producer.send(m2);
       m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
       producer.send(m3);
       m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       producer.send(m4);
       m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
       producer.send(m5);
       m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m5");
+      assertEquals(m.getBuffer().readString(), "m5");
       producer.send(m6);
       m = consumer.receive(1000);
       assertNotNull(m);
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
       consumer.close();
       consumer = clientSession.createConsumer(qName1);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
       m = consumer.receiveImmediate();
       assertNull(m);
    }
@@ -211,7 +211,7 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
    }
 
    public void testMultipleMessagesInTx() throws Exception
@@ -236,11 +236,11 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
       clientSessionTxReceives.commit();
       m = consumer.receiveImmediate();
       assertNull(m);
@@ -266,30 +266,30 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
       producer.send(m3);
       producer.send(m4);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
       clientSessionTxReceives.rollback();
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
    }
 
    public void testMultipleMessagesInTxSend() throws Exception
@@ -320,7 +320,7 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
    }
 
    public void testMultipleMessagesPersistedCorrectly() throws Exception
@@ -356,7 +356,7 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
       m = consumer.receiveImmediate();
       assertNull(m);
    }
@@ -395,7 +395,7 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
       m = consumer.receiveImmediate();
       assertNull(m);
    }
@@ -428,32 +428,32 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       producer.send(m2);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
       producer.send(m3);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       producer.send(m4);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
       producer.send(m5);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m5");
+      assertEquals(m.getBuffer().readString(), "m5");
       producer.send(m6);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");      
+      assertEquals(m.getBuffer().readString(), "m6");      
    }
 
    public void testMultipleAcksPersistedCorrectlyInTx() throws Exception
@@ -484,32 +484,32 @@ public class LVQTest extends UnitTestCase
       ClientMessage m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m1");
+      assertEquals(m.getBuffer().readString(), "m1");
       producer.send(m2);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m2");
+      assertEquals(m.getBuffer().readString(), "m2");
       producer.send(m3);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m3");
+      assertEquals(m.getBuffer().readString(), "m3");
       producer.send(m4);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m4");
+      assertEquals(m.getBuffer().readString(), "m4");
       producer.send(m5);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m5");
+      assertEquals(m.getBuffer().readString(), "m5");
       producer.send(m6);
       m = consumer.receive(1000);
       assertNotNull(m);
       m.acknowledge();
-      assertEquals(m.getBody().readString(), "m6");
+      assertEquals(m.getBuffer().readString(), "m6");
       clientSessionTxReceives.commit();      
    }
    

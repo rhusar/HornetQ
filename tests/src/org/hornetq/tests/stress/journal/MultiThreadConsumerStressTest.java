@@ -249,7 +249,7 @@ public class MultiThreadConsumerStressTest extends ServiceTestBase
                   System.out.println(Thread.currentThread().getName() + "::received #" + i);
                }
                ClientMessage msg = session.createClientMessage(true);
-               msg.setBody(ChannelBuffers.wrappedBuffer(new byte[1024]));
+               msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
                prod.send(msg);
             }
 

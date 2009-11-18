@@ -227,13 +227,13 @@ public class ProducerFlowControlTest extends ServiceTestBase
             {
                // log.info("got message " + count);
 
-               int availBytes = message.getBody().readableBytes();
+               int availBytes = message.getBuffer().readableBytes();
 
                assertEquals(messageSize, availBytes);
 
                byte[] bytes = new byte[availBytes];
 
-               message.getBody().readBytes(bytes);
+               message.getBuffer().readBytes(bytes);
 
                message.acknowledge();
 

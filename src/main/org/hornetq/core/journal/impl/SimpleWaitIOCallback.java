@@ -28,7 +28,6 @@ import org.hornetq.core.logging.Logger;
  */
 public class SimpleWaitIOCallback implements IOCompletion
 {
-
    private static final Logger log = Logger.getLogger(SimpleWaitIOCallback.class);
 
    private final CountDownLatch latch = new CountDownLatch(1);
@@ -36,16 +35,10 @@ public class SimpleWaitIOCallback implements IOCompletion
    private volatile String errorMessage;
 
    private volatile int errorCode = 0;
-
-   public static IOCompletion getInstance()
-   {
-      return new SimpleWaitIOCallback();
-   }
-
-
+   
    public void done()
-   {
-      latch.countDown();
+   {     
+      latch.countDown();      
    }
 
    public void onError(final int errorCode, final String errorMessage)
@@ -62,6 +55,7 @@ public class SimpleWaitIOCallback implements IOCompletion
    public void waitCompletion() throws Exception
    {
       latch.await();
+      
       if (errorMessage != null)
       {
          throw new HornetQException(errorCode, errorMessage);

@@ -90,7 +90,7 @@ public class PagingManagerImplTest extends UnitTestCase
 
       assertEquals(1, msgs.size());
 
-      assertEqualsByteArrays(msg.getBody().array(), (msgs.get(0).getMessage(null)).getBody().array());
+      assertEqualsByteArrays(msg.getBuffer().array(), (msgs.get(0).getMessage(null)).getBuffer().array());
 
       assertTrue(store.isPaging());
 

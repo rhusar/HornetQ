@@ -17,6 +17,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.BufferHandler;
 import org.hornetq.core.remoting.spi.ConnectionLifeCycleListener;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -35,14 +36,16 @@ class HornetQChannelHandler extends SimpleChannelHandler
    private static final Logger log = Logger.getLogger(HornetQChannelHandler.class);
 
    private final ChannelGroup group;
-   
+
    private final BufferHandler handler;
 
    private final ConnectionLifeCycleListener listener;
 
    volatile boolean active;
 
-   HornetQChannelHandler(ChannelGroup group, BufferHandler handler, ConnectionLifeCycleListener listener)
+   HornetQChannelHandler(final ChannelGroup group,
+                         final BufferHandler handler,
+                         final ConnectionLifeCycleListener listener)
    {
       this.group = group;
       this.handler = handler;
@@ -50,42 +53,42 @@ class HornetQChannelHandler extends SimpleChannelHandler
    }
 
    @Override
-   public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+   public void channelOpen(final ChannelHandlerContext ctx, final ChannelStateEvent e) throws Exception
    {
       group.add(e.getChannel());
       ctx.sendUpstream(e);
    }
 
    @Override
-   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+   public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception
    {
       ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
-      
+
       handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer));
    }
 
    @Override
-   public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+   public void channelDisconnected(final ChannelHandlerContext ctx, final ChannelStateEvent e) throws Exception
    {
       synchronized (this)
       {
          if (active)
          {
             listener.connectionDestroyed(e.getChannel().getId());
-            
+
             active = false;
          }
       }
    }
 
    @Override
-   public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+   public void channelClosed(final ChannelHandlerContext ctx, final ChannelStateEvent e) throws Exception
    {
       active = false;
    }
 
    @Override
-   public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
+   public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e) throws Exception
    {
       synchronized (this)
       {
@@ -93,9 +96,9 @@ class HornetQChannelHandler extends SimpleChannelHandler
          {
             return;
          }
-         
+
          log.error("Got exception on Netty channel", e.getCause());
-                  
+
          HornetQException me = new HornetQException(HornetQException.INTERNAL_ERROR, "Netty exception");
          me.initCause(e.getCause());
          try

@@ -60,20 +60,20 @@ public class CreateSessionResponseMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {     
       buffer.writeInt(serverVersion);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {      
       serverVersion = buffer.readInt();
    }
    
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_INT; 
+      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT; 
    }
 
    @Override

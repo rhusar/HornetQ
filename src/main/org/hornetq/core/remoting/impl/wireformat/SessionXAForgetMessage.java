@@ -56,15 +56,15 @@ public class SessionXAForgetMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + XidCodecSupport.getXidEncodeLength(xid);
+      return PACKET_HEADERS_SIZE + XidCodecSupport.getXidEncodeLength(xid);
    }
 
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       XidCodecSupport.encodeXid(xid, buffer);
    }
    
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       xid = XidCodecSupport.decodeXid(buffer);
    }

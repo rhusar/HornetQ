@@ -44,7 +44,6 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
 
    protected final long bufferTimeout;
 
-
    public AbstractSequentialFactory(final String journalDir,
                                     final boolean buffered,
                                     final int bufferSize,
@@ -53,6 +52,7 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
                                     final boolean logRates)
    {
       this.journalDir = journalDir;
+      log.info("** buffered?" + buffered);
       if (buffered)
       {
          timedBuffer = new TimedBuffer(bufferSize, bufferTimeout, flushOnSync, logRates);
@@ -116,7 +116,6 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          timedBuffer.setObserver(null);
       }
    }
-
 
    public void releaseBuffer(ByteBuffer buffer)
    {

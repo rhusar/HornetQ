@@ -292,7 +292,7 @@ public class ReplicationTest extends ServiceTestBase
 
          SimpleString dummy = new SimpleString("dummy");
          msg.setDestination(dummy);
-         msg.setBody(ChannelBuffers.wrappedBuffer(new byte[10]));
+         msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[10]));
 
          replicatedJournal.appendAddRecordTransactional(23, 24, (byte)1, new FakeData());
 

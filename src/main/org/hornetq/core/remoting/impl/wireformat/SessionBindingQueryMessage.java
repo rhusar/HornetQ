@@ -46,17 +46,17 @@ public class SessionBindingQueryMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + address.sizeof();
+      return PACKET_HEADERS_SIZE + address.sizeof();
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeSimpleString(address);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       address = buffer.readSimpleString();
    }

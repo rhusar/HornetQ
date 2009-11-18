@@ -28,7 +28,7 @@ import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.impl.wireformat.SessionConsumerCloseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionReceiveMessage;
+import org.hornetq.core.remoting.impl.wireformat.SessionReceiveLargeMessage;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TokenBucketLimiter;
@@ -473,7 +473,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       }
    }
 
-   public synchronized void handleLargeMessage(final SessionReceiveMessage packet) throws Exception
+   public synchronized void handleLargeMessage(final SessionReceiveLargeMessage packet) throws Exception
    {
       if (closing)
       {
@@ -482,10 +482,12 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       }
 
       // Flow control for the first packet, we will have others
-      // It's using the RequiredBufferSize as the getSize() could be different between transports
+      
       flowControl(packet.getRequiredBufferSize(), false);
 
-      ClientMessageInternal currentChunkMessage = new ClientMessageImpl(packet.getDeliveryCount());
+      ClientMessageInternal currentChunkMessage = new ClientMessageImpl();
+      
+      currentChunkMessage.setDeliveryCount(packet.getDeliveryCount());
 
       currentChunkMessage.decodeHeadersAndProperties(ChannelBuffers.wrappedBuffer(packet.getLargeMessageHeader()));
 
@@ -502,7 +504,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
       currentLargeMessageBuffer = new LargeMessageBufferImpl(this, packet.getLargeMessageSize(), 60, largeMessageCache);
 
-      currentChunkMessage.setBody(currentLargeMessageBuffer);
+      currentChunkMessage.setBuffer(currentLargeMessageBuffer);
 
       currentChunkMessage.setFlowControlSize(0);
 

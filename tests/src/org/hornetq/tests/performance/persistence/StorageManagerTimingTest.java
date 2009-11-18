@@ -176,7 +176,7 @@ public class StorageManagerTimingTest extends UnitTestCase
                   implMsg.putStringProperty(new SimpleString("Key"), new SimpleString("This String is worthless!"));
 
                   implMsg.setMessageID(i);
-                  implMsg.setBody(ChannelBuffers.wrappedBuffer(bytes));
+                  implMsg.setBuffer(ChannelBuffers.wrappedBuffer(bytes));
 
                   implMsg.setDestination(address);
 

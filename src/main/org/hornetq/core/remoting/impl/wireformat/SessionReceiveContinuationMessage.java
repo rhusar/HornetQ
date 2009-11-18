@@ -80,16 +80,16 @@ public class SessionReceiveContinuationMessage extends SessionContinuationMessag
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
-      super.encodeBody(buffer);
+      super.encodeRest(buffer);
       buffer.writeLong(consumerID);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
-      super.decodeBody(buffer);
+      super.decodeRest(buffer);
       consumerID = buffer.readLong();
    }
 

@@ -60,7 +60,7 @@ public class EncodeSizeTest extends UnitTestCase
          
          HornetQBuffer body = ChannelBuffers.dynamicBuffer(bytes);
          
-         clientMessage.setBody(body);
+         clientMessage.setBuffer(body);
          
          int clientEncodeSize = clientMessage.getEncodeSize();
              
@@ -104,7 +104,7 @@ public class EncodeSizeTest extends UnitTestCase
          
          HornetQBuffer body = ChannelBuffers.dynamicBuffer(bytes);
          
-         clientMessage.setBody(body);
+         clientMessage.setBuffer(body);
          
          int clientEncodeSize = clientMessage.getEncodeSize();
          

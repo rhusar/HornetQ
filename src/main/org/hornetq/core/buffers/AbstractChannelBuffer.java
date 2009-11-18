@@ -302,6 +302,13 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       readerIndex += 4;
       return v;
    }
+   
+   public int readInt(final int pos)
+   {
+      checkReadableBytes(4);
+      int v = getInt(pos);
+      return v;
+   }
 
    public long readUnsignedInt()
    {

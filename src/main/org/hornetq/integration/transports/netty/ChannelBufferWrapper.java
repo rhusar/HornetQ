@@ -20,11 +20,6 @@ import org.hornetq.utils.UTF8Util;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
- * Wraps Netty {@link ChannelBuffer} with {@link HornetQBuffer}.
- * Because there's neither {@code position()} nor {@code limit()} in a Netty
- * buffer.  {@link ChannelBuffer#readerIndex()} and {@link ChannelBuffer#writerIndex()}
- * are used as {@code position} and {@code limit} of the buffer respectively
- * instead.
  *
  * @author <a href="mailto:tlee@redhat.com">Trustin Lee</a>
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -35,7 +30,6 @@ import org.jboss.netty.buffer.ChannelBuffer;
  */
 public class ChannelBufferWrapper implements HornetQBuffer
 {
-
    private final ChannelBuffer buffer;
 
    /**
@@ -95,6 +89,11 @@ public class ChannelBufferWrapper implements HornetQBuffer
    public int readInt()
    {
       return buffer.readInt();
+   }
+   
+   public int readInt(final int pos)
+   {
+      return buffer.getInt(pos);
    }
 
    public long readLong()
@@ -156,12 +155,12 @@ public class ChannelBufferWrapper implements HornetQBuffer
    {
       buffer.writeBytes(src, srcIndex, length);
    }
-   
-   public void writeBytes(HornetQBuffer src, int srcIndex, int length)
+
+   public void writeBytes(final HornetQBuffer src, final int srcIndex, final int length)
    {
       byte bytes[] = new byte[length];
       src.readBytes(bytes, srcIndex, length);
-      this.writeBytes(bytes);      
+      this.writeBytes(bytes);
    }
 
    public void writeBytes(final byte[] src)

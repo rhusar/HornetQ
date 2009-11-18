@@ -90,7 +90,7 @@ public class ServerLargeMessageTest extends ServiceTestBase
          
          for (int i = 0 ; i < 2 * ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE; i++)
          {
-            assertEquals(getSamplebyte(i), msg.getBody().readByte());
+            assertEquals(getSamplebyte(i), msg.getBuffer().readByte());
          }
          
          msg.acknowledge();

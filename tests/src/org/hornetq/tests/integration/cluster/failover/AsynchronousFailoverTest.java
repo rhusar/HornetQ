@@ -218,7 +218,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
          {
             ClientMessage message = session.createClientMessage(true);
 
-            message.getBody().writeString("message" + i);
+            message.getBuffer().writeString("message" + i);
 
             message.putIntProperty("counter", i);
 
@@ -313,7 +313,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             {
                ClientMessage message = session.createClientMessage(true);
 
-               message.getBody().writeString("message" + i);
+               message.getBuffer().writeString("message" + i);
 
                message.putIntProperty("counter", i);
 

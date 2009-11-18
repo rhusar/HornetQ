@@ -63,34 +63,7 @@ public interface Message
 
    int getEncodeSize();
 
-   void encode(HornetQBuffer buffer);
-
-   void decode(HornetQBuffer buffer);
-
-   int getHeadersAndPropertiesEncodeSize();
-
-   void encodeHeadersAndProperties(HornetQBuffer buffer);
-
-   void decodeHeadersAndProperties(HornetQBuffer buffer);
-
-   int getBodySize();
-
    boolean isLargeMessage();
-
-   long getLargeBodySize();
-   
-   /** Used to encode Body over the wire when using large messages */
-   BodyEncoder getBodyEncoder();
-
-   /** Set the InputStream used on a message that will be sent over a producer */
-   void setBodyInputStream(InputStream stream);
-
-   /** Get the InputStream used on a message that will be sent over a producer */
-   InputStream getBodyInputStream();
-
-   void encodeBody(HornetQBuffer buffer);
-
-   void decodeBody(HornetQBuffer buffer);
 
    // Properties
    // ------------------------------------------------------------------
@@ -195,11 +168,21 @@ public interface Message
 
    Map<String, Object> toMap();
 
-   // Body
-   // ---------------------------------------------------------------------------------
-
-   HornetQBuffer getBody();
-
-   void setBody(HornetQBuffer body);
+   // FIXME - All this stuff is only necessary here for large messages - it should be refactored to be put in a better place
+   
+   
+   int getHeadersAndPropertiesEncodeSize();
+   
+   HornetQBuffer getBuffer();
+   
+   void encodeHeadersAndProperties(HornetQBuffer buffer);
+   
+   long getLargeBodySize();
+   
+   BodyEncoder getBodyEncoder();
+   
+   /** Get the InputStream used on a message that will be sent over a producer */
+   InputStream getBodyInputStream();
+   
 
 }

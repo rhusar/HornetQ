@@ -56,19 +56,19 @@ public class ReplicationDeleteMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_BYTE + DataConstants.SIZE_LONG;
+      return PACKET_HEADERS_SIZE + DataConstants.SIZE_BYTE + DataConstants.SIZE_LONG;
 
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeByte(journalID);
       buffer.writeLong(id);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       journalID = buffer.readByte();
       id = buffer.readLong();

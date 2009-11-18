@@ -50,14 +50,14 @@ public class ReplicationCompareDataMessage extends PacketImpl
    // Public --------------------------------------------------------
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + 
+      return PACKET_HEADERS_SIZE + 
              DataConstants.SIZE_INT + (journalInformation.length * (DataConstants.SIZE_INT + DataConstants.SIZE_LONG)) +
              DataConstants.SIZE_INT;
 
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(journalInformation.length);
       for (JournalLoadInformation info : journalInformation)
@@ -68,7 +68,7 @@ public class ReplicationCompareDataMessage extends PacketImpl
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       int numberOfJournals = buffer.readInt();
 

@@ -79,16 +79,16 @@ public class SessionSendContinuationMessage extends SessionContinuationMessage
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
-      super.encodeBody(buffer);
+      super.encodeRest(buffer);
       buffer.writeBoolean(requiresResponse);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
-      super.decodeBody(buffer);
+      super.decodeRest(buffer);
       requiresResponse = buffer.readBoolean();
    }
 

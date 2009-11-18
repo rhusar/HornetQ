@@ -50,7 +50,7 @@ public class CreateReplicationSessionMessage extends PacketImpl
    // Public --------------------------------------------------------
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE +
+      return PACKET_HEADERS_SIZE +
       // buffer.writeLong(sessionChannelID);
              DataConstants.SIZE_LONG +
              // buffer.writeInt(windowSize);
@@ -59,14 +59,14 @@ public class CreateReplicationSessionMessage extends PacketImpl
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeLong(sessionChannelID);
       buffer.writeInt(windowSize);
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       sessionChannelID = buffer.readLong();
       windowSize = buffer.readInt();

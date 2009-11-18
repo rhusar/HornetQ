@@ -32,7 +32,9 @@ public interface Packet
    
    byte getType();
 
-   int encode(HornetQBuffer buffer);
+   //int encode(HornetQBuffer buffer);
+   
+   HornetQBuffer encode(RemotingConnection connection);
       
    void decode(HornetQBuffer buffer);
    

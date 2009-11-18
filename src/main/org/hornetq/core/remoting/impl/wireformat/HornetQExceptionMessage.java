@@ -66,17 +66,17 @@ public class HornetQExceptionMessage extends PacketImpl
    
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + DataConstants.SIZE_INT + nullableStringEncodeSize(exception.getMessage());
+      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT + nullableStringEncodeSize(exception.getMessage());
    }
 
 
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(exception.getCode());
       buffer.writeNullableString(exception.getMessage());
    }
 
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       int code = buffer.readInt();
       String msg = buffer.readNullableString();

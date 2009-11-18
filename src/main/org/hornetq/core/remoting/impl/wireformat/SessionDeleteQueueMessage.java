@@ -63,15 +63,15 @@ public class SessionDeleteQueueMessage extends PacketImpl
 
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE + queueName.sizeof();
+      return PACKET_HEADERS_SIZE + queueName.sizeof();
    }
 
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeSimpleString(queueName);
    }
 
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
       queueName = buffer.readSimpleString();
    }

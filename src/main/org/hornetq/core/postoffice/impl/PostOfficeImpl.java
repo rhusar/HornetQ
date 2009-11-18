@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -348,7 +349,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                      long redistributionDelay = addressSettings.getRedistributionDelay();
 
                      if (redistributionDelay != -1)
-                     {                        
+                     {
                         queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
@@ -418,7 +419,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                      long redistributionDelay = addressSettings.getRedistributionDelay();
 
                      if (redistributionDelay != -1)
-                     {                       
+                     {
                         queue.addRedistributor(redistributionDelay, redistributorExecutorFactory.getExecutor());
                      }
                   }
@@ -467,7 +468,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
 
       String uid = UUIDGenerator.getInstance().generateStringUUID();
-    
+
       managementService.sendNotification(new Notification(uid, NotificationType.BINDING_ADDED, props));
    }
 
@@ -635,7 +636,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          bindings.route(message, context);
       }
 
-      if (context.getQueues().isEmpty())
+      if (context.getQueueCount() == 0)
       {
          // Send to DLA if appropriate
 
@@ -779,9 +780,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          // First send a reset message
 
-         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID());
-//         message.setDurable(true);
-         message.setBody(ChannelBuffers.EMPTY_BUFFER);
+         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.EMPTY_BUFFER);
+         // message.setDurable(true);
+
          message.setDestination(queueName);
          message.putBooleanProperty(HDR_RESET_QUEUE_DATA, true);
          routeDirect(message, queue, false);
@@ -863,7 +864,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       Transaction tx = context.getTransaction();
 
-      for (Queue queue : context.getQueues())
+      for (Queue queue : context.getNonDurableQueues())
       {
          MessageReference reference = message.createReference(queue);
 
@@ -872,10 +873,36 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          if (message.containsProperty(MessageImpl.HDR_SCHEDULED_DELIVERY_TIME))
          {
             Long scheduledDeliveryTime = message.getLongProperty(MessageImpl.HDR_SCHEDULED_DELIVERY_TIME);
+
             reference.setScheduledDeliveryTime(scheduledDeliveryTime);
          }
 
-         if (message.isDurable() && queue.isDurable())
+         if (storageManager.isReplicated())
+         {
+            storageManager.sync();
+         }
+
+         message.incrementRefCount(reference);
+      }
+
+      Iterator<Queue> iter = context.getDurableQueues().iterator();
+
+      while (iter.hasNext())
+      {
+         Queue queue = iter.next();
+
+         MessageReference reference = message.createReference(queue);
+
+         refs.add(reference);
+
+         if (message.containsProperty(MessageImpl.HDR_SCHEDULED_DELIVERY_TIME))
+         {
+            Long scheduledDeliveryTime = message.getLongProperty(MessageImpl.HDR_SCHEDULED_DELIVERY_TIME);
+
+            reference.setScheduledDeliveryTime(scheduledDeliveryTime);
+         }
+
+         if (message.isDurable())
          {
             int durableRefCount = message.incrementDurableRefCount();
 
@@ -899,7 +926,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             }
             else
             {
-               storageManager.storeReference(queue.getID(), message.getMessageID());
+               storageManager.storeReference(queue.getID(), message.getMessageID(), !iter.hasNext());
             }
 
             if (message.containsProperty(MessageImpl.HDR_SCHEDULED_DELIVERY_TIME))
@@ -973,11 +1000,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private ServerMessage createQueueInfoMessage(final NotificationType type, final SimpleString queueName)
    {
-      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID());
-      message.setBody(ChannelBuffers.EMPTY_BUFFER);
+      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.EMPTY_BUFFER);
 
       message.setDestination(queueName);
-//      message.setDurable(true);
+      // message.setDurable(true);
 
       String uid = UUIDGenerator.getInstance().generateStringUUID();
 

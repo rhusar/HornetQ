@@ -44,17 +44,17 @@ public class ReplicationSyncContextMessage extends PacketImpl
    @Override
    public int getRequiredBufferSize()
    {
-      return BASIC_PACKET_SIZE;
+      return PACKET_HEADERS_SIZE;
 
    }
 
    @Override
-   public void encodeBody(final HornetQBuffer buffer)
+   public void encodeRest(final HornetQBuffer buffer)
    {
    }
 
    @Override
-   public void decodeBody(final HornetQBuffer buffer)
+   public void decodeRest(final HornetQBuffer buffer)
    {
    }
 

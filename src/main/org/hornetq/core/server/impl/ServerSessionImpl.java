@@ -114,29 +114,28 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    // Static -------------------------------------------------------------------------------
    
-   private static int offset;
-
-   static
-   {
-      try
-      {
-         ServerMessage msg = new ServerMessageImpl();
-         
-         msg.setBody(ChannelBuffers.dynamicBuffer(0));
-   
-         msg.setDestination(new SimpleString("foobar"));
-   
-         int es = msg.getEncodeSize();
-   
-         int me = msg.getMemoryEstimate();
-   
-         offset = MessageReferenceImpl.getMemoryEstimate() + me - es;
-      }
-      catch (Exception e)
-      {
-         log.error("Failed to initialise mult and offset", e);
-      }
-   }
+   //TODO not actually used currently
+//   private static int offset;
+//
+//   static
+//   {
+//      try
+//      {
+//         ServerMessage msg = new ServerMessageImpl(1, ChannelBuffers.EMPTY_BUFFER);
+//
+//         msg.setDestination(new SimpleString("foobar"));
+//   
+//         int es = msg.getEncodeSize();
+//   
+//         int me = msg.getMemoryEstimate();
+//   
+//         offset = MessageReferenceImpl.getMemoryEstimate() + me - es;
+//      }
+//      catch (Exception e)
+//      {
+//         log.error("Failed to initialise mult and offset", e);
+//      }
+//   }
 
    // Attributes ----------------------------------------------------------------------------
 
@@ -1456,9 +1455,13 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleSend(final SessionSendMessage packet)
    {
+      log.info("Got message on server");
+      
       Packet response = null;
 
       ServerMessage message = packet.getServerMessage();
+      
+      log.info("server message is " + message);
 
       try
       {
@@ -1943,7 +1946,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    {      
       holder.outstandingCredits += credits;
 
-      Packet packet = new SessionProducerCreditsMessage(credits, address, offset);
+      Packet packet = new SessionProducerCreditsMessage(credits, address, -1);
 
       channel.send(packet);
    }
