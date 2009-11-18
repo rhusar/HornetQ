@@ -22,13 +22,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.hornetq.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.FailoverManager;
-import org.hornetq.core.completion.OperationContext;
-import org.hornetq.core.completion.impl.OperationContextImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.persistence.OperationContext;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;

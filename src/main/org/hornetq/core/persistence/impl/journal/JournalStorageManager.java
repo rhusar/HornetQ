@@ -31,7 +31,6 @@ import java.util.concurrent.Executor;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
-import org.hornetq.core.completion.impl.OperationContextImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;

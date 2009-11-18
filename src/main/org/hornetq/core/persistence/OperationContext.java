@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.completion;
+package org.hornetq.core.persistence;
 
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;

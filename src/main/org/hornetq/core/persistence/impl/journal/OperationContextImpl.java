@@ -11,13 +11,13 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.completion.impl;
+package org.hornetq.core.persistence.impl.journal;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import org.hornetq.core.completion.OperationContext;
 import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.persistence.OperationContext;
 
 /**
  * A ReplicationToken
