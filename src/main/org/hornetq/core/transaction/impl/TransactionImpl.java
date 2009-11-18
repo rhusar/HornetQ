@@ -222,25 +222,28 @@ public class TransactionImpl implements Transaction
          // to execute this runnable in the correct order
          storageManager.afterCompleteOperations(new IOCompletion()
          {
-            
+
             public void onError(int errorCode, String errorMessage)
             {
                log.warn("IO Error completing the transaction, code = " + errorCode + ", message = " + errorMessage);
             }
-            
+
             public void done()
             {
-               for (TransactionOperation operation : operations)
+               if (operations != null)
                {
-                  try
+                  for (TransactionOperation operation : operations)
                   {
-                     operation.afterCommit(TransactionImpl.this);
-                  }
-                  catch (Exception e)
-                  {
-                     // https://jira.jboss.org/jira/browse/HORNETQ-188
-                     // After commit shouldn't throw an exception
-                     log.warn(e.getMessage(), e);
+                     try
+                     {
+                        operation.afterCommit(TransactionImpl.this);
+                     }
+                     catch (Exception e)
+                     {
+                        // https://jira.jboss.org/jira/browse/HORNETQ-188
+                        // After commit shouldn't throw an exception
+                        log.warn(e.getMessage(), e);
+                     }
                   }
                }
             }
