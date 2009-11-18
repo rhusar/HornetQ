@@ -19,6 +19,7 @@ import java.util.List;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
@@ -219,9 +220,15 @@ public class TransactionImpl implements Transaction
          // We use the Callback even for non persistence
          // If we are using non-persistence with replication, the replication manager will have
          // to execute this runnable in the correct order
-         storageManager.afterCompleteOperations(new Runnable()
+         storageManager.afterCompleteOperations(new IOCompletion()
          {
-            public void run()
+            
+            public void onError(int errorCode, String errorMessage)
+            {
+               log.warn("IO Error completing the transaction, code = " + errorCode + ", message = " + errorMessage);
+            }
+            
+            public void done()
             {
                for (TransactionOperation operation : operations)
                {
@@ -238,6 +245,7 @@ public class TransactionImpl implements Transaction
                }
             }
          });
+
       }
    }
 

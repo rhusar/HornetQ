@@ -28,6 +28,7 @@ import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.Notification;
@@ -924,9 +925,14 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
       else
       {
-         storageManager.afterCompleteOperations(new Runnable()
+         storageManager.afterCompleteOperations(new IOCompletion()
          {
-            public void run()
+            public void onError(int errorCode, String errorMessage)
+            {
+               log.warn("It wasn't possible to add references due to an IO error code " + errorCode + " message = " + errorMessage);
+            }
+            
+            public void done()
             {
                addReferences(refs);
             }

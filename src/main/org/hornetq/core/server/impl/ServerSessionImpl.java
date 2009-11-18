@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Red Hat, Inc.
+x * Copyright 2009 Red Hat, Inc.
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
@@ -34,6 +34,7 @@ import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.Notification;
@@ -1718,13 +1719,22 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
                              final boolean flush,
                              final boolean closeChannel)
    {
-      storageManager.afterCompleteOperations(new Runnable()
+      storageManager.afterCompleteOperations(new IOCompletion()
       {
-         public void run()
+         
+         public void onError(int errorCode, String errorMessage)
+         {
+            log.warn("Error processing IOCallback code = " + errorCode + " message = " + errorMessage);
+
+            HornetQExceptionMessage exceptionMessage = new HornetQExceptionMessage(new HornetQException(errorCode, errorMessage));
+            
+            doSendResponse(confirmPacket, exceptionMessage, flush, closeChannel);
+         }
+         
+         public void done()
          {
             doSendResponse(confirmPacket, response, flush, closeChannel);
          }
-
       });
       
       storageManager.completeOperations();
