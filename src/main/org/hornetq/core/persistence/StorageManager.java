@@ -18,7 +18,7 @@ import java.util.Map;
 
 import javax.transaction.xa.Xid;
 
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
@@ -57,7 +57,7 @@ public interface StorageManager extends HornetQComponent
 
    boolean isReplicated();
 
-   void afterCompleteOperations(IOCompletion run);
+   void afterCompleteOperations(IOAsyncTask run);
    
    /** Block until the replication is done. 
     * @throws Exception */

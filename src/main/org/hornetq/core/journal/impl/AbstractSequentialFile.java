@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -159,7 +159,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
    }
 
-   public void write(final HornetQBuffer bytes, final boolean sync, final IOCompletion callback) throws Exception
+   public void write(final HornetQBuffer bytes, final boolean sync, final IOAsyncTask callback) throws Exception
    {
       if (timedBuffer != null)
       {
@@ -203,18 +203,18 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
    // Inner classes -------------------------------------------------
 
-   protected static class DelegateCallback implements IOCompletion
+   protected static class DelegateCallback implements IOAsyncTask
    {
-      final List<IOCompletion> delegates;
+      final List<IOAsyncTask> delegates;
 
-      DelegateCallback(final List<IOCompletion> delegates)
+      DelegateCallback(final List<IOAsyncTask> delegates)
       {
          this.delegates = delegates;
       }
 
       public void done()
       {
-         for (IOCompletion callback : delegates)
+         for (IOAsyncTask callback : delegates)
          {
             try
             {
@@ -229,7 +229,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
       public void onError(final int errorCode, final String errorMessage)
       {
-         for (IOCompletion callback : delegates)
+         for (IOAsyncTask callback : delegates)
          {
             try
             {
@@ -249,7 +249,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
    protected class LocalBufferObserver implements TimedBufferObserver
    {
-      public void flushBuffer(final ByteBuffer buffer, final boolean requestedSync, final List<IOCompletion> callbacks)
+      public void flushBuffer(final ByteBuffer buffer, final boolean requestedSync, final List<IOAsyncTask> callbacks)
       {
          buffer.flip();
 

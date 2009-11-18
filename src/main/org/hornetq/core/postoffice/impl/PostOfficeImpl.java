@@ -28,7 +28,7 @@ import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.Notification;
@@ -925,7 +925,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
       else
       {
-         storageManager.afterCompleteOperations(new IOCompletion()
+         storageManager.afterCompleteOperations(new IOAsyncTask()
          {
             public void onError(int errorCode, String errorMessage)
             {

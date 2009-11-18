@@ -26,9 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import javax.transaction.xa.Xid;
 
@@ -38,6 +36,7 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -363,7 +362,7 @@ public class JournalStorageManager implements StorageManager
 
    // TODO: shouldn't those page methods be on the PageManager? ^^^^
 
-   public void afterCompleteOperations(IOCompletion run)
+   public void afterCompleteOperations(IOAsyncTask run)
    {
       OperationContextImpl.getContext().executeOnCompletion(run);
    }

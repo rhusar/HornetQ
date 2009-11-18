@@ -19,7 +19,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -133,7 +133,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
       return read(bytes, null);
    }
 
-   public int read(final ByteBuffer bytes, final IOCompletion callback) throws Exception
+   public int read(final ByteBuffer bytes, final IOAsyncTask callback) throws Exception
    {
       try
       {
@@ -197,7 +197,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
       return new NIOSequentialFile(factory, getFile());
    }
 
-   public void writeDirect(final ByteBuffer bytes, final boolean sync, final IOCompletion callback)
+   public void writeDirect(final ByteBuffer bytes, final boolean sync, final IOAsyncTask callback)
    {
       if (callback == null)
       {
@@ -226,7 +226,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
     * @throws IOException
     * @throws Exception
     */
-   private void internalWrite(final ByteBuffer bytes, final boolean sync, final IOCompletion callback) throws Exception
+   private void internalWrite(final ByteBuffer bytes, final boolean sync, final IOAsyncTask callback) throws Exception
    {
       position.addAndGet(bytes.limit());
 

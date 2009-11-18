@@ -44,6 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.hornetq.core.buffers.ChannelBuffer;
 import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.LoaderCallback;
@@ -869,6 +870,11 @@ public class JournalImpl implements TestableJournal
       {
          throw new IllegalStateException("Journal must be loaded first");
       }
+      
+      if (callback != null)
+      {
+         callback.linedUp();
+      }
 
       compactingLock.readLock().lock();
 
@@ -926,6 +932,11 @@ public class JournalImpl implements TestableJournal
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
+      }
+      
+      if (callback != null)
+      {
+         callback.linedUp();
       }
 
       compactingLock.readLock().lock();
@@ -995,6 +1006,11 @@ public class JournalImpl implements TestableJournal
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
+      }
+      
+      if (callback != null)
+      {
+         callback.linedUp();
       }
 
       compactingLock.readLock().lock();
@@ -1228,13 +1244,18 @@ public class JournalImpl implements TestableJournal
     * @param transactionData - extra user data for the prepare
     * @throws Exception
     */
-   public void appendPrepareRecord(final long txID, final EncodingSupport transactionData, final boolean sync, IOCompletion completion) throws Exception
+   public void appendPrepareRecord(final long txID, final EncodingSupport transactionData, final boolean sync, IOCompletion callback) throws Exception
    {
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
       }
 
+      if (callback != null)
+      {
+         callback.linedUp();
+      }
+      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = getTransactionInfo(txID);
@@ -1250,7 +1271,7 @@ public class JournalImpl implements TestableJournal
          lockAppend.lock();
          try
          {
-            JournalFile usedFile = appendRecord(bb, true, sync, tx, completion);
+            JournalFile usedFile = appendRecord(bb, true, sync, tx, callback);
 
             tx.prepare(usedFile);
          }
@@ -1307,6 +1328,11 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
+      if (callback != null)
+      {
+         callback.linedUp();
+      }
+      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = transactions.remove(txID);
@@ -1362,13 +1388,18 @@ public class JournalImpl implements TestableJournal
 
    }
    
-   public void appendRollbackRecord(final long txID, final boolean sync, final IOCompletion completion) throws Exception
+   public void appendRollbackRecord(final long txID, final boolean sync, final IOCompletion callback) throws Exception
    {
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
       }
 
+      if (callback != null)
+      {
+         callback.linedUp();
+      }
+      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = null;
@@ -1389,7 +1420,7 @@ public class JournalImpl implements TestableJournal
          lockAppend.lock();
          try
          {
-            JournalFile usedFile = appendRecord(bb, false, sync, tx, completion);
+            JournalFile usedFile = appendRecord(bb, false, sync, tx, callback);
 
             tx.rollback(usedFile);
          }
@@ -2883,7 +2914,7 @@ public class JournalImpl implements TestableJournal
                                     final boolean completeTransaction,
                                     final boolean sync,
                                     final JournalTransaction tx,
-                                    final IOCompletion parameterCallback) throws Exception
+                                    final IOAsyncTask parameterCallback) throws Exception
    {
       try
       {
@@ -2892,7 +2923,7 @@ public class JournalImpl implements TestableJournal
             throw new IllegalStateException("The journal is not loaded " + state);
          }
          
-         final IOCompletion callback;
+         final IOAsyncTask callback;
 
          int size = bb.capacity();
 

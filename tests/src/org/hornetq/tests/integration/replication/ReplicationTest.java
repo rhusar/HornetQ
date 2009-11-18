@@ -38,6 +38,7 @@ import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -376,7 +377,7 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getContext().executeOnCompletion(new IOCompletion()
+         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -408,7 +409,7 @@ public class ReplicationTest extends ServiceTestBase
    private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      OperationContextImpl.getContext().executeOnCompletion(new IOCompletion()
+      OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
       {
 
          public void onError(int errorCode, String errorMessage)
@@ -467,7 +468,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getContext().executeOnCompletion(new IOCompletion()
+         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -529,7 +530,7 @@ public class ReplicationTest extends ServiceTestBase
                replicatedJournal.appendPrepareRecord(i, new FakeData(), false);
             }
 
-            OperationContextImpl.getContext().executeOnCompletion(new IOCompletion()
+            OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
             {
 
                public void onError(int errorCode, String errorMessage)

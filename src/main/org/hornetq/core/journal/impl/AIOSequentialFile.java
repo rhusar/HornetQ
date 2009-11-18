@@ -25,7 +25,7 @@ import org.hornetq.core.asyncio.AIOCallback;
 import org.hornetq.core.asyncio.AsynchronousFile;
 import org.hornetq.core.asyncio.BufferCallback;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.logging.Logger;
@@ -214,7 +214,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
       aioFile.setBufferCallback(callback);
    }
 
-   public int read(final ByteBuffer bytes, final IOCompletion callback) throws Exception
+   public int read(final ByteBuffer bytes, final IOAsyncTask callback) throws Exception
    {
       int bytesToRead = bytes.limit();
 
@@ -298,7 +298,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
     * 
     * @param sync Not used on AIO
     *  */
-   public void writeDirect(final ByteBuffer bytes, final boolean sync, IOCompletion callback)
+   public void writeDirect(final ByteBuffer bytes, final boolean sync, IOAsyncTask callback)
    {
       final int bytesToWrite = factory.calculateBlockSize(bytes.limit());
 

@@ -17,7 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.hornetq.core.completion.OperationContext;
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 
 /**
  * A ReplicationToken
@@ -42,7 +42,7 @@ public class OperationContextImpl implements OperationContext
       return token;
    }
 
-   private List<IOCompletion> tasks;
+   private List<IOAsyncTask> tasks;
    
    private int linedup = 0;
 
@@ -72,7 +72,7 @@ public class OperationContextImpl implements OperationContext
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
-   public void executeOnCompletion(IOCompletion completion)
+   public void executeOnCompletion(IOAsyncTask completion)
    {
       if (complete)
       {
@@ -84,7 +84,7 @@ public class OperationContextImpl implements OperationContext
       {
          // No need to use Concurrent, we only add from a single thread.
          // We don't add any more Runnables after it is complete
-         tasks = new LinkedList<IOCompletion>();
+         tasks = new LinkedList<IOAsyncTask>();
       }
 
       tasks.add(completion);
@@ -116,7 +116,7 @@ public class OperationContextImpl implements OperationContext
    {
       if (tasks != null)
       {
-         for (IOCompletion run : tasks)
+         for (IOAsyncTask run : tasks)
          {
             run.done();
          }
@@ -145,7 +145,7 @@ public class OperationContextImpl implements OperationContext
    {
       if (tasks != null)
       {
-         for (IOCompletion run : tasks)
+         for (IOAsyncTask run : tasks)
          {
             run.onError(errorCode, errorMessage);
          }

@@ -13,6 +13,7 @@
 
 package org.hornetq.core.completion;
 
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;
 
 
@@ -26,12 +27,10 @@ import org.hornetq.core.journal.IOCompletion;
  */
 public interface OperationContext extends IOCompletion
 {
-   /** To be called by the replication manager, when new replication is added to the queue */
-   void linedUp();
    
    boolean hasData();
 
-   void executeOnCompletion(IOCompletion runnable);
+   void executeOnCompletion(IOAsyncTask runnable);
    
    /** To be called when there are no more operations pending */
    void complete();

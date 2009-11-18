@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
@@ -344,7 +344,7 @@ public class NullStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#afterCompleteOperations(org.hornetq.core.journal.IOCompletion)
     */
-   public void afterCompleteOperations(IOCompletion run)
+   public void afterCompleteOperations(IOAsyncTask run)
    {
       run.done();
    }

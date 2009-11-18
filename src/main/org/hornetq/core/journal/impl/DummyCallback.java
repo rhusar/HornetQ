@@ -46,5 +46,12 @@ class DummyCallback extends SyncIOCompletion
    public void waitCompletion() throws Exception
    {
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.IOCompletion#linedUp()
+    */
+   public void linedUp()
+   {
+   }
 }
 

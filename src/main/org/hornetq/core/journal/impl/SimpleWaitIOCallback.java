@@ -67,4 +67,11 @@ public class SimpleWaitIOCallback extends SyncIOCompletion
    {
       return latch.await(timeout, TimeUnit.MILLISECONDS);
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.IOCompletion#linedUp()
+    */
+   public void linedUp()
+   {
+   }
 }
