@@ -300,6 +300,10 @@ public class JournalStorageManager implements StorageManager
       {
          replicator.closeContext();
       }
+      else
+      {
+         OperationContextImpl.getContext().complete();
+      }
    }
 
    public boolean isReplicated()
