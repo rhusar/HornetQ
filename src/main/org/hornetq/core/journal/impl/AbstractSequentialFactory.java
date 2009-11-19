@@ -44,14 +44,12 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
 
    private static final Logger log = Logger.getLogger(AbstractSequentialFactory.class);
 
-   /** For AIO: A single AIO write executor for every AIO File.
-    *  This is used only for AIO & instant operations. We only need one executor-thread for the entire journal as we always have only one active file.
-    *  And even if we had multiple files at a given moment, this should still be ok, as we control max-io in a semaphore, guaranteeing AIO calls don't block on disk calls.
-    *  
-    *  For NIO: this is used to execute the callbacks.
-    *           We can't call the executor holding a lock.
+   /** 
+    * 
+    * We can't execute callbacks directly from any of the IO module. We need to do it through another thread,
+    * So, we will use an executor for this. 
     *   */
-   protected ExecutorService writeExecutor;
+   protected ExecutorService callbacksExecutor;
 
    protected final String journalDir;
 
@@ -88,13 +86,13 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          timedBuffer.stop();
       }
 
-      if (writeExecutor != null)
+      if (callbacksExecutor != null)
       {
-         writeExecutor.shutdown();
+         callbacksExecutor.shutdown();
 
          try
          {
-            if (!writeExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
+            if (!callbacksExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
             {
                log.warn("Timed out on AIO writer shutdown", new Exception("Timed out on AIO writer shutdown"));
             }
@@ -114,12 +112,12 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
 
       if (isSupportsCallbacks())
       {
-         writeExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-writer-pool" + System.identityHashCode(this),
+         callbacksExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-callbacks" + System.identityHashCode(this),
                                                                                     true));
       }
       else
       {
-         writeExecutor = null;
+         callbacksExecutor = null;
       }
 
    }

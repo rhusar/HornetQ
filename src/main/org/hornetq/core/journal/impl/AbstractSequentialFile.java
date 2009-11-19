@@ -44,13 +44,8 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
    private final String directory;
    
-   /** on AIO: A context switch on AIO would make it to synchronize the disk before
-   switching to the new thread, what would cause
-   serious performance problems. Because of that we make all the writes on
-   AIO using a single thread. 
-       on NIO: We can't execute callbacks while inside the locks, as more IO operations could be
-               performed later */
-   protected final Executor executor;
+   /** We can't execute callbacks while inside the locks, as more IO operations could be performed, what could cause serious dead locks. */
+   protected final Executor callbackExecutor;
 
 
 
@@ -80,7 +75,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
       this.file = file;
       this.directory = directory;
       this.factory = factory;
-      this.executor = executor;
+      this.callbackExecutor = executor;
    }
 
    // Public --------------------------------------------------------

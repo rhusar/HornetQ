@@ -48,6 +48,10 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    /** The pool for Thread pollers */
    private final Executor pollerExecutor;
+   
+   /** Context switch on AIO could fire unnecessary flushes, so we use a single thread for write */
+   private final Executor writerExecutor;
+   
 
    public AIOSequentialFile(final SequentialFileFactory factory,
                             final int bufferSize,
@@ -56,11 +60,13 @@ public class AIOSequentialFile extends AbstractSequentialFile
                             final String fileName,
                             final int maxIO,
                             final BufferCallback bufferCallback,
-                            final Executor executor,
+                            final Executor callbackExecutor,
+                            final Executor writerExecutor,
                             final Executor pollerExecutor)
    {
-      super(executor, directory, new File(directory + "/" + fileName), factory);
+      super(callbackExecutor, directory, new File(directory + "/" + fileName), factory);
       this.maxIO = maxIO;
+      this.writerExecutor = writerExecutor;
       this.bufferCallback = bufferCallback;
       this.pollerExecutor = pollerExecutor;
    }
@@ -88,7 +94,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    public SequentialFile copy()
    {
-      return new AIOSequentialFile(factory, -1, -1, getFile().getParent(), getFileName(), maxIO, bufferCallback, executor, pollerExecutor);
+      return new AIOSequentialFile(factory, -1, -1, getFile().getParent(), getFileName(), maxIO, bufferCallback, callbackExecutor, writerExecutor, pollerExecutor);
    }
 
    public synchronized void close() throws Exception
@@ -103,7 +109,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
       final CountDownLatch donelatch = new CountDownLatch(1);
 
-      executor.execute(new Runnable()
+      writerExecutor.execute(new Runnable()
       {
          public void run()
          {
@@ -191,7 +197,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
    public synchronized void open(final int currentMaxIO) throws Exception
    {
       opened = true;
-      aioFile = newFile();
+      aioFile = new AsynchronousFileImpl(writerExecutor, pollerExecutor, callbackExecutor);
       aioFile.open(getFile().getAbsolutePath(), currentMaxIO);
       position.set(0);
       aioFile.setBufferCallback(bufferCallback);
@@ -256,14 +262,6 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    // Protected methods
    // -----------------------------------------------------------------------------------------------------
-
-   /**
-    * An extension point for tests
-    */
-   protected AsynchronousFile newFile()
-   {
-      return new AsynchronousFileImpl(executor, pollerExecutor);
-   }
 
    
    public void writeDirect(final ByteBuffer bytes, final boolean sync) throws Exception

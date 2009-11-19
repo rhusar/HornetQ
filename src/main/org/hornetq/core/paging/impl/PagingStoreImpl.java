@@ -127,14 +127,16 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // Static --------------------------------------------------------
 
-   private static final boolean isTrace = log.isTraceEnabled();
+   //private static final boolean isTrace = log.isTraceEnabled();
+   private static final boolean isTrace = true;
 
    // This is just a debug tool method.
    // During debugs you could make log.trace as log.info, and change the
    // variable isTrace above
    private static void trace(final String message)
    {
-      log.trace(message);
+      System.out.println("PagingStoreImpl::" + message);
+      // log.trace(message);
    }
 
    // Constructors --------------------------------------------------

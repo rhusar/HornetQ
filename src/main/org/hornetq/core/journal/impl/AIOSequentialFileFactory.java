@@ -42,7 +42,12 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
 
    private final ReuseBuffersController buffersControl = new ReuseBuffersController();
 
-   protected ExecutorService pollerExecutor;
+   /** A single AIO write executor for every AIO File.
+    *  This is used only for AIO & instant operations. We only need one executor-thread for the entire journal as we always have only one active file.
+    *  And even if we had multiple files at a given moment, this should still be ok, as we control max-io in a semaphore, guaranteeing AIO calls don't block on disk calls */
+   private ExecutorService writeExecutor;
+
+   private ExecutorService pollerExecutor;
 
    // This method exists just to make debug easier.
    // I could replace log.trace by log.info temporarily while I was debugging
@@ -79,6 +84,7 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
                                    fileName,
                                    maxIO,
                                    buffersControl.callback,
+                                   callbacksExecutor,
                                    writeExecutor,
                                    pollerExecutor);
    }
@@ -144,6 +150,9 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
    {
       super.start();
 
+      writeExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-AIO-writer-pool" + System.identityHashCode(this),
+                                                                                 true));
+
       pollerExecutor = Executors.newCachedThreadPool(new HornetQThreadFactory("HornetQ-AIO-poller-pool" + System.identityHashCode(this),
                                                                               true));
 
@@ -153,6 +162,19 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
    public void stop()
    {
       buffersControl.stop();
+
+      writeExecutor.shutdown();
+
+      try
+      {
+         if (!writeExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
+         {
+            log.warn("Timed out on AIO writer shutdown", new Exception("Timed out on AIO writer shutdown"));
+         }
+      }
+      catch (InterruptedException e)
+      {
+      }
 
       pollerExecutor.shutdown();
 

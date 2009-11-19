@@ -148,6 +148,10 @@ public class AsynchronousFileImpl implements AsynchronousFile
    // serious performance problems. Because of that we make all the writes on
    // AIO using a single thread.
    private final Executor writeExecutor;
+   
+   // We can't use the same thread on the callbacks
+   // as the callbacks may perform other IO operations back what could cause dead locks
+   private final Executor callbackExecutor;
 
    private final Executor pollerExecutor;
 
@@ -157,10 +161,11 @@ public class AsynchronousFileImpl implements AsynchronousFile
     * @param writeExecutor It needs to be a single Thread executor. If null it will use the user thread to execute write operations
     * @param pollerExecutor The thread pool that will initialize poller handlers
     */
-   public AsynchronousFileImpl(final Executor writeExecutor, final Executor pollerExecutor)
+   public AsynchronousFileImpl(final Executor writeExecutor, final Executor pollerExecutor, final Executor callbackExecutor)
    {
       this.writeExecutor = writeExecutor;
       this.pollerExecutor = pollerExecutor;
+      this.callbackExecutor = callbackExecutor;
    }
 
    public void open(final String fileName, final int maxIO) throws HornetQException
@@ -418,7 +423,13 @@ public class AsynchronousFileImpl implements AsynchronousFile
    {
       writeSemaphore.release();
       pendingWrites.down();
-      callback.done();
+      callbackExecutor.execute(new Runnable()
+      {
+         public void run()
+         {
+            callback.done();
+         }
+      });
       
       // The buffer is not sent on callback for read operations
       if (bufferCallback != null && buffer != null)

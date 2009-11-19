@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.StorageManager;
@@ -58,11 +59,14 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
    private final StorageManager storageManager;
 
    private final boolean persist;
+   
+   private final Executor executor;
 
    public DuplicateIDCacheImpl(final SimpleString address,
                                final int size,
                                final StorageManager storageManager,
-                               final boolean persist)
+                               final boolean persist,
+                               final Executor executor)
    {
       this.address = address;
 
@@ -73,6 +77,8 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       this.storageManager = storageManager;
 
       this.persist = persist;
+      
+      this.executor = executor;
    }
 
    public void load(final List<Pair<byte[], Long>> theIds) throws Exception
@@ -209,7 +215,20 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       {
          if (!done)
          {
-            addToCacheInMemory(duplID, recordID);
+            executor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  try
+                  {
+                     addToCacheInMemory(duplID, recordID);
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn(e.getMessage());
+                  }
+               }
+            });
 
             done = true;
          }

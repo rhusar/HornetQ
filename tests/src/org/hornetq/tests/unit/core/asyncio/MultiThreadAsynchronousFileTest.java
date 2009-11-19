@@ -56,9 +56,9 @@ public class MultiThreadAsynchronousFileTest extends AIOTestBase
 
    static final int NUMBER_OF_LINES = 1000;
 
-   // Executor exec
-
    ExecutorService executor;
+   
+   ExecutorService callbackExecutor;
    
    ExecutorService pollerExecutor;
 
@@ -74,6 +74,7 @@ public class MultiThreadAsynchronousFileTest extends AIOTestBase
    {
       super.setUp();
       pollerExecutor = Executors.newCachedThreadPool(new HornetQThreadFactory("HornetQ-AIO-poller-pool" + System.identityHashCode(this), false));
+      callbackExecutor = Executors.newSingleThreadExecutor();
       executor = Executors.newSingleThreadExecutor();
    }
    
@@ -97,7 +98,7 @@ public class MultiThreadAsynchronousFileTest extends AIOTestBase
    private void executeTest(final boolean sync) throws Throwable
    {
       debug(sync ? "Sync test:" : "Async test");
-      AsynchronousFileImpl jlibAIO = new AsynchronousFileImpl(executor, pollerExecutor);
+      AsynchronousFileImpl jlibAIO = new AsynchronousFileImpl(executor, pollerExecutor, callbackExecutor);
       jlibAIO.open(FILE_NAME, 21000);
       try
       {

@@ -240,13 +240,13 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
       if (callback != null)
       {
-         if (executor == null)
+         if (callbackExecutor == null)
          {
             callback.done();
          }
          else
          {
-            executor.execute(new Runnable()
+            callbackExecutor.execute(new Runnable()
             {
                public void run()
                {
