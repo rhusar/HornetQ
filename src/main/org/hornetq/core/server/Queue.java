@@ -125,6 +125,10 @@ public interface Queue extends Bindable
    
    Collection<Consumer> getConsumers();
    
+   /** We can't execute IO operation when inside the IOCallback / TransactionCallback.
+    *  This method will will perform IO operations in a second thread */
+   boolean checkDLQ(MessageReference ref, Executor ioExecutor) throws Exception;
+   
    boolean checkDLQ(MessageReference ref) throws Exception;
    
    void lockDelivery();

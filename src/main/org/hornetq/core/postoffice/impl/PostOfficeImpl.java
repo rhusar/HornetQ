@@ -1114,11 +1114,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          }
       }
 
-      public void afterPrepare(final Transaction tx) throws Exception
+      public void afterPrepare(final Transaction tx)
       {
       }
 
-      public void afterRollback(final Transaction tx) throws Exception
+      public void afterRollback(final Transaction tx)
       {
          PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 
@@ -1225,11 +1225,11 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          }
       }
 
-      public void afterPrepare(Transaction tx) throws Exception
+      public void afterPrepare(Transaction tx)
       {
       }
 
-      public void afterRollback(Transaction tx) throws Exception
+      public void afterRollback(Transaction tx)
       {
       }
 

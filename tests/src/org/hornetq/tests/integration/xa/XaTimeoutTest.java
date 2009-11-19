@@ -538,15 +538,15 @@ public class XaTimeoutTest extends UnitTestCase
       {
       }
 
-      public void afterPrepare(Transaction tx) throws Exception
+      public void afterPrepare(Transaction tx)
       {
       }
 
-      public void afterCommit(Transaction tx) throws Exception
+      public void afterCommit(Transaction tx)
       {
       }
 
-      public void afterRollback(Transaction tx) throws Exception
+      public void afterRollback(Transaction tx)
       {
          latch.countDown();
       }

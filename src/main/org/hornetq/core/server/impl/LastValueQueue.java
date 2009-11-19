@@ -14,6 +14,7 @@ package org.hornetq.core.server.impl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.core.filter.Filter;
@@ -50,6 +51,7 @@ public class LastValueQueue extends QueueImpl
                          final Filter filter,
                          final boolean durable,
                          final boolean temporary,
+                         final Executor executor,
                          final ScheduledExecutorService scheduledExecutor,
                          final PostOffice postOffice,
                          final StorageManager storageManager,
@@ -61,6 +63,7 @@ public class LastValueQueue extends QueueImpl
             filter,
             durable,
             temporary,
+            executor,
             scheduledExecutor,
             postOffice,
             storageManager,

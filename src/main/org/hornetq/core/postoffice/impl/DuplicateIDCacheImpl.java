@@ -211,7 +211,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
          this.recordID = recordID;
       }
 
-      private void process() throws Exception
+      private void process()
       {
          if (!done)
          {
@@ -246,17 +246,17 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       {
       }
 
-      public void afterCommit(final Transaction tx) throws Exception
+      public void afterCommit(final Transaction tx)
       {
          process();
       }
 
-      public void afterPrepare(final Transaction tx) throws Exception
+      public void afterPrepare(final Transaction tx)
       {
          process();
       }
 
-      public void afterRollback(final Transaction tx) throws Exception
+      public void afterRollback(final Transaction tx)
       {
       }
 

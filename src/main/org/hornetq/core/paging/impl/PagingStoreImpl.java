@@ -281,7 +281,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       checkReleaseProducerFlowControlCredits(-credits);
    }
 
-   public void addSize(final ServerMessage message, final boolean add) throws Exception
+   public void addSize(final ServerMessage message, final boolean add)
    {
       long size = message.getMemoryEstimate();
 
@@ -299,7 +299,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   public void addSize(final MessageReference reference, final boolean add) throws Exception
+   public void addSize(final MessageReference reference, final boolean add)
    {
       long size = MessageReferenceImpl.getMemoryEstimate();
 
@@ -479,7 +479,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   public boolean startPaging() throws Exception
+   public boolean startPaging()
    {
       if (!running)
       {
@@ -510,7 +510,17 @@ public class PagingStoreImpl implements TestSupportPageStore
       {
          if (currentPage == null)
          {
-            openNewPage();
+            try
+            {
+               openNewPage();
+            }
+            catch (Exception e)
+            {
+               // If not possible to starting page due to an IO error, we will just consider it non paging.
+               // This shouldn't happen anyway
+               log.warn("IO Error, impossible to start paging", e);
+               return false;
+            }
 
             return true;
          }
@@ -701,7 +711,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   private void addSize(final long size) throws Exception
+   private void addSize(final long size) 
    {
       if (addressFullMessagePolicy != AddressFullMessagePolicy.PAGE)
       {
