@@ -119,8 +119,6 @@ public class NettyConnection implements Connection
 
    public void write(final HornetQBuffer buffer, final boolean flush)
    {
-      log.info("writing buffer " + buffer.readerIndex() + " writer " + buffer.writerIndex());
-      
       ChannelFuture future = channel.write(buffer.getUnderlyingBuffer());
 
       if (flush)

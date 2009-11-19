@@ -101,23 +101,13 @@ public class SessionReceiveMessage extends PacketImpl
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
-      log.info("Encoding session send message, consumer id is " + consumerID + " delivery count is " + deliveryCount);
-      
       HornetQBuffer buffer = serverMessage.getBuffer();
-      
-      log.info("** DELIVERING writer index is " + buffer.writerIndex());
-                  
-      
-      log.info("** WRITING CONSUMER ID AT POS " + buffer.writerIndex());
       
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
-
-      // At this point, the rest of the message has already been encoded into the buffer
+      
       size = buffer.writerIndex();
       
-      log.info("size is " + size);
-
       buffer.setIndex(0, 0);
 
       // The standard header fields
@@ -126,6 +116,10 @@ public class SessionReceiveMessage extends PacketImpl
       buffer.writeInt(len);
       buffer.writeByte(type);
       buffer.writeLong(channelID);
+                      
+      //And fill in the message id, since this was set on the server side so won't already be in the buffer
+      buffer.setIndex(0, buffer.writerIndex() + DataConstants.SIZE_INT);
+      buffer.writeLong(serverMessage.getMessageID());
       
       buffer.setIndex(0, size);
 
@@ -137,7 +131,7 @@ public class SessionReceiveMessage extends PacketImpl
       clientMessage = new ClientMessageImpl();
       
       //fast forward past the size byte
-      buffer.readInt();
+      int size = buffer.readInt();
       
       clientMessage.decode(buffer);
       
@@ -147,25 +141,15 @@ public class SessionReceiveMessage extends PacketImpl
       
       //Now we need to fast forward past the body part
       
-      int size = buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
+      //int size = buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
       
       buffer.setIndex(size, buffer.writerIndex());
                   
-      log.info("decoded receive message");
-      
-      log.info("*** READING CONSUMER ID AT POS " + buffer.readerIndex());
-      
       consumerID = buffer.readLong();
       
-      log.info("consumer id is " + consumerID);
-
       deliveryCount = buffer.readInt();
       
-      log.info("delivery count is " + deliveryCount);
-      
       clientMessage.setDeliveryCount(deliveryCount);
-      
-      //clientMessage.getBuffer().resetReaderIndex();
       
       //Reset buffer to beginning of body
       buffer.setIndex(bodyBeginning, buffer.writerIndex());

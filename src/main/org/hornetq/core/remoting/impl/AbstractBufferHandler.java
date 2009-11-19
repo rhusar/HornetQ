@@ -29,16 +29,12 @@ public abstract class AbstractBufferHandler implements BufferHandler
 
    public int isReadyToHandle(final HornetQBuffer buffer)
    {
-      log.info("calling buffer is ready to handle");
-
       if (buffer.readableBytes() < DataConstants.SIZE_INT)
       {
          return -1;
       }
 
       int length = buffer.readInt();
-
-      log.info("length is " + length + " readable bytes is " + buffer.readableBytes());
 
       if (buffer.readableBytes() < length)
       {

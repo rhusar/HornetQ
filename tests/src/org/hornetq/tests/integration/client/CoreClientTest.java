@@ -78,10 +78,45 @@ public class CoreClientTest extends UnitTestCase
 
       ClientProducer producer = session.createProducer(QUEUE);
 
-      final int numMessages = 1;
+      final int numMessages = 10000;
 
       for (int i = 0; i < numMessages; i++)
       {
+         /*
+          * Like this:
+          * 
+          * ClientMessage message = producer.createMessage(...);
+          * 
+          * message.putStringProperty("foo", "bar");
+          * 
+          * message.encodeToBuffer(); [this sets the destination from the producer, and encodes]
+          * 
+          * message.getBuffer().writeString("testINVMCoreClient");
+          *          
+          * message.send();
+          * 
+          * OR, another option:
+          * 
+          * Get rid of client producer altogether,
+          * 
+          * Have send direct on the session, and destination must be set explicitly
+          * 
+          * e.g.
+          * 
+          * ClientMessage message = session.createMessage(...)
+          * 
+          * message.putStringProperty("foo", "bar");
+          * 
+          * message.setDestination("foo");
+          * 
+          * message.encodeToBuffer();
+          * 
+          * message.getBuffer().writeString("testINVMCoreClient");
+          * 
+          * message.send();
+          * 
+          */
+         
          ClientMessage message = session.createClientMessage(HornetQTextMessage.TYPE,
                                                              false,
                                                              0,
@@ -90,13 +125,16 @@ public class CoreClientTest extends UnitTestCase
 
          message.putStringProperty("foo", "bar");
 
+         //One way around the setting destination problem is as follows -
+         //Remove destination as an attribute from client producer.
+         //The destination always has to be set explicity before sending a message
+         
          message.setDestination(QUEUE);
-
+         
          message.encodeToBuffer();
 
          message.getBuffer().writeString("testINVMCoreClient");
 
-         log.info("sending message " + i);
          producer.send(message);
       }
 

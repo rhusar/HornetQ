@@ -55,14 +55,6 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
 
    // Constructors --------------------------------------------------
    
-   /*
-    * This constructor is used to construct messages prior to sending
-    */
-//   public HornetQTextMessage()
-//   {
-//      super(HornetQTextMessage.TYPE);
-//   }
-
    public HornetQTextMessage(final ClientSession session)
    {
       super(HornetQTextMessage.TYPE, session);
@@ -113,8 +105,12 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
 
    // HornetQRAMessage override -----------------------------------------
    
+   private SimpleString dest = new SimpleString("jms.queue.test_queue");
+   
    public void doBeforeSend() throws Exception
-   {
+   {   
+      message.setDestination(dest);
+      
       message.encodeToBuffer();
       
       message.getBuffer().writeNullableSimpleString(text);

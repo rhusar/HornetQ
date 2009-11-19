@@ -145,8 +145,6 @@ public abstract class MessageImpl implements Message
    {
 //      return getHeadersAndPropertiesEncodeSize() + SIZE_INT + getBodySize();
       
-      //log.info("getting encode size, writer index is " + buffer.writerIndex(), new Exception());
-      
       return buffer.writerIndex() - PACKET_HEADERS_SIZE;
    }
   
@@ -167,27 +165,17 @@ public abstract class MessageImpl implements Message
       properties.encode(buffer);
    }
    
-//   public void encodeBody(final HornetQBuffer buffer)
-//   {
-//      HornetQBuffer localBody = getBuffer();
-//      buffer.writeBytes(localBody.array(), 0, localBody.writerIndex());
-//   }
-
    public void decode(final HornetQBuffer buffer)
    {
       decodeHeadersAndProperties(buffer);
 
       this.buffer = buffer;
    }
-   
- 
-
+    
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
    {
-      messageID = buffer.readLong();
-      log.info("message id is " + messageID);
-      destination = buffer.readSimpleString();
-      log.info("destination is " + destination);
+      messageID = buffer.readLong();     
+      destination = buffer.readSimpleString();     
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();

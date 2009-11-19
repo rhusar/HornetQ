@@ -66,8 +66,6 @@ public class ClientProducerCreditsImpl implements ClientProducerCredits
 
       checkCredits(credits);
 
-      log.info("trying to acquire " + credits);
-      
       semaphore.acquire(credits);
    }
 

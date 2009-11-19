@@ -926,8 +926,6 @@ public class JournalImpl implements TestableJournal
 
          callback = getSyncCallback(sync);
          
-        // log.info("callback is " + callback);
-
          lockAppend.lock();
          try
          {
@@ -957,7 +955,6 @@ public class JournalImpl implements TestableJournal
       if (callback != null)
       {
          callback.waitCompletion();
-        // log.info("waited completion");
       }
    }
 

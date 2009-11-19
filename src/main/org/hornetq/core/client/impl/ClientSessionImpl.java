@@ -438,28 +438,12 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    public ClientProducer createProducer(final SimpleString address, final int maxRate) throws HornetQException
    {
-      return createProducer(address, maxRate, blockOnNonPersistentSend, blockOnPersistentSend);
+      return internalCreateProducer(address, maxRate);
    }
 
    public ClientProducer createProducer(final String address, final int rate) throws HornetQException
    {
       return createProducer(toSimpleString(address), rate);
-   }
-
-   public ClientProducer createProducer(final SimpleString address,
-                                        final int maxRate,
-                                        final boolean blockOnNonPersistentSend,
-                                        final boolean blockOnPersistentSend) throws HornetQException
-   {
-      return internalCreateProducer(address, maxRate, blockOnNonPersistentSend, blockOnPersistentSend);
-   }
-
-   public ClientProducer createProducer(final String address,
-                                        final int maxRate,
-                                        final boolean blockOnNonPersistentSend,
-                                        final boolean blockOnPersistentSend) throws HornetQException
-   {
-      return createProducer(toSimpleString(address), maxRate, blockOnNonPersistentSend, blockOnPersistentSend);
    }
 
    public XAResource getXAResource()
@@ -1397,9 +1381,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    }
 
    private ClientProducer internalCreateProducer(final SimpleString address,
-                                                 final int maxRate,
-                                                 final boolean blockOnNonPersistentSend,
-                                                 final boolean blockOnPersistentSend) throws HornetQException
+                                                 final int maxRate) throws HornetQException
    {
       checkClosed();
 

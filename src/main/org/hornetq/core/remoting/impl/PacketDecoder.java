@@ -157,8 +157,6 @@ public class PacketDecoder
    {
       final byte packetType = in.readByte();
       
-      log.info("Packet type is " + packetType);
-
       Packet packet;
 
       switch (packetType)

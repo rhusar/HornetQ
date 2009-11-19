@@ -95,8 +95,7 @@ public class TimedBuffer
    // Public --------------------------------------------------------
 
    public TimedBuffer(final int size, final long timeout, final boolean flushOnSync, final boolean logRates)
-   {
-      log.info("creating timed buffer, log rates is " + logRates);
+   {     
       bufferSize = 490 * 1024;
       this.logRates = logRates;
       if (logRates)
@@ -230,8 +229,6 @@ public class TimedBuffer
 
    public synchronized void addBytes(final byte[] bytes, final boolean sync, final IOCompletion callback)
    {
-     //  log.info("timedbuffer addbytes, " + bytes.length + " sync " + sync);
-
       if (buffer.writerIndex() == 0)
       {
          // Resume latch
@@ -253,17 +250,12 @@ public class TimedBuffer
 
          if (flushOnSync)
          {
-            log.info("flushing on sync record added");
-
             flush();
          }
       }
       
-      //log.info("buffer writer index is now " + buffer.writerIndex());
-
       if (buffer.writerIndex() == bufferLimit)
       {
-         log.info("flushing because reached buffer limit");
          flush();
       }
    }
@@ -272,8 +264,6 @@ public class TimedBuffer
    {
       if (buffer.writerIndex() > 0)
       {
-         //log.info("actually flushing");
-         
          latchTimer.up();
 
          int pos = buffer.writerIndex();
@@ -321,7 +311,6 @@ public class TimedBuffer
          {
             if (bufferObserver != null)
             {
-                //log.info("flushing on timer");
                 flush();
             }
          }
@@ -352,20 +341,15 @@ public class TimedBuffer
             {
                double rate = 1000 * ((double)bytesFlushed) / (now - lastExecution);
                log.info("Write rate = " + rate + " bytes / sec or " + (long)(rate / (1024 * 1024)) + " MiB / sec");
-               double flushRate = 1000 * ((double)flushesDone) / (now - lastExecution);
-               double numSyncs = 1000 * ((double)NIOSequentialFile.numSyncs.get()) / (now - lastExecution);
+               double flushRate = 1000 * ((double)flushesDone) / (now - lastExecution);              
                log.info("Flush rate = " + flushRate + " flushes / sec");
-               log.info("numSyncs " + numSyncs);
             }
 
             lastExecution = now;
 
             bytesFlushed = 0;
 
-            flushesDone = 0;
-
-            NIOSequentialFile.numSyncs.set(0);
-
+            flushesDone = 0;           
          }
       }
 

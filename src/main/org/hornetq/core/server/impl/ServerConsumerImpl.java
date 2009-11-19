@@ -210,7 +210,7 @@ public class ServerConsumerImpl implements ServerConsumer
          }
 
          final ServerMessage message = ref.getMessage();
-
+         
          if (filter != null && !filter.match(message))
          {
             return HandleStatus.NO_MATCH;
@@ -449,7 +449,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
       // Acknowledge acknowledges all refs delivered by the consumer up to and including the one explicitly
       // acknowledged
-
+      
       MessageReference ref;
       do
       {
@@ -584,8 +584,6 @@ public class ServerConsumerImpl implements ServerConsumer
          availableCredits.addAndGet(-packet.getRequiredBufferSize());
       }
 
-      log.info("*** delivering message to client");
-      
       channel.send(packet);
    }
 

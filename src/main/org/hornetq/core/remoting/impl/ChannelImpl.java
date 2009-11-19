@@ -146,8 +146,6 @@ public class ChannelImpl implements Channel
    // This must never called by more than one thread concurrently
    public void send(final Packet packet, final boolean flush)
    {      
-      log.info("Sending packet on channel " + packet);
-      
       synchronized (sendLock)
       {
          packet.setChannelID(id);

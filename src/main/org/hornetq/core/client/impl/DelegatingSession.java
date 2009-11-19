@@ -228,14 +228,6 @@ public class DelegatingSession implements ClientSessionInternal
       return session.createProducer();
    }
 
-   public ClientProducer createProducer(SimpleString address,
-                                        int maxRate,
-                                        boolean blockOnNonPersistentSend,
-                                        boolean blockOnPersistentSend) throws HornetQException
-   {
-      return session.createProducer(address, maxRate, blockOnNonPersistentSend, blockOnPersistentSend);
-   }
-
    public ClientProducer createProducer(SimpleString address, int rate) throws HornetQException
    {
       return session.createProducer(address, rate);
@@ -244,14 +236,6 @@ public class DelegatingSession implements ClientSessionInternal
    public ClientProducer createProducer(SimpleString address) throws HornetQException
    {
       return session.createProducer(address);
-   }
-
-   public ClientProducer createProducer(String address,
-                                        int maxRate,
-                                        boolean blockOnNonPersistentSend,
-                                        boolean blockOnPersistentSend) throws HornetQException
-   {
-      return session.createProducer(address, maxRate, blockOnNonPersistentSend, blockOnPersistentSend);
    }
 
    public ClientProducer createProducer(String address, int rate) throws HornetQException

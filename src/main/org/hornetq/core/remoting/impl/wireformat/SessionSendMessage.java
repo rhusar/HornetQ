@@ -80,18 +80,15 @@ public class SessionSendMessage extends PacketImpl
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
-      log.info("Encoding session send message");
-      
       HornetQBuffer buffer = sentMessage.getBuffer();
       
-      log.info("ENCODE ** size is " + buffer.writerIndex());
+      int afterBody = buffer.writerIndex();
       
       buffer.writeBoolean(requiresResponse);
 
       // At this point, the rest of the message has already been encoded into the buffer
       size = buffer.writerIndex();
             
-
       buffer.setIndex(0, 0);
 
       // The standard header fields
@@ -100,7 +97,9 @@ public class SessionSendMessage extends PacketImpl
       buffer.writeInt(len);
       buffer.writeByte(type);
       buffer.writeLong(channelID);
-      buffer.writeInt(size);
+      
+      //This last byte we write marks the position of the end of the message body where we store extra data for the packet
+      buffer.writeInt(afterBody);
       
       buffer.setIndex(0, size);
 
@@ -114,22 +113,17 @@ public class SessionSendMessage extends PacketImpl
 
       sentMessage = receivedMessage;
       
-      //fast forward past the size byte
-      buffer.readInt();
+      //Read the position of after the body where extra data is stored
+      int afterBody = buffer.readInt();
 
-      log.info("********** server message ");
-                 
       receivedMessage.decode(buffer);
+      
+      buffer.setIndex(afterBody, buffer.writerIndex());
+      
+      requiresResponse = buffer.readBoolean();   
             
       receivedMessage.getBuffer().resetReaderIndex();
-
-      requiresResponse = buffer.readBoolean();
-      
-      //reset the writer index back one boolean since when we deliver to the client we will write the extra fields on here
-      
-      //buffer.setIndex(0, buffer.writerIndex() - DataConstants.SIZE_BOOLEAN);
-      
-      log.info("SEND MESSAGE DECODE, WRITER INDEX IS " + buffer.writerIndex());
+             
    }
 
    public int getRequiredBufferSize()

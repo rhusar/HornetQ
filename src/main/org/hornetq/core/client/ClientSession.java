@@ -98,19 +98,9 @@ public interface ClientSession extends XAResource
 
    ClientProducer createProducer(SimpleString address, int rate) throws HornetQException;
 
-   ClientProducer createProducer(SimpleString address,
-                                 int maxRate,
-                                 boolean blockOnNonPersistentSend,
-                                 boolean blockOnPersistentSend) throws HornetQException;
-
    ClientProducer createProducer(String address) throws HornetQException;
 
    ClientProducer createProducer(String address, int rate) throws HornetQException;
-
-   ClientProducer createProducer(String address,
-                                 int maxRate,
-                                 boolean blockOnNonPersistentSend,
-                                 boolean blockOnPersistentSend) throws HornetQException;
 
    SessionQueueQueryResponseMessage queueQuery(SimpleString queueName) throws HornetQException;
 

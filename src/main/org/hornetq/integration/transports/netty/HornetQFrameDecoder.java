@@ -74,8 +74,6 @@ public class HornetQFrameDecoder extends FrameDecoder
       
       newBuffer.readInt();
       
-     // log.info("Now ri, wi " + newBuffer.readerIndex() + ", " + newBuffer.writerIndex());
-      
       return newBuffer;
    }
 }

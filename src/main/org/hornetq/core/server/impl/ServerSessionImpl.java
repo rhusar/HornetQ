@@ -1455,20 +1455,18 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleSend(final SessionSendMessage packet)
    {
-      log.info("Got message on server");
-      
       Packet response = null;
 
       ServerMessage message = packet.getServerMessage();
       
-      log.info("server message is " + message);
-
+      //log.info("Got msg on server");
+      
       try
       {
          long id = storageManager.generateUniqueID();
 
          message.setMessageID(id);
-
+         
          if (message.getDestination().equals(managementAddress))
          {
             // It's a management message
@@ -1479,7 +1477,10 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          {
             send(message);
          }
-
+         
+         //log.info("requires response "+ packet.isRequiresResponse());
+         
+         
          if (packet.isRequiresResponse())
          {
             response = new NullResponseMessage();
@@ -1544,7 +1545,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
             currentLargeMessage = null;
          }
-
+         
          if (packet.isRequiresResponse())
          {
             response = new NullResponseMessage();

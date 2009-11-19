@@ -52,7 +52,7 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
                                     final boolean logRates)
    {
       this.journalDir = journalDir;
-      log.info("** buffered?" + buffered);
+ 
       if (buffered)
       {
          timedBuffer = new TimedBuffer(bufferSize, bufferTimeout, flushOnSync, logRates);
