@@ -16,6 +16,7 @@ package org.hornetq.core.journal.impl;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.core.journal.IOAsyncTask;
@@ -42,6 +43,16 @@ public abstract class AbstractSequentialFile implements SequentialFile
    private File file;
 
    private final String directory;
+   
+   /** on AIO: A context switch on AIO would make it to synchronize the disk before
+   switching to the new thread, what would cause
+   serious performance problems. Because of that we make all the writes on
+   AIO using a single thread. 
+       on NIO: We can't execute callbacks while inside the locks, as more IO operations could be
+               performed later */
+   protected final Executor executor;
+
+
 
    protected final SequentialFileFactory factory;
 
@@ -63,12 +74,13 @@ public abstract class AbstractSequentialFile implements SequentialFile
     * @param file
     * @param directory
     */
-   public AbstractSequentialFile(final String directory, final File file, final SequentialFileFactory factory)
+   public AbstractSequentialFile(final Executor executor, final String directory, final File file, final SequentialFileFactory factory)
    {
       super();
       this.file = file;
       this.directory = directory;
       this.factory = factory;
+      this.executor = executor;
    }
 
    // Public --------------------------------------------------------

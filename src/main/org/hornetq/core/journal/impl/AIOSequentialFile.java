@@ -15,21 +15,17 @@ package org.hornetq.core.journal.impl;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.hornetq.core.asyncio.AIOCallback;
 import org.hornetq.core.asyncio.AsynchronousFile;
 import org.hornetq.core.asyncio.BufferCallback;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
 import org.hornetq.core.journal.IOAsyncTask;
-import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.SequentialFile;
+import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * 
@@ -50,12 +46,6 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    private final BufferCallback bufferCallback;
 
-   /** A context switch on AIO would make it to synchronize the disk before
-       switching to the new thread, what would cause
-       serious performance problems. Because of that we make all the writes on
-       AIO using a single thread. */
-   private final Executor executor;
-
    /** The pool for Thread pollers */
    private final Executor pollerExecutor;
 
@@ -69,10 +59,9 @@ public class AIOSequentialFile extends AbstractSequentialFile
                             final Executor executor,
                             final Executor pollerExecutor)
    {
-      super(directory, new File(directory + "/" + fileName), factory);
+      super(executor, directory, new File(directory + "/" + fileName), factory);
       this.maxIO = maxIO;
       this.bufferCallback = bufferCallback;
-      this.executor = executor;
       this.pollerExecutor = pollerExecutor;
    }
 

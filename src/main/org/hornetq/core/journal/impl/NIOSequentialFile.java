@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.concurrent.Executor;
 
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.SequentialFile;
@@ -40,14 +41,14 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
    private RandomAccessFile rfile;
 
-   public NIOSequentialFile(final SequentialFileFactory factory, final String directory, final String fileName)
+   public NIOSequentialFile(final SequentialFileFactory factory, final Executor executor, final String directory, final String fileName)
    {
-      super(directory, new File(directory + "/" + fileName), factory);
+      super(executor, directory, new File(directory + "/" + fileName), factory);
    }
 
    public NIOSequentialFile(final SequentialFileFactory factory, final File file)
    {
-      super(file.getParent(), new File(file.getPath()), factory);
+      super(null, file.getParent(), new File(file.getPath()), factory);
    }
 
    public int getAlignment()
@@ -239,7 +240,20 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
       if (callback != null)
       {
-         callback.done();
+         if (executor == null)
+         {
+            callback.done();
+         }
+         else
+         {
+            executor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  callback.done();
+               }
+            });
+         }
       }
    }
 }
