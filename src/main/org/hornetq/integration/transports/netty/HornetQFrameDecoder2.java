@@ -48,7 +48,8 @@ public class HornetQFrameDecoder2 extends SimpleChannelUpstreamHandler
       if (previousData.readable())
       {
          if (previousData.readableBytes() + in.readableBytes() < SIZE_INT) {
-            append(in, 512); // Length is unknown. Bet at 512.
+            // XXX Length is unknown. Bet at 512. Tune this value.
+            append(in, 512); 
             return;
          }
          
@@ -104,6 +105,9 @@ public class HornetQFrameDecoder2 extends SimpleChannelUpstreamHandler
             previousData.writeBytes(in, length + 4 - previousData.readableBytes());
             frame = previousData;
          } else {
+            // XXX Tune this value: Increasing the initial capacity of the
+            //     dynamic buffer might reduce the chance of additional memory
+            //     copy.
             frame = ChannelBuffers.dynamicBuffer(length + 4);
             frame.writeBytes(previousData, previousData.readerIndex(), previousData.readableBytes());
             frame.writeBytes(in, length + 4 - frame.writerIndex());
@@ -148,6 +152,8 @@ public class HornetQFrameDecoder2 extends SimpleChannelUpstreamHandler
          }
          
          // Convert to dynamic buffer (this requires copy)
+         // XXX Tune this value: Increasing the initial capacity of the dynamic
+         //     buffer might reduce the chance of additional memory copy.
          ChannelBuffer frame = ChannelBuffers.dynamicBuffer(length + SIZE_INT);
          frame.writeBytes(in, length + SIZE_INT);
          frame.skipBytes(SIZE_INT);
