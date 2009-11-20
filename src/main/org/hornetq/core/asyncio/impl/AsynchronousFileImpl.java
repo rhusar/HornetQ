@@ -18,6 +18,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -49,11 +50,11 @@ public class AsynchronousFileImpl implements AsynchronousFile
    private static int EXPECTED_NATIVE_VERSION = 26;
    
    /** Used to determine the next writing sequence */
-   private AtomicInteger nextWritingSequence = new AtomicInteger(0);
+   private AtomicLong nextWritingSequence = new AtomicLong(0);
 
    /** Used to determine the next writing sequence.
     *  This is accessed from a single thread (the Poller Thread) */
-   private int readSequence = 0;
+   private long readSequence = 0;
 
    public static void addMax(final int io)
    {
@@ -283,7 +284,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
             {
                writeSemaphore.acquireUninterruptibly();
                
-               int sequence = nextWritingSequence.getAndIncrement();
+               long sequence = nextWritingSequence.getAndIncrement();
 
                try
                {
@@ -304,7 +305,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
       {
          writeSemaphore.acquireUninterruptibly();
 
-         int sequence = nextWritingSequence.getAndIncrement();
+         long sequence = nextWritingSequence.getAndIncrement();
 
          try
          {
@@ -427,7 +428,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
    @SuppressWarnings("unused")
    // Called by the JNI layer.. just ignore the
    // warning
-   private void callbackDone(final AIOCallback callback, final int sequence, final ByteBuffer buffer)
+   private void callbackDone(final AIOCallback callback, final long sequence, final ByteBuffer buffer)
    {
       writeSemaphore.release();
       pendingWrites.down();
@@ -442,7 +443,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
 
    // Called by the JNI layer.. just ignore the
    // warning
-   private void callbackError(final AIOCallback callback, final int sequence, final ByteBuffer buffer, final int errorCode, final String errorMessage)
+   private void callbackError(final AIOCallback callback, final long sequence, final ByteBuffer buffer, final int errorCode, final String errorMessage)
    {
       log.warn("CallbackError: " + errorMessage);
       writeSemaphore.release();
@@ -529,7 +530,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
 
    private native long size0(long handle) throws HornetQException;
 
-   private native void write(long handle, int sequence, long position, long size, ByteBuffer buffer, AIOCallback aioPackage) throws HornetQException;
+   private native void write(long handle, long sequence, long position, long size, ByteBuffer buffer, AIOCallback aioPackage) throws HornetQException;
 
    private native void read(long handle, long position, long size, ByteBuffer buffer, AIOCallback aioPackage) throws HornetQException;
 

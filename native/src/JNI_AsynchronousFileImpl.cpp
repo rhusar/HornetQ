@@ -48,10 +48,10 @@ JNIEXPORT jlong JNICALL Java_org_hornetq_core_asyncio_impl_AsynchronousFileImpl_
 		std::string fileName = convertJavaString(env, jstrFileName);
 
 		controller = new AIOController(fileName, (int) maxIO);
-		controller->done = env->GetMethodID(clazz,"callbackDone","(Lorg/hornetq/core/asyncio/AIOCallback;ILjava/nio/ByteBuffer;)V");
+		controller->done = env->GetMethodID(clazz,"callbackDone","(Lorg/hornetq/core/asyncio/AIOCallback;JLjava/nio/ByteBuffer;)V");
 		if (!controller->done) return 0;
 
-		controller->error = env->GetMethodID(clazz, "callbackError", "(Lorg/hornetq/core/asyncio/AIOCallback;ILjava/nio/ByteBuffer;ILjava/lang/String;)V");
+		controller->error = env->GetMethodID(clazz, "callbackError", "(Lorg/hornetq/core/asyncio/AIOCallback;JLjava/nio/ByteBuffer;ILjava/lang/String;)V");
         if (!controller->error) return 0;
 
         jclass loggerClass = env->GetObjectClass(logger);

@@ -18,7 +18,7 @@
 
 jobject nullObj = NULL;
 
-JNICallbackAdapter::JNICallbackAdapter(AIOController * _controller, jint _sequence, jobject _callback, jobject _fileController, jobject _bufferReference, short _isRead) : CallbackAdapter()
+JNICallbackAdapter::JNICallbackAdapter(AIOController * _controller, jlong _sequence, jobject _callback, jobject _fileController, jobject _bufferReference, short _isRead) : CallbackAdapter()
 {
 	controller = _controller;
 
