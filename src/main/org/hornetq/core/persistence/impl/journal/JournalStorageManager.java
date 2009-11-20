@@ -309,6 +309,12 @@ public class JournalStorageManager implements StorageManager
       return replicator != null;
    }
 
+
+   public void waitOnOperations() throws Exception
+   {
+      waitOnOperations(-1);
+   }
+
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#blockOnReplication()
     */
@@ -316,6 +322,12 @@ public class JournalStorageManager implements StorageManager
    {
       SimpleWaitIOCallback waitCallback = new SimpleWaitIOCallback();
       afterCompleteOperations(waitCallback);
+      completeOperations();
+      if (timeout <= 0)
+      {
+         waitCallback.waitCompletion();
+      }
+      else
       if (!waitCallback.waitCompletion(timeout))
       {
          throw new IllegalStateException("no response received from replication");

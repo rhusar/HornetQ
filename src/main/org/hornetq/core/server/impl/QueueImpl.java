@@ -651,39 +651,45 @@ public class QueueImpl implements Queue
       return deleteMatchingReferences(null);
    }
 
-   public synchronized int deleteMatchingReferences(final Filter filter) throws Exception
+   public int deleteMatchingReferences(final Filter filter) throws Exception
    {
       int count = 0;
-
-      Transaction tx = new TransactionImpl(storageManager);
-
-      Iterator<MessageReference> iter = messageReferences.iterator();
-
-      while (iter.hasNext())
+      
+      synchronized(this)
       {
-         MessageReference ref = iter.next();
-
-         if (filter == null || filter.match(ref.getMessage()))
+   
+         Transaction tx = new TransactionImpl(storageManager);
+   
+         Iterator<MessageReference> iter = messageReferences.iterator();
+   
+         while (iter.hasNext())
          {
-            deliveringCount.incrementAndGet();
-            acknowledge(tx, ref);
-            iter.remove();
-            count++;
+            MessageReference ref = iter.next();
+   
+            if (filter == null || filter.match(ref.getMessage()))
+            {
+               deliveringCount.incrementAndGet();
+               acknowledge(tx, ref);
+               iter.remove();
+               count++;
+            }
          }
-      }
-
-      List<MessageReference> cancelled = scheduledDeliveryHandler.cancel();
-      for (MessageReference messageReference : cancelled)
-      {
-         if (filter == null || filter.match(messageReference.getMessage()))
+   
+         List<MessageReference> cancelled = scheduledDeliveryHandler.cancel();
+         for (MessageReference messageReference : cancelled)
          {
-            deliveringCount.incrementAndGet();
-            acknowledge(tx, messageReference);
-            count++;
+            if (filter == null || filter.match(messageReference.getMessage()))
+            {
+               deliveringCount.incrementAndGet();
+               acknowledge(tx, messageReference);
+               count++;
+            }
          }
+   
+         tx.commit();
       }
-
-      tx.commit();
+      
+      storageManager.waitOnOperations(-1);
 
       return count;
    }

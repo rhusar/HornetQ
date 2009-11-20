@@ -59,9 +59,13 @@ public interface StorageManager extends HornetQComponent
 
    void afterCompleteOperations(IOAsyncTask run);
    
-   /** Block until the replication is done. 
+   /** Block until the operations are done. 
     * @throws Exception */
    void waitOnOperations(long timeout) throws Exception;
+
+   /** Block until the operations are done. 
+    * @throws Exception */
+   void waitOnOperations() throws Exception;
 
    /** To close the OperationsContext */
    void completeOperations();

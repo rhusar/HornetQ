@@ -349,4 +349,11 @@ public class NullStorageManager implements StorageManager
       run.done();
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#waitOnOperations()
+    */
+   public void waitOnOperations() throws Exception
+   {
+   }
+
 }

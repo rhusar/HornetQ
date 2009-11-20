@@ -1238,8 +1238,13 @@ public class PagingStoreImplTest extends UnitTestCase
        */
       public void afterCompleteOperations(IOAsyncTask run)
       {
-         // TODO Auto-generated method stub
-         
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#waitOnOperations()
+       */
+      public void waitOnOperations() throws Exception
+      {
       }
 
    }
