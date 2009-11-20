@@ -641,7 +641,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
    /** A native method that does nothing, and just validate if the ELF dependencies are loaded and on the correct platform as this binary format */
    private static native int getNativeVersion();
 
-   /** Poll asynchrounous events from internal queues */
+   /** Poll asynchronous events from internal queues */
    private static native void internalPollEvents(long handler);
 
    // Inner classes ---------------------------------------------------------------------
