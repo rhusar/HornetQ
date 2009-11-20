@@ -1463,7 +1463,7 @@ public class QueueImpl implements Queue
 
    private void postAcknowledge(final MessageReference ref)
    {
-      ServerMessage message = ref.getMessage();
+      final ServerMessage message = ref.getMessage();
 
       QueueImpl queue = (QueueImpl)ref.getQueue();
 
@@ -1485,14 +1485,23 @@ public class QueueImpl implements Queue
 
             // also note then when this happens as part of a trasaction its the tx commt of the ack that is important
             // not this
-            try
+            
+            // and this has to happen in a different thread
+            
+            journalExecutor.execute(new Runnable()
             {
-               storageManager.deleteMessage(message.getMessageID());
-            }
-            catch (Exception e)
-            {
-               log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
-            }
+               public void run()
+               {
+                  try
+                  {
+                     storageManager.deleteMessage(message.getMessageID());
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
+                  }
+               }
+            });
          }
       }
 
