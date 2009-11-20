@@ -19,7 +19,9 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
+import org.hornetq.integration.transports.netty.ChannelBufferWrapper;
 import org.hornetq.utils.DataConstants;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
@@ -33,7 +35,7 @@ public class SessionSendMessage extends PacketImpl
    // Constants -----------------------------------------------------
 
    private static final Logger log = Logger.getLogger(SessionSendMessage.class);
-   
+
    // Attributes ----------------------------------------------------
 
    private Message sentMessage;
@@ -80,28 +82,77 @@ public class SessionSendMessage extends PacketImpl
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
+      /*
+       * We write the message to the buffer in the following structure:
+       * 
+       * First the standard packet headers - all packets have these
+       * 
+       * length:int
+       * packet type:byte
+       * channelID:long
+       *
+       * Then the message body:
+       * 
+       * bodySize:int
+       * body:byte[]
+       * 
+       * {Note we store the message body before the message headers/properties since this allows the user to 
+       * construct a message, add stuff to the body buffer, and send it without us having to copy the body into a new
+       * buffer before sending it, this minmises buffer copying}
+       * 
+       * Then followed by the message headers and properties:
+       * 
+       * messageID:long
+       * destination:SimpleString
+       * message type: byte
+       * durable: boolean
+       * expiration: long
+       * timestamp: long
+       * priority: byte
+       * 
+       * properties: byte[]
+       * 
+       *  
+       */
       HornetQBuffer buffer = sentMessage.getBuffer();
-      
+
+      // The body will already be written (if any) at this point, so we take note of the position of the end of the
+      // body
       int afterBody = buffer.writerIndex();
-      
+
+      // We now write the message headers and properties
+      sentMessage.encodeHeadersAndProperties(buffer);
+
+      // We now write the extra data for the packet
       buffer.writeBoolean(requiresResponse);
 
-      // At this point, the rest of the message has already been encoded into the buffer
+      // We take note of the overall size of the packet
       size = buffer.writerIndex();
-            
-      buffer.setIndex(0, 0);
+      
+      // We now set the standard packet headers at the beginning of the buffer
 
-      // The standard header fields
-
+      buffer.writerIndex(0);
+      
       int len = size - DataConstants.SIZE_INT;
       buffer.writeInt(len);
       buffer.writeByte(type);
       buffer.writeLong(channelID);
-      
-      //This last byte we write marks the position of the end of the message body where we store extra data for the packet
+
+      // This last byte we write marks the position of the end of the message body
       buffer.writeInt(afterBody);
-      
+
+      // And we set the indexes back for reading and writing
       buffer.setIndex(0, size);
+            
+      //We must make a copy of the buffer, since the message might get sent again, and the body might get read or written
+      //this might occur while the same send is in operatio since netty send is asynch
+      //this could cause incorrect data to be send and/or reader/writer positions to become corrupted
+      
+      HornetQBuffer newBuffer = buffer.copy();
+      
+      newBuffer.setIndex(0, afterBody);
+      
+      this.sentMessage.setBuffer(newBuffer);
 
       return buffer;
    }
@@ -112,25 +163,28 @@ public class SessionSendMessage extends PacketImpl
       receivedMessage = new ServerMessageImpl();
 
       sentMessage = receivedMessage;
-      
-      //Read the position of after the body where extra data is stored
+
+      // At this point, the standard packet headers will already have been read
+
+      // We read the position of the end of the body - this is where the message headers and properties are stored
       int afterBody = buffer.readInt();
 
-      receivedMessage.decode(buffer);
-      
+      // We now read message headers/properties
+
       buffer.setIndex(afterBody, buffer.writerIndex());
-      
-      requiresResponse = buffer.readBoolean();   
-            
-      receivedMessage.getBuffer().resetReaderIndex();
-             
-   }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + sentMessage.getEncodeSize() + DataConstants.SIZE_BOOLEAN;
+      receivedMessage.decode(buffer);
 
-      return size;
+      // And we read extra data in the packet
+
+      requiresResponse = buffer.readBoolean();
+
+      // We set reader index back to the beginning of the buffer so it can be easily read if then delivered
+      // to a client, and we set writer index to just after where the headers/properties were encoded so that it can
+      // be fileld in with extra data required when delivering the packet to the client (e.g. delivery count, consumer
+      // id)
+
+      buffer.setIndex(0, buffer.writerIndex() - DataConstants.SIZE_BOOLEAN);
    }
 
    // Package protected ---------------------------------------------

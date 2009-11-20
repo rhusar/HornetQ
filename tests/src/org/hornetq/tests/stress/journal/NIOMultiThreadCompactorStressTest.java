@@ -22,7 +22,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -455,7 +455,7 @@ public class NIOMultiThreadCompactorStressTest extends ServiceTestBase
                   // System.out.println(Thread.currentThread().getName() + "::sent #" + i);
                }
                ClientMessage msg = session.createClientMessage(true);
-               msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
+               msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
                prod.send(msg);
             }
 

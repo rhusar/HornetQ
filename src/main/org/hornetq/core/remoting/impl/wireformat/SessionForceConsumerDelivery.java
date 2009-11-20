@@ -61,11 +61,6 @@ public class SessionForceConsumerDelivery extends PacketImpl
       return sequence;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_LONG;
-   }
-
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeLong(consumerID);

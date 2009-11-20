@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.hornetq.core.buffers.ChannelBuffer;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -57,7 +57,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
 
    protected int nextOrderingID;
 
-   private ChannelBuffer writingChannel;
+   private HornetQChannelBuffer writingChannel;
 
    private final Set<Long> recordsSnapshot = new ConcurrentHashSet<Long>();
 
@@ -98,12 +98,12 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
       {
          controlFile.open(1);
 
-         ChannelBuffer renameBuffer = ChannelBuffers.dynamicBuffer(1);
+         HornetQChannelBuffer renameBuffer = HornetQChannelBuffers.dynamicBuffer(1);
 
          renameBuffer.writeInt(-1);
          renameBuffer.writeInt(-1);
 
-         HornetQBuffer filesToRename = ChannelBuffers.dynamicBuffer(1);
+         HornetQBuffer filesToRename = HornetQChannelBuffers.dynamicBuffer(1);
 
          // DataFiles first
 
@@ -206,7 +206,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
       flush();
 
       ByteBuffer bufferWrite = fileFactory.newBuffer(journal.getFileSize());
-      writingChannel = ChannelBuffers.wrappedBuffer(bufferWrite);
+      writingChannel = HornetQChannelBuffers.wrappedBuffer(bufferWrite);
 
       currentFile = journal.getFile(false, false, false, true);
       sequentialFile = currentFile.getFile();
@@ -226,7 +226,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
    /**
     * @return the writingChannel
     */
-   protected ChannelBuffer getWritingChannel()
+   protected HornetQChannelBuffer getWritingChannel()
    {
       return writingChannel;
    }

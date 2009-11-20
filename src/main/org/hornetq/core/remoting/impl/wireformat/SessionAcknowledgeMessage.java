@@ -69,11 +69,6 @@ public class SessionAcknowledgeMessage extends PacketImpl
       return requiresResponse;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_LONG + DataConstants.SIZE_BOOLEAN;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

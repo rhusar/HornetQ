@@ -20,7 +20,7 @@ import javax.transaction.xa.Xid;
 
 import junit.framework.AssertionFailedError;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -2210,7 +2210,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          for (int i = 0; i < 100; i++)
          {
-            HornetQBuffer bodyLocal = ChannelBuffers.buffer(DataConstants.SIZE_INT * numberOfBytes);
+            HornetQBuffer bodyLocal = HornetQChannelBuffers.buffer(DataConstants.SIZE_INT * numberOfBytes);
 
             for (int j = 1; j <= numberOfBytes; j++)
             {

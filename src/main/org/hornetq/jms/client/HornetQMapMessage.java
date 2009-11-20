@@ -366,8 +366,6 @@ public class HornetQMapMessage extends HornetQMessage implements MapMessage
    
    public void doBeforeSend() throws Exception
    {
-      message.encodeToBuffer();
-      
       map.encode(message.getBuffer());
       
       super.doBeforeSend();

@@ -94,15 +94,6 @@ public class SessionSendLargeMessage extends PacketImpl
       largeMessageId = buffer.readLong();
    }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT +
-                 largeMessageHeader.length +
-                 DataConstants.SIZE_LONG;
-
-      return size;
-   }
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

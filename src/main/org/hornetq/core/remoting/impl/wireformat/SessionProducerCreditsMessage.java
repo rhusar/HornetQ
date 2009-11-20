@@ -86,14 +86,6 @@ public class SessionProducerCreditsMessage extends PacketImpl
       offset = buffer.readInt();
    }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT +
-                 SimpleString.sizeofString(address) +
-                 DataConstants.SIZE_INT;
-
-      return size;
-   }
 
    // Package protected ---------------------------------------------
 

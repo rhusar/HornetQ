@@ -18,7 +18,7 @@ import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -234,7 +234,7 @@ public class PagingTest extends ServiceTestBase
 
          ClientProducer producer = session.createProducer(ADDRESS);
 
-         HornetQBuffer bodyLocal = ChannelBuffers.buffer(DataConstants.SIZE_INT * numberOfIntegers);
+         HornetQBuffer bodyLocal = HornetQChannelBuffers.buffer(DataConstants.SIZE_INT * numberOfIntegers);
 
          ClientMessage message = null;
 
@@ -387,7 +387,7 @@ public class PagingTest extends ServiceTestBase
          {
             message = session.createClientMessage(true);
 
-            message.setBuffer(ChannelBuffers.wrappedBuffer(body));
+            message.setBuffer(HornetQChannelBuffers.wrappedBuffer(body));
             message.putIntProperty(new SimpleString("id"), i);
 
             TestSupportPageStore store = (TestSupportPageStore)server.getPostOffice()
@@ -669,7 +669,7 @@ public class PagingTest extends ServiceTestBase
 
          for (int i = 0; i < numberOfMessages; i++)
          {
-            HornetQBuffer bodyLocal = ChannelBuffers.wrappedBuffer(new byte[1024]);
+            HornetQBuffer bodyLocal = HornetQChannelBuffers.wrappedBuffer(new byte[1024]);
 
             message = session.createClientMessage(true);
             message.setBuffer(bodyLocal);
@@ -697,7 +697,7 @@ public class PagingTest extends ServiceTestBase
 
          for (int i = 0; i < numberOfMessages; i++)
          {
-            HornetQBuffer bodyLocal = ChannelBuffers.wrappedBuffer(new byte[1024]);
+            HornetQBuffer bodyLocal = HornetQChannelBuffers.wrappedBuffer(new byte[1024]);
 
             message = session.createClientMessage(true);
             message.setBuffer(bodyLocal);
@@ -724,7 +724,7 @@ public class PagingTest extends ServiceTestBase
 
          for (int i = 0; i < numberOfMessages; i++)
          {
-            HornetQBuffer bodyLocal = ChannelBuffers.wrappedBuffer(new byte[1024]);
+            HornetQBuffer bodyLocal = HornetQChannelBuffers.wrappedBuffer(new byte[1024]);
 
             message = session.createClientMessage(true);
             message.setBuffer(bodyLocal);
@@ -801,7 +801,7 @@ public class PagingTest extends ServiceTestBase
 
          ClientMessage message = null;
 
-         HornetQBuffer bodyLocal = ChannelBuffers.wrappedBuffer(new byte[1024]);
+         HornetQBuffer bodyLocal = HornetQChannelBuffers.wrappedBuffer(new byte[1024]);
 
          message = session.createClientMessage(true);
          message.setBuffer(bodyLocal);

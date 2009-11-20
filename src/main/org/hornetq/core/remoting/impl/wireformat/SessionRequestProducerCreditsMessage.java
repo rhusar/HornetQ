@@ -80,13 +80,6 @@ public class SessionRequestProducerCreditsMessage extends PacketImpl
       address = buffer.readSimpleString();
    }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT + SimpleString.sizeofString(address);
-
-      return size;
-   }
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

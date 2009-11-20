@@ -74,12 +74,6 @@ public abstract class SessionContinuationMessage extends PacketImpl
    }
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return SESSION_CONTINUATION_BASE_SIZE + body.length; 
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(body.length);

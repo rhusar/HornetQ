@@ -23,6 +23,8 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.UnsupportedCharsetException;
 
+import org.hornetq.core.remoting.spi.HornetQBuffer;
+
 /**
  * A skeletal implementation for Java heap buffers.
  *
@@ -31,7 +33,7 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  * @version $Rev: 486 $, $Date: 2008-11-16 22:52:47 +0900 (Sun, 16 Nov 2008) $
  */
-public class HeapChannelBuffer extends AbstractChannelBuffer
+public class HornetQHeapChannelBuffer extends HornetQAbstractChannelBuffer
 {
 
    /**
@@ -44,7 +46,7 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
     *
     * @param length the length of the new byte array
     */
-   HeapChannelBuffer(final int length)
+   HornetQHeapChannelBuffer(final int length)
    {
       this(new byte[length], 0, 0);
    }
@@ -54,7 +56,7 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
     *
     * @param array the byte array to wrap
     */
-   HeapChannelBuffer(final byte[] array)
+   HornetQHeapChannelBuffer(final byte[] array)
    {
       this(array, 0, array.length);
    }
@@ -66,7 +68,7 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
     * @param readerIndex  the initial reader index of this buffer
     * @param writerIndex  the initial writer index of this buffer
     */
-   protected HeapChannelBuffer(final byte[] array, final int readerIndex, final int writerIndex)
+   protected HornetQHeapChannelBuffer(final byte[] array, final int readerIndex, final int writerIndex)
    {
       if (array == null)
       {
@@ -86,11 +88,11 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
       return array[index];
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
-      if (dst instanceof HeapChannelBuffer)
+      if (dst instanceof HornetQHeapChannelBuffer)
       {
-         getBytes(index, ((HeapChannelBuffer)dst).array, dstIndex, length);
+         getBytes(index, ((HornetQHeapChannelBuffer)dst).array, dstIndex, length);
       }
       else
       {
@@ -123,11 +125,11 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
       array[index] = value;
    }
 
-   public void setBytes(final int index, final ChannelBuffer src, final int srcIndex, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
-      if (src instanceof HeapChannelBuffer)
+      if (src instanceof HornetQHeapChannelBuffer)
       {
-         setBytes(index, ((HeapChannelBuffer)src).array, srcIndex, length);
+         setBytes(index, ((HornetQHeapChannelBuffer)src).array, srcIndex, length);
       }
       else
       {
@@ -270,7 +272,7 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
       array[index + 7] = (byte)(value >>> 0);
    }
 
-   public ChannelBuffer copy(final int index, final int length)
+   public HornetQChannelBuffer copy(final int index, final int length)
    {
       if (index < 0 || length < 0 || index + length > array.length)
       {
@@ -279,12 +281,7 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
 
       byte[] copiedArray = new byte[length];
       System.arraycopy(array, index, copiedArray, 0, length);
-      return new HeapChannelBuffer(copiedArray);
-   }
-
-   public ChannelBuffer duplicate()
-   {
-      return new HeapChannelBuffer(array, readerIndex(), writerIndex());
+      return new HornetQHeapChannelBuffer(copiedArray);
    }
 
    public ByteBuffer toByteBuffer(final int index, final int length)
@@ -310,6 +307,11 @@ public class HeapChannelBuffer extends AbstractChannelBuffer
    public byte[] array()
    {
       return array;
+   }
+   
+   public HornetQBuffer copy()
+   {
+      return new HornetQHeapChannelBuffer(array.clone());
    }
 
 }

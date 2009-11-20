@@ -309,23 +309,11 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    
    // Used when storing to/from journal
    
-   //TODO - this can be further optimised, so when writing into the journal, we just write the message's already existing
-   //buffer directly into the timed buffer, the journal specific headers can be added in the timed buffer when the smaller
-   //buffer is copied into the timed buffer's larger buffer
-   
    public void encode(HornetQBuffer buffer)
    {
-      //FIXME - this won't work
-      buffer.writeBytes(buffer, PacketImpl.PACKET_HEADERS_SIZE, 0);  
+      
    }
    
-//   public void decode(HornetQBuffer buffer)
-//   {
-//      this.decodeHeadersAndProperties(buffer);
-//      
-//      this.buffer = buffer;
-//   }
-
    @Override
    public String toString()
    {

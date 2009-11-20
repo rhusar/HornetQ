@@ -73,12 +73,6 @@ public class SessionSendContinuationMessage extends SessionContinuationMessage
    }
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return super.getRequiredBufferSize() + DataConstants.SIZE_BOOLEAN;
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       super.encodeRest(buffer);

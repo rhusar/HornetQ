@@ -13,7 +13,7 @@
 
 package org.hornetq.tests.integration;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.logging.Logger;
@@ -58,13 +58,13 @@ public class EncodeSizeTest extends UnitTestCase
          
          byte[] bytes = RandomUtil.randomBytes(1000);
          
-         HornetQBuffer body = ChannelBuffers.dynamicBuffer(bytes);
+         HornetQBuffer body = HornetQChannelBuffers.dynamicBuffer(bytes);
          
          clientMessage.setBuffer(body);
          
          int clientEncodeSize = clientMessage.getEncodeSize();
              
-         HornetQBuffer buffer = ChannelBuffers.dynamicBuffer(clientEncodeSize);
+         HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(clientEncodeSize);
                   
          clientMessage.encode(buffer);
          
@@ -102,7 +102,7 @@ public class EncodeSizeTest extends UnitTestCase
          
          byte[] bytes = RandomUtil.randomBytes(1000);
          
-         HornetQBuffer body = ChannelBuffers.dynamicBuffer(bytes);
+         HornetQBuffer body = HornetQChannelBuffers.dynamicBuffer(bytes);
          
          clientMessage.setBuffer(body);
          
@@ -110,7 +110,7 @@ public class EncodeSizeTest extends UnitTestCase
          
          SessionSendMessage packet = new SessionSendMessage(clientMessage, false);
              
-         HornetQBuffer buffer = ChannelBuffers.dynamicBuffer(packet.getRequiredBufferSize());
+         HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(packet.getRequiredBufferSize());
                   
          packet.encode(buffer);
          

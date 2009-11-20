@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.impl.ClientConsumerImpl;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
@@ -189,7 +189,7 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          return HandleStatus.BUSY;
       }
-
+      
       lock.lock();
 
       try
@@ -347,7 +347,7 @@ public class ServerConsumerImpl implements ServerConsumer
             promptDelivery(false);
 
             ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
-                                                                        ChannelBuffers.EMPTY_BUFFER);
+                                                                        HornetQChannelBuffers.EMPTY_BUFFER);
 
             forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
             forcedDeliveryMessage.setDestination(messageQueue.getName());
@@ -578,13 +578,14 @@ public class ServerConsumerImpl implements ServerConsumer
    private void deliverStandardMessage(final MessageReference ref, final ServerMessage message)
    {
       final SessionReceiveMessage packet = new SessionReceiveMessage(id, message, ref.getDeliveryCount());
-
+      
+      channel.send(packet);
+      
       if (availableCredits != null)
       {
-         availableCredits.addAndGet(-packet.getRequiredBufferSize());
+         availableCredits.addAndGet(-packet.getPacketSize());
       }
 
-      channel.send(packet);
    }
 
    // Inner classes
@@ -667,7 +668,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
             if (!sentInitialPacket)
             {
-               HornetQBuffer headerBuffer = ChannelBuffers.buffer(largeMessage.getHeadersAndPropertiesEncodeSize());
+               HornetQBuffer headerBuffer = HornetQChannelBuffers.buffer(largeMessage.getHeadersAndPropertiesEncodeSize());
 
                largeMessage.encodeHeadersAndProperties(headerBuffer);
 
@@ -679,15 +680,15 @@ public class ServerConsumerImpl implements ServerConsumer
                context = largeMessage.getBodyEncoder();
 
                context.open();
-
-               if (availableCredits != null)
-               {
-                  availableCredits.addAndGet(-initialPacket.getRequiredBufferSize());
-               }
-
+               
                sentInitialPacket = true;
 
                channel.send(initialPacket);
+               
+               if (availableCredits != null)
+               {
+                  availableCredits.addAndGet(-initialPacket.getPacketSize());
+               }
 
                // Execute the rest of the large message on a different thread so as not to tie up the delivery thread
                // for too long
@@ -711,20 +712,20 @@ public class ServerConsumerImpl implements ServerConsumer
                SessionReceiveContinuationMessage chunk = createChunkSend(context);
 
                int chunkLen = chunk.getBody().length;
-
-               if (availableCredits != null)
-               {
-                  availableCredits.addAndGet(-chunk.getRequiredBufferSize());
-               }
-
+                              
+               channel.send(chunk);
+               
                if (trace)
                {
-                  trace("deliverLargeMessage: Sending " + chunk.getRequiredBufferSize() +
+                  trace("deliverLargeMessage: Sending " + chunk.getPacketSize() +
                         " availableCredits now is " +
                         availableCredits);
                }
-
-               channel.send(chunk);
+               
+               if (availableCredits != null)
+               {
+                  availableCredits.addAndGet(-chunk.getPacketSize());
+               }
 
                positionPendingLargeMessage += chunkLen;
 
@@ -795,7 +796,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
          localChunkLen = (int)Math.min(sizePendingLargeMessage - positionPendingLargeMessage, minLargeMessageSize);
 
-         HornetQBuffer bodyBuffer = ChannelBuffers.buffer(localChunkLen);
+         HornetQBuffer bodyBuffer = HornetQChannelBuffers.buffer(localChunkLen);
 
          context.encode(bodyBuffer, localChunkLen);
 

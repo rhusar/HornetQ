@@ -99,13 +99,6 @@ public class SessionCreateConsumerMessage extends PacketImpl
       return requiresResponse;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG + queueName.sizeof() +
-             SimpleString.sizeofNullableString(filterString) +
-             2 * DataConstants.SIZE_BOOLEAN ;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

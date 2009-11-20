@@ -52,11 +52,6 @@ public class SessionConsumerCloseMessage extends PacketImpl
       return consumerID;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

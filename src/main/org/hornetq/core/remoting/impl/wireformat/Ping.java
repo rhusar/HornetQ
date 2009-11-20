@@ -54,11 +54,6 @@ public class Ping extends PacketImpl
       return connectionTTL;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG;
-   }
-
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeLong(connectionTTL);

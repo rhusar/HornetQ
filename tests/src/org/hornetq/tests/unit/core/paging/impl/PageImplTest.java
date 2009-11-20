@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
@@ -208,7 +208,7 @@ public class PageImplTest extends UnitTestCase
 
       for (int i = 0; i < numberOfElements; i++)
       {
-         HornetQBuffer buffer = ChannelBuffers.buffer(10); 
+         HornetQBuffer buffer = HornetQChannelBuffers.buffer(10); 
 
          for (int j = 0; j < buffer.capacity(); j++)
          {

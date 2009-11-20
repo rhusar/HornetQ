@@ -31,12 +31,12 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  * <h3>Creation of a buffer</h3>
  *
  * It is recommended to create a new buffer using the helper methods in
- * {@link ChannelBuffers} rather than calling an individual implementation's
+ * {@link HornetQChannelBuffers} rather than calling an individual implementation's
  * constructor.
  *
  * <h3>Random Access Indexing</h3>
  *
- * Just like an ordinary primitive byte array, {@link ChannelBuffer} uses
+ * Just like an ordinary primitive byte array, {@link HornetQChannelBuffer} uses
  * <a href="http://en.wikipedia.org/wiki/Index_(information_technology)#Array_element_identifier">zero-based indexing</a>.
  * It means the index of the first byte is always {@code 0} and the index of
  * the last byte is always {@link #capacity() capacity - 1}.  For example, to
@@ -53,7 +53,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  *
  * <h3>Sequential Access Indexing</h3>
  *
- * {@link ChannelBuffer} provides two pointer variables to support sequential
+ * {@link HornetQChannelBuffer} provides two pointer variables to support sequential
  * read and write operations - {@link #readerIndex() readerIndex} for a read
  * operation and {@link #writerIndex() writerIndex} for a write operation
  * respectively.  The following diagram shows how a buffer is segmented into
@@ -74,7 +74,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  * starts with {@code read} or {@code skip} will get or skip the data at the
  * current {@link #readerIndex() readerIndex} and increase it by the number of
  * read bytes.  If the argument of the read operation is also a
- * {@link ChannelBuffer} and no start index is specified, the specified
+ * {@link HornetQChannelBuffer} and no start index is specified, the specified
  * buffer's {@link #readerIndex() readerIndex} is increased together.
  * <p>
  * If there's not enough content left, {@link IndexOutOfBoundsException} is
@@ -94,7 +94,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  * This segment is a undefined space which needs to be filled.  Any operation
  * whose name ends with {@code write} will write the data at the current
  * {@link #writerIndex() writerIndex} and increase it by the number of written
- * bytes.  If the argument of the write operation is also a {@link ChannelBuffer},
+ * bytes.  If the argument of the write operation is also a {@link HornetQChannelBuffer},
  * and no start index is specified, the specified buffer's
  * {@link #readerIndex() readerIndex} is increased together.
  * <p>
@@ -198,14 +198,14 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  * <h4>NIO Buffers</h4>
  *
  * Various {@link #toByteBuffer()} and {@link #toByteBuffers()} methods convert
- * a {@link ChannelBuffer} into one or more NIO buffers.  These methods avoid
+ * a {@link HornetQChannelBuffer} into one or more NIO buffers.  These methods avoid
  * buffer allocation and memory copy whenever possible, but there's no
  * guarantee that memory copy will not be involved or that an explicit memory
  * copy will be involved.
  *
  * <h4>Strings</h4>
  *
- * Various {@link #toString(String)} methods convert a {@link ChannelBuffer}
+ * Various {@link #toString(String)} methods convert a {@link HornetQChannelBuffer}
  * into a {@link String}.  Plesae note that {@link #toString()} is not a
  * conversion method.
  *
@@ -221,7 +221,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  *
  * @apiviz.landmark
  */
-public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
+public interface HornetQChannelBuffer extends Comparable<HornetQChannelBuffer>, HornetQBuffer
 {
 
    /**
@@ -490,25 +490,25 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * Transfers this buffer's data to the specified destination starting at
     * the specified absolute {@code index} until the destination becomes
     * non-writable.  This method is basically same with
-    * {@link #getBytes(int, ChannelBuffer, int, int)}, except that this
+    * {@link #getBytes(int, HornetQChannelBuffer, int, int)}, except that this
     * method increases the {@code writerIndex} of the destination by the
     * number of the transferred bytes while
-    * {@link #getBytes(int, ChannelBuffer, int, int)} does not.
+    * {@link #getBytes(int, HornetQChannelBuffer, int, int)} does not.
     *
     * @throws IndexOutOfBoundsException
     *         if the specified {@code index} is less than {@code 0} or
     *         if {@code index + dst.writableBytes} is greater than
     *            {@code this.capacity}
     */
-   void getBytes(int index, ChannelBuffer dst);
+   void getBytes(int index, HornetQChannelBuffer dst);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
     * the specified absolute {@code index}.  This method is basically same
-    * with {@link #getBytes(int, ChannelBuffer, int, int)}, except that this
+    * with {@link #getBytes(int, HornetQChannelBuffer, int, int)}, except that this
     * method increases the {@code writerIndex} of the destination by the
     * number of the transferred bytes while
-    * {@link #getBytes(int, ChannelBuffer, int, int)} does not.
+    * {@link #getBytes(int, HornetQChannelBuffer, int, int)} does not.
     *
     * @param length the number of bytes to transfer
     *
@@ -518,7 +518,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *            {@code this.capacity}, or
     *         if {@code length} is greater than {@code dst.writableBytes}
     */
-   void getBytes(int index, ChannelBuffer dst, int length);
+   void getBytes(int index, HornetQChannelBuffer dst, int length);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
@@ -535,7 +535,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *         if {@code dstIndex + length} is greater than
     *            {@code dst.capacity}
     */
-   void getBytes(int index, ChannelBuffer dst, int dstIndex, int length);
+   void getBytes(int index, HornetQChannelBuffer dst, int dstIndex, int length);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
@@ -664,25 +664,25 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * Transfers the specified source buffer's data to this buffer starting at
     * the specified absolute {@code index} until the destination becomes
     * unreadable.  This method is basically same with
-    * {@link #setBytes(int, ChannelBuffer, int, int)}, except that this
+    * {@link #setBytes(int, HornetQChannelBuffer, int, int)}, except that this
     * method increases the {@code readerIndex} of the source buffer by
     * the number of the transferred bytes while
-    * {@link #getBytes(int, ChannelBuffer, int, int)} does not.
+    * {@link #getBytes(int, HornetQChannelBuffer, int, int)} does not.
     *
     * @throws IndexOutOfBoundsException
     *         if the specified {@code index} is less than {@code 0} or
     *         if {@code index + src.readableBytes} is greater than
     *            {@code this.capacity}
     */
-   void setBytes(int index, ChannelBuffer src);
+   void setBytes(int index, HornetQChannelBuffer src);
 
    /**
     * Transfers the specified source buffer's data to this buffer starting at
     * the specified absolute {@code index}.  This method is basically same
-    * with {@link #setBytes(int, ChannelBuffer, int, int)}, except that this
+    * with {@link #setBytes(int, HornetQChannelBuffer, int, int)}, except that this
     * method increases the {@code readerIndex} of the source buffer by
     * the number of the transferred bytes while
-    * {@link #getBytes(int, ChannelBuffer, int, int)} does not.
+    * {@link #getBytes(int, HornetQChannelBuffer, int, int)} does not.
     *
     * @param length the number of bytes to transfer
     *
@@ -692,7 +692,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *            {@code this.capacity}, or
     *         if {@code length} is greater than {@code src.readableBytes}
     */
-   void setBytes(int index, ChannelBuffer src, int length);
+   void setBytes(int index, HornetQChannelBuffer src, int length);
 
    /**
     * Transfers the specified source buffer's data to this buffer starting at
@@ -709,7 +709,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *         if {@code srcIndex + length} is greater than
     *            {@code src.capacity}
     */
-   void setBytes(int index, ChannelBuffer src, int srcIndex, int length);
+   void setBytes(int index, HornetQChannelBuffer src, int srcIndex, int length);
 
    /**
     * Transfers the specified source array's data to this buffer starting at
@@ -879,31 +879,31 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * the current {@code readerIndex} until the destination becomes
     * non-writable, and increases the {@code readerIndex} by the number of the
     * transferred bytes.  This method is basically same with
-    * {@link #readBytes(ChannelBuffer, int, int)}, except that this method
+    * {@link #readBytes(HornetQChannelBuffer, int, int)}, except that this method
     * increases the {@code writerIndex} of the destination by the number of
-    * the transferred bytes while {@link #readBytes(ChannelBuffer, int, int)}
+    * the transferred bytes while {@link #readBytes(HornetQChannelBuffer, int, int)}
     * does not.
     *
     * @throws IndexOutOfBoundsException
     *         if {@code dst.writableBytes} is greater than
     *            {@code this.readableBytes}
     */
-   void readBytes(ChannelBuffer dst);
+   void readBytes(HornetQChannelBuffer dst);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
     * the current {@code readerIndex} and increases the {@code readerIndex}
     * by the number of the transferred bytes (= {@code length}).  This method
-    * is basically same with {@link #readBytes(ChannelBuffer, int, int)},
+    * is basically same with {@link #readBytes(HornetQChannelBuffer, int, int)},
     * except that this method increases the {@code writerIndex} of the
     * destination by the number of the transferred bytes (= {@code length})
-    * while {@link #readBytes(ChannelBuffer, int, int)} does not.
+    * while {@link #readBytes(HornetQChannelBuffer, int, int)} does not.
     *
     * @throws IndexOutOfBoundsException
     *         if {@code length} is greater than {@code this.readableBytes} or
     *         if {@code length} is greater than {@code dst.writableBytes}
     */
-   void readBytes(ChannelBuffer dst, int length);
+   void readBytes(HornetQChannelBuffer dst, int length);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
@@ -919,7 +919,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *         if {@code dstIndex + length} is greater than
     *            {@code dst.capacity}
     */
-   void readBytes(ChannelBuffer dst, int dstIndex, int length);
+   void readBytes(HornetQChannelBuffer dst, int dstIndex, int length);
 
    /**
     * Transfers this buffer's data to the specified destination starting at
@@ -1048,9 +1048,9 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * the current {@code writerIndex} until the source buffer becomes
     * unreadable, and increases the {@code writerIndex} by the number of
     * the transferred bytes.  This method is basically same with
-    * {@link #writeBytes(ChannelBuffer, int, int)}, except that this method
+    * {@link #writeBytes(HornetQChannelBuffer, int, int)}, except that this method
     * increases the {@code readerIndex} of the source buffer by the number of
-    * the transferred bytes while {@link #writeBytes(ChannelBuffer, int, int)}
+    * the transferred bytes while {@link #writeBytes(HornetQChannelBuffer, int, int)}
     * does not.
     *
     * @throws IndexOutOfBoundsException
@@ -1058,16 +1058,16 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *            {@code this.writableBytes}
     *
     */
-   void writeBytes(ChannelBuffer src);
+   void writeBytes(HornetQChannelBuffer src);
 
    /**
     * Transfers the specified source buffer's data to this buffer starting at
     * the current {@code writerIndex} and increases the {@code writerIndex}
     * by the number of the transferred bytes (= {@code length}).  This method
-    * is basically same with {@link #writeBytes(ChannelBuffer, int, int)},
+    * is basically same with {@link #writeBytes(HornetQChannelBuffer, int, int)},
     * except that this method increases the {@code readerIndex} of the source
     * buffer by the number of the transferred bytes (= {@code length}) while
-    * {@link #writeBytes(ChannelBuffer, int, int)} does not.
+    * {@link #writeBytes(HornetQChannelBuffer, int, int)} does not.
     *
     * @param length the number of bytes to transfer
     *
@@ -1075,7 +1075,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *         if {@code length} is greater than {@code this.writableBytes} or
     *         if {@code length} is greater then {@code src.readableBytes}
     */
-   void writeBytes(ChannelBuffer src, int length);
+   void writeBytes(HornetQChannelBuffer src, int length);
 
    /**
     * Transfers the specified source buffer's data to this buffer starting at
@@ -1091,7 +1091,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     *            {@code src.capacity}, or
     *         if {@code length} is greater than {@code this.writableBytes}
     */
-   void writeBytes(ChannelBuffer src, int srcIndex, int length);
+   void writeBytes(HornetQChannelBuffer src, int srcIndex, int length);
 
    /**
     * Transfers the specified source array's data to this buffer starting at
@@ -1234,7 +1234,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * Please note that it does not compare {@link #readerIndex()} nor
     * {@link #writerIndex()}.  This method also returns {@code false} for
     * {@code null} and an object which is not an instance of
-    * {@link ChannelBuffer} type.
+    * {@link HornetQChannelBuffer} type.
     */
    boolean equals(Object obj);
 
@@ -1244,7 +1244,7 @@ public interface ChannelBuffer extends Comparable<ChannelBuffer>, HornetQBuffer
     * comparison functions of various languages such as {@code strcmp},
     * {@code memcmp} and {@link String#compareTo(String)}.
     */
-   int compareTo(ChannelBuffer buffer);
+   int compareTo(HornetQChannelBuffer buffer);
 
    /**
     * Returns the string representation of this buffer.  This method does not

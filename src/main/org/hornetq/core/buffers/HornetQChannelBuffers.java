@@ -16,7 +16,7 @@ package org.hornetq.core.buffers;
 import java.nio.ByteBuffer;
 
 /**
- * Creates a new {@link ChannelBuffer} by allocating new space or by wrapping
+ * Creates a new {@link HornetQChannelBuffer} by allocating new space or by wrapping
  * or copying existing byte arrays, byte buffers and a string.
  *
  * <h3>Use static import</h3>
@@ -75,13 +75,13 @@ import java.nio.ByteBuffer;
  *
  * @apiviz.landmark
  */
-public class ChannelBuffers
+public class HornetQChannelBuffers
 {
 
    /**
     * A buffer whose capacity is {@code 0}.
     */
-   public static final HeapChannelBuffer EMPTY_BUFFER = new HeapChannelBuffer(0);
+   public static final HornetQHeapChannelBuffer EMPTY_BUFFER = new HornetQHeapChannelBuffer(0);
 
    private static final char[] HEXDUMP_TABLE = new char[65536 * 4];
 
@@ -102,7 +102,7 @@ public class ChannelBuffers
     * and {@code capacity}.  The new buffer's {@code readerIndex} and
     * {@code writerIndex} are {@code 0}.
     */
-   public static ChannelBuffer buffer(final int capacity)
+   public static HornetQChannelBuffer buffer(final int capacity)
    {
       if (capacity == 0)
       {
@@ -110,7 +110,7 @@ public class ChannelBuffers
       }
       else
       {
-         return new HeapChannelBuffer(capacity);
+         return new HornetQHeapChannelBuffer(capacity);
       }
    }
    
@@ -120,9 +120,9 @@ public class ChannelBuffers
     * 
     * @author Clebert
     */
-   public static ChannelBuffer dynamicBuffer(final byte[] initialBuffer)
+   public static HornetQChannelBuffer dynamicBuffer(final byte[] initialBuffer)
    {
-      return new DynamicChannelBuffer(initialBuffer);
+      return new HornetQDynamicChannelBuffer(initialBuffer);
    }
 
    /**
@@ -131,9 +131,9 @@ public class ChannelBuffers
     * less unexpected reallocation overhead.  The new buffer's
     * {@code readerIndex} and {@code writerIndex} are {@code 0}.
     */
-   public static ChannelBuffer dynamicBuffer(final int estimatedLength)
+   public static HornetQChannelBuffer dynamicBuffer(final int estimatedLength)
    {
-      return new DynamicChannelBuffer(estimatedLength);
+      return new HornetQDynamicChannelBuffer(estimatedLength);
    }
 
    /**
@@ -141,9 +141,9 @@ public class ChannelBuffers
     * specified {@code endianness}.  A modification on the specified array's
     * content will be visible to the returned buffer.
     */
-   public static ChannelBuffer wrappedBuffer(final byte[] array)
+   public static HornetQChannelBuffer wrappedBuffer(final byte[] array)
    {
-      return new HeapChannelBuffer(array);
+      return new HornetQHeapChannelBuffer(array);
    }
    
    /**
@@ -158,10 +158,10 @@ public class ChannelBuffers
     * 
     * @author Clebert
     */
-   public static ChannelBuffer wrappedBuffer(final ByteBuffer buffer)
+   public static HornetQChannelBuffer wrappedBuffer(final ByteBuffer buffer)
    {
       
-      ChannelBuffer newbuffer = new ByteBufferBackedChannelBuffer(buffer);
+      HornetQChannelBuffer newbuffer = new HornetQByteBufferBackedChannelBuffer(buffer);
       newbuffer.clear();
       return newbuffer;
    }
@@ -172,92 +172,92 @@ public class ChannelBuffers
     * {@code readerIndex} and {@code writerIndex} are {@code 0} and
     * {@code array.length} respectively.
     */
-   public static ChannelBuffer copiedBuffer(final byte[] array)
-   {
-      if (array.length == 0)
-      {
-         return EMPTY_BUFFER;
-      }
-      else
-      {
-         return new HeapChannelBuffer(array.clone());
-      }
-   }
-
-   /**
-    * Creates a new buffer whose content is a copy of the specified
-    * {@code buffer}'s current slice.  The new buffer's {@code readerIndex}
-    * and {@code writerIndex} are {@code 0} and {@code buffer.remaining}
-    * respectively.
-    */
-   public static ChannelBuffer copiedBuffer(final ByteBuffer buffer)
-   {
-      int length = buffer.remaining();
-      if (length == 0)
-      {
-         return EMPTY_BUFFER;
-      }
-      byte[] copy = new byte[length];
-      int position = buffer.position();
-      try
-      {
-         buffer.get(copy);
-      }
-      finally
-      {
-         buffer.position(position);
-      }
-      return wrappedBuffer(copy);
-   }
-
-   /**
-    * Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-    * of the specified buffer's readable bytes.
-    */
-   public static String hexDump(final ChannelBuffer buffer)
-   {
-      return hexDump(buffer, buffer.readerIndex(), buffer.readableBytes());
-   }
-
-   /**
-    * Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
-    * of the specified buffer's sub-region.
-    */
-   public static String hexDump(final ChannelBuffer buffer, final int fromIndex, final int length)
-   {
-      if (length < 0)
-      {
-         throw new IllegalArgumentException("length: " + length);
-      }
-      if (length == 0)
-      {
-         return "";
-      }
-
-      int endIndex = fromIndex + (length >>> 1 << 1);
-      boolean oddLength = length % 2 != 0;
-      char[] buf = new char[length << 1];
-
-      int srcIdx = fromIndex;
-      int dstIdx = 0;
-      for (; srcIdx < endIndex; srcIdx += 2, dstIdx += 4)
-      {
-         System.arraycopy(HEXDUMP_TABLE, buffer.getUnsignedShort(srcIdx) << 2, buf, dstIdx, 4);
-      }
-
-      if (oddLength)
-      {
-         System.arraycopy(HEXDUMP_TABLE, (buffer.getUnsignedByte(srcIdx) << 2) + 2, buf, dstIdx, 2);
-      }
-
-      return new String(buf);
-   }
-
+//   public static HornetQChannelBuffer copiedBuffer(final byte[] array)
+//   {
+//      if (array.length == 0)
+//      {
+//         return EMPTY_BUFFER;
+//      }
+//      else
+//      {
+//         return new HornetQHeapChannelBuffer(array.clone());
+//      }
+//   }
+//
+//   /**
+//    * Creates a new buffer whose content is a copy of the specified
+//    * {@code buffer}'s current slice.  The new buffer's {@code readerIndex}
+//    * and {@code writerIndex} are {@code 0} and {@code buffer.remaining}
+//    * respectively.
+//    */
+//   public static HornetQChannelBuffer copiedBuffer(final ByteBuffer buffer)
+//   {
+//      int length = buffer.remaining();
+//      if (length == 0)
+//      {
+//         return EMPTY_BUFFER;
+//      }
+//      byte[] copy = new byte[length];
+//      int position = buffer.position();
+//      try
+//      {
+//         buffer.get(copy);
+//      }
+//      finally
+//      {
+//         buffer.position(position);
+//      }
+//      return wrappedBuffer(copy);
+//   }
+//
+//   /**
+//    * Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+//    * of the specified buffer's readable bytes.
+//    */
+//   public static String hexDump(final HornetQChannelBuffer buffer)
+//   {
+//      return hexDump(buffer, buffer.readerIndex(), buffer.readableBytes());
+//   }
+//
+//   /**
+//    * Returns a <a href="http://en.wikipedia.org/wiki/Hex_dump">hex dump</a>
+//    * of the specified buffer's sub-region.
+//    */
+//   public static String hexDump(final HornetQChannelBuffer buffer, final int fromIndex, final int length)
+//   {
+//      if (length < 0)
+//      {
+//         throw new IllegalArgumentException("length: " + length);
+//      }
+//      if (length == 0)
+//      {
+//         return "";
+//      }
+//
+//      int endIndex = fromIndex + (length >>> 1 << 1);
+//      boolean oddLength = length % 2 != 0;
+//      char[] buf = new char[length << 1];
+//
+//      int srcIdx = fromIndex;
+//      int dstIdx = 0;
+//      for (; srcIdx < endIndex; srcIdx += 2, dstIdx += 4)
+//      {
+//         System.arraycopy(HEXDUMP_TABLE, buffer.getUnsignedShort(srcIdx) << 2, buf, dstIdx, 4);
+//      }
+//
+//      if (oddLength)
+//      {
+//         System.arraycopy(HEXDUMP_TABLE, (buffer.getUnsignedByte(srcIdx) << 2) + 2, buf, dstIdx, 2);
+//      }
+//
+//      return new String(buf);
+//   }
+//
    /**
     * Calculates the hash code of the specified buffer.  This method is
     * useful when implementing a new buffer type.
     */
-   public static int hashCode(final ChannelBuffer buffer)
+   public static int hashCode(final HornetQChannelBuffer buffer)
    {
       final int aLen = buffer.readableBytes();
       final int intCount = aLen >>> 2;
@@ -289,7 +289,7 @@ public class ChannelBuffers
     * identical to each other as described in {@code ChannelBuffer#equals(Object)}.
     * This method is useful when implementing a new buffer type.
     */
-   public static boolean equals(final ChannelBuffer bufferA, final ChannelBuffer bufferB)
+   public static boolean equals(final HornetQChannelBuffer bufferA, final HornetQChannelBuffer bufferB)
    {
       final int aLen = bufferA.readableBytes();
       if (aLen != bufferB.readableBytes())
@@ -327,10 +327,10 @@ public class ChannelBuffers
    }
 
    /**
-    * Compares the two specified buffers as described in {@link ChannelBuffer#compareTo(ChannelBuffer)}.
+    * Compares the two specified buffers as described in {@link HornetQChannelBuffer#compareTo(HornetQChannelBuffer)}.
     * This method is useful when implementing a new buffer type.
     */
-   public static int compare(final ChannelBuffer bufferA, final ChannelBuffer bufferB)
+   public static int compare(final HornetQChannelBuffer bufferA, final HornetQChannelBuffer bufferB)
    {
       final int aLen = bufferA.readableBytes();
       final int bLen = bufferB.readableBytes();
@@ -375,94 +375,94 @@ public class ChannelBuffers
 
       return aLen - bLen;
    }
+//
+//   /**
+//    * The default implementation of {@link HornetQChannelBuffer#indexOf(int, int, byte)}.
+//    * This method is useful when implementing a new buffer type.
+//    */
+//   public static int indexOf(final HornetQChannelBuffer buffer, final int fromIndex, final int toIndex, final byte value)
+//   {
+//      if (fromIndex <= toIndex)
+//      {
+//         return firstIndexOf(buffer, fromIndex, toIndex, value);
+//      }
+//      else
+//      {
+//         return lastIndexOf(buffer, fromIndex, toIndex, value);
+//      }
+//   }
+//
+//   /**
+//    * Toggles the endianness of the specified 16-bit short integer.
+//    */
+//   public static short swapShort(final short value)
+//   {
+//      return (short)(value << 8 | value >>> 8 & 0xff);
+//   }
+//
+//   /**
+//    * Toggles the endianness of the specified 24-bit medium integer.
+//    */
+//   public static int swapMedium(final int value)
+//   {
+//      return value << 16 & 0xff0000 | value & 0xff00 | value >>> 16 & 0xff;
+//   }
+//
+//   /**
+//    * Toggles the endianness of the specified 32-bit integer.
+//    */
+//   public static int swapInt(final int value)
+//   {
+//      return swapShort((short)value) << 16 | swapShort((short)(value >>> 16)) & 0xffff;
+//   }
+//
+//   /**
+//    * Toggles the endianness of the specified 64-bit long integer.
+//    */
+//   public static long swapLong(final long value)
+//   {
+//      return (long)swapInt((int)value) << 32 | swapInt((int)(value >>> 32)) & 0xffffffffL;
+//   }
+//
+//   private static int firstIndexOf(final HornetQChannelBuffer buffer, int fromIndex, final int toIndex, final byte value)
+//   {
+//      fromIndex = Math.max(fromIndex, 0);
+//      if (fromIndex >= toIndex || buffer.capacity() == 0)
+//      {
+//         return -1;
+//      }
+//
+//      for (int i = fromIndex; i < toIndex; i++)
+//      {
+//         if (buffer.getByte(i) == value)
+//         {
+//            return i;
+//         }
+//      }
+//
+//      return -1;
+//   }
+//
+//   private static int lastIndexOf(final HornetQChannelBuffer buffer, int fromIndex, final int toIndex, final byte value)
+//   {
+//      fromIndex = Math.min(fromIndex, buffer.capacity());
+//      if (fromIndex < 0 || buffer.capacity() == 0)
+//      {
+//         return -1;
+//      }
+//
+//      for (int i = fromIndex - 1; i >= toIndex; i--)
+//      {
+//         if (buffer.getByte(i) == value)
+//         {
+//            return i;
+//         }
+//      }
+//
+//      return -1;
+//   }
 
-   /**
-    * The default implementation of {@link ChannelBuffer#indexOf(int, int, byte)}.
-    * This method is useful when implementing a new buffer type.
-    */
-   public static int indexOf(final ChannelBuffer buffer, final int fromIndex, final int toIndex, final byte value)
-   {
-      if (fromIndex <= toIndex)
-      {
-         return firstIndexOf(buffer, fromIndex, toIndex, value);
-      }
-      else
-      {
-         return lastIndexOf(buffer, fromIndex, toIndex, value);
-      }
-   }
-
-   /**
-    * Toggles the endianness of the specified 16-bit short integer.
-    */
-   public static short swapShort(final short value)
-   {
-      return (short)(value << 8 | value >>> 8 & 0xff);
-   }
-
-   /**
-    * Toggles the endianness of the specified 24-bit medium integer.
-    */
-   public static int swapMedium(final int value)
-   {
-      return value << 16 & 0xff0000 | value & 0xff00 | value >>> 16 & 0xff;
-   }
-
-   /**
-    * Toggles the endianness of the specified 32-bit integer.
-    */
-   public static int swapInt(final int value)
-   {
-      return swapShort((short)value) << 16 | swapShort((short)(value >>> 16)) & 0xffff;
-   }
-
-   /**
-    * Toggles the endianness of the specified 64-bit long integer.
-    */
-   public static long swapLong(final long value)
-   {
-      return (long)swapInt((int)value) << 32 | swapInt((int)(value >>> 32)) & 0xffffffffL;
-   }
-
-   private static int firstIndexOf(final ChannelBuffer buffer, int fromIndex, final int toIndex, final byte value)
-   {
-      fromIndex = Math.max(fromIndex, 0);
-      if (fromIndex >= toIndex || buffer.capacity() == 0)
-      {
-         return -1;
-      }
-
-      for (int i = fromIndex; i < toIndex; i++)
-      {
-         if (buffer.getByte(i) == value)
-         {
-            return i;
-         }
-      }
-
-      return -1;
-   }
-
-   private static int lastIndexOf(final ChannelBuffer buffer, int fromIndex, final int toIndex, final byte value)
-   {
-      fromIndex = Math.min(fromIndex, buffer.capacity());
-      if (fromIndex < 0 || buffer.capacity() == 0)
-      {
-         return -1;
-      }
-
-      for (int i = fromIndex - 1; i >= toIndex; i--)
-      {
-         if (buffer.getByte(i) == value)
-         {
-            return i;
-         }
-      }
-
-      return -1;
-   }
-
-   private ChannelBuffers()
+   private HornetQChannelBuffers()
    {
       // Unused
    }

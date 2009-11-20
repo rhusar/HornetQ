@@ -19,7 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.config.impl.FileConfiguration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
@@ -171,12 +171,12 @@ public class StorageManagerTimingTest extends UnitTestCase
                   true, /* expiration */
                   0,
                   /* timestamp */0, /* priority */
-                  (byte)0, ChannelBuffers.wrappedBuffer(new byte[1024]));
+                  (byte)0, HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
 
                   implMsg.putStringProperty(new SimpleString("Key"), new SimpleString("This String is worthless!"));
 
                   implMsg.setMessageID(i);
-                  implMsg.setBuffer(ChannelBuffers.wrappedBuffer(bytes));
+                  implMsg.setBuffer(HornetQChannelBuffers.wrappedBuffer(bytes));
 
                   implMsg.setDestination(address);
 

@@ -48,13 +48,6 @@ public class ReplicationCompareDataMessage extends PacketImpl
    }
 
    // Public --------------------------------------------------------
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + 
-             DataConstants.SIZE_INT + (journalInformation.length * (DataConstants.SIZE_INT + DataConstants.SIZE_LONG)) +
-             DataConstants.SIZE_INT;
-
-   }
 
    @Override
    public void encodeRest(final HornetQBuffer buffer)

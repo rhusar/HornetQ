@@ -24,7 +24,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.logging.Logger;
@@ -58,7 +58,7 @@ public class ManagementHelperTest extends TestCase
       String operationName = randomString();
       String param = randomString();
       String[] params = new String[] { randomString(), randomString(), randomString() };
-      Message msg = new ClientMessageImpl(false, ChannelBuffers.dynamicBuffer(1024));
+      Message msg = new ClientMessageImpl(false, HornetQChannelBuffers.dynamicBuffer(1024));
       ManagementHelper.putOperationInvocation(msg, resource, operationName, param, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);
@@ -146,7 +146,7 @@ public class ManagementHelperTest extends TestCase
 
       Object[] params = new Object[] { i, s, d, b, l, map, strArray, maps };
 
-      Message msg = new ClientMessageImpl(false, ChannelBuffers.dynamicBuffer(1024));
+      Message msg = new ClientMessageImpl(false, HornetQChannelBuffers.dynamicBuffer(1024));
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);
@@ -212,7 +212,7 @@ public class ManagementHelperTest extends TestCase
       
       Object[] params = new Object[] { "hello", map };
 
-      Message msg = new ClientMessageImpl(false, ChannelBuffers.dynamicBuffer(1024));
+      Message msg = new ClientMessageImpl(false, HornetQChannelBuffers.dynamicBuffer(1024));
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);

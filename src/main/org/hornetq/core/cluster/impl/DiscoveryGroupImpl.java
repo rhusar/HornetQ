@@ -23,7 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.cluster.DiscoveryEntry;
 import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
@@ -328,7 +328,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
                }
             }
 
-            HornetQBuffer buffer = ChannelBuffers.wrappedBuffer(data);
+            HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(data);
 
             String originatingNodeID = buffer.readString();
             

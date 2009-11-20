@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.Notification;
@@ -203,7 +203,7 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
          return;
       }
       
-      HornetQBuffer buff = ChannelBuffers.dynamicBuffer(4096);
+      HornetQBuffer buff = HornetQChannelBuffers.dynamicBuffer(4096);
      
       buff.writeString(nodeID);
       

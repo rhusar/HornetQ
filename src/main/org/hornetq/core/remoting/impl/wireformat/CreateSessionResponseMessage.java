@@ -71,11 +71,6 @@ public class CreateSessionResponseMessage extends PacketImpl
       serverVersion = buffer.readInt();
    }
    
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT; 
-   }
-
    @Override
    public boolean equals(final Object other)
    {

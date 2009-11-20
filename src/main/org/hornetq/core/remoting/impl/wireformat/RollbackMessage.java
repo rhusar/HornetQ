@@ -65,11 +65,6 @@ public class RollbackMessage extends PacketImpl
       considerLastMessageAsDelivered = isLastMessageAsDelived;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_BOOLEAN;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

@@ -25,7 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
@@ -780,7 +780,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          // First send a reset message
 
-         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.EMPTY_BUFFER);
+         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.EMPTY_BUFFER);
          // message.setDurable(true);
 
          message.setDestination(queueName);
@@ -1000,7 +1000,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private ServerMessage createQueueInfoMessage(final NotificationType type, final SimpleString queueName)
    {
-      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.EMPTY_BUFFER);
+      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.EMPTY_BUFFER);
 
       message.setDestination(queueName);
       // message.setDurable(true);

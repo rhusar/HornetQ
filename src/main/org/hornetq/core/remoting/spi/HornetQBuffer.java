@@ -13,6 +13,8 @@
 
 package org.hornetq.core.remoting.spi;
 
+import java.nio.ByteBuffer;
+
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -29,7 +31,7 @@ public interface HornetQBuffer
    void writeBytes(byte[] bytes);
 
    void writeBytes(byte[] bytes, int offset, int length);
-   
+
    void writeBytes(HornetQBuffer src, int srcIndex, int length);
 
    void writeInt(int val);
@@ -67,7 +69,7 @@ public interface HornetQBuffer
    void readBytes(byte[] bytes, int offset, int length);
 
    int readInt();
-   
+
    int readInt(int pos);
 
    long readLong();
@@ -93,8 +95,6 @@ public interface HornetQBuffer
    SimpleString readNullableSimpleString();
 
    String readUTF() throws Exception;
-
-   byte[] array();
 
    int capacity();
 
@@ -123,4 +123,8 @@ public interface HornetQBuffer
    void resetWriterIndex();
 
    Object getUnderlyingBuffer();
+
+   byte[] array();
+   
+   HornetQBuffer copy();
 }

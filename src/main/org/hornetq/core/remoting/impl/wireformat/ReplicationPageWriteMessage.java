@@ -55,13 +55,6 @@ public class ReplicationPageWriteMessage extends PacketImpl
    // Public --------------------------------------------------------
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT + pagedMessage.getEncodeSize();
-
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(pageNumber);

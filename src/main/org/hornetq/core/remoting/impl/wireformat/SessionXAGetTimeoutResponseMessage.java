@@ -57,11 +57,6 @@ public class SessionXAGetTimeoutResponseMessage extends PacketImpl
       return this.timeoutSeconds;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
-   }
-
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(timeoutSeconds);

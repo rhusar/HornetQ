@@ -20,9 +20,11 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
+import org.hornetq.core.remoting.spi.HornetQBuffer;
+
 /**
  * A dynamic capacity buffer which increases its capacity as needed.  It is
- * recommended to use {@link ChannelBuffers#dynamicBuffer(int)} instead of
+ * recommended to use {@link HornetQChannelBuffers#dynamicBuffer(int)} instead of
  * calling the constructor explicitly.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
@@ -31,14 +33,13 @@ import java.nio.channels.ScatteringByteChannel;
  * @version $Rev: 237 $, $Date: 2008-09-04 20:53:44 +0900 (Thu, 04 Sep 2008) $
  *
  */
-public class DynamicChannelBuffer extends AbstractChannelBuffer
+public class HornetQDynamicChannelBuffer extends HornetQAbstractChannelBuffer
 {
-
    private final int initialCapacity;
 
-   private ChannelBuffer buffer = ChannelBuffers.EMPTY_BUFFER;
+   private HornetQChannelBuffer buffer = HornetQChannelBuffers.EMPTY_BUFFER;
 
-   DynamicChannelBuffer(final int estimatedLength)
+   HornetQDynamicChannelBuffer(final int estimatedLength)
    {
       if (estimatedLength < 0)
       {
@@ -47,15 +48,15 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
       initialCapacity = estimatedLength;
    }
 
-   DynamicChannelBuffer(final byte[] initialBuffer)
+   HornetQDynamicChannelBuffer(final byte[] initialBuffer)
    {
       initialCapacity = initialBuffer.length;
 
-      buffer = new HeapChannelBuffer(initialBuffer);
+      buffer = new HornetQHeapChannelBuffer(initialBuffer);
 
       writerIndex(initialBuffer.length);
    }
-
+   
    public int capacity()
    {
       return buffer.capacity();
@@ -91,7 +92,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
       buffer.getBytes(index, dst, dstIndex, length);
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
       buffer.getBytes(index, dst, dstIndex, length);
    }
@@ -141,7 +142,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
       buffer.setBytes(index, src, srcIndex, length);
    }
 
-   public void setBytes(final int index, final ChannelBuffer src, final int srcIndex, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
       buffer.setBytes(index, src, srcIndex, length);
    }
@@ -204,7 +205,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
    }
 
    @Override
-   public void writeBytes(final ChannelBuffer src, final int srcIndex, final int length)
+   public void writeBytes(final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
       ensureWritableBytes(length);
       super.writeBytes(src, srcIndex, length);
@@ -260,7 +261,7 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
          newCapacity <<= 1;
       }
 
-      ChannelBuffer newBuffer = ChannelBuffers.buffer(newCapacity);
+      HornetQChannelBuffer newBuffer = HornetQChannelBuffers.buffer(newCapacity);
       newBuffer.writeBytes(buffer, 0, writerIndex());
       buffer = newBuffer;
    }
@@ -272,4 +273,10 @@ public class DynamicChannelBuffer extends AbstractChannelBuffer
    {
       return buffer.array();
    }
+   
+   public HornetQBuffer copy()
+   {
+      return new HornetQDynamicChannelBuffer(buffer.copy().array());
+   }
+
 }

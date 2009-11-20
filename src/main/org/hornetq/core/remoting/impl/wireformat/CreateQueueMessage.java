@@ -140,18 +140,6 @@ public class CreateQueueMessage extends PacketImpl
              r.temporary == this.temporary;
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.remoting.Packet#getRequiredBufferSize()
-    */
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + address.sizeof() +
-             queueName.sizeof() +
-             SimpleString.sizeofNullableString(filterString) +
-             DataConstants.SIZE_BOOLEAN +
-             DataConstants.SIZE_BOOLEAN;
-   }
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

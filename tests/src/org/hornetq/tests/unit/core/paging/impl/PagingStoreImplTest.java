@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.transaction.xa.Xid;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
@@ -107,7 +107,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(nr1, trans.getNumberOfMessages());
 
-      HornetQBuffer buffer = ChannelBuffers.buffer(trans.getEncodeSize());
+      HornetQBuffer buffer = HornetQChannelBuffers.buffer(trans.getEncodeSize());
 
       trans.encode(buffer);
 
@@ -717,7 +717,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
    private HornetQBuffer createRandomBuffer(final long id, final int size)
    {
-      HornetQBuffer buffer = ChannelBuffers.buffer(size + 8);
+      HornetQBuffer buffer = HornetQChannelBuffers.buffer(size + 8);
 
       buffer.writeLong(id);
 

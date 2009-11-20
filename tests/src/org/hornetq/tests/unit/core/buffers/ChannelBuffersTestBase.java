@@ -12,7 +12,7 @@
  */
 package org.hornetq.tests.unit.core.buffers;
 
-import static org.hornetq.core.buffers.ChannelBuffers.wrappedBuffer;
+import static org.hornetq.core.buffers.HornetQChannelBuffers.wrappedBuffer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,7 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.hornetq.core.buffers.ChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
 import org.hornetq.tests.util.UnitTestCase;
 
 /**
@@ -43,9 +43,9 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
    private Random random;
 
-   private ChannelBuffer buffer;
+   private HornetQChannelBuffer buffer;
 
-   protected abstract ChannelBuffer newBuffer(int capacity);
+   protected abstract HornetQChannelBuffer newBuffer(int capacity);
 
    @Override
    public void setUp()
@@ -957,7 +957,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -980,7 +980,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -996,7 +996,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testRandomHeapBufferTransfer1()
    {
       byte[] valueContent = new byte[BLOCK_SIZE];
-      ChannelBuffer value = wrappedBuffer(valueContent);
+      HornetQChannelBuffer value = wrappedBuffer(valueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(valueContent);
@@ -1008,7 +1008,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -1026,7 +1026,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testRandomHeapBufferTransfer2()
    {
       byte[] valueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer value = wrappedBuffer(valueContent);
+      HornetQChannelBuffer value = wrappedBuffer(valueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(valueContent);
@@ -1035,7 +1035,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -1134,7 +1134,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testSequentialHeapBufferTransfer1()
    {
       byte[] valueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer value = wrappedBuffer(valueContent);
+      HornetQChannelBuffer value = wrappedBuffer(valueContent);
       buffer.writerIndex(0);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
@@ -1148,7 +1148,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -1168,7 +1168,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testSequentialHeapBufferTransfer2()
    {
       byte[] valueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer value = wrappedBuffer(valueContent);
+      HornetQChannelBuffer value = wrappedBuffer(valueContent);
       buffer.writerIndex(0);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
@@ -1185,7 +1185,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -1207,7 +1207,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testSequentialByteBufferBackedHeapBufferTransfer1()
    {
       byte[] valueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer value = wrappedBuffer(ByteBuffer.allocate(BLOCK_SIZE * 2));
+      HornetQChannelBuffer value = wrappedBuffer(ByteBuffer.allocate(BLOCK_SIZE * 2));
       value.writerIndex(0);
       buffer.writerIndex(0);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
@@ -1223,7 +1223,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);
@@ -1244,7 +1244,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
    public void testSequentialByteBufferBackedHeapBufferTransfer2()
    {
       byte[] valueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer value = wrappedBuffer(ByteBuffer.allocate(BLOCK_SIZE * 2));
+      HornetQChannelBuffer value = wrappedBuffer(ByteBuffer.allocate(BLOCK_SIZE * 2));
       value.writerIndex(0);
       buffer.writerIndex(0);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
@@ -1264,7 +1264,7 @@ public abstract class ChannelBuffersTestBase extends UnitTestCase
 
       random.setSeed(seed);
       byte[] expectedValueContent = new byte[BLOCK_SIZE * 2];
-      ChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
+      HornetQChannelBuffer expectedValue = wrappedBuffer(expectedValueContent);
       for (int i = 0; i < buffer.capacity() - BLOCK_SIZE + 1; i += BLOCK_SIZE)
       {
          random.nextBytes(expectedValueContent);

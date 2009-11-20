@@ -62,11 +62,6 @@ public class SessionConsumerFlowCreditMessage extends PacketImpl
       return credits;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG + DataConstants.SIZE_INT;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

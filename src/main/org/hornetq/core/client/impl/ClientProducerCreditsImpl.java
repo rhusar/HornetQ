@@ -65,7 +65,7 @@ public class ClientProducerCreditsImpl implements ClientProducerCredits
       // credits += offset;
 
       checkCredits(credits);
-
+      
       semaphore.acquire(credits);
    }
 

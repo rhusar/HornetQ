@@ -60,13 +60,6 @@ public class ReplicationPageEventMessage extends PacketImpl
    // Public --------------------------------------------------------
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT + storeName.sizeof() + DataConstants.SIZE_BOOLEAN;
-
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeSimpleString(storeName);

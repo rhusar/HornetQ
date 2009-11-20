@@ -74,12 +74,6 @@ public class SessionReceiveContinuationMessage extends SessionContinuationMessag
    // Public --------------------------------------------------------
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return SESSION_RECEIVE_CONTINUATION_BASE_SIZE + body.length; 
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       super.encodeRest(buffer);

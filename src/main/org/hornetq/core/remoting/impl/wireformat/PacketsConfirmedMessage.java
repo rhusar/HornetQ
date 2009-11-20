@@ -54,11 +54,6 @@ public class PacketsConfirmedMessage extends PacketImpl
       return this.commandID;
    }
    
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
-   }
-   
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(commandID);

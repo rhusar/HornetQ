@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.FailoverManager;
@@ -1504,7 +1504,7 @@ public class HornetQServerImpl implements HornetQServer
 
          for (int i = 0; i < numMessages; i++)
          {
-            ServerMessage msg = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.wrappedBuffer(body));
+            ServerMessage msg = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.wrappedBuffer(body));
 
             msg.setDestination(address);
 

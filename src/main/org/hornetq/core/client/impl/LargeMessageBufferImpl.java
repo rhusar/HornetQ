@@ -26,7 +26,8 @@ import java.nio.channels.ScatteringByteChannel;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.hornetq.core.buffers.ChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQDynamicChannelBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
@@ -44,7 +45,7 @@ import org.hornetq.utils.UTF8Util;
  *
  *
  */
-public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
+public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessageBuffer
 {
    // Constants -----------------------------------------------------
 
@@ -162,7 +163,8 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
 
                outStream.write(packet.getBody());
 
-               flowControlCredit = packet.getRequiredBufferSize();
+               flowControlCredit = packet.getPacketSize();
+               
                continues = packet.isContinues();
 
                notifyAll();
@@ -248,7 +250,8 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
             {
                break;
             }
-            totalFlowControl += packet.getRequiredBufferSize();
+            totalFlowControl += packet.getPacketSize();
+            
             continues = packet.isContinues();
             sendPacketToOutput(output, packet);
          }
@@ -357,7 +360,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#getBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void getBytes(final int index, final ChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
       byte[] destBytes = new byte[length];
       getBytes(index, destBytes);
@@ -367,7 +370,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#getBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void getBytes(final long index, final ChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final long index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
       byte[] destBytes = new byte[length];
       getBytes(index, destBytes);
@@ -518,7 +521,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#setBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void setBytes(final int index, final ChannelBuffer src, final int srcIndex, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -760,12 +763,12 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       }
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst)
+   public void getBytes(final int index, final HornetQChannelBuffer dst)
    {
       getBytes(index, dst, dst.writableBytes());
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst, final int length)
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -780,12 +783,12 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void setBytes(final int index, final ChannelBuffer src)
+   public void setBytes(final int index, final HornetQChannelBuffer src)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void setBytes(final int index, final ChannelBuffer src, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -865,12 +868,12 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       readBytes(dst, 0, dst.length);
    }
 
-   public void readBytes(final ChannelBuffer dst)
+   public void readBytes(final HornetQChannelBuffer dst)
    {
       readBytes(dst, dst.writableBytes());
    }
 
-   public void readBytes(final ChannelBuffer dst, final int length)
+   public void readBytes(final HornetQChannelBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -880,7 +883,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       dst.writerIndex(dst.writerIndex() + length);
    }
 
-   public void readBytes(final ChannelBuffer dst, final int dstIndex, final int length)
+   public void readBytes(final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
       getBytes(readerIndex, dst, dstIndex, length);
       readerIndex += length;
@@ -949,12 +952,12 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final ChannelBuffer src)
+   public void writeBytes(final HornetQChannelBuffer src)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final ChannelBuffer src, final int length)
+   public void writeBytes(final HornetQChannelBuffer src, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -964,7 +967,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final ChannelBuffer src, final int srcIndex, final int length)
+   public void writeBytes(final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -1188,9 +1191,14 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#compareTo(org.hornetq.core.buffers.ChannelBuffer)
     */
-   public int compareTo(final ChannelBuffer buffer)
+   public int compareTo(final HornetQChannelBuffer buffer)
    {
       return -1;
+   }
+   
+   public HornetQBuffer copy()
+   {
+      throw new UnsupportedOperationException();
    }
 
    // Package protected ---------------------------------------------
@@ -1245,7 +1253,7 @@ public class LargeMessageBufferImpl implements ChannelBuffer, LargeMessageBuffer
             throw new IndexOutOfBoundsException();
          }
 
-         consumerInternal.flowControl(currentPacket.getRequiredBufferSize(), !currentPacket.isContinues());
+         consumerInternal.flowControl(currentPacket.getPacketSize(), !currentPacket.isContinues());
 
          packetPosition += sizeToAdd;
 

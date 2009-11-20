@@ -12,8 +12,8 @@
  */
 package org.hornetq.tests.unit.core.buffers;
 
-import org.hornetq.core.buffers.ChannelBuffer;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 
 /**
  *
@@ -27,9 +27,9 @@ public class HeapChannelBufferTest extends ChannelBuffersTestBase
 {
 
    @Override
-   protected ChannelBuffer newBuffer(final int length)
+   protected HornetQChannelBuffer newBuffer(final int length)
    {
-      ChannelBuffer buffer = ChannelBuffers.buffer(length);
+      HornetQChannelBuffer buffer = HornetQChannelBuffers.buffer(length);
       assertEquals(0, buffer.writerIndex());
       return buffer;
    }
@@ -38,7 +38,7 @@ public class HeapChannelBufferTest extends ChannelBuffersTestBase
    {
       try
       {
-         ChannelBuffers.wrappedBuffer((byte[])null);
+         HornetQChannelBuffers.wrappedBuffer((byte[])null);
          fail("Exception expected");
       }
       catch (NullPointerException e)

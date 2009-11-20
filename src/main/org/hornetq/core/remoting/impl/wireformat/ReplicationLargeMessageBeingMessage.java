@@ -50,12 +50,6 @@ public class ReplicationLargeMessageBeingMessage extends PacketImpl
    // Public --------------------------------------------------------
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_LONG;
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeLong(messageId);

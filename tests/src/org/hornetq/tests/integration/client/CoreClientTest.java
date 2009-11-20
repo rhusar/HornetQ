@@ -109,11 +109,23 @@ public class CoreClientTest extends UnitTestCase
           * 
           * message.setDestination("foo");
           * 
-          * message.encodeToBuffer();
+          * message.writeBody();
           * 
           * message.getBuffer().writeString("testINVMCoreClient");
           * 
           * message.send();
+          * 
+          * 
+          * ORRR
+          * 
+          * we don't write the headers and properties until *AFTER* the body
+          * 
+          * giving this format:
+          * body length
+          * body
+          * headers + properties
+          * 
+          * this means we don't need an encodeToBuffer() method!!
           * 
           */
          

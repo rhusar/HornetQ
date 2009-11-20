@@ -17,7 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -186,7 +186,7 @@ public class CompactingStressTest extends ServiceTestBase
          byte[] buffer = new byte[10 * 1024];
 
          ClientMessage msg = session.createClientMessage(true);
-         msg.setBuffer(ChannelBuffers.wrappedBuffer(buffer));
+         msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(buffer));
          for (int i = 0; i < TOT_AD3; i++)
          {
             producer.send(msg);
@@ -246,7 +246,7 @@ public class CompactingStressTest extends ServiceTestBase
                      slowProd.send(session.createClientMessage(true));
                   }
                   ClientMessage msg = session.createClientMessage(true);
-                  msg.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
+                  msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
                   prod.send(msg);
                }
                sessionSlow.commit();

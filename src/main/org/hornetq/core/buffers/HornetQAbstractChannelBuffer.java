@@ -34,9 +34,9 @@ import org.hornetq.utils.UTF8Util;
  *
  * @version $Rev: 303 $, $Date: 2008-09-24 18:48:32 +0900 (Wed, 24 Sep 2008) $
  */
-public abstract class AbstractChannelBuffer implements ChannelBuffer
+public abstract class HornetQAbstractChannelBuffer implements HornetQChannelBuffer
 {
-   private static final Logger log = Logger.getLogger(AbstractChannelBuffer.class);
+   private static final Logger log = Logger.getLogger(HornetQAbstractChannelBuffer.class);
 
 
    private int readerIndex;
@@ -173,12 +173,12 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       getBytes(index, dst, 0, dst.length);
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst)
+   public void getBytes(final int index, final HornetQChannelBuffer dst)
    {
       getBytes(index, dst, dst.writableBytes());
    }
 
-   public void getBytes(final int index, final ChannelBuffer dst, final int length)
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -193,12 +193,12 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       setBytes(index, src, 0, src.length);
    }
 
-   public void setBytes(final int index, final ChannelBuffer src)
+   public void setBytes(final int index, final HornetQChannelBuffer src)
    {
       setBytes(index, src, src.readableBytes());
    }
 
-   public void setBytes(final int index, final ChannelBuffer src, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int length)
    {
       if (length > src.readableBytes())
       {
@@ -335,12 +335,12 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       readBytes(dst, 0, dst.length);
    }
 
-   public void readBytes(final ChannelBuffer dst)
+   public void readBytes(final HornetQChannelBuffer dst)
    {
       readBytes(dst, dst.writableBytes());
    }
 
-   public void readBytes(final ChannelBuffer dst, final int length)
+   public void readBytes(final HornetQChannelBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -350,7 +350,7 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       dst.writerIndex(dst.writerIndex() + length);
    }
 
-   public void readBytes(final ChannelBuffer dst, final int dstIndex, final int length)
+   public void readBytes(final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
       checkReadableBytes(length);
       getBytes(readerIndex, dst, dstIndex, length);
@@ -430,12 +430,12 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       writeBytes(src, 0, src.length);
    }
 
-   public void writeBytes(final ChannelBuffer src)
+   public void writeBytes(final HornetQChannelBuffer src)
    {
       writeBytes(src, src.readableBytes());
    }
 
-   public void writeBytes(final ChannelBuffer src, final int length)
+   public void writeBytes(final HornetQChannelBuffer src, final int length)
    {
       if (length > src.readableBytes())
       {
@@ -445,7 +445,7 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
       src.readerIndex(src.readerIndex() + length);
    }
 
-   public void writeBytes(final ChannelBuffer src, final int srcIndex, final int length)
+   public void writeBytes(final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
       setBytes(writerIndex, src, srcIndex, length);
       writerIndex += length;
@@ -454,7 +454,7 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
 
    public void writeBytes(final HornetQBuffer src, final int srcIndex, final int length)
    {
-      writeBytes((ChannelBuffer)src, srcIndex, length);
+      writeBytes((HornetQChannelBuffer)src, srcIndex, length);
    }
 
    public void writeBytes(final ByteBuffer src)
@@ -540,22 +540,22 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
    @Override
    public int hashCode()
    {
-      return ChannelBuffers.hashCode(this);
+      return HornetQChannelBuffers.hashCode(this);
    }
 
    @Override
    public boolean equals(final Object o)
    {
-      if (!(o instanceof ChannelBuffer))
+      if (!(o instanceof HornetQChannelBuffer))
       {
          return false;
       }
-      return ChannelBuffers.equals(this, (ChannelBuffer)o);
+      return HornetQChannelBuffers.equals(this, (HornetQChannelBuffer)o);
    }
 
-   public int compareTo(final ChannelBuffer that)
+   public int compareTo(final HornetQChannelBuffer that)
    {
-      return ChannelBuffers.compare(this, that);
+      return HornetQChannelBuffers.compare(this, that);
    }
 
    @Override
@@ -784,5 +784,5 @@ public abstract class AbstractChannelBuffer implements ChannelBuffer
    {
       UTF8Util.saveUTF(this, utf);
    }
-
+   
 }

@@ -44,7 +44,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.exception.HornetQException;
@@ -838,7 +838,7 @@ public class UnitTestCase extends TestCase
                                                     0,
                                                     System.currentTimeMillis(),
                                                     (byte)4,
-                                                    ChannelBuffers.dynamicBuffer(1024));
+                                                    HornetQChannelBuffers.dynamicBuffer(1024));
 
       message.setMessageID(id);
 

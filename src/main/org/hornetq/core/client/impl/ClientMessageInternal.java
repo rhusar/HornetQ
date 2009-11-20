@@ -42,6 +42,5 @@ public interface ClientMessageInternal extends ClientMessage
     */
    void discardLargeBody();    
    
-
    void setBuffer(HornetQBuffer buffer);
 }

@@ -28,7 +28,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.config.Configuration;
@@ -411,7 +411,7 @@ public class ManagementServiceImpl implements ManagementService
    public ServerMessage handleMessage(final ServerMessage message) throws Exception
    {
       // a reply message is sent with the result stored in the message body.
-      ServerMessage reply = new ServerMessageImpl(storageManager.generateUniqueID(), ChannelBuffers.dynamicBuffer(1500));
+      ServerMessage reply = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.dynamicBuffer(1500));
 
       String resourceName = message.getStringProperty(ManagementHelper.HDR_RESOURCE_NAME);
       if (log.isDebugEnabled())
@@ -700,7 +700,7 @@ public class ManagementServiceImpl implements ManagementService
                }
 
                ServerMessage notificationMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
-                                                                         ChannelBuffers.EMPTY_BUFFER);
+                                                                         HornetQChannelBuffers.EMPTY_BUFFER);
 
                // Notification messages are always durable so the user can choose whether to add a durable queue to
                // consume

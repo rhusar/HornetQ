@@ -13,8 +13,8 @@
 
 package org.hornetq.tests.unit.core.buffers;
 
-import org.hornetq.core.buffers.ChannelBuffer;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.jboss.netty.buffer.DynamicChannelBuffer;
 
 /**
@@ -33,9 +33,9 @@ public class DynamicChannelBufferTest extends ChannelBuffersTestBase
     * @see org.hornetq.tests.unit.core.buffers.AbstractChannelBufferTest#newBuffer(int)
     */
    @Override
-   protected ChannelBuffer newBuffer(final int length)
+   protected HornetQChannelBuffer newBuffer(final int length)
    {
-      ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(length);
+      HornetQChannelBuffer buffer = HornetQChannelBuffers.dynamicBuffer(length);
 
       // A dynamic buffer does lazy initialization.
       assertEquals(0, buffer.capacity());
@@ -65,7 +65,7 @@ public class DynamicChannelBufferTest extends ChannelBuffersTestBase
    
    public void testExpanding()
    {
-      ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(10);
+      HornetQChannelBuffer buffer = HornetQChannelBuffers.dynamicBuffer(10);
       
       for (byte b = 0; b < (byte)20; b++)
       {
@@ -92,7 +92,7 @@ public class DynamicChannelBufferTest extends ChannelBuffersTestBase
       }
       
 
-      ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(bytes);
+      HornetQChannelBuffer buffer = HornetQChannelBuffers.dynamicBuffer(bytes);
 
       buffer.clear();
       

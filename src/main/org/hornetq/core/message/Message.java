@@ -175,6 +175,8 @@ public interface Message
    
    HornetQBuffer getBuffer();
    
+   void setBuffer(HornetQBuffer buffer);
+   
    void encodeHeadersAndProperties(HornetQBuffer buffer);
    
    long getLargeBodySize();
@@ -184,5 +186,11 @@ public interface Message
    /** Get the InputStream used on a message that will be sent over a producer */
    InputStream getBodyInputStream();
    
+   
+   // Sending stuff
+   
+   void afterSend();
+   
+   boolean isBufferWritten();
 
 }

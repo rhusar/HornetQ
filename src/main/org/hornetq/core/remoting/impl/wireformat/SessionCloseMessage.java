@@ -34,11 +34,6 @@ public class SessionCloseMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE;
-   }
-
    @Override
    public boolean equals(final Object other)
    {

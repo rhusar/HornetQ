@@ -63,16 +63,6 @@ public class SessionXAGetInDoubtXidsResponseMessage extends PacketImpl
       return xids;
    }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
-      for (Xid xid : xids)
-      {
-         size += XidCodecSupport.getXidEncodeLength(xid);
-      }
-      return size;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

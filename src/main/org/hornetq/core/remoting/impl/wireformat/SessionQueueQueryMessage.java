@@ -45,12 +45,6 @@ public class SessionQueueQueryMessage extends PacketImpl
       return queueName;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + queueName.sizeof();
-   }
-
-
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeSimpleString(queueName);

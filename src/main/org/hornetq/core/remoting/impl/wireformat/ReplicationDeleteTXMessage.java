@@ -66,17 +66,6 @@ public class ReplicationDeleteTXMessage extends PacketImpl
    // Public --------------------------------------------------------
 
    @Override
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_BYTE +
-             DataConstants.SIZE_LONG +
-             DataConstants.SIZE_LONG +
-             DataConstants.SIZE_INT +
-             (encodingData != null ? encodingData.getEncodeSize() : recordData.length);
-
-   }
-
-   @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeByte(journalID);

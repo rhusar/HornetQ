@@ -55,13 +55,6 @@ public class SessionXAResponseMessage extends PacketImpl
 
    // Public --------------------------------------------------------
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_BOOLEAN +
-             DataConstants.SIZE_INT +
-             nullableStringEncodeSize(message);
-   }
-
    @Override
    public boolean isResponse()
    {

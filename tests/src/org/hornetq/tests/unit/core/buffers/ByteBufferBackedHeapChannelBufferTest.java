@@ -14,8 +14,8 @@ package org.hornetq.tests.unit.core.buffers;
 
 import java.nio.ByteBuffer;
 
-import org.hornetq.core.buffers.ChannelBuffer;
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 
 
 /**
@@ -28,15 +28,15 @@ import org.hornetq.core.buffers.ChannelBuffers;
 public class ByteBufferBackedHeapChannelBufferTest extends ChannelBuffersTestBase {
 
     @Override
-    protected ChannelBuffer newBuffer(int length) {
-       ChannelBuffer buffer = ChannelBuffers.wrappedBuffer(ByteBuffer.allocate(length));
+    protected HornetQChannelBuffer newBuffer(int length) {
+       HornetQChannelBuffer buffer = HornetQChannelBuffers.wrappedBuffer(ByteBuffer.allocate(length));
         return buffer;
     }
 
     public void testShouldNotAllowNullInConstructor() {
        try
        {
-          ChannelBuffers.wrappedBuffer((ByteBuffer)null);
+          HornetQChannelBuffers.wrappedBuffer((ByteBuffer)null);
           fail("NullPointerException");
        }
        catch (NullPointerException e)

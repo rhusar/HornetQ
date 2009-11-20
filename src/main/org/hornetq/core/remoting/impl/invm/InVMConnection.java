@@ -15,7 +15,7 @@ package org.hornetq.core.remoting.impl.invm;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.BufferHandler;
@@ -97,7 +97,7 @@ public class InVMConnection implements Connection
 
    public HornetQBuffer createBuffer(final int size)
    {
-      return ChannelBuffers.buffer(size);
+      return HornetQChannelBuffers.buffer(size);
    }
 
    public Object getID()

@@ -62,11 +62,6 @@ public class SessionXACommitMessage extends PacketImpl
       return onePhase;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + XidCodecSupport.getXidEncodeLength(xid) + DataConstants.SIZE_BOOLEAN;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

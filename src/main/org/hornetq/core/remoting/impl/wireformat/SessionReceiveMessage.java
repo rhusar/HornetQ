@@ -84,33 +84,21 @@ public class SessionReceiveMessage extends PacketImpl
       return deliveryCount;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE +
-             // consumerID
-             DataConstants.SIZE_LONG +
-             // deliveryCount
-             DataConstants.SIZE_INT +
-             // isLargeMessage
-             DataConstants.SIZE_BOOLEAN +
-             // message.encoding
-             (serverMessage != null ? serverMessage.getEncodeSize() : clientMessage.getEncodeSize());
-
-   }
-   
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
+      //We re-use the same packet buffer - but we need to change the extra data
       HornetQBuffer buffer = serverMessage.getBuffer();
       
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
       
+      // Calculate the new packet size
       size = buffer.writerIndex();
       
       buffer.setIndex(0, 0);
 
-      // The standard header fields
+      // Fill in the standard header fields
 
       int len = size - DataConstants.SIZE_INT;
       buffer.writeInt(len);
@@ -130,29 +118,22 @@ public class SessionReceiveMessage extends PacketImpl
    {
       clientMessage = new ClientMessageImpl();
       
-      //fast forward past the size byte
-      int size = buffer.readInt();
+      // We read the position of the end of the body - this is where the message headers and properties are stored
+      int afterBody = buffer.readInt();
       
+      // We now read message headers/properties
+
+      buffer.setIndex(afterBody, buffer.writerIndex());
+            
       clientMessage.decode(buffer);
       
-      int bodyBeginning = buffer.readerIndex();
-      
-      clientMessage.setBuffer(buffer);
-      
-      //Now we need to fast forward past the body part
-      
-      //int size = buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
-      
-      buffer.setIndex(size, buffer.writerIndex());
-                  
       consumerID = buffer.readLong();
       
       deliveryCount = buffer.readInt();
       
       clientMessage.setDeliveryCount(deliveryCount);
       
-      //Reset buffer to beginning of body
-      buffer.setIndex(bodyBeginning, buffer.writerIndex());
+      buffer.resetReaderIndex();
       
       clientMessage.setBuffer(buffer);
    }

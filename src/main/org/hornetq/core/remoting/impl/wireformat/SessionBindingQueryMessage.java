@@ -44,11 +44,6 @@ public class SessionBindingQueryMessage extends PacketImpl
       return address;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + address.sizeof();
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

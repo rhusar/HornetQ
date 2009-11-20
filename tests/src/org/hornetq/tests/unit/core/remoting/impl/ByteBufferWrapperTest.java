@@ -15,7 +15,7 @@ package org.hornetq.tests.unit.core.remoting.impl;
 
 import java.nio.ByteBuffer;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.unit.core.remoting.HornetQBufferTestBase;
 
@@ -43,7 +43,7 @@ public class ByteBufferWrapperTest extends HornetQBufferTestBase
    @Override
    protected HornetQBuffer createBuffer()
    {
-      return ChannelBuffers.wrappedBuffer(ByteBuffer.allocate(512));
+      return HornetQChannelBuffers.wrappedBuffer(ByteBuffer.allocate(512));
    }
 
    // Package protected ---------------------------------------------

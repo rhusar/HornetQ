@@ -23,8 +23,10 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.integration.transports.netty.ChannelBufferWrapper;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * 
@@ -67,9 +69,11 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
                      final long expiration,
                      final long timestamp,
                      final byte priority,
-                     final HornetQBuffer body)
+                     final HornetQBuffer buffer)
    {
-      super(type, durable, expiration, timestamp, priority, body);
+      super(type, durable, expiration, timestamp, priority, buffer);     
+      
+      this.resetBuffer();
    }
 
    public void onReceipt(final ClientConsumerInternal consumer)
@@ -94,14 +98,6 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
          consumer.acknowledge(this);
       }
    }
-   
-//   @Override
-//   public void decode(final HornetQBuffer buffer)
-//   {
-//      decodeHeadersAndProperties(buffer);
-//
-//      this.buffer = buffer;
-//   }
 
    public int getFlowControlSize()
    {
@@ -133,18 +129,33 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
       this.largeMessage = largeMessage;
    }
 
-   public void encodeToBuffer()
-   {
-      //We need to set a byte to work around a Netty bug with Dynamic buffers - this line can be removed
-      //when it's fixed in Netty
-      buffer.writeByte((byte)0);
-
-      //And we leave an extra byte where we store the body length (to be filled in later)
-      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);
+   @Override
+   public void afterSend()
+   {      
+      //temp hack
       
-      encodeHeadersAndProperties(buffer);
+//      ChannelBuffer cb = (ChannelBuffer)buffer.getUnderlyingBuffer();
+//      
+//      ChannelBuffer cbCopy = cb.copy(0, cb.capacity());
+//      
+//      this.buffer = new ChannelBufferWrapper(cbCopy); 
+      
+     // resetBuffer();
+      
+      
    }
 
+   public void resetBuffer()
+   {     
+      //There is a bug in Netty which requires us to initially write a byte
+      if (buffer.capacity() == 0)
+      {
+         buffer.writeByte((byte)0);
+      }
+
+      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);      
+   }
+   
    @Override
    public String toString()
    {

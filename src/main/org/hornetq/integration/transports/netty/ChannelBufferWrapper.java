@@ -401,5 +401,10 @@ public class ChannelBufferWrapper implements HornetQBuffer
    {
       return buffer;
    }
+   
+   public HornetQBuffer copy()
+   {
+      return new ChannelBufferWrapper(buffer.copy(0, buffer.capacity()));
+   }
 
 }

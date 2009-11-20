@@ -16,7 +16,7 @@ package org.hornetq.tests.integration.management;
 import static org.hornetq.tests.util.RandomUtil.randomSimpleString;
 import static org.hornetq.tests.util.RandomUtil.randomString;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -68,7 +68,7 @@ public class ManagementServiceImplTest extends UnitTestCase
 
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
-      HornetQBuffer body = ChannelBuffers.buffer(2048);
+      HornetQBuffer body = HornetQChannelBuffers.buffer(2048);
       message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               ResourceNames.CORE_SERVER,
@@ -93,7 +93,7 @@ public class ManagementServiceImplTest extends UnitTestCase
 
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
-      HornetQBuffer body = ChannelBuffers.buffer(2048);
+      HornetQBuffer body = HornetQChannelBuffers.buffer(2048);
       message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               ResourceNames.CORE_SERVER,
@@ -117,7 +117,7 @@ public class ManagementServiceImplTest extends UnitTestCase
 
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
-      HornetQBuffer body = ChannelBuffers.buffer(2048);
+      HornetQBuffer body = HornetQChannelBuffers.buffer(2048);
       message.setBuffer(body);
       ManagementHelper.putOperationInvocation(message,
                                               "Resouce.Does.Not.Exist",
@@ -141,7 +141,7 @@ public class ManagementServiceImplTest extends UnitTestCase
 
       // invoke attribute and operation on the server
       ServerMessage message = new ServerMessageImpl();
-      HornetQBuffer body = ChannelBuffers.buffer(2048);
+      HornetQBuffer body = HornetQChannelBuffers.buffer(2048);
       message.setBuffer(body);
       ManagementHelper.putAttribute(message, ResourceNames.CORE_SERVER, "attribute.Does.Not.Exist");
       

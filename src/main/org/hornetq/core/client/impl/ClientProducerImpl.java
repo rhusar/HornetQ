@@ -18,7 +18,7 @@ import static org.hornetq.utils.SimpleString.toSimpleString;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
@@ -32,6 +32,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TokenBucketLimiter;
 import org.hornetq.utils.UUIDGenerator;
+import org.jboss.netty.buffer.ChannelBuffers;
 
 /**
  * The client-side Producer connectionFactory class.
@@ -238,9 +239,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
       boolean isLarge;
       
-      int encodeSize = msg.getEncodeSize();
-
-      if (msg.getBodyInputStream() != null || encodeSize >= minLargeMessageSize || msg.isLargeMessage())
+      if (msg.getBodyInputStream() != null || msg.isLargeMessage())
       {
          isLarge = true;
       }
@@ -271,8 +270,8 @@ public class ClientProducerImpl implements ClientProducerInternal
          // data in *memory* and continuations go straight to the disk
 
          if (!isLarge)
-         {
-            theCredits.acquireCredits(encodeSize);
+         {            
+            theCredits.acquireCredits(msg.getEncodeSize());
          }
       }
       catch (InterruptedException e)
@@ -310,7 +309,8 @@ public class ClientProducerImpl implements ClientProducerInternal
          msg.getBuffer().readerIndex(0);
       }
 
-      HornetQBuffer headerBuffer = ChannelBuffers.buffer(headerSize);
+      HornetQBuffer headerBuffer = HornetQChannelBuffers.buffer(headerSize);
+      
       msg.encodeHeadersAndProperties(headerBuffer);
 
       SessionSendLargeMessage initialChunk = new SessionSendLargeMessage(headerBuffer.array());
@@ -360,7 +360,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
             final int chunkLength = Math.min((int)(bodySize - pos), minLargeMessageSize);
 
-            final HornetQBuffer bodyBuffer = ChannelBuffers.buffer(chunkLength);
+            final HornetQBuffer bodyBuffer = HornetQChannelBuffers.buffer(chunkLength);
 
             context.encode(bodyBuffer, chunkLength);
 
@@ -384,7 +384,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
             try
             {
-               credits.acquireCredits(chunk.getRequiredBufferSize());
+               credits.acquireCredits(chunk.getPacketSize());
             }
             catch (InterruptedException e)
             {
@@ -470,7 +470,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
          try
          {
-            credits.acquireCredits(chunk.getRequiredBufferSize());
+            credits.acquireCredits(chunk.getPacketSize());
          }
          catch (InterruptedException e)
          {

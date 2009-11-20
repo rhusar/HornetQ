@@ -40,7 +40,7 @@ public class PacketImpl implements Packet
 
    protected final byte type;
 
-   protected int size;
+   protected int size = -1;
 
    // The packet types
    // -----------------------------------------------------------------------------------
@@ -237,12 +237,12 @@ public class PacketImpl implements Packet
 
    public final int getPacketSize()
    {
+      if (size == -1)
+      {
+         throw new IllegalStateException("Packet hasn't been encoded/decoded yet");
+      }
+      
       return size;
-   }
-
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE;
    }
 
    public boolean isResponse()

@@ -86,16 +86,6 @@ public class SessionBindingQueryResponseMessage extends PacketImpl
       }
    }
 
-   public int getRequiredBufferSize()
-   {
-      int size = PACKET_HEADERS_SIZE + DataConstants.SIZE_BOOLEAN + DataConstants.SIZE_INT;
-      for (SimpleString queueName : queueNames)
-      {
-         size += queueName.sizeof();
-      }
-      return size;
-   }
-
    @Override
    public boolean equals(final Object other)
    {

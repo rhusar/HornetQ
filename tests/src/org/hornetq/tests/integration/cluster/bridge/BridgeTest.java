@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -666,7 +666,7 @@ public class BridgeTest extends ServiceTestBase
          {
             ClientMessage message = session0.createClientMessage(false);
 
-            message.setBuffer(ChannelBuffers.wrappedBuffer(new byte[1024]));
+            message.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
 
             message.putIntProperty(propKey, i);
 

@@ -21,7 +21,7 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
@@ -104,7 +104,7 @@ public class TimedBuffer
       }
       // Setting the interval for nano-sleeps
 
-      buffer = ChannelBuffers.buffer(bufferSize);
+      buffer = HornetQChannelBuffers.buffer(bufferSize);
       buffer.clear();
       bufferLimit = 0;
 

@@ -51,8 +51,6 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
 
    // Attributes ----------------------------------------------------
 
-   private HornetQBuffer buffer;
-
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -102,14 +100,14 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
 
          switch (type)
          {
             case DataConstants.BOOLEAN:
-               return buffer.readBoolean();
+               return getBuffer().readBoolean();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Boolean.valueOf(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -126,13 +124,13 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.BYTE:
-               return buffer.readByte();
+               return getBuffer().readByte();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Byte.parseByte(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -149,15 +147,15 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.BYTE:
-               return buffer.readByte();
+               return getBuffer().readByte();
             case DataConstants.SHORT:
-               return buffer.readShort();
+               return getBuffer().readShort();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Short.parseShort(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -174,11 +172,11 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.CHAR:
-               return buffer.readChar();
+               return getBuffer().readChar();
             default:
                throw new MessageFormatException("Invalid conversion");
          }
@@ -194,17 +192,17 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.BYTE:
-               return buffer.readByte();
+               return getBuffer().readByte();
             case DataConstants.SHORT:
-               return buffer.readShort();
+               return getBuffer().readShort();
             case DataConstants.INT:
-               return buffer.readInt();
+               return getBuffer().readInt();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Integer.parseInt(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -221,19 +219,19 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.BYTE:
-               return buffer.readByte();
+               return getBuffer().readByte();
             case DataConstants.SHORT:
-               return buffer.readShort();
+               return getBuffer().readShort();
             case DataConstants.INT:
-               return buffer.readInt();
+               return getBuffer().readInt();
             case DataConstants.LONG:
-               return buffer.readLong();
+               return getBuffer().readLong();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Long.parseLong(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -250,13 +248,13 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.FLOAT:
-               return buffer.readFloat();
+               return getBuffer().readFloat();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Float.parseFloat(s);
             default:
                throw new MessageFormatException("Invalid conversion");
@@ -273,15 +271,15 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.FLOAT:
-               return buffer.readFloat();
+               return getBuffer().readFloat();
             case DataConstants.DOUBLE:
-               return buffer.readDouble();
+               return getBuffer().readDouble();
             case DataConstants.STRING:
-               String s = buffer.readNullableString();
+               String s = getBuffer().readNullableString();
                return Double.parseDouble(s);
             default:
                throw new MessageFormatException("Invalid conversion: " + type);
@@ -298,27 +296,27 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       checkRead();
       try
       {
-         byte type = buffer.readByte();
+         byte type = getBuffer().readByte();
          switch (type)
          {
             case DataConstants.BOOLEAN:
-               return String.valueOf(buffer.readBoolean());
+               return String.valueOf(getBuffer().readBoolean());
             case DataConstants.BYTE:
-               return String.valueOf(buffer.readByte());
+               return String.valueOf(getBuffer().readByte());
             case DataConstants.SHORT:
-               return String.valueOf(buffer.readShort());
+               return String.valueOf(getBuffer().readShort());
             case DataConstants.CHAR:
-               return String.valueOf(buffer.readChar());
+               return String.valueOf(getBuffer().readChar());
             case DataConstants.INT:
-               return String.valueOf(buffer.readInt());
+               return String.valueOf(getBuffer().readInt());
             case DataConstants.LONG:
-               return String.valueOf(buffer.readLong());
+               return String.valueOf(getBuffer().readLong());
             case DataConstants.FLOAT:
-               return String.valueOf(buffer.readFloat());
+               return String.valueOf(getBuffer().readFloat());
             case DataConstants.DOUBLE:
-               return String.valueOf(buffer.readDouble());
+               return String.valueOf(getBuffer().readDouble());
             case DataConstants.STRING:
-               return buffer.readNullableString();
+               return getBuffer().readNullableString();
             default:
                throw new MessageFormatException("Invalid conversion");
          }
@@ -343,15 +341,15 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          }
          else if (len == 0)
          {
-            byte type = buffer.readByte();
+            byte type = getBuffer().readByte();
             if (type != DataConstants.BYTES)
             {
                throw new MessageFormatException("Invalid conversion");
             }
-            len = buffer.readInt();
+            len = getBuffer().readInt();
          }
          int read = Math.min(value.length, len);
-         buffer.readBytes(value, 0, read);
+         getBuffer().readBytes(value, 0, read);
          len -= read;
          if (len == 0)
          {
@@ -368,31 +366,31 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    public Object readObject() throws JMSException
    {
       checkRead();
-      byte type = buffer.readByte();
+      byte type = getBuffer().readByte();
       switch (type)
       {
          case DataConstants.BOOLEAN:
-            return buffer.readBoolean();
+            return getBuffer().readBoolean();
          case DataConstants.BYTE:
-            return buffer.readByte();
+            return getBuffer().readByte();
          case DataConstants.SHORT:
-            return buffer.readShort();
+            return getBuffer().readShort();
          case DataConstants.CHAR:
-            return buffer.readChar();
+            return getBuffer().readChar();
          case DataConstants.INT:
-            return buffer.readInt();
+            return getBuffer().readInt();
          case DataConstants.LONG:
-            return buffer.readLong();
+            return getBuffer().readLong();
          case DataConstants.FLOAT:
-            return buffer.readFloat();
+            return getBuffer().readFloat();
          case DataConstants.DOUBLE:
-            return buffer.readDouble();
+            return getBuffer().readDouble();
          case DataConstants.STRING:
-            return buffer.readNullableString();
+            return getBuffer().readNullableString();
          case DataConstants.BYTES:
-            int len = buffer.readInt();
+            int len = getBuffer().readInt();
             byte[] bytes = new byte[len];
-            buffer.readBytes(bytes);
+            getBuffer().readBytes(bytes);
             return bytes;
          default:
             throw new MessageFormatException("Invalid conversion");
@@ -402,80 +400,80 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    public void writeBoolean(final boolean value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.BOOLEAN);
-      buffer.writeBoolean(value);
+      getBuffer().writeByte(DataConstants.BOOLEAN);
+      getBuffer().writeBoolean(value);
    }
 
    public void writeByte(final byte value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.BYTE);
-      buffer.writeByte(value);
+      getBuffer().writeByte(DataConstants.BYTE);
+      getBuffer().writeByte(value);
    }
 
    public void writeShort(final short value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.SHORT);
-      buffer.writeShort(value);
+      getBuffer().writeByte(DataConstants.SHORT);
+      getBuffer().writeShort(value);
    }
 
    public void writeChar(final char value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.CHAR);
-      buffer.writeChar(value);
+      getBuffer().writeByte(DataConstants.CHAR);
+      getBuffer().writeChar(value);
    }
 
    public void writeInt(final int value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.INT);
-      buffer.writeInt(value);
+      getBuffer().writeByte(DataConstants.INT);
+      getBuffer().writeInt(value);
    }
 
    public void writeLong(final long value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.LONG);
-      buffer.writeLong(value);
+      getBuffer().writeByte(DataConstants.LONG);
+      getBuffer().writeLong(value);
    }
 
    public void writeFloat(final float value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.FLOAT);
-      buffer.writeFloat(value);
+      getBuffer().writeByte(DataConstants.FLOAT);
+      getBuffer().writeFloat(value);
    }
 
    public void writeDouble(final double value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.DOUBLE);
-      buffer.writeDouble(value);
+      getBuffer().writeByte(DataConstants.DOUBLE);
+      getBuffer().writeDouble(value);
    }
 
    public void writeString(final String value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.STRING);
-      buffer.writeNullableString(value);
+      getBuffer().writeByte(DataConstants.STRING);
+      getBuffer().writeNullableString(value);
    }
 
    public void writeBytes(final byte[] value) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.BYTES);
-      buffer.writeInt(value.length);
-      buffer.writeBytes(value);
+      getBuffer().writeByte(DataConstants.BYTES);
+      getBuffer().writeInt(value.length);
+      getBuffer().writeBytes(value);
    }
 
    public void writeBytes(final byte[] value, final int offset, final int length) throws JMSException
    {
       checkWrite();
-      buffer.writeByte(DataConstants.BYTES);
-      buffer.writeInt(length);
-      buffer.writeBytes(value, offset, length);
+      getBuffer().writeByte(DataConstants.BYTES);
+      getBuffer().writeInt(length);
+      getBuffer().writeBytes(value, offset, length);
    }
 
    public void writeObject(final Object value) throws JMSException
@@ -536,7 +534,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
       {
          readOnly = true;
       }
-      buffer.resetReaderIndex();
+      getBuffer().resetReaderIndex();
    }
 
    // HornetQRAMessage overrides ----------------------------------------
@@ -546,18 +544,13 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    {
       super.clearBody();
 
-      buffer.clear();
-
+      getBuffer().clear();
    }
 
    @Override
    public void doBeforeSend() throws Exception
    {
       reset();
-
-      message.encodeToBuffer();
-
-      message.getBuffer().writeBytes(buffer, 0, buffer.writerIndex());
    }
 
    // Package protected ---------------------------------------------
@@ -565,6 +558,11 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+   
+   private HornetQBuffer getBuffer()
+   {
+      return message.getBuffer();
+   }
 
    // Inner classes -------------------------------------------------
 }

@@ -63,11 +63,6 @@ public class ReattachSessionResponseMessage extends PacketImpl
       return reattached;
    }
    
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + DataConstants.SIZE_INT + DataConstants.SIZE_BOOLEAN;
-   }
-   
    public void encodeRest(final HornetQBuffer buffer)
    { 
       buffer.writeInt(lastReceivedCommandID);

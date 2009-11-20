@@ -48,15 +48,6 @@ public class CreateReplicationSessionMessage extends PacketImpl
    }
 
    // Public --------------------------------------------------------
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE +
-      // buffer.writeLong(sessionChannelID);
-             DataConstants.SIZE_LONG +
-             // buffer.writeInt(windowSize);
-             DataConstants.SIZE_INT;
-
-   }
 
    @Override
    public void encodeRest(final HornetQBuffer buffer)

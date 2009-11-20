@@ -21,6 +21,7 @@ import javax.jms.TextMessage;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -89,11 +90,23 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
       checkWrite();
       
       this.text = new SimpleString(text);
+      
+      //Reset buffer to just after standard headers space
+      message.resetBuffer();
+      
+      message.getBuffer().writeNullableSimpleString(this.text);
    }
 
    public String getText() throws JMSException
    {
-      return text.toString();
+      if (text != null)
+      {
+         return text.toString();
+      }
+      else
+      {
+         return null;
+      }
    }
    
    public void clearBody() throws JMSException
@@ -104,19 +117,6 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
    }
 
    // HornetQRAMessage override -----------------------------------------
-   
-   private SimpleString dest = new SimpleString("jms.queue.test_queue");
-   
-   public void doBeforeSend() throws Exception
-   {   
-      message.setDestination(dest);
-      
-      message.encodeToBuffer();
-      
-      message.getBuffer().writeNullableSimpleString(text);
-      
-      super.doBeforeSend();
-   }
    
    public void doBeforeReceive() throws Exception
    {

@@ -36,12 +36,10 @@ public interface ClientMessage extends Message
    
    void acknowledge() throws HornetQException;   
    
-   void encodeToBuffer();
-   
    void decode(HornetQBuffer buffer);
    
-   
-   
+   void resetBuffer();
+        
    //FIXME - the following are only used for large messages - they should be put somewhere else:
    
    /** Sets the OutputStream that will receive the content of a message received in a non blocking way
@@ -61,5 +59,5 @@ public interface ClientMessage extends Message
    
    void decodeHeadersAndProperties(HornetQBuffer buffer);
       
-   void setBodyInputStream(InputStream bodyInputStream);
+   void setBodyInputStream(InputStream bodyInputStream);  
 }

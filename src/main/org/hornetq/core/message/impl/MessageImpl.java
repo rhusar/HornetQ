@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
@@ -92,8 +92,6 @@ public abstract class MessageImpl implements Message
 
    protected HornetQBuffer buffer;
 
-   //private int encodeSize = -1;
-
    // Constructors --------------------------------------------------
 
    protected MessageImpl()
@@ -134,18 +132,20 @@ public abstract class MessageImpl implements Message
 
    // Message implementation ----------------------------------------
 
-//   public void encode(final HornetQBuffer buffer)
-//   {
-//      encodeHeadersAndProperties(buffer);
-//      buffer.writeInt(getBodySize());
-//      encodeBody(buffer);
-//   }
-
+   public void afterSend()
+   {      
+   }
+   
+   public boolean isBufferWritten()
+   {
+      return false;
+   }
+   
+   private int encodeSize;
+   
    public int getEncodeSize()
    {
-//      return getHeadersAndPropertiesEncodeSize() + SIZE_INT + getBodySize();
-      
-      return buffer.writerIndex() - PACKET_HEADERS_SIZE;
+      return encodeSize;
    }
   
    public int getBodySize()
@@ -155,14 +155,18 @@ public abstract class MessageImpl implements Message
 
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
    {
-      buffer.writeLong(messageID);
+      //log.info("starting encode message at " + buffer.writerIndex());
+      buffer.writeLong(messageID);      
+     // log.info("encoded id " + messageID + " at index " + buffer.writerIndex());
       buffer.writeSimpleString(destination);
+      //log.info("encoded destination " + destination + " at index " + buffer.writerIndex());
       buffer.writeByte(type);
       buffer.writeBoolean(durable);
       buffer.writeLong(expiration);
       buffer.writeLong(timestamp);
       buffer.writeByte(priority);
       properties.encode(buffer);
+      encodeSize = buffer.writerIndex();
    }
    
    public void decode(final HornetQBuffer buffer)
@@ -174,14 +178,18 @@ public abstract class MessageImpl implements Message
     
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
    {
-      messageID = buffer.readLong();     
-      destination = buffer.readSimpleString();     
+     // log.info("starting decode at " + buffer.readerIndex());
+      messageID = buffer.readLong();
+     // log.info("decoded message id " + messageID + " at index " + buffer.readerIndex());
+      destination = buffer.readSimpleString();    
+     // log.info("decoded destination " + destination + " at index " + buffer.readerIndex());
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();
       timestamp = buffer.readLong();
       priority = buffer.readByte();
       properties.decode(buffer);
+      encodeSize = buffer.readerIndex();
    }
 
    public long getMessageID()
@@ -576,6 +584,11 @@ public abstract class MessageImpl implements Message
    {
       return buffer;
    }
+   
+   public void setBuffer(HornetQBuffer buffer)
+   {
+      this.buffer = buffer;
+   }
 
    public BodyEncoder getBodyEncoder()
    {
@@ -591,9 +604,8 @@ public abstract class MessageImpl implements Message
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
-
    
-   class DecodingContext implements BodyEncoder
+   private class DecodingContext implements BodyEncoder
    {
       private int lastPos = 0;
 
@@ -611,7 +623,7 @@ public abstract class MessageImpl implements Message
 
       public int encode(ByteBuffer bufferRead) throws HornetQException
       {
-         HornetQBuffer buffer = ChannelBuffers.wrappedBuffer(bufferRead);
+         HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(bufferRead);
          return encode(buffer, bufferRead.capacity());
       }
 

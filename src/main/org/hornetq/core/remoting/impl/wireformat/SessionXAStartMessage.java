@@ -53,11 +53,6 @@ public class SessionXAStartMessage extends PacketImpl
       return xid;
    }
 
-   public int getRequiredBufferSize()
-   {
-      return PACKET_HEADERS_SIZE + XidCodecSupport.getXidEncodeLength(xid);
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {

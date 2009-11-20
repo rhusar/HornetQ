@@ -105,8 +105,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    private final boolean trace = log.isTraceEnabled();
 
-   public static final int INITIAL_MESSAGE_BUFFER_SIZE = 1500;
-
    // Attributes ----------------------------------------------------------------------------
 
    private final FailoverManager failoverManager;
@@ -150,13 +148,13 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    private final int producerMaxRate;
 
-   private final int producerWindowSize;
-
    private final boolean blockOnNonPersistentSend;
 
    private final boolean blockOnPersistentSend;
 
    private final int minLargeMessageSize;
+   
+   private final int initialMessagePacketSize;
 
    private final boolean cacheLargeMessageClient;
 
@@ -201,6 +199,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
                             final boolean blockOnPersistentSend,
                             final boolean cacheLargeMessageClient,
                             final int minLargeMessageSize,
+                            final int initialMessagePacketSize,
                             final RemotingConnection remotingConnection,
                             final int version,
                             final Channel channel,
@@ -242,8 +241,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       this.confirmationWindowSize = confirmationWindowSize;
 
-      this.producerWindowSize = producerWindowSize;
-
       this.producerMaxRate = producerMaxRate;
 
       this.blockOnNonPersistentSend = blockOnNonPersistentSend;
@@ -253,6 +250,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       this.cacheLargeMessageClient = cacheLargeMessageClient;
 
       this.minLargeMessageSize = minLargeMessageSize;
+      
+      this.initialMessagePacketSize = initialMessagePacketSize;
 
       producerCreditManager = new ClientProducerCreditManagerImpl(this, producerWindowSize);
    }
@@ -519,7 +518,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
                                             final long timestamp,
                                             final byte priority)
    {
-      HornetQBuffer body = remotingConnection.createBuffer(INITIAL_MESSAGE_BUFFER_SIZE);
+      HornetQBuffer body = remotingConnection.createBuffer(initialMessagePacketSize);
 
       return new ClientMessageImpl(type, durable, expiration, timestamp, priority, body);
    }
@@ -695,10 +694,10 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
          if (trace)
          {
-            log.trace("Setting up flowControlSize to " + message.getRequiredBufferSize() + " on message = " + clMessage);
+            log.trace("Setting up flowControlSize to " + message.getPacketSize() + " on message = " + clMessage);
          }
 
-         clMessage.setFlowControlSize(message.getRequiredBufferSize());
+         clMessage.setFlowControlSize(message.getPacketSize());
 
          consumer.handleMessage(message.getClientMessage());
       }

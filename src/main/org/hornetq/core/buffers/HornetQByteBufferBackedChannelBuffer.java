@@ -23,9 +23,11 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.UnsupportedCharsetException;
 
+import org.hornetq.core.remoting.spi.HornetQBuffer;
+
 /**
- * A NIO {@link ByteBuffer} based buffer.  It is recommended to use {@link ChannelBuffers#directBuffer(int)}
- * and {@link ChannelBuffers#wrappedBuffer(ByteBuffer)} instead of calling the
+ * A NIO {@link ByteBuffer} based buffer.  It is recommended to use {@link HornetQChannelBuffers#directBuffer(int)}
+ * and {@link HornetQChannelBuffers#wrappedBuffer(ByteBuffer)} instead of calling the
  * constructor explicitly.
  *
  * @author The Netty Project (netty-dev@lists.jboss.org)
@@ -34,7 +36,7 @@ import java.nio.charset.UnsupportedCharsetException;
  * @version $Rev: 486 $, $Date: 2008-11-16 22:52:47 +0900 (Sun, 16 Nov 2008) $
  *
  */
-public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer
+public class HornetQByteBufferBackedChannelBuffer extends HornetQAbstractChannelBuffer
 {
 
    private final ByteBuffer buffer;
@@ -44,7 +46,7 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer
    /**
     * Creates a new buffer which wraps the specified buffer's slice.
     */
-   ByteBufferBackedChannelBuffer(final ByteBuffer buffer)
+   HornetQByteBufferBackedChannelBuffer(final ByteBuffer buffer)
    {
       if (buffer == null)
       {
@@ -84,12 +86,12 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer
    {
       return buffer.getLong(index);
    }
-
-   public void getBytes(final int index, final ChannelBuffer dst, final int dstIndex, final int length)
+   
+   public void getBytes(final int index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
    {
-      if (dst instanceof ByteBufferBackedChannelBuffer)
+      if (dst instanceof HornetQByteBufferBackedChannelBuffer)
       {
-         ByteBufferBackedChannelBuffer bbdst = (ByteBufferBackedChannelBuffer)dst;
+         HornetQByteBufferBackedChannelBuffer bbdst = (HornetQByteBufferBackedChannelBuffer)dst;
          ByteBuffer data = bbdst.buffer.duplicate();
 
          data.limit(dstIndex + length).position(dstIndex);
@@ -161,11 +163,11 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer
       buffer.putLong(index, value);
    }
 
-   public void setBytes(final int index, final ChannelBuffer src, final int srcIndex, final int length)
+   public void setBytes(final int index, final HornetQChannelBuffer src, final int srcIndex, final int length)
    {
-      if (src instanceof ByteBufferBackedChannelBuffer)
+      if (src instanceof HornetQByteBufferBackedChannelBuffer)
       {
-         ByteBufferBackedChannelBuffer bbsrc = (ByteBufferBackedChannelBuffer)src;
+         HornetQByteBufferBackedChannelBuffer bbsrc = (HornetQByteBufferBackedChannelBuffer)src;
          ByteBuffer data = bbsrc.buffer.duplicate();
 
          data.limit(srcIndex + length).position(srcIndex);
@@ -370,5 +372,10 @@ public class ByteBufferBackedChannelBuffer extends AbstractChannelBuffer
    public byte[] array()
    {
       return buffer.array();
+   }
+   
+   public HornetQBuffer copy()
+   {
+      return new HornetQByteBufferBackedChannelBuffer(ByteBuffer.wrap(buffer.array().clone()));
    }
 }
