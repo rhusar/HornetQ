@@ -166,7 +166,7 @@ JNIEXPORT jobject JNICALL Java_org_hornetq_core_asyncio_impl_AsynchronousFileImp
 }
 
 JNIEXPORT void JNICALL Java_org_hornetq_core_asyncio_impl_AsynchronousFileImpl_write
-  (JNIEnv *env, jobject objThis, jlong controllerAddress, jint sequence, jlong position, jlong size, jobject jbuffer, jobject callback)
+  (JNIEnv *env, jobject objThis, jlong controllerAddress, jlong sequence, jlong position, jlong size, jobject jbuffer, jobject callback)
 {
 	try
 	{
