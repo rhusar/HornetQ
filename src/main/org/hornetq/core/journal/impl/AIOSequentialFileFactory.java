@@ -84,7 +84,6 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
                                    fileName,
                                    maxIO,
                                    buffersControl.callback,
-                                   callbacksExecutor,
                                    writeExecutor,
                                    pollerExecutor);
    }

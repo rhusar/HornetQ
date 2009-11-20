@@ -44,11 +44,6 @@ public abstract class AbstractSequentialFile implements SequentialFile
 
    private final String directory;
    
-   /** We can't execute callbacks while inside the locks, as more IO operations could be performed, what could cause serious dead locks. */
-   protected final Executor callbackExecutor;
-
-
-
    protected final SequentialFileFactory factory;
 
    protected long fileSize = 0;
@@ -69,13 +64,12 @@ public abstract class AbstractSequentialFile implements SequentialFile
     * @param file
     * @param directory
     */
-   public AbstractSequentialFile(final Executor executor, final String directory, final File file, final SequentialFileFactory factory)
+   public AbstractSequentialFile(final String directory, final File file, final SequentialFileFactory factory)
    {
       super();
       this.file = file;
       this.directory = directory;
       this.factory = factory;
-      this.callbackExecutor = executor;
    }
 
    // Public --------------------------------------------------------

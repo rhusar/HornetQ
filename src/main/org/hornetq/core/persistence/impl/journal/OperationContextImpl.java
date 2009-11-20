@@ -13,6 +13,7 @@
 
 package org.hornetq.core.persistence.impl.journal;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -116,12 +117,15 @@ public class OperationContextImpl implements OperationContext
    {
       if (stored >= minimalStore && replicated >= minimalReplicated)
       {
-         for (TaskHolder holder : tasks)
+         Iterator<TaskHolder> iter = tasks.iterator();
+         while (iter.hasNext())
          {
+            TaskHolder holder = iter.next();
             if (!holder.executed && stored >= holder.storeLined && replicated >= holder.replicationLined)
             {
                holder.executed = true;
                holder.task.done();
+               iter.remove();
             }
          }
       }

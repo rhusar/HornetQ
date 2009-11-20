@@ -60,11 +60,10 @@ public class AIOSequentialFile extends AbstractSequentialFile
                             final String fileName,
                             final int maxIO,
                             final BufferCallback bufferCallback,
-                            final Executor callbackExecutor,
                             final Executor writerExecutor,
                             final Executor pollerExecutor)
    {
-      super(callbackExecutor, directory, new File(directory + "/" + fileName), factory);
+      super(directory, new File(directory + "/" + fileName), factory);
       this.maxIO = maxIO;
       this.writerExecutor = writerExecutor;
       this.bufferCallback = bufferCallback;
@@ -94,7 +93,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
 
    public SequentialFile copy()
    {
-      return new AIOSequentialFile(factory, -1, -1, getFile().getParent(), getFileName(), maxIO, bufferCallback, callbackExecutor, writerExecutor, pollerExecutor);
+      return new AIOSequentialFile(factory, -1, -1, getFile().getParent(), getFileName(), maxIO, bufferCallback, writerExecutor, pollerExecutor);
    }
 
    public synchronized void close() throws Exception
@@ -197,7 +196,7 @@ public class AIOSequentialFile extends AbstractSequentialFile
    public synchronized void open(final int currentMaxIO) throws Exception
    {
       opened = true;
-      aioFile = new AsynchronousFileImpl(writerExecutor, pollerExecutor, callbackExecutor);
+      aioFile = new AsynchronousFileImpl(writerExecutor, pollerExecutor);
       aioFile.open(getFile().getAbsolutePath(), currentMaxIO);
       position.set(0);
       aioFile.setBufferCallback(bufferCallback);

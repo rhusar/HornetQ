@@ -41,14 +41,14 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
    private RandomAccessFile rfile;
 
-   public NIOSequentialFile(final SequentialFileFactory factory, final Executor executor, final String directory, final String fileName)
+   public NIOSequentialFile(final SequentialFileFactory factory, final String directory, final String fileName)
    {
-      super(executor, directory, new File(directory + "/" + fileName), factory);
+      super(directory, new File(directory + "/" + fileName), factory);
    }
 
    public NIOSequentialFile(final SequentialFileFactory factory, final File file)
    {
-      super(null, file.getParent(), new File(file.getPath()), factory);
+      super(file.getParent(), new File(file.getPath()), factory);
    }
 
    public int getAlignment()
@@ -240,20 +240,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
       if (callback != null)
       {
-         if (callbackExecutor == null)
-         {
-            callback.done();
-         }
-         else
-         {
-            callbackExecutor.execute(new Runnable()
-            {
-               public void run()
-               {
-                  callback.done();
-               }
-            });
-         }
+         callback.done();
       }
    }
 }
