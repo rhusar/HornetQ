@@ -627,6 +627,8 @@ public class QueueImpl implements Queue
       {
          acknowledge(ref);
       }
+      
+      storageManager.completeOperations();
    }
 
    public void setExpiryAddress(final SimpleString expiryAddress)
@@ -945,6 +947,7 @@ public class QueueImpl implements Queue
                   try
                   {
                      storageManager.updateDeliveryCount(reference);
+                     storageManager.completeOperations();
                   }
                   catch (Exception e)
                   {
@@ -974,6 +977,7 @@ public class QueueImpl implements Queue
                   try
                   {
                      sendToDeadLetterAddress(reference);
+                     storageManager.completeOperations();
                   }
                   catch (Exception e)
                   {
@@ -1005,7 +1009,8 @@ public class QueueImpl implements Queue
                   {
                      try
                      {
-                        sendToDeadLetterAddress(reference);
+                        storageManager.updateScheduledDeliveryTime(reference);
+                        storageManager.completeOperations();
                      }
                      catch (Exception e)
                      {

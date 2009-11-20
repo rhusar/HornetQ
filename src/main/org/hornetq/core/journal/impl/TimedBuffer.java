@@ -15,6 +15,7 @@ package org.hornetq.core.journal.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -280,7 +281,7 @@ public class TimedBuffer
 
          bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
 
-         callbacks = new ArrayList<IOAsyncTask>();
+         callbacks = new LinkedList<IOAsyncTask>();
 
          active = false;
          pendingSync = false;

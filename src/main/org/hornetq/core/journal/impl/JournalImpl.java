@@ -2964,7 +2964,10 @@ public class JournalImpl implements TestableJournal
             {
                // Set the delegated callback as a parameter
                TransactionCallback txcallback = tx.getCallback(currentFile);
-               txcallback.setDelegateCompletion(parameterCallback);
+               if (parameterCallback != null)
+               {
+                  txcallback.setDelegateCompletion(parameterCallback);
+               }
                callback = txcallback;
             }
             else
