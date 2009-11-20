@@ -878,7 +878,7 @@ public class JournalImpl implements TestableJournal
       
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
 
       compactingLock.readLock().lock();
@@ -945,7 +945,7 @@ public class JournalImpl implements TestableJournal
       
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
 
       compactingLock.readLock().lock();
@@ -1023,7 +1023,7 @@ public class JournalImpl implements TestableJournal
       
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
 
       compactingLock.readLock().lock();
@@ -1284,7 +1284,7 @@ public class JournalImpl implements TestableJournal
 
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
       
       compactingLock.readLock().lock();
@@ -1361,7 +1361,7 @@ public class JournalImpl implements TestableJournal
 
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
       
       compactingLock.readLock().lock();
@@ -1431,7 +1431,7 @@ public class JournalImpl implements TestableJournal
 
       if (callback != null)
       {
-         callback.linedUp();
+         callback.lineUp();
       }
       
       compactingLock.readLock().lock();

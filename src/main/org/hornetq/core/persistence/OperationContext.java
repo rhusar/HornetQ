@@ -28,15 +28,16 @@ import org.hornetq.core.journal.IOCompletion;
 public interface OperationContext extends IOCompletion
 {
    
-   boolean hasData();
+   boolean hasReplication();
 
    void executeOnCompletion(IOAsyncTask runnable);
    
+   void replicationLineUp();
+   
+   void replicationDone();
+
    /** To be called when there are no more operations pending */
    void complete();
-   
-   /** Flush all pending callbacks on the Context */
-   void flush();
    
    /** Replication may need some extra controls to guarantee ordering
     *  when nothing is persisted through the contexts 

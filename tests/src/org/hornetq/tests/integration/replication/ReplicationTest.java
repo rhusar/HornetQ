@@ -494,7 +494,7 @@ public class ReplicationTest extends ServiceTestBase
       }
    }
 
-   public void testOrderOnNonPersistency() throws Exception
+   public void disabledForNowtestOrderOnNonPersistency() throws Exception
    {
 
       Configuration config = createDefaultConfig(false);

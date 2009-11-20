@@ -359,20 +359,12 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       enabled = false;
       
-      LinkedHashSet<OperationContext> activeContexts = new LinkedHashSet<OperationContext>();
-      
       // The same context will be replicated on the pending tokens...
       // as the multiple operations will be replicated on the same context
       while (!pendingTokens.isEmpty())
       {
          OperationContext ctx = pendingTokens.poll();
-         activeContexts.add(ctx);
-      }
-
-      for (OperationContext ctx : activeContexts)
-      {
-         ctx.complete();
-         ctx.flush();
+         ctx.replicationDone();
       }
 
       if (replicatingChannel != null)
@@ -402,7 +394,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       if (token != null)
       {
          // Remove from pending tokens as soon as this is complete
-         if (!token.hasData())
+         if (!token.hasReplication())
          {
             sync(token);
          }
@@ -436,7 +428,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       boolean runItNow = false;
 
       OperationContext repliToken = getContext();
-      repliToken.linedUp();
+      repliToken.replicationLineUp();
 
       synchronized (replicationLock)
       {
@@ -476,7 +468,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       for (OperationContext ctx : tokensToExecute)
       {
-         ctx.done();
+         ctx.replicationDone();
       }
    }
 
@@ -491,7 +483,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       boolean executeNow = false;
       synchronized (replicationLock)
       {
-         context.linedUp();
+         context.lineUp();
          context.setEmpty(true);
          if (pendingTokens.isEmpty())
          {

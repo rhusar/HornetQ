@@ -23,9 +23,6 @@ import org.hornetq.core.persistence.OperationContext;
  * A ReplicationToken
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
- *
- * TODO: Maybe I should move this to persistence.journal. I need to check a few dependencies first.
- *
  */
 public class OperationContextImpl implements OperationContext
 {
@@ -42,15 +39,21 @@ public class OperationContextImpl implements OperationContext
       return token;
    }
 
-   private List<IOAsyncTask> tasks;
-   
-   private int storeLinedUp = 0;
+   private List<TaskHolder> tasks;
+
+   private volatile int storeLineUp = 0;
+
+   private volatile int replicationLineUp = 0;
+
+   private int minimalStore = Integer.MAX_VALUE;
+
+   private int minimalReplicated = Integer.MAX_VALUE;
 
    private int stored = 0;
 
-   private boolean empty = false;
+   private int replicated = 0;
 
-   private volatile boolean complete = false;
+   private boolean empty = false;
 
    /**
     * @param executor
@@ -61,67 +64,75 @@ public class OperationContextImpl implements OperationContext
    }
 
    /** To be called by the replication manager, when new replication is added to the queue */
-   public void linedUp()
+   public void lineUp()
    {
-      storeLinedUp++;
+      storeLineUp++;
    }
 
-   public boolean hasData()
+   public void replicationLineUp()
    {
-      return storeLinedUp > 0;
+      replicationLineUp++;
+   }
+
+   public synchronized void replicationDone()
+   {
+      replicated++;
+      checkTasks();
+   }
+
+   public boolean hasReplication()
+   {
+      return replicationLineUp > 0;
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
-   public void executeOnCompletion(IOAsyncTask completion)
+   public synchronized void executeOnCompletion(IOAsyncTask completion)
    {
-      if (complete)
-      {
-         // Sanity check, this shouldn't happen
-         throw new IllegalStateException("The Replication Context is complete, and no more tasks are accepted");
-      }
-
       if (tasks == null)
       {
-         // No need to use Concurrent, we only add from a single thread.
-         // We don't add any more Runnables after it is complete
-         tasks = new LinkedList<IOAsyncTask>();
+         tasks = new LinkedList<TaskHolder>();
+         minimalReplicated = replicationLineUp;
+         minimalStore = storeLineUp;
       }
 
-      tasks.add(completion);
+      if (replicationLineUp == replicated && storeLineUp == stored)
+      {
+         completion.done();
+      }
+      else
+      {
+         tasks.add(new TaskHolder(completion));
+      }
    }
 
    /** To be called by the storage manager, when data is confirmed on the channel */
    public synchronized void done()
    {
-      if (++stored == storeLinedUp && complete)
+      stored++;
+      checkTasks();
+   }
+
+   private void checkTasks()
+   {
+      if (stored >= minimalStore && replicated >= minimalReplicated)
       {
-         flush();
+         for (TaskHolder holder : tasks)
+         {
+            if (!holder.executed && stored >= holder.storeLined && replicated >= holder.replicationLined)
+            {
+               holder.executed = true;
+               holder.task.done();
+            }
+         }
       }
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationToken#complete()
     */
-   public synchronized void complete()
+   public void complete()
    {
       tlContext.set(null);
-      complete = true;
-      if (stored == storeLinedUp && complete)
-      {
-         flush();
-      }
-   }
-
-   public synchronized void flush()
-   {
-      if (tasks != null)
-      {
-         for (IOAsyncTask run : tasks)
-         {
-            run.done();
-         }
-         tasks.clear();
-      }
    }
 
    /* (non-Javadoc)
@@ -137,7 +148,6 @@ public class OperationContextImpl implements OperationContext
       this.empty = sync;
    }
 
-   
    /* (non-Javadoc)
     * @see org.hornetq.core.asyncio.AIOCallback#onError(int, java.lang.String)
     */
@@ -145,10 +155,28 @@ public class OperationContextImpl implements OperationContext
    {
       if (tasks != null)
       {
-         for (IOAsyncTask run : tasks)
+         for (TaskHolder run : tasks)
          {
-            run.onError(errorCode, errorMessage);
+            run.task.onError(errorCode, errorMessage);
          }
+      }
+   }
+
+   class TaskHolder
+   {
+      int storeLined;
+
+      int replicationLined;
+
+      boolean executed;
+
+      IOAsyncTask task;
+
+      TaskHolder(IOAsyncTask task)
+      {
+         this.storeLined = storeLineUp;
+         this.replicationLined = replicationLineUp;
+         this.task = task;
       }
    }
 

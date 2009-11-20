@@ -971,9 +971,6 @@ public class PagingTest extends ServiceTestBase
 
          assertNull(consumerPaged.receiveImmediate());
 
-         assertFalse(server.getPostOffice().getPagingManager().getPageStore(PAGED_ADDRESS).isPaging());
-         assertFalse(server.getPostOffice().getPagingManager().getPageStore(NON_PAGED_ADDRESS).isPaging());
-
          session.close();
 
       }

@@ -71,7 +71,7 @@ public class SimpleWaitIOCallback extends SyncIOCompletion
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.IOCompletion#linedUp()
     */
-   public void linedUp()
+   public void lineUp()
    {
    }
 }
