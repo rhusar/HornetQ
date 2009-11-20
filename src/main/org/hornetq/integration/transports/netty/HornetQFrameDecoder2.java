@@ -15,22 +15,14 @@ package org.hornetq.integration.transports.netty;
 
 import static org.hornetq.utils.DataConstants.SIZE_INT;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-import org.hornetq.core.remoting.impl.AbstractBufferHandler;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.buffer.DynamicChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineCoverage;
-import org.jboss.netty.channel.ChannelUpstreamHandler;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.handler.codec.embedder.DecoderEmbedder;
 
 /**
  * A Netty decoder used to decode messages.
