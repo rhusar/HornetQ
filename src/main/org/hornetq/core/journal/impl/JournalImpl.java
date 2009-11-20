@@ -85,7 +85,7 @@ public class JournalImpl implements TestableJournal
 
    private static final Logger log = Logger.getLogger(JournalImpl.class);
 
-   private static final boolean trace = false;
+   private static final boolean trace = log.isTraceEnabled();
 
    /** This is to be set to true at DEBUG & development only */
    private static final boolean LOAD_TRACE = false;
@@ -96,6 +96,7 @@ public class JournalImpl implements TestableJournal
    private static final void trace(final String message)
    {
       log.trace(message);
+      //System.out.println("JournalImpl::" + message);
    }
 
    // The sizes of primitive types
@@ -866,6 +867,10 @@ public class JournalImpl implements TestableJournal
 
    public void appendAddRecord(final long id, final byte recordType, final EncodingSupport record, final boolean sync, final IOCompletion callback) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendAddRecord id = " + id + ", recordType = " + recordType);
+      }
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -929,6 +934,10 @@ public class JournalImpl implements TestableJournal
    
    public void appendUpdateRecord(final long id, final byte recordType, final EncodingSupport record, final boolean sync, final IOCompletion callback) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendUpdateRecord id = " + id + ", recordType = " + recordType);
+      }
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1003,6 +1012,10 @@ public class JournalImpl implements TestableJournal
    
    public void appendDeleteRecord(final long id, final boolean sync, final IOCompletion callback) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendDeleteRecord id = " + id);
+      }
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1073,6 +1086,10 @@ public class JournalImpl implements TestableJournal
                                             final byte recordType,
                                             final EncodingSupport record) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendAddRecordTransactional txID " + txID + ", id = " + id + ", recordType = " + recordType);
+      }
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1122,6 +1139,10 @@ public class JournalImpl implements TestableJournal
                                                final byte recordType,
                                                final EncodingSupport record) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendUpdateRecordTransactional txID " + txID + ", id = " + id + ", recordType = " + recordType);
+      }
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1165,6 +1186,11 @@ public class JournalImpl implements TestableJournal
 
    public void appendDeleteRecordTransactional(final long txID, final long id, final EncodingSupport record) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendDeleteRecordTransactional txID " + txID + ", id = " + id);
+      }
+
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1246,6 +1272,11 @@ public class JournalImpl implements TestableJournal
     */
    public void appendPrepareRecord(final long txID, final EncodingSupport transactionData, final boolean sync, IOCompletion callback) throws Exception
    {
+      if (LOAD_TRACE)
+      {
+         trace("appendPrepareRecord txID " + txID);
+      }
+
       if (state != STATE_LOADED)
       {
          throw new IllegalStateException("Journal must be loaded first");
@@ -1342,7 +1373,10 @@ public class JournalImpl implements TestableJournal
 
          if (tx == null)
          {
-            throw new IllegalStateException("Cannot find tx with id " + txID);
+            log.warn("Commit being called on an empty transaction, ignoring call. ID = " + txID);
+            // Commit being called on an empty transaction
+            callback.done();
+            return;
          }
 
          ChannelBuffer bb = newBuffer(SIZE_COMPLETE_TRANSACTION_RECORD);
