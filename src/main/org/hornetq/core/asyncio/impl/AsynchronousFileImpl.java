@@ -682,6 +682,11 @@ public class AsynchronousFileImpl implements AsynchronousFile
       final int errorCode;
       
       final String message;
+      
+      public boolean isError()
+      {
+         return true;
+      }
 
       public ErrorCallback(final long sequence, final AIOCallback callback, int errorCode, String message)
       {
