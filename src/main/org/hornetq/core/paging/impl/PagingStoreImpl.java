@@ -919,6 +919,8 @@ public class PagingStoreImpl implements TestSupportPageStore
       for (PagedMessage pagedMessage : pagedMessages)
       {
          ServerMessage message = pagedMessage.getMessage(storageManager);
+         
+         System.out.println("Depaged id = " + message.getIntProperty("id"));
 
          if (message.isLargeMessage())
          {
@@ -1008,8 +1010,9 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
 
       depageTransaction.commit();
-
-      storageManager.completeOperations();
+      
+      // TODO: If we implement ordering on AIO, we won't need to block here
+      storageManager.waitOnOperations();
 
       if (isTrace)
       {

@@ -44,9 +44,9 @@ public class OperationContextImpl implements OperationContext
 
    private List<IOAsyncTask> tasks;
    
-   private int linedup = 0;
+   private int storeLinedUp = 0;
 
-   private int replicated = 0;
+   private int stored = 0;
 
    private boolean empty = false;
 
@@ -63,12 +63,12 @@ public class OperationContextImpl implements OperationContext
    /** To be called by the replication manager, when new replication is added to the queue */
    public void linedUp()
    {
-      linedup++;
+      storeLinedUp++;
    }
 
    public boolean hasData()
    {
-      return linedup > 0;
+      return storeLinedUp > 0;
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
@@ -90,10 +90,10 @@ public class OperationContextImpl implements OperationContext
       tasks.add(completion);
    }
 
-   /** To be called by the replication manager, when data is confirmed on the channel */
+   /** To be called by the storage manager, when data is confirmed on the channel */
    public synchronized void done()
    {
-      if (++replicated == linedup && complete)
+      if (++stored == storeLinedUp && complete)
       {
          flush();
       }
@@ -106,7 +106,7 @@ public class OperationContextImpl implements OperationContext
    {
       tlContext.set(null);
       complete = true;
-      if (replicated == linedup && complete)
+      if (stored == storeLinedUp && complete)
       {
          flush();
       }

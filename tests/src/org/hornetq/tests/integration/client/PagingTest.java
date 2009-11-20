@@ -163,8 +163,7 @@ public class PagingTest extends ServiceTestBase
 
             assertNotNull(message2);
 
-             // TODO: AIO doesn't support ordering ATM
-//            assertEquals(i, ((Integer)message2.getObjectProperty(new SimpleString("id"))).intValue());
+            assertEquals(i, message2.getIntProperty("id").intValue());
 
             message2.acknowledge();
 
