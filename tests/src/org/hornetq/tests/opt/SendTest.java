@@ -161,7 +161,7 @@ public class SendTest
 
       String str = new String(bytes);
       
-      final int warmup = 50000;
+      final int warmup = 500000;
       
       log.info("Warming up");
       
@@ -181,7 +181,7 @@ public class SendTest
       
       log.info("** WARMUP DONE");
       
-      final int numMessages = 1000000;
+      final int numMessages = 2000000;
       
       tm = sess.createTextMessage();
 

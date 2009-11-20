@@ -192,5 +192,11 @@ public interface Message
    void afterSend();
    
    boolean isBufferWritten();
+   
+   boolean isEncodedToBuffer();
+   
+   void decodeFromWire(HornetQBuffer buffer);
+   
+   void decodeHeadersAndProperties(HornetQBuffer buffer);
 
 }

@@ -23,6 +23,7 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.client.HornetQTextMessage;
@@ -78,57 +79,10 @@ public class CoreClientTest extends UnitTestCase
 
       ClientProducer producer = session.createProducer(QUEUE);
 
-      final int numMessages = 10000;
+      final int numMessages = 10;
 
       for (int i = 0; i < numMessages; i++)
-      {
-         /*
-          * Like this:
-          * 
-          * ClientMessage message = producer.createMessage(...);
-          * 
-          * message.putStringProperty("foo", "bar");
-          * 
-          * message.encodeToBuffer(); [this sets the destination from the producer, and encodes]
-          * 
-          * message.getBuffer().writeString("testINVMCoreClient");
-          *          
-          * message.send();
-          * 
-          * OR, another option:
-          * 
-          * Get rid of client producer altogether,
-          * 
-          * Have send direct on the session, and destination must be set explicitly
-          * 
-          * e.g.
-          * 
-          * ClientMessage message = session.createMessage(...)
-          * 
-          * message.putStringProperty("foo", "bar");
-          * 
-          * message.setDestination("foo");
-          * 
-          * message.writeBody();
-          * 
-          * message.getBuffer().writeString("testINVMCoreClient");
-          * 
-          * message.send();
-          * 
-          * 
-          * ORRR
-          * 
-          * we don't write the headers and properties until *AFTER* the body
-          * 
-          * giving this format:
-          * body length
-          * body
-          * headers + properties
-          * 
-          * this means we don't need an encodeToBuffer() method!!
-          * 
-          */
-         
+      {         
          ClientMessage message = session.createClientMessage(HornetQTextMessage.TYPE,
                                                              false,
                                                              0,
@@ -143,8 +97,6 @@ public class CoreClientTest extends UnitTestCase
          
          message.setDestination(QUEUE);
          
-         message.encodeToBuffer();
-
          message.getBuffer().writeString("testINVMCoreClient");
 
          producer.send(message);
@@ -159,10 +111,14 @@ public class CoreClientTest extends UnitTestCase
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message2 = consumer.receive();
-
-         assertEquals("testINVMCoreClient", message2.getBuffer().readString());
+         
+         HornetQBuffer buffer = message2.getBuffer();
+         
+         assertEquals("testINVMCoreClient", buffer.readString());
 
          message2.acknowledge();
+         
+         log.info("got message " + i);
       }
 
       session.close();

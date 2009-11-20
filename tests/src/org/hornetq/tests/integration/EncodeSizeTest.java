@@ -74,7 +74,7 @@ public class EncodeSizeTest extends UnitTestCase
                        
          ServerMessage serverMessage = new ServerMessageImpl();
          
-         serverMessage.decode(buffer);
+         serverMessage.decodeHeadersAndProperties(buffer);
          
          int serverEncodeSize = serverMessage.getEncodeSize();
 

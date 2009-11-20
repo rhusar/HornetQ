@@ -353,7 +353,7 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    public String getTextMessage(ClientMessage m)
    {
-      m.getBuffer().resetReaderIndex();
+      //m.getBuffer().resetReaderIndex();
       return m.getBuffer().readString();
    }
 

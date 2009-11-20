@@ -29,7 +29,9 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
 import org.hornetq.core.message.Message;
 import org.hornetq.core.message.PropertyConversionException;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -91,7 +93,12 @@ public abstract class MessageImpl implements Message
    protected byte priority;
 
    protected HornetQBuffer buffer;
-
+   
+   private int encodeSize;
+   
+   //This means does the buffer contain an accurate encoding of the message?
+   protected boolean encodedToBuffer;
+      
    // Constructors --------------------------------------------------
 
    protected MessageImpl()
@@ -141,7 +148,16 @@ public abstract class MessageImpl implements Message
       return false;
    }
    
-   private int encodeSize;
+   public void resetBuffer()
+   {     
+      //There is a bug in Netty which requires us to initially write a byte
+      if (buffer.capacity() == 0)
+      {
+         buffer.writeByte((byte)0);
+      }
+
+      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);        
+   }
    
    public int getEncodeSize()
    {
@@ -154,12 +170,9 @@ public abstract class MessageImpl implements Message
    }
 
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
-   {
-      //log.info("starting encode message at " + buffer.writerIndex());
-      buffer.writeLong(messageID);      
-     // log.info("encoded id " + messageID + " at index " + buffer.writerIndex());
-      buffer.writeSimpleString(destination);
-      //log.info("encoded destination " + destination + " at index " + buffer.writerIndex());
+   {     
+      buffer.writeLong(messageID);          
+      buffer.writeSimpleString(destination);    
       buffer.writeByte(type);
       buffer.writeBoolean(durable);
       buffer.writeLong(expiration);
@@ -169,20 +182,24 @@ public abstract class MessageImpl implements Message
       encodeSize = buffer.writerIndex();
    }
    
-   public void decode(final HornetQBuffer buffer)
+   public void decodeFromWire(final HornetQBuffer buffer)
    {
       decodeHeadersAndProperties(buffer);
 
       this.buffer = buffer;
+      
+      this.encodedToBuffer = true;
    }
-    
-   public void decodeHeadersAndProperties(final HornetQBuffer buffer)
+   
+   public boolean isEncodedToBuffer()
    {
-     // log.info("starting decode at " + buffer.readerIndex());
-      messageID = buffer.readLong();
-     // log.info("decoded message id " + messageID + " at index " + buffer.readerIndex());
-      destination = buffer.readSimpleString();    
-     // log.info("decoded destination " + destination + " at index " + buffer.readerIndex());
+      return this.encodedToBuffer;
+   }
+       
+   public void decodeHeadersAndProperties(final HornetQBuffer buffer)
+   {     
+      messageID = buffer.readLong();    
+      destination = buffer.readSimpleString();         
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();

@@ -165,7 +165,7 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
 //   }
 
    @Override
-   public void decode(final HornetQBuffer buffer)
+   public void decodeHeadersAndProperties(final HornetQBuffer buffer)
    {
       file = null;
       decodeHeadersAndProperties(buffer);

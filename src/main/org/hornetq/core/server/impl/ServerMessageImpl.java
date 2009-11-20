@@ -16,6 +16,7 @@ package org.hornetq.core.server.impl;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
 import org.hornetq.core.message.impl.MessageImpl;
@@ -25,6 +26,7 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -62,8 +64,10 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
     * Construct a MessageImpl from storage
     */
    public ServerMessageImpl(final long messageID)
-   {
+   {      
       super(messageID);
+      
+      log.info("creating server message from storage, with id " + messageID);
    }
    
    /*
@@ -74,8 +78,11 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       super(messageID);
       
       this.buffer = buffer;
-   }
       
+      //Must align the body after the packet headers
+      resetBuffer();
+   }
+        
    /*
     * Copy constructor
     */
@@ -253,6 +260,8 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
 
          putLongProperty(HDR_ACTUAL_EXPIRY_TIME, actualExpiryTime);
       }
+      
+      setNeedsEncoding();
    }
 
    public void setPagingStore(final PagingStore pagingStore)
@@ -305,14 +314,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       }
    }
    
-   // EncodingSupport implementation
-   
-   // Used when storing to/from journal
-   
-   public void encode(HornetQBuffer buffer)
-   {
-      
-   }
+
    
    @Override
    public String toString()
@@ -331,6 +333,84 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    public InputStream getBodyInputStream()
    {
       return null;
+   }
+   
+   
+   
+   // Encoding stuff
+   
+   
+   public void setNeedsEncoding()
+   {
+      //This wil force the message to be re-encoded if it gets sent to a client
+      //Typically this is called after properties or headers are changed on the server side
+      this.encodedToBuffer = false;
+   }
+   
+   private int endMessagePosition;
+   
+   public void setEndMessagePosition(int pos)
+   {
+      this.endMessagePosition = pos;
+   }
+   
+   public int getEndMessagePosition()
+   {
+      return this.endMessagePosition;
+   }
+   
+   // EncodingSupport implementation
+   
+   // Used when storing to/from journal
+   
+   public void encode(final HornetQBuffer buffer)
+   {
+      //Encode the message to a buffer for storage in the journal
+      
+      if (this.encodedToBuffer)
+      {
+         //The body starts after the standard packet headers
+         int bodyStart = PacketImpl.PACKET_HEADERS_SIZE;
+         
+         int end = this.endMessagePosition;
+         
+         buffer.writeBytes(this.buffer, bodyStart, end);
+      }
+      else
+      {
+         //encodeToBuffer();
+         
+         throw new IllegalStateException("Not encoded to buffer and storing to journal");
+      }      
+   }
+   
+   public void decode(final HornetQBuffer buffer)
+   {
+      //TODO optimise
+      
+      log.info("decoding server message");
+      
+      this.buffer = HornetQChannelBuffers.dynamicBuffer(1500);
+      
+      //work around Netty bug
+      this.buffer.writeByte((byte)0);
+      
+      this.buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
+      
+      this.buffer.writeBytes(buffer, 0, buffer.readableBytes());
+      
+      
+      //Position to beginning of encoded message headers/properties
+      
+      int msgHeadersPos = this.buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
+      
+      this.buffer.readerIndex(msgHeadersPos);
+      
+      this.decodeHeadersAndProperties(this.buffer);
+      
+      log.info("priority is now " + this.getPriority());
+      
+      
    }
 
 }

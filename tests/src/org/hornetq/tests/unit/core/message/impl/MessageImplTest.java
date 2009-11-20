@@ -63,7 +63,7 @@ public class MessageImplTest extends UnitTestCase
          HornetQBuffer buffer = HornetQChannelBuffers.buffer(message.getEncodeSize()); 
          message.encode(buffer);      
          Message message2 = new ClientMessageImpl(false);      
-         message2.decode(buffer);      
+         message2.decodeHeadersAndProperties(buffer);      
          assertMessagesEquivalent(message, message2);
       }
    }

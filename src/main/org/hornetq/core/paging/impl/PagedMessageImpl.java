@@ -74,7 +74,7 @@ public class PagedMessageImpl implements PagedMessage
       {
          message = storage.createLargeMessage();
          HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(largeMessageLazyData); 
-         message.decode(buffer);
+         message.decodeHeadersAndProperties(buffer);
          largeMessageLazyData = null;
       }
       return message;
@@ -107,7 +107,7 @@ public class PagedMessageImpl implements PagedMessage
          
          message = new ServerMessageImpl();
          
-         message.decode(buffer);
+         message.decodeHeadersAndProperties(buffer);
       }
 
    }

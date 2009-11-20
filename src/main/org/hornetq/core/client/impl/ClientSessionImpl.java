@@ -696,7 +696,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          {
             log.trace("Setting up flowControlSize to " + message.getPacketSize() + " on message = " + clMessage);
          }
-
+       
          clMessage.setFlowControlSize(message.getPacketSize());
 
          consumer.handleMessage(message.getClientMessage());
@@ -1372,7 +1372,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       // consumer
 
       if (windowSize != 0)
-      {
+      {         
          channel.send(new SessionConsumerFlowCreditMessage(consumerID, windowSize));
       }
 

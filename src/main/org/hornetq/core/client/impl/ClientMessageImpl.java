@@ -132,30 +132,8 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    @Override
    public void afterSend()
    {      
-      //temp hack
-      
-//      ChannelBuffer cb = (ChannelBuffer)buffer.getUnderlyingBuffer();
-//      
-//      ChannelBuffer cbCopy = cb.copy(0, cb.capacity());
-//      
-//      this.buffer = new ChannelBufferWrapper(cbCopy); 
-      
-     // resetBuffer();
-      
-      
    }
-
-   public void resetBuffer()
-   {     
-      //There is a bug in Netty which requires us to initially write a byte
-      if (buffer.capacity() == 0)
-      {
-         buffer.writeByte((byte)0);
-      }
-
-      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);      
-   }
-   
+     
    @Override
    public String toString()
    {

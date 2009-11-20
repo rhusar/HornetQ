@@ -36,8 +36,6 @@ public interface ClientMessage extends Message
    
    void acknowledge() throws HornetQException;   
    
-   void decode(HornetQBuffer buffer);
-   
    void resetBuffer();
         
    //FIXME - the following are only used for large messages - they should be put somewhere else:
@@ -56,8 +54,6 @@ public interface ClientMessage extends Message
     * @throws HornetQException
     */
    boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException;
-   
-   void decodeHeadersAndProperties(HornetQBuffer buffer);
-      
+            
    void setBodyInputStream(InputStream bodyInputStream);  
 }

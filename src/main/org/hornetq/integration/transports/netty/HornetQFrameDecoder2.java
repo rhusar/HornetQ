@@ -27,8 +27,6 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 /**
  * A Netty decoder used to decode messages.
  *
- * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * @author <a href="ataylor@redhat.com">Andy Taylor</a>
  * @author <a href="tlee@redhat.com">Trustin Lee</a>
  *
  * @version $Revision: 7839 $, $Date: 2009-08-21 02:26:39 +0900 (2009-08-21, 금) $
@@ -49,7 +47,7 @@ public class HornetQFrameDecoder2 extends SimpleChannelUpstreamHandler
       {
          if (previousData.readableBytes() + in.readableBytes() < SIZE_INT) {
             // XXX Length is unknown. Bet at 512. Tune this value.
-            append(in, 512); 
+            append(in, 1500); 
             return;
          }
          

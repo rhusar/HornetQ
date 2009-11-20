@@ -114,10 +114,12 @@ public class SessionSendMessage extends PacketImpl
        * 
        *  
        */
+
       HornetQBuffer buffer = sentMessage.getBuffer();
 
       // The body will already be written (if any) at this point, so we take note of the position of the end of the
       // body
+      
       int afterBody = buffer.writerIndex();
 
       // We now write the message headers and properties
@@ -173,20 +175,19 @@ public class SessionSendMessage extends PacketImpl
 
       buffer.setIndex(afterBody, buffer.writerIndex());
 
-      receivedMessage.decode(buffer);
+      receivedMessage.decodeFromWire(buffer);
+           
+      //We store the position of the end of the encoded message, where the extra data starts - this
+      //will be needed if we re-deliver this packet, since we need to reset to there to rewrite the extra data
+      //for the different packet
+      receivedMessage.setEndMessagePosition(buffer.readerIndex());
 
       // And we read extra data in the packet
 
       requiresResponse = buffer.readBoolean();
-
-      // We set reader index back to the beginning of the buffer so it can be easily read if then delivered
-      // to a client, and we set writer index to just after where the headers/properties were encoded so that it can
-      // be fileld in with extra data required when delivering the packet to the client (e.g. delivery count, consumer
-      // id)
-
-      buffer.setIndex(0, buffer.writerIndex() - DataConstants.SIZE_BOOLEAN);
    }
 
+   
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

@@ -605,7 +605,7 @@ public class QueueImpl implements Queue
    }
 
    public synchronized void cancel(final MessageReference reference) throws Exception
-   {
+   {      
       if (checkDLQ(reference))
       {
          if (!scheduledDeliveryHandler.checkAndSchedule(reference))
@@ -1109,7 +1109,7 @@ public class QueueImpl implements Queue
     * Attempt to deliver all the messages in the queue
     */
    private synchronized void deliver()
-   {
+   {     
       if (paused || handlers.isEmpty())
       {
          return;
@@ -1213,7 +1213,7 @@ public class QueueImpl implements Queue
    }
 
    private synchronized boolean directDeliver(final MessageReference reference)
-   {
+   {    
       if (paused || handlers.isEmpty())
       {
          return false;
@@ -1308,13 +1308,13 @@ public class QueueImpl implements Queue
       boolean add = false;
 
       if (direct && !paused)
-      {
+      {         
          // Deliver directly
 
          boolean delivered = directDeliver(ref);
 
          if (!delivered)
-         {
+         {          
             add = true;
 
             direct = false;

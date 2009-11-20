@@ -451,6 +451,8 @@ public class JournalStorageManager implements StorageManager
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "MessageId was not assigned to Message");
       }
       
+      log.info("storing message");
+      
       // Note that we don't sync, the add reference that comes immediately after will sync if appropriate
 
       if (message.isLargeMessage())
@@ -1674,7 +1676,7 @@ public class JournalStorageManager implements StorageManager
        */
       public void decode(final HornetQBuffer buffer)
       {
-         message.decode(buffer);
+         message.decodeHeadersAndProperties(buffer);
       }
 
       /* (non-Javadoc)

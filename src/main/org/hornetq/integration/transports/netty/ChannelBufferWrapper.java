@@ -13,6 +13,7 @@
 
 package org.hornetq.integration.transports.netty;
 
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
@@ -30,6 +31,9 @@ import org.jboss.netty.buffer.ChannelBuffer;
  */
 public class ChannelBufferWrapper implements HornetQBuffer
 {
+   private static final Logger log = Logger.getLogger(ChannelBufferWrapper.class);
+
+   
    private final ChannelBuffer buffer;
 
    /**
@@ -280,8 +284,8 @@ public class ChannelBufferWrapper implements HornetQBuffer
     * @see org.hornetq.core.remoting.spi.HornetQBuffer#readString()
     */
    public String readString()
-   {
-      int len = readInt();
+   {      
+      int len = readInt();      
       char[] chars = new char[len];
       for (int i = 0; i < len; i++)
       {
@@ -378,12 +382,12 @@ public class ChannelBufferWrapper implements HornetQBuffer
     * @see org.hornetq.core.remoting.spi.HornetQBuffer#writeString(java.lang.String)
     */
    public void writeString(final String val)
-   {
+   {      
       writeInt(val.length());
       for (int i = 0; i < val.length(); i++)
       {
          writeShort((short)val.charAt(i));
-      }
+      }      
    }
 
    /* (non-Javadoc)

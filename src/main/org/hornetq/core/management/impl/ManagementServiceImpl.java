@@ -700,7 +700,7 @@ public class ManagementServiceImpl implements ManagementService
                }
 
                ServerMessage notificationMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
-                                                                         HornetQChannelBuffers.EMPTY_BUFFER);
+                                                                         HornetQChannelBuffers.dynamicBuffer(1500));
 
                // Notification messages are always durable so the user can choose whether to add a durable queue to
                // consume

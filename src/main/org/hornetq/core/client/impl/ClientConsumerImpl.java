@@ -581,7 +581,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
     * @parameter discountSlowConsumer When dealing with slowConsumers, we need to discount one credit that was pre-sent when the first receive was called. For largeMessage that is only done at the latest packet
     * */
    public void flowControl(final int messageBytes, final boolean discountSlowConsumer) throws HornetQException
-   {
+   { 
       if (clientWindowSize >= 0)
       {
          creditsToSend += messageBytes;

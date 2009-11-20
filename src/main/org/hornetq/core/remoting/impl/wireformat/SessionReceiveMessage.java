@@ -83,13 +83,36 @@ public class SessionReceiveMessage extends PacketImpl
    {
       return deliveryCount;
    }
-
+      
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
       //We re-use the same packet buffer - but we need to change the extra data
-      HornetQBuffer buffer = serverMessage.getBuffer();
       
+      HornetQBuffer buffer = serverMessage.getBuffer();
+           
+      if (serverMessage.isEncodedToBuffer())
+      {
+         //It's already encoded - we just need to change the extra data at the end
+         //so we need to jump to the after body position
+         
+         buffer.setIndex(0, serverMessage.getEndMessagePosition());         
+      }
+      else
+      {
+         int afterBody = buffer.writerIndex();
+         
+         //Message hasn't been encoded yet - probably it's something like a notification message generated on the server
+         
+         // We now write the message headers and properties
+         serverMessage.encodeHeadersAndProperties(buffer);
+         
+         serverMessage.setEndMessagePosition(buffer.writerIndex());
+         
+         //Now we need to fill in the afterBody 
+         buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, afterBody);
+      }
+                             
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
       
@@ -106,34 +129,48 @@ public class SessionReceiveMessage extends PacketImpl
       buffer.writeLong(channelID);
                       
       //And fill in the message id, since this was set on the server side so won't already be in the buffer
-      buffer.setIndex(0, buffer.writerIndex() + DataConstants.SIZE_INT);
+      
+      buffer.writerIndex(buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE));            
       buffer.writeLong(serverMessage.getMessageID());
       
+      //Set the reader and writer position to be read fully by remoting
       buffer.setIndex(0, size);
 
       return buffer;
    }
 
-   public void decodeRest(final HornetQBuffer buffer)
+   @Override
+   public void decode(final HornetQBuffer buffer)
    {
+      channelID = buffer.readLong();
+      
       clientMessage = new ClientMessageImpl();
       
       // We read the position of the end of the body - this is where the message headers and properties are stored
       int afterBody = buffer.readInt();
       
+      //At this point standard headers have been decoded and we are positioned at the beginning of the body
+      int bodyStart = buffer.readerIndex();
+      
       // We now read message headers/properties
 
-      buffer.setIndex(afterBody, buffer.writerIndex());
+      buffer.readerIndex(afterBody);
             
-      clientMessage.decode(buffer);
+      clientMessage.decodeFromWire(buffer);
       
+      // And read the extra data
+            
       consumerID = buffer.readLong();
-      
+        
       deliveryCount = buffer.readInt();
       
       clientMessage.setDeliveryCount(deliveryCount);
       
-      buffer.resetReaderIndex();
+      size = buffer.readerIndex();
+
+      // Set reader index back to beginning of body
+      
+      buffer.readerIndex(bodyStart);
       
       clientMessage.setBuffer(buffer);
    }

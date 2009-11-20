@@ -329,7 +329,7 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
    // ----------------------------------------------------
 
    public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
-   {                 
+   {                             
       final Packet packet = decoder.decode(buffer);
       
       if (executor == null || packet.getType() == PacketImpl.PING)

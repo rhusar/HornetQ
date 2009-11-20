@@ -184,9 +184,9 @@ public class ServerConsumerImpl implements ServerConsumer
    }
 
    public HandleStatus handle(final MessageReference ref) throws Exception
-   {
+   { 
       if (availableCredits != null && availableCredits.get() <= 0)
-      {
+      {         
          return HandleStatus.BUSY;
       }
       
@@ -347,7 +347,7 @@ public class ServerConsumerImpl implements ServerConsumer
             promptDelivery(false);
 
             ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
-                                                                        HornetQChannelBuffers.EMPTY_BUFFER);
+                                                                        HornetQChannelBuffers.dynamicBuffer(100));
 
             forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
             forcedDeliveryMessage.setDestination(messageQueue.getName());
@@ -409,7 +409,7 @@ public class ServerConsumerImpl implements ServerConsumer
    }
 
    public void receiveCredits(final int credits) throws Exception
-   {
+   {      
       if (credits == -1)
       {
          // No flow control
@@ -582,7 +582,7 @@ public class ServerConsumerImpl implements ServerConsumer
       channel.send(packet);
       
       if (availableCredits != null)
-      {
+      {         
          availableCredits.addAndGet(-packet.getPacketSize());
       }
 

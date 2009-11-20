@@ -376,6 +376,9 @@ public class HornetQByteBufferBackedChannelBuffer extends HornetQAbstractChannel
    
    public HornetQBuffer copy()
    {
-      return new HornetQByteBufferBackedChannelBuffer(ByteBuffer.wrap(buffer.array().clone()));
+      ByteBuffer newBuffer = ByteBuffer.allocate(buffer.remaining());
+      newBuffer.put(buffer);
+      newBuffer.flip();
+      return new HornetQByteBufferBackedChannelBuffer(newBuffer);
    }
 }
