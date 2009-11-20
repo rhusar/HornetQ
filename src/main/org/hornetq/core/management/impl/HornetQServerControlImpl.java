@@ -438,6 +438,7 @@ public class HornetQServerControlImpl extends StandardMBean implements HornetQSe
          {
             Transaction transaction = resourceManager.removeTransaction(xid);
             transaction.commit();
+            server.getStorageManager().completeOperations();
             long recordID = server.getStorageManager().storeHeuristicCompletion(xid, true);
             resourceManager.putHeuristicCompletion(recordID, xid, true);
             return true;
@@ -456,6 +457,7 @@ public class HornetQServerControlImpl extends StandardMBean implements HornetQSe
          {
             Transaction transaction = resourceManager.removeTransaction(xid);
             transaction.rollback();
+            server.getStorageManager().completeOperations();
             long recordID = server.getStorageManager().storeHeuristicCompletion(xid, false);
             resourceManager.putHeuristicCompletion(recordID, xid, false);
             return true;
