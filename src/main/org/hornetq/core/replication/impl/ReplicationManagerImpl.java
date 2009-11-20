@@ -450,7 +450,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       if (runItNow)
       {
-         repliToken.done();
+         repliToken.replicationDone();
       }
    }
 
@@ -499,7 +499,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
       if (executeNow)
       {
-         context.done();
+         context.replicationDone();
       }
    }
 
