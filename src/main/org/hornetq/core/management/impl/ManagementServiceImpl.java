@@ -21,7 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServer;
 import javax.management.NotificationBroadcasterSupport;
@@ -39,6 +41,7 @@ import org.hornetq.core.config.cluster.ClusterConnectionConfiguration;
 import org.hornetq.core.config.cluster.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.cluster.DivertConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.AcceptorControl;
 import org.hornetq.core.management.BridgeControl;
@@ -56,6 +59,7 @@ import org.hornetq.core.messagecounter.MessageCounterManager;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.spi.Acceptor;
@@ -736,6 +740,29 @@ public class ManagementServiceImpl implements ManagementService
             }
          }
       }
+      
+      // TODO: Talk to Andy and Jeff about a better way to sync this...
+      System.out.println("Waiting");
+      final CountDownLatch latch = new CountDownLatch(1);
+      OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+      {
+
+         public void done()
+         {
+            System.out.println("Done on management");
+            latch.countDown();
+         }
+
+         public void onError(int errorCode, String errorMessage)
+         {
+         }
+         
+      });
+      
+      OperationContextImpl.getContext().complete();
+      
+      latch.await(5, TimeUnit.SECONDS);
+      System.out.println("Done");
    }
 
    public void enableNotifications(boolean enabled)
