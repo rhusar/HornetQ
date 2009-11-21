@@ -54,8 +54,6 @@ public class OperationContextImpl implements OperationContext
 
    private int replicated = 0;
 
-   private boolean empty = false;
-
    /**
     * @param executor
     */
