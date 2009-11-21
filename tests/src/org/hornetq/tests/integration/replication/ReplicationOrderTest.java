@@ -80,7 +80,7 @@ public class ReplicationOrderTest extends FailoverTestBase
 
       ClientSessionFactory csf = new ClientSessionFactoryImpl(getConnectorTransportConfiguration(true));
       csf.setBlockOnNonPersistentSend(false);
-      csf.setBlockOnPersistentSend(false);
+      csf.setBlockOnPersistentSend(true);
       ClientSession session = null;
       if (transactional)
       {
