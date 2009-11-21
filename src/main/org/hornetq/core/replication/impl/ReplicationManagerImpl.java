@@ -29,7 +29,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
-import org.hornetq.core.persistence.impl.journal.SyncOperation;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
@@ -421,31 +420,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       replicatingChannel.sendBlocking(new ReplicationCompareDataMessage(journalInfo));
    }
 
-
-   public void sync(OperationContext context)
-   {
-      boolean executeNow = false;
-      synchronized (replicationLock)
-      {
-         context.replicationLineUp();
-         if (pendingTokens.isEmpty())
-         {
-            // this means the list is empty and we should process it now
-            executeNow = true;
-         }
-         else
-         {
-            // adding the sync to be executed in order
-            // as soon as the reponses are back from the backup
-            this.pendingTokens.add(new SyncOperation(context));
-         }
-      }
-      if (executeNow)
-      {
-         context.replicationDone();
-      }
-   }
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
@@ -492,7 +466,7 @@ public class ReplicationManagerImpl implements ReplicationManager
          ctx.replicationDone();
       }
    }
-   
+
    public OperationContext getContext()
    {
       return OperationContextImpl.getInstance();

@@ -17,16 +17,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.buffers.ChannelBuffers;
-import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.util.UnitTestCase;
 
 /**
@@ -44,9 +39,9 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
    protected void setUp() throws Exception
    {
       super.setUp();
-
+      
       factory = createFactory();
-
+      
       factory.start();
    }
 
@@ -54,13 +49,13 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
    protected void tearDown() throws Exception
    {
       assertEquals(0, AsynchronousFileImpl.getTotalMaxIO());
-
+      
       factory.stop();
-
+      
       factory = null;
-
+      
       forceGC();
-
+      
       super.tearDown();
    }
 
@@ -177,139 +172,7 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
       sf2.close();
 
    }
-
-   public void testOrder() throws Exception
-   {
-      SequentialFile sf = factory.createSequentialFile("order-test.hq", 100);
-
-      sf.open();
-      
-      factory.activateBuffer(sf);
-
-      final int records = 5000;
-      
-      sf.fill(0, records * 1024, (byte)0);
-      
-
-      final ArrayList<Integer> result = new ArrayList<Integer>();
-      
-      final CountDownLatch latch = new CountDownLatch(records);
-      
-      HornetQBuffer buffer = ChannelBuffers.wrappedBuffer(new byte[512]);
-      
-      for (int i = 0 ; i < records; i++)
-      {
-         final int toadd = i;
-         IOAsyncTask callback = new IOAsyncTask()
-         {
-            
-            public void onError(int errorCode, String errorMessage)
-            {
-            }
-            
-            public void done()
-            {
-               result.add(toadd);
-               
-               latch.countDown();
-            }
-            
-         };
-         
-         if (i % 2 == 0)
-         {
-            sf.disableAutoFlush();
-            sf.fits(512);
-            sf.write(buffer, false, callback);
-            sf.enableAutoFlush();
-         }
-         else
-         {
-            sf.syncCallback(callback);
-         }
-      }
-      
-      assertTrue(latch.await(5, TimeUnit.SECONDS));
-      
-      assertEquals(records, result.size());
-      
-      int i = 0;
-      
-      for (Integer r : result)
-      {
-         assertEquals(i++, r.intValue());
-      }
-
-      
-      factory.deactivateBuffer();
-
-      sf.close();
-   }
-
-   public void testOrder2() throws Exception
-   {
-      SequentialFile sf = factory.createSequentialFile("order-test.hq", 100);
-
-      sf.open();
-      
-      factory.activateBuffer(sf);
-
-      final int records = 1000;
-      
-      sf.fill(0, records * 1024, (byte)0);
-      
-
-      final ArrayList<Integer> result = new ArrayList<Integer>();
-      
-      final CountDownLatch latch = new CountDownLatch(records);
-      
-      HornetQBuffer buffer = ChannelBuffers.wrappedBuffer(new byte[512]);
-      
-      for (int i = 0 ; i < records; i++)
-      {
-         final int toadd = i;
-         IOAsyncTask callback = new IOAsyncTask()
-         {
-            
-            public void onError(int errorCode, String errorMessage)
-            {
-            }
-            
-            public void done()
-            {
-               result.add(toadd);
-               
-               latch.countDown();
-            }
-            
-         };
-         
-         if (i == 10)
-         {
-            sf.write(buffer, false, callback);
-         }
-         else
-         {
-            sf.syncCallback(callback);
-         }
-      }
-      
-      assertTrue(latch.await(5, TimeUnit.SECONDS));
-      
-      assertEquals(records, result.size());
-      
-      int i = 0;
-      
-      for (Integer r : result)
-      {
-         assertEquals(i++, r.intValue());
-      }
-      
-      factory.deactivateBuffer();
-
-      sf.close();
-   }
-
+   
    public void testRename() throws Exception
    {
       SequentialFile sf = factory.createSequentialFile("test1.hq", 1);
@@ -321,7 +184,7 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
       assertEquals(1, fileNames.size());
 
       assertTrue(fileNames.contains("test1.hq"));
-
+      
       sf.renameTo("test1.cmp");
 
       fileNames = factory.listFiles("cmp");
@@ -341,7 +204,7 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
       assertEquals(0, fileNames.size());
 
    }
-
+   
    public void testWriteandRead() throws Exception
    {
       SequentialFile sf = factory.createSequentialFile("write.hq", 1);
@@ -359,7 +222,7 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
       String s3 = "echidna";
       byte[] bytes3 = s3.getBytes("UTF-8");
       ByteBuffer bb3 = factory.wrapBuffer(bytes3);
-
+      
       long initialPos = sf.position();
       sf.writeDirect(bb1, true);
       long bytesWritten = sf.position() - initialPos;
@@ -442,6 +305,7 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
          sf.writeDirect(bb2, true);
          bytesWritten = sf.position() - initialPos;
 
+         
          assertEquals(bb2.limit(), bytesWritten);
 
          initialPos = sf.position();
@@ -518,9 +382,9 @@ public abstract class SequentialFileFactoryTestBase extends UnitTestCase
 
       try
       {
-
+         
          bb1 = factory.wrapBuffer(bytes1);
-
+         
          sf.writeDirect(bb1, true);
 
          fail("Should throw exception");

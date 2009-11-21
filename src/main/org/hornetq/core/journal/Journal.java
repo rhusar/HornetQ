@@ -112,7 +112,5 @@ public interface Journal extends HornetQComponent
 
    void perfBlast(int pages) throws Exception;
 
-   void sync(IOCompletion callback);
-
 
 }

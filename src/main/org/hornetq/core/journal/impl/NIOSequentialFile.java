@@ -220,18 +220,6 @@ public class NIOSequentialFile extends AbstractSequentialFile
       internalWrite(bytes, sync, null);
    }
 
-   
-   /* (non-Javadoc)
-    * @see org.hornetq.core.journal.impl.AbstractSequentialFile#syncCallbackDirect(org.hornetq.core.journal.IOAsyncTask)
-    */
-   @Override
-   protected void syncCallbackDirect(IOAsyncTask callback)
-   {
-      // Nothing to be done on NIO.
-      // Timed buffer took care of everything
-      callback.done();
-   }
-   
    /**
     * @param bytes
     * @param sync
@@ -255,5 +243,4 @@ public class NIOSequentialFile extends AbstractSequentialFile
          callback.done();
       }
    }
-
 }

@@ -634,15 +634,8 @@ public class FakeSequentialFileFactory implements SequentialFileFactory
        */
       public void setTimedBuffer(TimedBuffer buffer)
       {
+         // TODO Auto-generated method stub
          
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.journal.SequentialFile#syncCallback(org.hornetq.core.journal.IOAsyncTask)
-       */
-      public void syncCallback(IOAsyncTask callback)
-      {
-         callback.done();
       }
 
    }

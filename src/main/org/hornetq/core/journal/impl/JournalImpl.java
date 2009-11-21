@@ -864,30 +864,6 @@ public class JournalImpl implements TestableJournal
          callback.waitCompletion();
       }
    }
-   
-   public void sync(IOCompletion callback)
-   {
-      callback.lineUp();
-
-      compactingLock.readLock().lock();
-
-      try
-      {
-         lockAppend.lock();
-         try
-         {
-            currentFile.getFile().syncCallback(callback);
-         }
-         finally
-         {
-            lockAppend.unlock();
-         }
-      }
-      finally
-      {
-         compactingLock.readLock().unlock();
-      }
-   }
 
    public void appendAddRecord(final long id, final byte recordType, final EncodingSupport record, final boolean sync, final IOCompletion callback) throws Exception
    {

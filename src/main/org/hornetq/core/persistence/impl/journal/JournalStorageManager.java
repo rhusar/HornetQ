@@ -515,11 +515,6 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getIOContext());
    }
 
-   public void sync()
-   {
-      messageJournal.sync(OperationContextImpl.getInstance());
-   }
-
    // Transactional operations
 
    public void storeMessageTransactional(final long txID, final ServerMessage message) throws Exception
