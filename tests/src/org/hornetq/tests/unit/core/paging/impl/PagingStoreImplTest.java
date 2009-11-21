@@ -44,6 +44,7 @@ import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
 import org.hornetq.core.persistence.GroupingInfo;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
@@ -1245,6 +1246,22 @@ public class PagingStoreImplTest extends UnitTestCase
        */
       public void waitOnOperations() throws Exception
       {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#getContext()
+       */
+      public OperationContext getContext()
+      {
+         return null;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#newContext(java.util.concurrent.Executor)
+       */
+      public OperationContext newContext(Executor executor)
+      {
+         return null;
       }
 
    }

@@ -52,17 +52,6 @@ public class ReplicationOrderTest extends FailoverTestBase
 
    // Public --------------------------------------------------------
 
-   public void test() throws Exception
-   {
-      for (int i = 0; i < 100; i++)
-      {
-         System.out.println("<<<<<< " + i + " >>>>>>>");
-         testMixedPersistentAndNonPersistentMessagesOrderWithReplicatedBackup();
-         tearDown();
-         setUp();
-      }
-   }
-
    public void testMixedPersistentAndNonPersistentMessagesOrderWithReplicatedBackup() throws Exception
    {
       doTestMixedPersistentAndNonPersistentMessagesOrderWithReplicatedBackup(false);

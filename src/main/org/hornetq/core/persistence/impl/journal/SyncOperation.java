@@ -13,6 +13,8 @@
 
 package org.hornetq.core.persistence.impl.journal;
 
+import java.util.concurrent.Executor;
+
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.persistence.OperationContext;
 
@@ -123,6 +125,22 @@ public class SyncOperation implements OperationContext
    public void replicationLineUp()
    {
       ctx.replicationLineUp();
+   }
+
+   /**
+    * @see org.hornetq.core.persistence.OperationContext#setExecutor(java.util.concurrent.Executor)
+    */
+   public void setExecutor(Executor executor)
+   {
+      ctx.setExecutor(executor);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.OperationContext#reattach()
+    */
+   public void reinstall()
+   {
+      OperationContextImpl.setInstance(this);
    }
 
    // Package protected ---------------------------------------------

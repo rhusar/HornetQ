@@ -13,6 +13,8 @@
 
 package org.hornetq.core.persistence;
 
+import java.util.concurrent.Executor;
+
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.IOCompletion;
 
@@ -29,7 +31,16 @@ public interface OperationContext extends IOCompletion
 {
    
    boolean hasReplication();
+   
+   /** Reattach the context to the current thread */
+   void reinstall();
+   
+   /** The executor used on responses.
+    *  If this is not set, it will use the current thread. */
+   void setExecutor(Executor executor);
 
+   /** Execute the task when all IO operations are complete,
+    *  Or execute it immediately if nothing is pending.  */
    void executeOnCompletion(IOAsyncTask runnable);
    
    void replicationLineUp();

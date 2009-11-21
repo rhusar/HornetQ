@@ -50,8 +50,6 @@ public interface ReplicationManager extends HornetQComponent
 
    void appendRollbackRecord(byte journalID, long txID) throws Exception;
    
-   void closeContext();
-   
    /** A list of tokens that are still waiting for replications to be completed */
    Set<OperationContext> getActiveTokens();
 

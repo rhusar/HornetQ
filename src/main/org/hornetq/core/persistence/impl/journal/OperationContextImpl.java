@@ -16,20 +16,31 @@ package org.hornetq.core.persistence.impl.journal;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.persistence.OperationContext;
 
+import sun.security.util.PendingException;
+
 /**
- * A ReplicationToken
- *
+ * 
+ * This class will hold operations when there are IO operations...
+ * and it will 
+ * 
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  */
 public class OperationContextImpl implements OperationContext
 {
    private static final ThreadLocal<OperationContext> tlContext = new ThreadLocal<OperationContext>();
 
-   public static OperationContext getContext()
+   public static void setInstance(OperationContext context)
+   {
+      tlContext.set(context);
+   }
+   
+   public static OperationContext getInstance()
    {
       OperationContext token = tlContext.get();
       if (token == null)
@@ -53,6 +64,14 @@ public class OperationContextImpl implements OperationContext
    private int stored = 0;
 
    private int replicated = 0;
+   
+   private int errorCode = -1;
+   
+   private String errorMessage = null;
+   
+   private Executor executor;
+   
+   private final AtomicInteger executorsPending = new AtomicInteger(0);
 
    /**
     * @param executor
@@ -61,6 +80,21 @@ public class OperationContextImpl implements OperationContext
    {
       super();
    }
+
+   public OperationContextImpl(final Executor executor)
+   {
+      super();
+      this.executor = executor;
+   }
+   
+   /*
+    * @see org.hornetq.core.persistence.OperationContext#reinstall()
+    */
+   public void reinstall()
+   {
+      setInstance(this);
+   }
+
 
    /** To be called by the replication manager, when new replication is added to the queue */
    public void lineUp()
@@ -71,6 +105,12 @@ public class OperationContextImpl implements OperationContext
    public void replicationLineUp()
    {
       replicationLineUp++;
+   }
+   
+   /** this method needs to be called before the executor became operational */
+   public void setExecutor(Executor executor)
+   {
+      this.executor = executor;
    }
 
    public synchronized void replicationDone()
@@ -85,7 +125,7 @@ public class OperationContextImpl implements OperationContext
    }
 
    /** You may have several actions to be done after a replication operation is completed. */
-   public synchronized void executeOnCompletion(IOAsyncTask completion)
+   public synchronized void executeOnCompletion(final IOAsyncTask completion)
    {
       if (tasks == null)
       {
@@ -94,9 +134,30 @@ public class OperationContextImpl implements OperationContext
          minimalStore = storeLineUp;
       }
 
+      // On this case, we can just execute the context directly
       if (replicationLineUp == replicated && storeLineUp == stored)
       {
-         completion.done();
+         if (executor != null)
+         {
+            // We want to avoid the executor if everything is complete...
+            // However, we can't execute the context if there are executions pending
+            // We need to use the executor on this case
+            if (executorsPending.get() == 0)
+            {
+               // No need to use an executor here or a context switch
+               // there are no actions pending.. hence we can just execute the task directly on the same thread
+               completion.done();
+            }
+            else
+            {
+               execute(completion);
+            }
+         }
+         else
+         {
+            // Execute without an executor
+            completion.done();
+         }
       }
       else
       {
@@ -122,11 +183,43 @@ public class OperationContextImpl implements OperationContext
             if (!holder.executed && stored >= holder.storeLined && replicated >= holder.replicationLined)
             {
                holder.executed = true;
-               holder.task.done();
+                
+               if (executor != null)
+               {
+                  // If set, we use an executor to avoid the server being single threaded
+                  execute(holder.task);
+               }
+               else
+               {
+                  holder.task.done();
+               }
+               
                iter.remove();
+            }
+            else
+            {
+               // The actions need to be done in order...
+               // so it must achieve both conditions before we can proceed to more tasks
+               break;
             }
          }
       }
+   }
+
+   /**
+    * @param holder
+    */
+   private void execute(final IOAsyncTask task)
+   {
+      executorsPending.incrementAndGet();
+      executor.execute(new Runnable()
+      {
+         public void run()
+         {
+            task.done();
+            executorsPending.decrementAndGet();
+         }
+      });
    }
 
    /* (non-Javadoc)
@@ -135,6 +228,19 @@ public class OperationContextImpl implements OperationContext
    public void complete()
    {
       tlContext.set(null);
+      
+      // TODO: test and fix exceptions on the Context
+      if (tasks != null && errorMessage != null)
+      {
+         for (TaskHolder run : tasks)
+         {
+            run.task.onError(errorCode, errorMessage);
+         }
+      }
+      
+      // We hold errors until the complete is set, or the callbacks will never get informed
+      errorCode = -1;
+      errorMessage = null;
    }
    
    public boolean isSync()
@@ -147,13 +253,8 @@ public class OperationContextImpl implements OperationContext
     */
    public void onError(int errorCode, String errorMessage)
    {
-      if (tasks != null)
-      {
-         for (TaskHolder run : tasks)
-         {
-            run.task.onError(errorCode, errorMessage);
-         }
-      }
+      this.errorCode = errorCode;
+      this.errorMessage = errorMessage;
    }
 
    class TaskHolder
@@ -173,5 +274,6 @@ public class OperationContextImpl implements OperationContext
          this.task = task;
       }
    }
+
 
 }

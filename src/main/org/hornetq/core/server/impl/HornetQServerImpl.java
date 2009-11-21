@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -61,6 +62,7 @@ import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.GroupingInfo;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
@@ -646,6 +648,10 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       Channel channel = connection.getChannel(channelID, sendWindowSize);
+      
+      Executor sessionExecutor = executorFactory.getExecutor();
+      
+      OperationContext sessionContext = storageManager.newContext(sessionExecutor);
 
       final ServerSessionImpl session = new ServerSessionImpl(name,
                                                               username,
@@ -661,7 +667,8 @@ public class HornetQServerImpl implements HornetQServer
                                                               postOffice,
                                                               resourceManager,
                                                               securityStore,
-                                                              executorFactory.getExecutor(),
+                                                              sessionContext,
+                                                              sessionExecutor,
                                                               channel,
                                                               managementService,
                                                               // queueFactory,
@@ -670,7 +677,7 @@ public class HornetQServerImpl implements HornetQServer
 
       sessions.put(name, session);
 
-      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session);
+      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session, sessionContext);
 
       session.setHandler(handler);
 

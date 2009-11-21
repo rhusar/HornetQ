@@ -15,6 +15,7 @@ package org.hornetq.core.persistence;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import javax.transaction.xa.Xid;
 
@@ -47,6 +48,13 @@ import org.hornetq.utils.UUID;
  */
 public interface StorageManager extends HornetQComponent
 {
+   
+   /** Get the context associated with the thread for later reuse */
+   OperationContext getContext();
+   
+   /** It just creates an OperationContext without associating it to any threads */
+   OperationContext newContext(Executor executor);
+   
    // Message related operations
 
    void pageClosed(SimpleString storeName, int pageNumber);

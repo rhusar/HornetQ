@@ -55,6 +55,7 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.persistence.GroupingInfo;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
@@ -294,14 +295,7 @@ public class JournalStorageManager implements StorageManager
     */
    public void completeOperations()
    {
-      if (replicator != null)
-      {
-         replicator.closeContext();
-      }
-      else
-      {
-         OperationContextImpl.getContext().complete();
-      }
+      OperationContextImpl.getInstance().complete();
    }
 
    public boolean isReplicated()
@@ -373,9 +367,26 @@ public class JournalStorageManager implements StorageManager
 
    // TODO: shouldn't those page methods be on the PageManager? ^^^^
 
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#getContext()
+    */
+   public OperationContext getContext()
+   {
+      return OperationContextImpl.getInstance();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#newContext()
+    */
+   public OperationContext newContext(Executor executor)
+   {
+      return new OperationContextImpl(executor);
+   }
+
    public void afterCompleteOperations(IOAsyncTask run)
    {
-      OperationContextImpl.getContext().executeOnCompletion(run);
+      OperationContextImpl.getInstance().executeOnCompletion(run);
    }
 
    public UUID getPersistentID()
@@ -506,7 +517,7 @@ public class JournalStorageManager implements StorageManager
 
    public void sync()
    {
-      messageJournal.sync(OperationContextImpl.getContext());
+      messageJournal.sync(OperationContextImpl.getInstance());
    }
 
    // Transactional operations
@@ -1390,7 +1401,7 @@ public class JournalStorageManager implements StorageManager
    
    private IOCompletion getIOContext()
    {
-      return OperationContextImpl.getContext();
+      return OperationContextImpl.getInstance();
    }
 
    private void checkAndCreateDir(final String dir, final boolean create)
@@ -1917,7 +1928,6 @@ public class JournalStorageManager implements StorageManager
       }
 
    }
-   
 
 
 }

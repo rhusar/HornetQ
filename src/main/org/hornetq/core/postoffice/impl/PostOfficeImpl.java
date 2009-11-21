@@ -917,10 +917,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                }
             }
          }
-         else
-         {
-            storageManager.sync();
-         }
 
          message.incrementRefCount(reference);
       }
@@ -931,6 +927,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
       else
       {
+         // This will use the same thread if there are no pending operations
+         // avoiding a context switch on this case
          storageManager.afterCompleteOperations(new IOAsyncTask()
          {
             public void onError(int errorCode, String errorMessage)

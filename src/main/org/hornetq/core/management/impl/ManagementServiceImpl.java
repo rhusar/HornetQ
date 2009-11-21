@@ -744,7 +744,7 @@ public class ManagementServiceImpl implements ManagementService
       // TODO: Talk to Andy and Jeff about a better way to sync this...
       System.out.println("Waiting");
       final CountDownLatch latch = new CountDownLatch(1);
-      OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+      OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
       {
 
          public void done()
@@ -759,7 +759,7 @@ public class ManagementServiceImpl implements ManagementService
          
       });
       
-      OperationContextImpl.getContext().complete();
+      OperationContextImpl.getInstance().complete();
       
       latch.await(5, TimeUnit.SECONDS);
       System.out.println("Done");

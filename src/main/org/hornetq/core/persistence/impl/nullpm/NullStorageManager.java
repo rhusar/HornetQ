@@ -15,6 +15,7 @@ package org.hornetq.core.persistence.impl.nullpm;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.transaction.xa.Xid;
@@ -26,6 +27,7 @@ import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.GroupingInfo;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
@@ -354,6 +356,22 @@ public class NullStorageManager implements StorageManager
     */
    public void waitOnOperations() throws Exception
    {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#getContext()
+    */
+   public OperationContext getContext()
+   {
+      return null;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#newContext()
+    */
+   public OperationContext newContext(Executor executor)
+   {
+      return null;
    }
 
 }

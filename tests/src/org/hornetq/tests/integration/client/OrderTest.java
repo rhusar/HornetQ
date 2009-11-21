@@ -13,18 +13,11 @@
 
 package org.hornetq.tests.integration.client;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.client.ClientSessionFactory;
-import org.hornetq.core.client.SessionFailureListener;
-import org.hornetq.core.client.impl.ClientSessionInternal;
-import org.hornetq.core.exception.HornetQException;
-import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
 
@@ -47,9 +40,6 @@ public class OrderTest extends ServiceTestBase
    protected void setUp() throws Exception
    {
       super.setUp();
-      server = createServer(true, true);
-      server.getConfiguration().setJournalFileSize(10 * 1024 * 1024);
-      server.start();
    }
 
    protected void tearDown() throws Exception
@@ -64,8 +54,21 @@ public class OrderTest extends ServiceTestBase
 
    // Public --------------------------------------------------------
 
-   public void testSimpleOrder() throws Exception
+   public void testSimpleOrderNoStorage() throws Exception
    {
+      doTestSimpleOrder(false);
+   }
+
+   public void testSimpleOrderPersistence() throws Exception
+   {
+      doTestSimpleOrder(true);
+   }
+
+   public void doTestSimpleOrder(final boolean persistent) throws Exception
+   {
+      server = createServer(persistent, true);
+      server.start();
+
       ClientSessionFactory sf = createNettyFactory();
 
       sf.setBlockOnNonPersistentSend(false);
@@ -92,16 +95,16 @@ public class OrderTest extends ServiceTestBase
 
          boolean started = false;
 
-         for (int start = 0; start < 3; start++)
+         for (int start = 0; start < 2; start++)
          {
 
-            if (start == 2)
+            if (persistent && start == 1)
             {
                started = true;
                server.stop();
                server.start();
             }
-
+            
             session = sf.createSession(true, true);
 
             session.start();
@@ -140,40 +143,6 @@ public class OrderTest extends ServiceTestBase
          session.close();
       }
 
-   }
-
-   private void fail(ClientSession session) throws InterruptedException
-   {
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener implements SessionFailureListener
-      {
-         public void connectionFailed(HornetQException me)
-         {
-            latch.countDown();
-         }
-
-         public void beforeReconnect(HornetQException exception)
-         {
-         }
-      }
-
-      MyListener listener = new MyListener();
-      session.addFailureListener(listener);
-
-      RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
-
-      // Simulate failure on connection
-      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
-
-      // Wait to be informed of failure
-
-      boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
-
-      assertTrue(ok);
-
-      session.removeFailureListener(listener);
    }
 
    // Package protected ---------------------------------------------

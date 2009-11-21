@@ -51,6 +51,7 @@ import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.impl.PagedMessageImpl;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.remoting.Interceptor;
@@ -368,7 +369,6 @@ public class ReplicationTest extends ServiceTestBase
 
          Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
 
-         Thread.sleep(100);
          TestInterceptor.value.set(false);
 
          for (int i = 0; i < 500; i++)
@@ -377,7 +377,7 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+         OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -389,8 +389,6 @@ public class ReplicationTest extends ServiceTestBase
                latch.countDown();
             }
          });
-
-         manager.closeContext();
 
          server.stop();
 
@@ -409,7 +407,7 @@ public class ReplicationTest extends ServiceTestBase
    private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+      OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
       {
 
          public void onError(int errorCode, String errorMessage)
@@ -421,8 +419,6 @@ public class ReplicationTest extends ServiceTestBase
             latch.countDown();
          }
       });
-
-      manager.closeContext();
 
       assertTrue(latch.await(30, TimeUnit.SECONDS));
    }
@@ -468,7 +464,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+         OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -480,8 +476,6 @@ public class ReplicationTest extends ServiceTestBase
                latch.countDown();
             }
          });
-
-         manager.closeContext();
 
          assertTrue(latch.await(1, TimeUnit.SECONDS));
 
@@ -521,6 +515,8 @@ public class ReplicationTest extends ServiceTestBase
 
          final CountDownLatch latch = new CountDownLatch(numberOfAdds);
 
+         OperationContext ctx = OperationContextImpl.getInstance();
+         
          for (int i = 0; i < numberOfAdds; i++)
          {
             final int nAdd = i;
@@ -529,12 +525,8 @@ public class ReplicationTest extends ServiceTestBase
             {
                replicatedJournal.appendPrepareRecord(i, new FakeData(), false);
             }
-            else
-            {
-               manager.sync(OperationContextImpl.getContext());
-            }
 
-            OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
+            ctx.executeOnCompletion(new IOAsyncTask()
             {
 
                public void onError(int errorCode, String errorMessage)
@@ -543,12 +535,11 @@ public class ReplicationTest extends ServiceTestBase
 
                public void done()
                {
+                  System.out.println("Add " + nAdd);
                   executions.add(nAdd);
                   latch.countDown();
                }
             });
-
-            manager.closeContext();
          }
 
          assertTrue(latch.await(10, TimeUnit.SECONDS));

@@ -392,24 +392,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       started = false;
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#completeToken()
-    */
-   public void closeContext()
-   {
-      final OperationContext token = getContext();
-
-      if (token != null)
-      {
-         // Remove from pending tokens as soon as this is complete
-         if (!token.hasReplication())
-         {
-            sync(token);
-         }
-         token.complete();
-      }
-   }
-
 
    /* method for testcases only
     * @see org.hornetq.core.replication.ReplicationManager#getPendingTokens()
@@ -513,7 +495,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    
    public OperationContext getContext()
    {
-      return OperationContextImpl.getContext();
+      return OperationContextImpl.getInstance();
    }
 
    /**
