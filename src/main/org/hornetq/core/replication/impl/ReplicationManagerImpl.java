@@ -439,9 +439,29 @@ public class ReplicationManagerImpl implements ReplicationManager
       replicatingChannel.sendBlocking(new ReplicationCompareDataMessage(journalInfo));
    }
 
-   public void sync()
+
+   public void sync(OperationContext context)
    {
-      sync(OperationContextImpl.getContext());
+      boolean executeNow = false;
+      synchronized (replicationLock)
+      {
+         context.replicationLineUp();
+         if (pendingTokens.isEmpty())
+         {
+            // this means the list is empty and we should process it now
+            executeNow = true;
+         }
+         else
+         {
+            // adding the sync to be executed in order
+            // as soon as the reponses are back from the backup
+            this.pendingTokens.add(new SyncOperation(context));
+         }
+      }
+      if (executeNow)
+      {
+         context.replicationDone();
+      }
    }
 
    // Package protected ---------------------------------------------
@@ -490,31 +510,6 @@ public class ReplicationManagerImpl implements ReplicationManager
          ctx.replicationDone();
       }
    }
-
-   private void sync(OperationContext context)
-   {
-      boolean executeNow = false;
-      synchronized (replicationLock)
-      {
-         context.replicationLineUp();
-         if (pendingTokens.isEmpty())
-         {
-            // this means the list is empty and we should process it now
-            executeNow = true;
-         }
-         else
-         {
-            // adding the sync to be executed in order
-            // as soon as the reponses are back from the backup
-            this.pendingTokens.add(new SyncOperation(context));
-         }
-      }
-      if (executeNow)
-      {
-         context.replicationDone();
-      }
-   }
-
    
    public OperationContext getContext()
    {

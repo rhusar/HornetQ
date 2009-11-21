@@ -41,13 +41,20 @@ public interface AsynchronousFile
     * */
    long size() throws HornetQException;
 
+   /** Some operations may need to be done only after persitency is done.
+    *  for instance, when a messaging system needs to guarantee ordering over non-persistent data, 
+    *  it needs to make sure it will only deliver the message after all the data is persisted. 
+    *  The sync won't perform any disk operation however it will wait for all the current pending operations
+    *  on this file to be finished */
+   void syncCallback(AIOCallback aioCallback);
+
    /** Any error will be reported on the callback interface */ 
    void write(long position, long size, ByteBuffer directByteBuffer, AIOCallback aioCallback);
 
    void read(long position, long size, ByteBuffer directByteBuffer, AIOCallback aioCallback) throws HornetQException;
 
    void fill(long position, int blocks, long size, byte fillChar) throws HornetQException;
-
+   
    void setBufferCallback(BufferCallback callback);
 
    int getBlockSize();

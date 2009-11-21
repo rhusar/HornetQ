@@ -304,4 +304,14 @@ public class AIOSequentialFile extends AbstractSequentialFile
          throw new IllegalStateException("File not opened");
       }
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.impl.AbstractSequentialFile#syncCallbackDirect(org.hornetq.core.journal.IOAsyncTask)
+    */
+   @Override
+   protected void syncCallbackDirect(IOAsyncTask callback)
+   {
+      aioFile.syncCallback(callback);
+   }
+
 }

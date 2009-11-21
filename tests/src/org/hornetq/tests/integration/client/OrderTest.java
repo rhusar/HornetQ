@@ -64,63 +64,48 @@ public class OrderTest extends ServiceTestBase
 
    // Public --------------------------------------------------------
 
-   public void testLoop() throws Exception
-   {
-      for (int i = 0 ; i < 50; i ++)
-      {
-         testSimpleOrder();
-         tearDown();
-         setUp();
-      }
-   }
-   
    public void testSimpleOrder() throws Exception
    {
       ClientSessionFactory sf = createNettyFactory();
 
-      sf.setBlockOnNonPersistentSend(true);
-      sf.setBlockOnPersistentSend(true);
+      sf.setBlockOnNonPersistentSend(false);
+      sf.setBlockOnPersistentSend(false);
       sf.setBlockOnAcknowledge(true);
 
-      
       ClientSession session = sf.createSession(true, true, 0);
-      
+
       try
       {
          session.createQueue("queue", "queue", true);
 
          ClientProducer prod = session.createProducer("queue");
 
-
          for (int i = 0; i < 100; i++)
          {
-            ClientMessage msg = session.createClientMessage(i == 0);
+            ClientMessage msg = session.createClientMessage(i % 2 == 0);
             msg.setBody(session.createBuffer(new byte[1024]));
             msg.putIntProperty("id", i);
             prod.send(msg);
          }
 
          session.close();
-         
+
          boolean started = false;
 
          for (int start = 0; start < 3; start++)
          {
-            
-            
-            if (start == 20)
+
+            if (start == 2)
             {
                started = true;
                server.stop();
                server.start();
             }
-            
+
             session = sf.createSession(true, true);
-            
+
             session.start();
-            
-//            fail(session);
-            
+
             ClientConsumer cons = session.createConsumer("queue");
 
             for (int i = 0; i < 100; i++)
@@ -144,7 +129,7 @@ public class OrderTest extends ServiceTestBase
                   assertEquals(i, msg.getIntProperty("id").intValue());
                }
             }
-            
+
             session.close();
          }
 
@@ -156,11 +141,10 @@ public class OrderTest extends ServiceTestBase
       }
 
    }
-   
-   
+
    private void fail(ClientSession session) throws InterruptedException
    {
-      
+
       final CountDownLatch latch = new CountDownLatch(1);
 
       class MyListener implements SessionFailureListener
@@ -178,8 +162,6 @@ public class OrderTest extends ServiceTestBase
       MyListener listener = new MyListener();
       session.addFailureListener(listener);
 
-
-      
       RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
 
       // Simulate failure on connection
@@ -190,11 +172,9 @@ public class OrderTest extends ServiceTestBase
       boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
 
       assertTrue(ok);
-      
+
       session.removeFailureListener(listener);
    }
-
-
 
    // Package protected ---------------------------------------------
 

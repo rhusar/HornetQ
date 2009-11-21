@@ -52,12 +52,12 @@ public class ReplicationOrderTest extends FailoverTestBase
 
    // Public --------------------------------------------------------
 
-   public void _test() throws Exception
+   public void test() throws Exception
    {
       for (int i = 0; i < 100; i++)
       {
          System.out.println("<<<<<< " + i + " >>>>>>>");
-         testTxMixedPersistentAndNonPersistentMessagesOrderWithReplicatedBackup();
+         testMixedPersistentAndNonPersistentMessagesOrderWithReplicatedBackup();
          tearDown();
          setUp();
       }
@@ -80,7 +80,7 @@ public class ReplicationOrderTest extends FailoverTestBase
 
       ClientSessionFactory csf = new ClientSessionFactoryImpl(getConnectorTransportConfiguration(true));
       csf.setBlockOnNonPersistentSend(false);
-      csf.setBlockOnPersistentSend(true);
+      csf.setBlockOnPersistentSend(false);
       ClientSession session = null;
       if (transactional)
       {

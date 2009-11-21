@@ -25,6 +25,7 @@ import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.JournalImpl.ByteArrayEncoding;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.replication.ReplicationManager;
 
@@ -431,6 +432,15 @@ public class ReplicatedJournal implements Journal
       }
       replicationManager.appendUpdateRecordTransactional(journalID, txID, id, recordType, record);
       localJournal.appendUpdateRecordTransactional(txID, id, recordType, record);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.journal.Journal#sync()
+    */
+   public void sync(IOCompletion ctx)
+   {
+      replicationManager.sync((OperationContext)ctx);
+      localJournal.sync(ctx);
    }
 
    /**

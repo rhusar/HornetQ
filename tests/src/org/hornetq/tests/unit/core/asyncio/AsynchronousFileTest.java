@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.TestSuite;
@@ -413,6 +414,60 @@ public class AsynchronousFileTest extends AIOTestBase
       }
       finally
       {
+         if (!closed)
+         {
+            controller.close();
+         }
+      }
+   }
+
+   public void testOrderOnSynCallback() throws Exception
+   {
+      boolean closed = false;
+      final AsynchronousFileImpl controller = new AsynchronousFileImpl(executor, pollerExecutor);
+      ByteBuffer buffer = null;
+      try
+      {
+         final int NUMBER_LINES = 100;
+         final int SIZE = 512;
+
+         controller.open(FILE_NAME, 100);
+
+         controller.fill(0, 1, NUMBER_LINES * SIZE, (byte)'j');
+
+         CountDownLatch latch = new CountDownLatch(NUMBER_LINES * 2);
+
+         buffer = AsynchronousFileImpl.newBuffer(SIZE);
+         buffer.rewind();
+         for (int j = 0; j < SIZE; j++)
+         {
+            buffer.put((byte)(j % Byte.MAX_VALUE));
+         }
+
+         ArrayList<Integer> result = new ArrayList<Integer>();
+         
+         for (int i = 0; i < NUMBER_LINES * 2; i++)
+         {
+            CountDownCallback aio = new CountDownCallback(latch, null, result, i);
+            if (i % 2 == 0)
+            {
+               controller.write(i * SIZE, SIZE, buffer, aio);
+            }
+            else
+            {
+               controller.syncCallback(aio);
+            }
+         }
+
+         controller.close();
+         closed = true;
+
+         // We are not waiting the latch, as close should already hold for any writes
+         CountDownCallback.checkResults(NUMBER_LINES * 2, result);
+      }
+      finally
+      {
+         AsynchronousFileImpl.destroyBuffer(buffer);
          if (!closed)
          {
             controller.close();

@@ -295,8 +295,8 @@ public class AsynchronousFileImpl implements AsynchronousFile
             public void run()
             {
                writeSemaphore.acquireUninterruptibly();
-
-               long sequence = nextWritingSequence.getAndIncrement();
+               
+               final long sequence = nextWritingSequence.getAndIncrement();
 
                try
                {
@@ -321,7 +321,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
       {
          writeSemaphore.acquireUninterruptibly();
 
-         long sequence = nextWritingSequence.getAndIncrement();
+         final long sequence = nextWritingSequence.getAndIncrement();
 
          try
          {
@@ -438,15 +438,41 @@ public class AsynchronousFileImpl implements AsynchronousFile
       }
    }
 
-   // Private ---------------------------------------------------------------------------
+   // Callback methods ------------------------------------------------------------------
 
+   public void syncCallback(final AIOCallback callback)
+   {
+      pendingWrites.up();
+      
+      writeExecutor.execute(new Runnable()
+      {
+         public void run()
+         {
+            callbackLock.lock();
+
+            try
+            {
+               final long sequence = nextWritingSequence.getAndIncrement();
+
+               // This will execute the callback immediately if nothing is pending,
+               // or it will place it to the queue waiting for a response
+               executeCallback(callback, sequence);
+
+            }
+            finally
+            {
+               callbackLock.unlock();
+            }
+         }
+      });
+      
+   }
+   
    /** */
    @SuppressWarnings("unused")
    private void callbackDone(final AIOCallback callback, final long sequence, final ByteBuffer buffer)
    {
       writeSemaphore.release();
-
-      pendingWrites.down();
 
       callbackLock.lock();
 
@@ -456,20 +482,11 @@ public class AsynchronousFileImpl implements AsynchronousFile
          if (sequence == -1)
          {
             callback.done();
+            pendingWrites.down();
          }
          else
          {
-            if (sequence == nextReadSequence)
-            {
-               nextReadSequence++;
-               callback.done();
-               flushCallbacks();
-            }
-            else
-            {
-               // System.out.println("Buffering callback");
-               pendingCallbacks.add(new CallbackHolder(sequence, callback));
-            }
+            executeCallback(callback, sequence);
          }
 
          // The buffer is not sent on callback for read operations
@@ -481,6 +498,26 @@ public class AsynchronousFileImpl implements AsynchronousFile
       finally
       {
          callbackLock.unlock();
+      }
+   }
+
+   /**
+    * @param callback
+    * @param sequence
+    */
+   private void executeCallback(final AIOCallback callback, final long sequence)
+   {
+      if (sequence == nextReadSequence)
+      {
+         nextReadSequence++;
+         callback.done();
+         pendingWrites.down();
+         flushCallbacks();
+      }
+      else
+      {
+         // System.out.println("Buffering callback");
+         pendingCallbacks.add(new CallbackHolder(sequence, callback));
       }
    }
 
@@ -498,6 +535,7 @@ public class AsynchronousFileImpl implements AsynchronousFile
          {
             holder.callback.done();
          }
+         pendingWrites.down();
          nextReadSequence++;
       }
    }
@@ -549,6 +587,8 @@ public class AsynchronousFileImpl implements AsynchronousFile
          bufferCallback.bufferDone(buffer);
       }
    }
+
+   // Private ---------------------------------------------------------------------------
 
    private void pollEvents()
    {

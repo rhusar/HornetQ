@@ -85,7 +85,9 @@ public abstract class AIOTestBase extends UnitTestCase
 
    protected static class CountDownCallback implements AIOCallback
    {
-      private final CountDownLatch latch;
+      private final CountDownLatch latchDone;
+      
+      private final CountDownLatch waitCallback;
       
       private final List<Integer> outputList;
       
@@ -93,15 +95,22 @@ public abstract class AIOTestBase extends UnitTestCase
       
       private final AtomicInteger errors;
 
-      public CountDownCallback(final CountDownLatch latch, final AtomicInteger errors, final List<Integer> outputList, final int order)
+      public CountDownCallback(final CountDownLatch latch, final AtomicInteger errors, final List<Integer> outputList, final int order, final CountDownLatch waitCallback)
       {
-         this.latch = latch;
+         this.latchDone = latch;
          
          this.outputList = outputList;
          
          this.order = order;
          
          this.errors = errors;
+         
+         this.waitCallback = waitCallback;
+      }
+
+      public CountDownCallback(final CountDownLatch latch, final AtomicInteger errors, final List<Integer> outputList, final int order)
+      {
+         this(latch, errors, outputList, order, null);
       }
 
       volatile boolean doneCalled = false;
@@ -112,15 +121,26 @@ public abstract class AIOTestBase extends UnitTestCase
 
       public void done()
       {
+         if (waitCallback != null)
+         {
+            try
+            {
+               waitCallback.await();
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace(); // -> junit report
+            }
+         }
          if (outputList != null)
          {
             outputList.add(order);
          }
          doneCalled = true;
          timesDoneCalled.incrementAndGet();
-         if (latch != null)
+         if (latchDone != null)
          {
-            latch.countDown();
+            latchDone.countDown();
          }
       }
 
@@ -135,11 +155,11 @@ public abstract class AIOTestBase extends UnitTestCase
          {
             errors.incrementAndGet();
          }
-         if (latch != null)
+         if (latchDone != null)
          {
             // even thought an error happened, we need to inform the latch,
                // or the test won't finish
-            latch.countDown();
+            latchDone.countDown();
          }
       }
       

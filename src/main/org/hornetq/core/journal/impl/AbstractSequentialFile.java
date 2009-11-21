@@ -16,7 +16,6 @@ package org.hornetq.core.journal.impl;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.core.journal.IOAsyncTask;
@@ -190,10 +189,29 @@ public abstract class AbstractSequentialFile implements SequentialFile
          write(bytes, false, DummyCallback.getInstance());
       }
    }
+   
+   /**
+    * invoke the callback after all pending operations are complete.
+    */
+   public void syncCallback(IOAsyncTask callback)
+   {
+      if (timedBuffer != null)
+      {
+         timedBuffer.syncCallback(callback);
+      }
+      else
+      {
+         syncCallbackDirect(callback);
+      }
+   }
+   
+
 
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
+
+   protected abstract void syncCallbackDirect(IOAsyncTask callback);
 
    protected File getFile()
    {
@@ -252,15 +270,22 @@ public abstract class AbstractSequentialFile implements SequentialFile
    {
       public void flushBuffer(final ByteBuffer buffer, final boolean requestedSync, final List<IOAsyncTask> callbacks)
       {
-         buffer.flip();
-
-         if (buffer.limit() == 0)
+         if (buffer == null)
          {
-            factory.releaseBuffer(buffer);
+            syncCallbackDirect(new DelegateCallback(callbacks));
          }
          else
          {
-            writeDirect(buffer, requestedSync, new DelegateCallback(callbacks));
+            buffer.flip();
+   
+            if (buffer.limit() == 0)
+            {
+               factory.releaseBuffer(buffer);
+            }
+            else
+            {
+               writeDirect(buffer, requestedSync, new DelegateCallback(callbacks));
+            }
          }
       }
 

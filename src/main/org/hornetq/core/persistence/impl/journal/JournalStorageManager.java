@@ -506,10 +506,7 @@ public class JournalStorageManager implements StorageManager
 
    public void sync()
    {
-      if (replicator != null)
-      {
-         replicator.sync();
-      }
+      messageJournal.sync(OperationContextImpl.getContext());
    }
 
    // Transactional operations

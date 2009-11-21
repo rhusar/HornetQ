@@ -531,7 +531,7 @@ public class ReplicationTest extends ServiceTestBase
             }
             else
             {
-               manager.sync();
+               manager.sync(OperationContextImpl.getContext());
             }
 
             OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
@@ -958,6 +958,13 @@ public class ReplicationTest extends ServiceTestBase
                                      EncodingSupport record,
                                      boolean sync,
                                      IOCompletion completionCallback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#sync(org.hornetq.core.journal.IOCompletion)
+       */
+      public void sync(IOCompletion callback)
       {
       }
 

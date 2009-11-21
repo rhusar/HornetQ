@@ -225,14 +225,29 @@ public class TimedBuffer
          return true;
       }
    }
+   
+
+   /**
+    * This method will make sure this callback will be executed after all the pending callbacks
+    */
+   public synchronized void syncCallback(IOAsyncTask callback)
+   {
+      resumeTimerIfNeeded();
+      
+      callbacks.add(callback);
+      
+      pendingSync = true;
+      
+      if (flushOnSync)
+      {
+         flush();
+      }
+   }
+
 
    public synchronized void addBytes(final byte[] bytes, final boolean sync, final IOAsyncTask callback)
    {
-      if (buffer.writerIndex() == 0)
-      {
-         // Resume latch
-         latchTimer.down();
-      }
+      resumeTimerIfNeeded();
 
       buffer.writeBytes(bytes);
 
@@ -259,35 +274,57 @@ public class TimedBuffer
       }
    }
 
+   private void resumeTimerIfNeeded()
+   {
+      if (buffer.writerIndex() == 0 && callbacks.size() == 0)
+      {
+         // Resume latch
+         latchTimer.down();
+      }
+   }
+
    public synchronized void flush()
    {
-      if (buffer.writerIndex() > 0)
+      if (buffer.writerIndex() > 0 || callbacks.size() > 0)
       {
+         // Stop latch
          latchTimer.up();
-
-         int pos = buffer.writerIndex();
-
-         if (logRates)
+         
+         if (buffer.writerIndex() == 0 && callbacks.size() > 0)
          {
-            bytesFlushed += pos;
+            // This is to perform a sync callback.
+            // When we get to here, means we have sync callbacks waiting with no buffer
+            // on this case we need to call sync on the file to make sure no other callbacks are pending
+            bufferObserver.flushBuffer(null, pendingSync, callbacks);
+   
+            callbacks = new LinkedList<IOAsyncTask>();
          }
-
-         ByteBuffer directBuffer = bufferObserver.newBuffer(bufferSize, pos);
-
-         // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
-         // Using directBuffer.put(buffer) would make several append calls for each byte
-
-         directBuffer.put(buffer.array(), 0, pos);
-
-         bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
-
-         callbacks = new LinkedList<IOAsyncTask>();
-
-         active = false;
-         pendingSync = false;
-
-         buffer.clear();
-         bufferLimit = 0;
+         else
+         {
+            int pos = buffer.writerIndex();
+   
+            if (logRates)
+            {
+               bytesFlushed += pos;
+            }
+   
+            ByteBuffer directBuffer = bufferObserver.newBuffer(bufferSize, pos);
+   
+            // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
+            // Using directBuffer.put(buffer) would make several append calls for each byte
+   
+            directBuffer.put(buffer.array(), 0, pos);
+   
+            bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
+   
+            callbacks = new LinkedList<IOAsyncTask>();
+   
+            active = false;
+            pendingSync = false;
+   
+            buffer.clear();
+            bufferLimit = 0;
+         }
       }
    }
 

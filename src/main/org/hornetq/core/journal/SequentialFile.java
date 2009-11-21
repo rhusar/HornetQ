@@ -80,6 +80,9 @@ public interface SequentialFile
 
    void sync() throws Exception;
 
+   /** This method will make sure the parameter callback will be invoked after all pending sync operations are done */
+   void syncCallback(IOAsyncTask callback);
+
    long size() throws Exception;
    
    void renameTo(String newFileName) throws Exception;
