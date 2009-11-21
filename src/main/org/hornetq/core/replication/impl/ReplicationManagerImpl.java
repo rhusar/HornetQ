@@ -29,6 +29,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
+import org.hornetq.core.persistence.impl.journal.SyncOperation;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
@@ -423,6 +424,25 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.replication.ReplicationManager#compareJournals(org.hornetq.core.journal.JournalLoadInformation[])
+    */
+   public void compareJournals(JournalLoadInformation[] journalInfo) throws HornetQException
+   {
+      replicatingChannel.sendBlocking(new ReplicationCompareDataMessage(journalInfo));
+   }
+
+   public void sync()
+   {
+      sync(OperationContextImpl.getContext());
+   }
+
+   // Package protected ---------------------------------------------
+
+   // Protected -----------------------------------------------------
+
+   // Private -------------------------------------------------------
+   
    private void sendReplicatePacket(final Packet packet)
    {
       boolean runItNow = false;
@@ -454,14 +474,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#compareJournals(org.hornetq.core.journal.JournalLoadInformation[])
-    */
-   public void compareJournals(JournalLoadInformation[] journalInfo) throws HornetQException
-   {
-      replicatingChannel.sendBlocking(new ReplicationCompareDataMessage(journalInfo));
-   }
-
    private void replicated()
    {
       List<OperationContext> tokensToExecute = getTokens();
@@ -472,19 +484,12 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
    private void sync(OperationContext context)
    {
       boolean executeNow = false;
       synchronized (replicationLock)
       {
-         context.lineUp();
-         context.setEmpty(true);
+         context.replicationLineUp();
          if (pendingTokens.isEmpty())
          {
             // this means the list is empty and we should process it now
@@ -494,7 +499,7 @@ public class ReplicationManagerImpl implements ReplicationManager
          {
             // adding the sync to be executed in order
             // as soon as the reponses are back from the backup
-            this.pendingTokens.add(context);
+            this.pendingTokens.add(new SyncOperation(context));
          }
       }
       if (executeNow)
@@ -534,16 +539,16 @@ public class ReplicationManagerImpl implements ReplicationManager
          retList.add(tokenPolled);
 
       }
-      while (tokenPolled.isEmpty());
+      while (tokenPolled.isSync());
 
       // This is to avoid a situation where we won't have more replicated packets
       // We need to make sure we process any pending sync packet up to the next non empty packet
       synchronized (replicationLock)
       {
-         while (!pendingTokens.isEmpty() && pendingTokens.peek().isEmpty())
+         while (!pendingTokens.isEmpty() && pendingTokens.peek().isSync())
          {
             tokenPolled = pendingTokens.poll();
-            if (!tokenPolled.isEmpty())
+            if (!tokenPolled.isSync())
             {
                throw new IllegalStateException("Replicatoin context is not a roundtrip token as expected");
             }

@@ -39,12 +39,7 @@ public interface OperationContext extends IOCompletion
    /** To be called when there are no more operations pending */
    void complete();
    
-   /** Replication may need some extra controls to guarantee ordering
-    *  when nothing is persisted through the contexts 
-    * @return The context is empty
-    */
-   boolean isEmpty();
-   
-   void setEmpty(boolean empty);
+   /** Is this a special operation to sync replication. */
+   boolean isSync();
 
 }

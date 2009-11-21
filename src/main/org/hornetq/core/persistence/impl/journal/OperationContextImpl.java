@@ -138,18 +138,10 @@ public class OperationContextImpl implements OperationContext
    {
       tlContext.set(null);
    }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationContext#isRoundtrip()
-    */
-   public boolean isEmpty()
+   
+   public boolean isSync()
    {
-      return empty;
-   }
-
-   public void setEmpty(final boolean sync)
-   {
-      this.empty = sync;
+      return false;
    }
 
    /* (non-Javadoc)

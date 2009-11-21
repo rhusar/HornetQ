@@ -374,11 +374,6 @@ public class HornetQServerImpl implements HornetQServer
 
          managementService.stop();
 
-         if (storageManager != null)
-         {
-            storageManager.stop();
-         }
-
          if (replicationEndpoint != null)
          {
             replicationEndpoint.stop();
@@ -410,6 +405,13 @@ public class HornetQServerImpl implements HornetQServer
          }
 
          threadPool.shutdown();
+         
+         threadPool.awaitTermination(60, TimeUnit.SECONDS);
+
+         if (storageManager != null)
+         {
+            storageManager.stop();
+         }
 
          scheduledPool = null;
 

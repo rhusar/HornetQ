@@ -85,5 +85,7 @@ public interface ReplicationManager extends HornetQComponent
     * @throws HornetQException 
     */
    void compareJournals(JournalLoadInformation[] journalInfo) throws HornetQException;
+   
+   void sync();
 
 }

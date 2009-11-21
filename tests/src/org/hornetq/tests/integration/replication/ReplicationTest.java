@@ -494,7 +494,7 @@ public class ReplicationTest extends ServiceTestBase
       }
    }
 
-   public void disabledForNowtestOrderOnNonPersistency() throws Exception
+   public void testOrderOnNonPersistency() throws Exception
    {
 
       Configuration config = createDefaultConfig(false);
@@ -529,6 +529,10 @@ public class ReplicationTest extends ServiceTestBase
             {
                replicatedJournal.appendPrepareRecord(i, new FakeData(), false);
             }
+            else
+            {
+               manager.sync();
+            }
 
             OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
             {
@@ -539,6 +543,7 @@ public class ReplicationTest extends ServiceTestBase
 
                public void done()
                {
+                  executions.add(nAdd);
                   latch.countDown();
                }
             });

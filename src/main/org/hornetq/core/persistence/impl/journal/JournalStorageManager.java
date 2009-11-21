@@ -504,6 +504,14 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getIOContext());
    }
 
+   public void sync()
+   {
+      if (replicator != null)
+      {
+         replicator.sync();
+      }
+   }
+
    // Transactional operations
 
    public void storeMessageTransactional(final long txID, final ServerMessage message) throws Exception
@@ -1321,7 +1329,7 @@ public class JournalStorageManager implements StorageManager
 
       return info;
    }
-
+   
    // Public -----------------------------------------------------------------------------------
 
    public Journal getMessageJournal()
