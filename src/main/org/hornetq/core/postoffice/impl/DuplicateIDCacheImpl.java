@@ -144,7 +144,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
             storageManager.storeDuplicateID(address, duplID, recordID);
          }
 
-         addToCacheInMemory(duplID, recordID);
+         addToCacheInMemory(duplID, recordID, null);
       }
       else
       {
@@ -161,11 +161,12 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       }
    }
 
-   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID) throws Exception
+   
+   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID, final Executor journalExecutor) throws Exception
    {
       cache.add(new ByteArrayHolder(duplID));
 
-      Pair<ByteArrayHolder, Long> id;
+      final Pair<ByteArrayHolder, Long> id;
 
       if (pos < ids.size())
       {
@@ -179,7 +180,28 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
          // reclaimed
          id.a = new ByteArrayHolder(duplID);
 
-         storageManager.deleteDuplicateID(id.b);
+         if (journalExecutor != null)
+         {
+            // We can't execute any IO inside the Journal callback, so taking it outside
+            journalExecutor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  try
+                  {
+                     storageManager.deleteDuplicateID(id.b);
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Error on deleting duplicate cache");
+                  }
+               }
+            });
+         }
+         else
+         {
+            storageManager.deleteDuplicateID(id.b);
+         }
 
          id.b = recordID;
       }
@@ -215,21 +237,14 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       {
          if (!done)
          {
-            executor.execute(new Runnable()
+            try
             {
-               public void run()
-               {
-                  try
-                  {
-                     addToCacheInMemory(duplID, recordID);
-                  }
-                  catch (Exception e)
-                  {
-                     log.warn(e.getMessage());
-                  }
-               }
-            });
-
+               addToCacheInMemory(duplID, recordID, executor);
+            }
+            catch (Exception shouldNotHappen)
+            {
+               // if you pass an executor to addtoCache, an exception will never happen here
+            }
             done = true;
          }
       }
