@@ -26,9 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import javax.transaction.xa.Xid;
 
@@ -37,6 +35,8 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.PreparedTransactionInfo;
@@ -47,6 +47,7 @@ import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
+import org.hornetq.core.journal.impl.SimpleWaitIOCallback;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.PageTransactionInfo;
@@ -291,11 +292,15 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#completeReplication()
     */
-   public void completeReplication()
+   public void completeOperations()
    {
       if (replicator != null)
       {
          replicator.closeContext();
+      }
+      else
+      {
+         OperationContextImpl.getContext().complete();
       }
    }
 
@@ -304,21 +309,26 @@ public class JournalStorageManager implements StorageManager
       return replicator != null;
    }
 
+
+   public void waitOnOperations() throws Exception
+   {
+      waitOnOperations(-1);
+   }
+
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#blockOnReplication()
     */
-   public void waitOnReplication(final long timeout) throws Exception
+   public void waitOnOperations(final long timeout) throws Exception
    {
-      final CountDownLatch latch = new CountDownLatch(1);
-      afterReplicated(new Runnable()
+      SimpleWaitIOCallback waitCallback = new SimpleWaitIOCallback();
+      afterCompleteOperations(waitCallback);
+      completeOperations();
+      if (timeout <= 0)
       {
-         public void run()
-         {
-            latch.countDown();
-         }
-      });
-      completeReplication();
-      if (!latch.await(timeout, TimeUnit.MILLISECONDS))
+         waitCallback.waitCompletion();
+      }
+      else
+      if (!waitCallback.waitCompletion(timeout))
       {
          throw new IllegalStateException("no response received from replication");
       }
@@ -363,13 +373,9 @@ public class JournalStorageManager implements StorageManager
 
    // TODO: shouldn't those page methods be on the PageManager? ^^^^
 
-   public void afterReplicated(Runnable run)
+   public void afterCompleteOperations(IOAsyncTask run)
    {
-      if (replicator == null)
-      {
-         throw new IllegalStateException("StorageManager is not replicated");
-      }
-      replicator.afterReplicated(run);
+      OperationContextImpl.getContext().executeOnCompletion(run);
    }
 
    public UUID getPersistentID()
@@ -452,27 +458,27 @@ public class JournalStorageManager implements StorageManager
          messageJournal.appendAddRecord(message.getMessageID(),
                                         ADD_LARGE_MESSAGE,
                                         new LargeMessageEncoding((LargeServerMessage)message),
-                                        false);
+                                        false, getIOContext());
       }
       else
       {
-         messageJournal.appendAddRecord(message.getMessageID(), ADD_MESSAGE, message, false);
+         messageJournal.appendAddRecord(message.getMessageID(), ADD_MESSAGE, message, false, getIOContext());
       }
    }
 
    public void storeReference(final long queueID, final long messageID) throws Exception
    {
-      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), syncNonTransactional);
+      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), syncNonTransactional, getIOContext());
    }
 
    public void storeAcknowledge(final long queueID, final long messageID) throws Exception
    {
-      messageJournal.appendUpdateRecord(messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional);
+      messageJournal.appendUpdateRecord(messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional, getIOContext());
    }
 
    public void deleteMessage(final long messageID) throws Exception
    {
-      messageJournal.appendDeleteRecord(messageID, syncNonTransactional);
+      messageJournal.appendDeleteRecord(messageID, syncNonTransactional, getIOContext());
    }
 
    public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception
@@ -483,19 +489,19 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
                                         SET_SCHEDULED_DELIVERY_TIME,
                                         encoding,
-                                        syncNonTransactional);
+                                        syncNonTransactional, getIOContext());
    }
 
    public void storeDuplicateID(final SimpleString address, final byte[] duplID, final long recordID) throws Exception
    {
       DuplicateIDEncoding encoding = new DuplicateIDEncoding(address, duplID);
 
-      messageJournal.appendAddRecord(recordID, DUPLICATE_ID, encoding, syncNonTransactional);
+      messageJournal.appendAddRecord(recordID, DUPLICATE_ID, encoding, syncNonTransactional, getIOContext());
    }
 
    public void deleteDuplicateID(long recordID) throws Exception
    {
-      messageJournal.appendDeleteRecord(recordID, syncNonTransactional);
+      messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getIOContext());
    }
 
    public void sync()
@@ -559,13 +565,13 @@ public class JournalStorageManager implements StorageManager
    public long storeHeuristicCompletion(Xid xid, boolean isCommit) throws Exception
    {
       long id = generateUniqueID();
-      messageJournal.appendAddRecord(id, HEURISTIC_COMPLETION, new HeuristicCompletionEncoding(xid, isCommit), true);
+      messageJournal.appendAddRecord(id, HEURISTIC_COMPLETION, new HeuristicCompletionEncoding(xid, isCommit), true, getIOContext());
       return id;
    }
 
    public void deleteHeuristicCompletion(long id) throws Exception
    {
-      messageJournal.appendDeleteRecord(id, true);
+      messageJournal.appendDeleteRecord(id, true, getIOContext());
    }
 
    public void deletePageTransactional(final long txID, final long recordID) throws Exception
@@ -591,17 +597,17 @@ public class JournalStorageManager implements StorageManager
 
    public void prepare(final long txID, final Xid xid) throws Exception
    {
-      messageJournal.appendPrepareRecord(txID, new XidEncoding(xid), syncTransactional);
+      messageJournal.appendPrepareRecord(txID, new XidEncoding(xid), syncTransactional, getIOContext());
    }
 
    public void commit(final long txID) throws Exception
    {
-      messageJournal.appendCommitRecord(txID, syncTransactional);
+      messageJournal.appendCommitRecord(txID, syncTransactional, getIOContext());
    }
 
    public void rollback(final long txID) throws Exception
    {
-      messageJournal.appendRollbackRecord(txID, syncTransactional);
+      messageJournal.appendRollbackRecord(txID, syncTransactional, getIOContext());
    }
 
    public void storeDuplicateIDTransactional(final long txID,
@@ -639,7 +645,7 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
                                         UPDATE_DELIVERY_COUNT,
                                         updateInfo,
-                                        syncNonTransactional);
+                                        syncNonTransactional, getIOContext());
    }
 
    private static final class AddMessageRecord
@@ -1323,7 +1329,7 @@ public class JournalStorageManager implements StorageManager
 
       return info;
    }
-
+   
    // Public -----------------------------------------------------------------------------------
 
    public Journal getMessageJournal()
@@ -1384,6 +1390,11 @@ public class JournalStorageManager implements StorageManager
    }
 
    // Private ----------------------------------------------------------------------------------
+   
+   private IOCompletion getIOContext()
+   {
+      return OperationContextImpl.getContext();
+   }
 
    private void checkAndCreateDir(final String dir, final boolean create)
    {
@@ -1874,11 +1885,11 @@ public class JournalStorageManager implements StorageManager
          }
       }
 
-      public void afterPrepare(final Transaction tx) throws Exception
+      public void afterPrepare(final Transaction tx)
       {
       }
 
-      public void afterRollback(final Transaction tx) throws Exception
+      public void afterRollback(final Transaction tx)
       {
          PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 

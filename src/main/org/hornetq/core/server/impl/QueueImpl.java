@@ -114,6 +114,9 @@ public class QueueImpl implements Queue
    private final HierarchicalRepository<AddressSettings> addressSettingsRepository;
 
    private final ScheduledExecutorService scheduledExecutor;
+   
+   /** We can't perform any operation on the journal while inside the Transactional operations. */
+   private final Executor journalExecutor;
 
    private final SimpleString address;
 
@@ -139,6 +142,7 @@ public class QueueImpl implements Queue
                     final Filter filter,
                     final boolean durable,
                     final boolean temporary,
+                    final Executor executor,
                     final ScheduledExecutorService scheduledExecutor,
                     final PostOffice postOffice,
                     final StorageManager storageManager,
@@ -163,6 +167,8 @@ public class QueueImpl implements Queue
       this.addressSettingsRepository = addressSettingsRepository;
 
       this.scheduledExecutor = scheduledExecutor;
+      
+      this.journalExecutor = executor;
 
       direct = true;
 
@@ -621,6 +627,8 @@ public class QueueImpl implements Queue
       {
          acknowledge(ref);
       }
+      
+      storageManager.completeOperations();
    }
 
    public void setExpiryAddress(final SimpleString expiryAddress)
@@ -643,39 +651,45 @@ public class QueueImpl implements Queue
       return deleteMatchingReferences(null);
    }
 
-   public synchronized int deleteMatchingReferences(final Filter filter) throws Exception
+   public int deleteMatchingReferences(final Filter filter) throws Exception
    {
       int count = 0;
-
-      Transaction tx = new TransactionImpl(storageManager);
-
-      Iterator<MessageReference> iter = messageReferences.iterator();
-
-      while (iter.hasNext())
+      
+      synchronized(this)
       {
-         MessageReference ref = iter.next();
-
-         if (filter == null || filter.match(ref.getMessage()))
+   
+         Transaction tx = new TransactionImpl(storageManager);
+   
+         Iterator<MessageReference> iter = messageReferences.iterator();
+   
+         while (iter.hasNext())
          {
-            deliveringCount.incrementAndGet();
-            acknowledge(tx, ref);
-            iter.remove();
-            count++;
+            MessageReference ref = iter.next();
+   
+            if (filter == null || filter.match(ref.getMessage()))
+            {
+               deliveringCount.incrementAndGet();
+               acknowledge(tx, ref);
+               iter.remove();
+               count++;
+            }
          }
-      }
-
-      List<MessageReference> cancelled = scheduledDeliveryHandler.cancel();
-      for (MessageReference messageReference : cancelled)
-      {
-         if (filter == null || filter.match(messageReference.getMessage()))
+   
+         List<MessageReference> cancelled = scheduledDeliveryHandler.cancel();
+         for (MessageReference messageReference : cancelled)
          {
-            deliveringCount.incrementAndGet();
-            acknowledge(tx, messageReference);
-            count++;
+            if (filter == null || filter.match(messageReference.getMessage()))
+            {
+               deliveringCount.incrementAndGet();
+               acknowledge(tx, messageReference);
+               count++;
+            }
          }
+   
+         tx.commit();
       }
-
-      tx.commit();
+      
+      storageManager.waitOnOperations(-1);
 
       return count;
    }
@@ -925,11 +939,37 @@ public class QueueImpl implements Queue
 
    public boolean checkDLQ(final MessageReference reference) throws Exception
    {
+      return checkDLQ(reference, null);
+   }
+   
+   public boolean checkDLQ(final MessageReference reference, Executor ioExecutor) throws Exception
+   {
       ServerMessage message = reference.getMessage();
 
       if (message.isDurable() && durable)
       {
-         storageManager.updateDeliveryCount(reference);
+         if (ioExecutor != null)
+         {
+            ioExecutor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  try
+                  {
+                     storageManager.updateDeliveryCount(reference);
+                     storageManager.completeOperations();
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Can't update delivery count on checkDLQ", e);
+                  }
+               }
+            });
+         }
+         else
+         {
+            storageManager.updateDeliveryCount(reference);
+         }
       }
 
       AddressSettings addressSettings = addressSettingsRepository.getMatch(address.toString());
@@ -938,7 +978,28 @@ public class QueueImpl implements Queue
 
       if (maxDeliveries > 0 && reference.getDeliveryCount() >= maxDeliveries)
       {
-         sendToDeadLetterAddress(reference);
+         if (ioExecutor != null)
+         {
+            ioExecutor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  try
+                  {
+                     sendToDeadLetterAddress(reference);
+                     storageManager.completeOperations();
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Error on DLQ send", e);
+                  }
+               }
+            });
+         }
+         else
+         {
+            sendToDeadLetterAddress(reference);
+         }
 
          return false;
       }
@@ -950,7 +1011,28 @@ public class QueueImpl implements Queue
          {
             reference.setScheduledDeliveryTime(System.currentTimeMillis() + redeliveryDelay);
 
-            storageManager.updateScheduledDeliveryTime(reference);
+            if (ioExecutor != null)
+            {
+               ioExecutor.execute(new Runnable()
+               {
+                  public void run()
+                  {
+                     try
+                     {
+                        storageManager.updateScheduledDeliveryTime(reference);
+                        storageManager.completeOperations();
+                     }
+                     catch (Exception e)
+                     {
+                        log.warn("Error on DLQ send", e);
+                     }
+                  }
+               });
+            }
+            else
+            {
+               storageManager.updateScheduledDeliveryTime(reference);
+            }
          }
 
          deliveringCount.decrementAndGet();
@@ -1381,7 +1463,7 @@ public class QueueImpl implements Queue
       return status;
    }
 
-   private void removeExpiringReference(final MessageReference ref) throws Exception
+   private void removeExpiringReference(final MessageReference ref)
    {
       if (ref.getMessage().getExpiration() > 0)
       {
@@ -1389,9 +1471,9 @@ public class QueueImpl implements Queue
       }
    }
 
-   private void postAcknowledge(final MessageReference ref) throws Exception
+   private void postAcknowledge(final MessageReference ref)
    {
-      ServerMessage message = ref.getMessage();
+      final ServerMessage message = ref.getMessage();
 
       QueueImpl queue = (QueueImpl)ref.getQueue();
 
@@ -1413,14 +1495,23 @@ public class QueueImpl implements Queue
 
             // also note then when this happens as part of a trasaction its the tx commt of the ack that is important
             // not this
-            try
+            
+            // and this has to happen in a different thread
+            
+            journalExecutor.execute(new Runnable()
             {
-               storageManager.deleteMessage(message.getMessageID());
-            }
-            catch (Exception e)
-            {
-               log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
-            }
+               public void run()
+               {
+                  try
+                  {
+                     storageManager.deleteMessage(message.getMessageID());
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
+                  }
+               }
+            });
          }
       }
 
@@ -1431,7 +1522,7 @@ public class QueueImpl implements Queue
       message.decrementRefCount(ref);
    }
 
-   void postRollback(final LinkedList<MessageReference> refs) throws Exception
+   void postRollback(final LinkedList<MessageReference> refs)
    {
       synchronized (this)
       {
@@ -1481,28 +1572,37 @@ public class QueueImpl implements Queue
       {
       }
 
-      public void afterPrepare(final Transaction tx) throws Exception
+      public void afterPrepare(final Transaction tx)
       {
       }
 
-      public void afterRollback(final Transaction tx) throws Exception
+      public void afterRollback(final Transaction tx)
       {
          Map<QueueImpl, LinkedList<MessageReference>> queueMap = new HashMap<QueueImpl, LinkedList<MessageReference>>();
 
          for (MessageReference ref : refsToAck)
          {
-            if (ref.getQueue().checkDLQ(ref))
+            try
             {
-               LinkedList<MessageReference> toCancel = queueMap.get(ref.getQueue());
-
-               if (toCancel == null)
+               if (ref.getQueue().checkDLQ(ref, journalExecutor))
                {
-                  toCancel = new LinkedList<MessageReference>();
-
-                  queueMap.put((QueueImpl)ref.getQueue(), toCancel);
+                  LinkedList<MessageReference> toCancel = queueMap.get(ref.getQueue());
+   
+                  if (toCancel == null)
+                  {
+                     toCancel = new LinkedList<MessageReference>();
+   
+                     queueMap.put((QueueImpl)ref.getQueue(), toCancel);
+                  }
+   
+                  toCancel.addFirst(ref);
                }
-
-               toCancel.addFirst(ref);
+            }
+            catch (Exception e)
+            {
+               // checkDLQ here will be using an executor, this shouldn't happen
+               // don't you just hate checked exceptions in java?
+               log.warn("Error on checkDLQ", e);
             }
          }
 
@@ -1519,7 +1619,7 @@ public class QueueImpl implements Queue
          }
       }
 
-      public void afterCommit(final Transaction tx) throws Exception
+      public void afterCommit(final Transaction tx)
       {
          for (MessageReference ref : refsToAck)
          {

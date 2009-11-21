@@ -15,6 +15,7 @@ package org.hornetq.core.journal.impl;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -22,7 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.hornetq.core.buffers.ChannelBuffers;
-import org.hornetq.core.journal.IOCompletion;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.VariableLatch;
@@ -56,7 +57,7 @@ public class TimedBuffer
 
    private int bufferLimit = 0;
 
-   private List<IOCompletion> callbacks;
+   private List<IOAsyncTask> callbacks;
 
    private final Lock lock = new ReentrantReadWriteLock().writeLock();
 
@@ -106,7 +107,7 @@ public class TimedBuffer
       buffer.clear();
       bufferLimit = 0;
 
-      callbacks = new ArrayList<IOCompletion>();
+      callbacks = new ArrayList<IOAsyncTask>();
       this.flushOnSync = flushOnSync;
       latchTimer.up();
       this.timeout = timeout;
@@ -225,7 +226,7 @@ public class TimedBuffer
       }
    }
 
-   public synchronized void addBytes(final byte[] bytes, final boolean sync, final IOCompletion callback)
+   public synchronized void addBytes(final byte[] bytes, final boolean sync, final IOAsyncTask callback)
    {
       if (buffer.writerIndex() == 0)
       {
@@ -280,7 +281,7 @@ public class TimedBuffer
 
          bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
 
-         callbacks = new ArrayList<IOCompletion>();
+         callbacks = new LinkedList<IOAsyncTask>();
 
          active = false;
          pendingSync = false;

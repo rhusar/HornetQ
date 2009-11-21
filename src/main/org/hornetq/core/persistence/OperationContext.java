@@ -11,16 +11,35 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.journal;
+package org.hornetq.core.persistence;
+
+import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.journal.IOCompletion;
+
 
 /**
- * A IOCompletion
+ * This represents a set of operations done as part of replication. 
+ * When the entire set is done a group of Runnables can be executed.
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface IOCompletion extends IOAsyncTask
+public interface OperationContext extends IOCompletion
 {
-   void lineUp();
+   
+   boolean hasReplication();
+
+   void executeOnCompletion(IOAsyncTask runnable);
+   
+   void replicationLineUp();
+   
+   void replicationDone();
+
+   /** To be called when there are no more operations pending */
+   void complete();
+   
+   /** Is this a special operation to sync replication. */
+   boolean isSync();
+
 }

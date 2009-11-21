@@ -414,6 +414,12 @@ public class HornetQServerImpl implements HornetQServer
          {
             log.debug("Waiting for " + task);
          }
+         
+         if (replicationManager != null)
+         {
+            replicationManager.stop();
+            replicationManager = null;
+         }
 
          threadPool.shutdown();
 
@@ -1031,7 +1037,7 @@ public class HornetQServerImpl implements HornetQServer
                                             configuration.getManagementClusterPassword(),
                                             managementService);
 
-      queueFactory = new QueueFactoryImpl(scheduledPool, addressSettingsRepository, storageManager);
+      queueFactory = new QueueFactoryImpl(executorFactory, scheduledPool, addressSettingsRepository, storageManager);
 
       pagingManager = createPagingManager();
 

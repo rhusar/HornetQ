@@ -37,6 +37,8 @@ import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.LoaderCallback;
@@ -50,6 +52,7 @@ import org.hornetq.core.paging.impl.PagedMessageImpl;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
@@ -272,19 +275,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(3, new FakeData(), false);
          replicatedJournal.appendRollbackRecord(3, false);
 
-         assertEquals(1, manager.getActiveTokens().size());
-
          blockOnReplication(manager);
-
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
 
          assertEquals(0, manager.getActiveTokens().size());
 
@@ -386,9 +377,14 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.afterReplicated(new Runnable()
+         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
          {
-            public void run()
+
+            public void onError(int errorCode, String errorMessage)
+            {
+            }
+
+            public void done()
             {
                latch.countDown();
             }
@@ -413,14 +409,17 @@ public class ReplicationTest extends ServiceTestBase
    private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      manager.afterReplicated(new Runnable()
+      OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
       {
 
-         public void run()
+         public void onError(int errorCode, String errorMessage)
+         {
+         }
+
+         public void done()
          {
             latch.countDown();
          }
-
       });
 
       manager.closeContext();
@@ -469,31 +468,22 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         manager.afterReplicated(new Runnable()
+         OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
          {
 
-            public void run()
+            public void onError(int errorCode, String errorMessage)
+            {
+            }
+
+            public void done()
             {
                latch.countDown();
             }
-
          });
-
-         assertEquals(1, manager.getActiveTokens().size());
 
          manager.closeContext();
 
          assertTrue(latch.await(1, TimeUnit.SECONDS));
-
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
 
          assertEquals(0, manager.getActiveTokens().size());
          manager.stop();
@@ -528,13 +518,13 @@ public class ReplicationTest extends ServiceTestBase
          Journal replicatedJournal = new ReplicatedJournal((byte)1, new FakeJournal(), manager);
 
          int numberOfAdds = 200;
-         
+
          final CountDownLatch latch = new CountDownLatch(numberOfAdds);
-         
+
          for (int i = 0; i < numberOfAdds; i++)
          {
             final int nAdd = i;
-            
+
             if (i % 2 == 0)
             {
                replicatedJournal.appendPrepareRecord(i, new FakeData(), false);
@@ -544,39 +534,29 @@ public class ReplicationTest extends ServiceTestBase
                manager.sync();
             }
 
-
-            manager.afterReplicated(new Runnable()
+            OperationContextImpl.getContext().executeOnCompletion(new IOAsyncTask()
             {
 
-               public void run()
+               public void onError(int errorCode, String errorMessage)
+               {
+               }
+
+               public void done()
                {
                   executions.add(nAdd);
                   latch.countDown();
                }
-
             });
 
             manager.closeContext();
          }
-         
+
          assertTrue(latch.await(10, TimeUnit.SECONDS));
 
-         
          for (int i = 0; i < numberOfAdds; i++)
          {
             assertEquals(i, executions.get(i).intValue());
          }
-         
-         for (int i = 0; i < 100; i++)
-         {
-            // This is asynchronous. Have to wait completion
-            if (manager.getActiveTokens().size() == 0)
-            {
-               break;
-            }
-            Thread.sleep(1);
-         }
-
 
          assertEquals(0, manager.getActiveTokens().size());
          manager.stop();
@@ -904,6 +884,81 @@ public class ReplicationTest extends ServiceTestBase
       public int getNumberOfRecords()
       {
          return 0;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecord(long, byte, byte[], boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendAddRecord(long id, byte recordType, byte[] record, boolean sync, IOCompletion completionCallback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendAddRecord(long, byte, org.hornetq.core.journal.EncodingSupport, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendAddRecord(long id,
+                                  byte recordType,
+                                  EncodingSupport record,
+                                  boolean sync,
+                                  IOCompletion completionCallback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendCommitRecord(long, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendCommitRecord(long txID, boolean sync, IOCompletion callback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendDeleteRecord(long, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendDeleteRecord(long id, boolean sync, IOCompletion completionCallback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, org.hornetq.core.journal.EncodingSupport, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendPrepareRecord(long txID, EncodingSupport transactionData, boolean sync, IOCompletion callback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendPrepareRecord(long, byte[], boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendPrepareRecord(long txID, byte[] transactionData, boolean sync, IOCompletion callback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendRollbackRecord(long, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendRollbackRecord(long txID, boolean sync, IOCompletion callback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecord(long, byte, byte[], boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendUpdateRecord(long id,
+                                     byte recordType,
+                                     byte[] record,
+                                     boolean sync,
+                                     IOCompletion completionCallback) throws Exception
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.Journal#appendUpdateRecord(long, byte, org.hornetq.core.journal.EncodingSupport, boolean, org.hornetq.core.journal.IOCompletion)
+       */
+      public void appendUpdateRecord(long id,
+                                     byte recordType,
+                                     EncodingSupport record,
+                                     boolean sync,
+                                     IOCompletion completionCallback) throws Exception
+      {
       }
 
    }

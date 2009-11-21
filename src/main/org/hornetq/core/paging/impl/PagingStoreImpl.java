@@ -127,14 +127,16 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // Static --------------------------------------------------------
 
-   private static final boolean isTrace = log.isTraceEnabled();
+   //private static final boolean isTrace = log.isTraceEnabled();
+   private static final boolean isTrace = true;
 
    // This is just a debug tool method.
    // During debugs you could make log.trace as log.info, and change the
    // variable isTrace above
    private static void trace(final String message)
    {
-      log.trace(message);
+      System.out.println("PagingStoreImpl::" + message);
+      // log.trace(message);
    }
 
    // Constructors --------------------------------------------------
@@ -279,7 +281,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       checkReleaseProducerFlowControlCredits(-credits);
    }
 
-   public void addSize(final ServerMessage message, final boolean add) throws Exception
+   public void addSize(final ServerMessage message, final boolean add)
    {
       long size = message.getMemoryEstimate();
 
@@ -297,7 +299,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   public void addSize(final MessageReference reference, final boolean add) throws Exception
+   public void addSize(final MessageReference reference, final boolean add)
    {
       long size = MessageReferenceImpl.getMemoryEstimate();
 
@@ -477,7 +479,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   public boolean startPaging() throws Exception
+   public boolean startPaging()
    {
       if (!running)
       {
@@ -508,7 +510,17 @@ public class PagingStoreImpl implements TestSupportPageStore
       {
          if (currentPage == null)
          {
-            openNewPage();
+            try
+            {
+               openNewPage();
+            }
+            catch (Exception e)
+            {
+               // If not possible to starting page due to an IO error, we will just consider it non paging.
+               // This shouldn't happen anyway
+               log.warn("IO Error, impossible to start paging", e);
+               return false;
+            }
 
             return true;
          }
@@ -699,7 +711,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
    }
 
-   private void addSize(final long size) throws Exception
+   private void addSize(final long size) 
    {
       if (addressFullMessagePolicy != AddressFullMessagePolicy.PAGE)
       {
@@ -996,9 +1008,9 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
 
       depageTransaction.commit();
-
-      // StorageManager does the check: if (replicated) -> do the proper cleanup already
-      storageManager.completeReplication();
+      
+      // TODO: If we implement ordering on AIO, we won't need to block here
+      storageManager.waitOnOperations();
 
       if (isTrace)
       {

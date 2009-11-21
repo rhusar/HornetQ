@@ -15,6 +15,8 @@ package org.hornetq.tests.timing.core.server.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -41,17 +43,23 @@ public class QueueImplTest extends UnitTestCase
    private static final Logger log = Logger.getLogger(QueueImplTest.class);
 
    private ScheduledExecutorService scheduledExecutor;
+   
+   private ExecutorService executor;
 
    public void setUp() throws Exception
    {
    	super.setUp();
 
    	scheduledExecutor = new ScheduledThreadPoolExecutor(1);
+   	
+   	executor = Executors.newSingleThreadExecutor();
    }
 
    public void tearDown() throws Exception
    {
    	scheduledExecutor.shutdownNow();
+   	
+   	executor.shutdown();
 
       super.tearDown();
    }
@@ -70,7 +78,7 @@ public class QueueImplTest extends UnitTestCase
 
    public void testScheduledNoConsumer() throws Exception
    {
-      Queue queue = new QueueImpl(1, new SimpleString("address1"), new SimpleString("queue1"), null, false, true, scheduledExecutor, null, null, null);
+      Queue queue = new QueueImpl(1, new SimpleString("address1"), new SimpleString("queue1"), null, false, true, executor, scheduledExecutor, null, null, null);
 
       //Send one scheduled
 
@@ -136,7 +144,7 @@ public class QueueImplTest extends UnitTestCase
 
    private void testScheduled(boolean direct) throws Exception
    {
-      Queue queue = new QueueImpl(1,new SimpleString("address1"), new SimpleString("queue1"), null, false, true, scheduledExecutor, null, null, null);
+      Queue queue = new QueueImpl(1,new SimpleString("address1"), new SimpleString("queue1"), null, false, true, executor, scheduledExecutor, null, null, null);
 
       FakeConsumer consumer = null;
 
@@ -243,7 +251,7 @@ public class QueueImplTest extends UnitTestCase
             return HandleStatus.HANDLED;
          }
       };
-      Queue queue = new QueueImpl(1, new SimpleString("address1"), queue1, null, false, true, scheduledExecutor, null, null, null);
+      Queue queue = new QueueImpl(1, new SimpleString("address1"), queue1, null, false, true, executor, scheduledExecutor, null, null, null);
       MessageReference messageReference = generateReference(queue, 1);
       queue.addConsumer(consumer);
       messageReference.setScheduledDeliveryTime(System.currentTimeMillis() + 2000);

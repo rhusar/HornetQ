@@ -19,10 +19,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.utils.HornetQThreadFactory;
 
 /**
  * 
@@ -34,16 +38,26 @@ import org.hornetq.core.logging.Logger;
  */
 public abstract class AbstractSequentialFactory implements SequentialFileFactory
 {
+
+   // Timeout used to wait executors to shutdown
+   protected static final int EXECUTOR_TIMEOUT = 60;
+
    private static final Logger log = Logger.getLogger(AbstractSequentialFactory.class);
+
+   /** 
+    * 
+    * We can't execute callbacks directly from any of the IO module. We need to do it through another thread,
+    * So, we will use an executor for this. 
+    *   */
+   protected ExecutorService callbacksExecutor;
 
    protected final String journalDir;
 
    protected final TimedBuffer timedBuffer;
-   
+
    protected final int bufferSize;
 
    protected final long bufferTimeout;
-
 
    public AbstractSequentialFactory(final String journalDir,
                                     final boolean buffered,
@@ -71,6 +85,22 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
       {
          timedBuffer.stop();
       }
+
+      if (callbacksExecutor != null)
+      {
+         callbacksExecutor.shutdown();
+
+         try
+         {
+            if (!callbacksExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
+            {
+               log.warn("Timed out on AIO writer shutdown", new Exception("Timed out on AIO writer shutdown"));
+            }
+         }
+         catch (InterruptedException e)
+         {
+         }
+      }
    }
 
    public void start()
@@ -79,6 +109,17 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
       {
          timedBuffer.start();
       }
+
+      if (isSupportsCallbacks())
+      {
+         callbacksExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-callbacks" + System.identityHashCode(this),
+                                                                                    true));
+      }
+      else
+      {
+         callbacksExecutor = null;
+      }
+
    }
 
    /* (non-Javadoc)
@@ -99,7 +140,7 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          }
       }
    }
-   
+
    public void flush()
    {
       if (timedBuffer != null)
@@ -116,7 +157,6 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          timedBuffer.setObserver(null);
       }
    }
-
 
    public void releaseBuffer(ByteBuffer buffer)
    {

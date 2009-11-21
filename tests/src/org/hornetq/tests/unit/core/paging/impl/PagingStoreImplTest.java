@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.ChannelBuffers;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
@@ -1155,7 +1156,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#afterReplicated(java.lang.Runnable)
        */
-      public void afterReplicated(Runnable run)
+      public void afterCompleteOperations(Runnable run)
       {
 
       }
@@ -1163,7 +1164,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#completeReplication()
        */
-      public void completeReplication()
+      public void completeOperations()
       {
 
       }
@@ -1221,7 +1222,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#blockOnReplication(long)
        */
-      public void waitOnReplication(long timeout) throws Exception
+      public void waitOnOperations(long timeout) throws Exception
       {
       }
 
@@ -1229,6 +1230,20 @@ public class PagingStoreImplTest extends UnitTestCase
        * @see org.hornetq.core.persistence.StorageManager#setReplicator(org.hornetq.core.replication.ReplicationManager)
        */
       public void setReplicator(ReplicationManager replicator)
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#afterCompleteOperations(org.hornetq.core.journal.IOCompletion)
+       */
+      public void afterCompleteOperations(IOAsyncTask run)
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#waitOnOperations()
+       */
+      public void waitOnOperations() throws Exception
       {
       }
 

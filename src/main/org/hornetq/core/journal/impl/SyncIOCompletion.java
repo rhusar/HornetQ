@@ -11,22 +11,18 @@
  * permissions and limitations under the License.
  */
 
-
 package org.hornetq.core.journal.impl;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
-import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.journal.IOCompletion;
 
 /**
- * A TimedBufferObserver
+ * Internal class used to manage explicit syncs on the Journal through callbacks.
  *
- * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
+ * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
  *
  */
-public interface TimedBufferObserver
+public abstract class SyncIOCompletion implements IOCompletion
 {
 
    // Constants -----------------------------------------------------
@@ -39,15 +35,7 @@ public interface TimedBufferObserver
 
    // Public --------------------------------------------------------
    
-   public void flushBuffer(ByteBuffer buffer, boolean syncRequested, List<IOAsyncTask> callbacks);
-   
-   
-   /** Return the number of remaining bytes that still fit on the observer (file) */
-   public int getRemainingBytes();
-   
-   
-   public ByteBuffer newBuffer(int size, int limit);
-   
+   public abstract void waitCompletion() throws Exception;
 
    // Package protected ---------------------------------------------
 

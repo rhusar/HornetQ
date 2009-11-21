@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.StorageManager;
@@ -58,11 +59,14 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
    private final StorageManager storageManager;
 
    private final boolean persist;
+   
+   private final Executor executor;
 
    public DuplicateIDCacheImpl(final SimpleString address,
                                final int size,
                                final StorageManager storageManager,
-                               final boolean persist)
+                               final boolean persist,
+                               final Executor executor)
    {
       this.address = address;
 
@@ -73,6 +77,8 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       this.storageManager = storageManager;
 
       this.persist = persist;
+      
+      this.executor = executor;
    }
 
    public void load(final List<Pair<byte[], Long>> theIds) throws Exception
@@ -138,7 +144,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
             storageManager.storeDuplicateID(address, duplID, recordID);
          }
 
-         addToCacheInMemory(duplID, recordID);
+         addToCacheInMemory(duplID, recordID, null);
       }
       else
       {
@@ -155,11 +161,12 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       }
    }
 
-   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID) throws Exception
+   
+   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID, final Executor journalExecutor) throws Exception
    {
       cache.add(new ByteArrayHolder(duplID));
 
-      Pair<ByteArrayHolder, Long> id;
+      final Pair<ByteArrayHolder, Long> id;
 
       if (pos < ids.size())
       {
@@ -173,7 +180,28 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
          // reclaimed
          id.a = new ByteArrayHolder(duplID);
 
-         storageManager.deleteDuplicateID(id.b);
+         if (journalExecutor != null)
+         {
+            // We can't execute any IO inside the Journal callback, so taking it outside
+            journalExecutor.execute(new Runnable()
+            {
+               public void run()
+               {
+                  try
+                  {
+                     storageManager.deleteDuplicateID(id.b);
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Error on deleting duplicate cache");
+                  }
+               }
+            });
+         }
+         else
+         {
+            storageManager.deleteDuplicateID(id.b);
+         }
 
          id.b = recordID;
       }
@@ -205,12 +233,18 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
          this.recordID = recordID;
       }
 
-      private void process() throws Exception
+      private void process()
       {
          if (!done)
          {
-            addToCacheInMemory(duplID, recordID);
-
+            try
+            {
+               addToCacheInMemory(duplID, recordID, executor);
+            }
+            catch (Exception shouldNotHappen)
+            {
+               // if you pass an executor to addtoCache, an exception will never happen here
+            }
             done = true;
          }
       }
@@ -227,17 +261,17 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       {
       }
 
-      public void afterCommit(final Transaction tx) throws Exception
+      public void afterCommit(final Transaction tx)
       {
          process();
       }
 
-      public void afterPrepare(final Transaction tx) throws Exception
+      public void afterPrepare(final Transaction tx)
       {
          process();
       }
 
-      public void afterRollback(final Transaction tx) throws Exception
+      public void afterRollback(final Transaction tx)
       {
       }
 

@@ -19,6 +19,7 @@ import java.util.List;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
@@ -98,7 +99,7 @@ public class TransactionImpl implements Transaction
    {
       this.containsPersistent = true;
    }
-   
+
    public long getID()
    {
       return id;
@@ -146,14 +147,38 @@ public class TransactionImpl implements Transaction
          storageManager.prepare(id, xid);
 
          state = State.PREPARED;
-
-         if (operations != null)
+         // We use the Callback even for non persistence
+         // If we are using non-persistence with replication, the replication manager will have
+         // to execute this runnable in the correct order
+         storageManager.afterCompleteOperations(new IOAsyncTask()
          {
-            for (TransactionOperation operation : operations)
+
+            public void onError(int errorCode, String errorMessage)
             {
-               operation.afterPrepare(this);
+               log.warn("IO Error completing the transaction, code = " + errorCode + ", message = " + errorMessage);
             }
-         }
+
+            public void done()
+            {
+               if (operations != null)
+               {
+                  System.out.println("Prepare was executed fine");
+                  for (TransactionOperation operation : operations)
+                  {
+                     try
+                     {
+                        operation.afterPrepare(TransactionImpl.this);
+                     }
+                     catch (Exception e)
+                     {
+                        // https://jira.jboss.org/jira/browse/HORNETQ-188
+                        // After commit shouldn't throw an exception
+                        log.warn(e.getMessage(), e);
+                     }
+                  }
+               }
+            }
+         });
       }
    }
 
@@ -185,7 +210,11 @@ public class TransactionImpl implements Transaction
             {
                if (state == State.ACTIVE)
                {
-                  prepare();
+                  // Why do we need a prepare record on the onePhase optimization?
+                  // Why we can't just go straight to commit, if we are doing one phase anyway?
+                  state = State.PREPARED;
+//                  System.out.println("Adding Prepare");
+//                  prepare();
                }
             }
             if (state != State.PREPARED)
@@ -209,13 +238,29 @@ public class TransactionImpl implements Transaction
             }
          }
 
-         Runnable execAfterCommit = null;
-
-         if (operations != null)
+         if (containsPersistent || (xid != null && state == State.PREPARED))
          {
-            execAfterCommit = new Runnable()
+            System.out.println("Adding commit");
+            storageManager.commit(id);
+
+            state = State.COMMITTED;
+         }
+
+         // We use the Callback even for non persistence
+         // If we are using non-persistence with replication, the replication manager will have
+         // to execute this runnable in the correct order
+         storageManager.afterCompleteOperations(new IOAsyncTask()
+         {
+
+            public void onError(int errorCode, String errorMessage)
             {
-               public void run()
+               log.warn("IO Error completing the transaction, code = " + errorCode + ", message = " + errorMessage);
+            }
+
+            public void done()
+            {
+               System.out.println("Commit was executed fine");
+               if (operations != null)
                {
                   for (TransactionOperation operation : operations)
                   {
@@ -231,31 +276,9 @@ public class TransactionImpl implements Transaction
                      }
                   }
                }
-            };
-         }
-
-         if (containsPersistent || (xid != null && state == State.PREPARED))
-         {
-            storageManager.commit(id);
-
-            state = State.COMMITTED;
-
-            if (execAfterCommit != null)
-            {
-               if (storageManager.isReplicated())
-               {
-                  storageManager.afterReplicated(execAfterCommit);
-               }
-               else
-               {
-                  execAfterCommit.run();
-               }
             }
-         }
-         else if (execAfterCommit != null)
-         {
-            execAfterCommit.run();
-         }
+         });
+
       }
    }
 
@@ -290,13 +313,38 @@ public class TransactionImpl implements Transaction
 
          state = State.ROLLEDBACK;
 
-         if (operations != null)
+         // We use the Callback even for non persistence
+         // If we are using non-persistence with replication, the replication manager will have
+         // to execute this runnable in the correct order
+         storageManager.afterCompleteOperations(new IOAsyncTask()
          {
-            for (TransactionOperation operation : operations)
+
+            public void onError(int errorCode, String errorMessage)
             {
-               operation.afterRollback(this);
+               log.warn("IO Error completing the transaction, code = " + errorCode + ", message = " + errorMessage);
             }
-         }
+
+            public void done()
+            {
+               if (operations != null)
+               {
+                  System.out.println("Rollback was executed fine");
+                  for (TransactionOperation operation : operations)
+                  {
+                     try
+                     {
+                        operation.afterRollback(TransactionImpl.this);
+                     }
+                     catch (Exception e)
+                     {
+                        // https://jira.jboss.org/jira/browse/HORNETQ-188
+                        // After commit shouldn't throw an exception
+                        log.warn(e.getMessage(), e);
+                     }
+                  }
+               }
+            }
+         });
       }
    }
 

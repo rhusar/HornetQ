@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -57,10 +58,19 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
    // Constructors --------------------------------------------------
 
+   ExecutorService executor;
+   
    @Override
    protected void tearDown() throws Exception
    {
       super.tearDown();
+      executor.shutdown();
+   }
+   
+   protected void setUp() throws Exception
+   {
+      super.setUp();
+      executor = Executors.newSingleThreadExecutor();
    }
 
    // Public --------------------------------------------------------
@@ -101,7 +111,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          assertEquals(0, mapDups.size());
 
-         DuplicateIDCacheImpl cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true);
+         DuplicateIDCacheImpl cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true, executor);
 
          for (int i = 0; i < 100; i++)
          {
@@ -126,7 +136,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          assertEquals(10, values.size());
 
-         cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true);
+         cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true, executor);
          cacheID.load(values);
 
          for (int i = 0; i < 100; i++)

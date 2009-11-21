@@ -36,14 +36,18 @@ import org.hornetq.utils.HornetQThreadFactory;
 public class AIOSequentialFileFactory extends AbstractSequentialFactory
 {
 
-   // Timeout used to wait executors to shutdown
-   private static final int EXECUTOR_TIMEOUT = 60;
-
    private static final Logger log = Logger.getLogger(AIOSequentialFileFactory.class);
 
    private static final boolean trace = log.isTraceEnabled();
 
    private final ReuseBuffersController buffersControl = new ReuseBuffersController();
+
+   /** A single AIO write executor for every AIO File.
+    *  This is used only for AIO & instant operations. We only need one executor-thread for the entire journal as we always have only one active file.
+    *  And even if we had multiple files at a given moment, this should still be ok, as we control max-io in a semaphore, guaranteeing AIO calls don't block on disk calls */
+   private ExecutorService writeExecutor;
+
+   private ExecutorService pollerExecutor;
 
    // This method exists just to make debug easier.
    // I could replace log.trace by log.info temporarily while I was debugging
@@ -52,13 +56,6 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
    {
       log.trace(message);
    }
-
-   /** A single AIO write executor for every AIO File.
-    *  This is used only for AIO & instant operations. We only need one executor-thread for the entire journal as we always have only one active file.
-    *  And even if we had multiple files at a given moment, this should still be ok, as we control max-io in a semaphore, guaranteeing AIO calls don't block on disk calls */
-   private ExecutorService writeExecutor;
-
-   private ExecutorService pollerExecutor;
 
    public AIOSequentialFileFactory(final String journalDir)
    {
@@ -163,8 +160,6 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
    @Override
    public void stop()
    {
-      super.stop();
-      
       buffersControl.stop();
 
       writeExecutor.shutdown();
@@ -192,6 +187,8 @@ public class AIOSequentialFileFactory extends AbstractSequentialFactory
       catch (InterruptedException e)
       {
       }
+
+      super.stop();
    }
 
    @Override

@@ -18,6 +18,7 @@ import java.util.Map;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
@@ -56,13 +57,18 @@ public interface StorageManager extends HornetQComponent
 
    boolean isReplicated();
 
-   void afterReplicated(Runnable run);
+   void afterCompleteOperations(IOAsyncTask run);
    
-   /** Block until the replication is done. 
+   /** Block until the operations are done. 
     * @throws Exception */
-   void waitOnReplication(long timeout) throws Exception;
+   void waitOnOperations(long timeout) throws Exception;
 
-   void completeReplication();
+   /** Block until the operations are done. 
+    * @throws Exception */
+   void waitOnOperations() throws Exception;
+
+   /** To close the OperationsContext */
+   void completeOperations();
 
    UUID getPersistentID();
    
