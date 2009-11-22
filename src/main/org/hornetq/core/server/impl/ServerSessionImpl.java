@@ -1435,6 +1435,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleSendLargeMessage(final SessionSendLargeMessage packet)
    {
+      log.info("Got large message on server");
+      
       // need to create the LargeMessage before continue
       long id = storageManager.generateUniqueID();
 
@@ -1464,6 +1466,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          long id = storageManager.generateUniqueID();
 
          message.setMessageID(id);
+         message.encodeMessageIDToBuffer();
 
          if (message.getDestination().equals(managementAddress))
          {
@@ -1573,7 +1576,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
       final CreditManagerHolder holder = this.getCreditManagerHolder(address);
 
       int credits = packet.getCredits();
-
+            
       int gotCredits = holder.manager.acquireCredits(credits, new CreditsAvailableRunnable()
       {
          public boolean run(final int credits)
@@ -1593,6 +1596,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
             }
          }
       });
+      
+      //log.info("session requesting " + credits + " got " + gotCredits);
 
       if (gotCredits > 0)
       {
@@ -1899,6 +1904,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
     */
    private void releaseOutStanding(final ServerMessage message, final int credits) throws Exception
    {
+      //log.info("releasing outstanding credits " + credits);
+      
       CreditManagerHolder holder = getCreditManagerHolder(message);
 
       holder.outstandingCredits -= credits;
@@ -1941,6 +1948,8 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    private void sendProducerCredits(final CreditManagerHolder holder, final int credits, final SimpleString address)
    {
       holder.outstandingCredits += credits;
+      
+     // log.info("sending producer credits " + credits);
 
       Packet packet = new SessionProducerCreditsMessage(credits, address, -1);
 

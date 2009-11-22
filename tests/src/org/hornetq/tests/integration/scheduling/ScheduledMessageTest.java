@@ -149,7 +149,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage message2 = consumer.receive(10250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message2.getBuffer().readString());
+      assertEquals("m1", message2.getBodyBuffer().readString());
 
       message2.acknowledge();
 
@@ -183,8 +183,8 @@ public class ScheduledMessageTest extends ServiceTestBase
       session.start();
       ClientMessage message3 = consumer.receive(1000);
       ClientMessage message2 = consumer2.receive(1000);
-      assertEquals("m1", message3.getBuffer().readString());
-      assertEquals("m1", message2.getBuffer().readString());
+      assertEquals("m1", message3.getBodyBuffer().readString());
+      assertEquals("m1", message2.getBodyBuffer().readString());
       long time = System.currentTimeMillis();
       // force redelivery
       consumer.close();
@@ -195,8 +195,8 @@ public class ScheduledMessageTest extends ServiceTestBase
       message2 = consumer2.receive(1000);
       time += 5000;
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message3.getBuffer().readString());
-      assertEquals("m1", message2.getBuffer().readString());
+      assertEquals("m1", message3.getBodyBuffer().readString());
+      assertEquals("m1", message2.getBodyBuffer().readString());
       message2.acknowledge();
       message3.acknowledge();
 
@@ -234,8 +234,8 @@ public class ScheduledMessageTest extends ServiceTestBase
       assertNotNull(message3);
       ClientMessage message2 = consumer2.receive(1000);
       assertNotNull(message2);
-      assertEquals("m1", message3.getBuffer().readString());
-      assertEquals("m1", message2.getBuffer().readString());
+      assertEquals("m1", message3.getBodyBuffer().readString());
+      assertEquals("m1", message2.getBodyBuffer().readString());
       long time = System.currentTimeMillis();
       // force redelivery
       consumer.close();
@@ -257,8 +257,8 @@ public class ScheduledMessageTest extends ServiceTestBase
       assertNotNull(message2);
       time += 5000;
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message3.getBuffer().readString());
-      assertEquals("m1", message2.getBuffer().readString());
+      assertEquals("m1", message3.getBodyBuffer().readString());
+      assertEquals("m1", message2.getBodyBuffer().readString());
       message2.acknowledge();
       message3.acknowledge();
 
@@ -284,7 +284,7 @@ public class ScheduledMessageTest extends ServiceTestBase
                                                           0,
                                                           System.currentTimeMillis(),
                                                           (byte)1);
-      message.getBuffer().writeString("testINVMCoreClient");
+      message.getBodyBuffer().writeString("testINVMCoreClient");
       message.setDurable(true);
       long time = System.currentTimeMillis();
       time += 10000;
@@ -309,7 +309,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage message2 = consumer.receive(11000);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("testINVMCoreClient", message2.getBuffer().readString());
+      assertEquals("testINVMCoreClient", message2.getBodyBuffer().readString());
 
       message2.acknowledge();
 
@@ -370,27 +370,27 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage message = consumer.receive(11000);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message.getBuffer().readString());
+      assertEquals("m1", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m2", message.getBuffer().readString());
+      assertEquals("m2", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m3", message.getBuffer().readString());
+      assertEquals("m3", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m4", message.getBuffer().readString());
+      assertEquals("m4", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m5", message.getBuffer().readString());
+      assertEquals("m5", message.getBodyBuffer().readString());
       message.acknowledge();
 
       // Make sure no more messages
@@ -451,27 +451,27 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage message = consumer.receive(10250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message.getBuffer().readString());
+      assertEquals("m1", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m3", message.getBuffer().readString());
+      assertEquals("m3", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m5", message.getBuffer().readString());
+      assertEquals("m5", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m2", message.getBuffer().readString());
+      assertEquals("m2", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m4", message.getBuffer().readString());
+      assertEquals("m4", message.getBodyBuffer().readString());
       message.acknowledge();
 
       // Make sure no more messages
@@ -526,24 +526,24 @@ public class ScheduledMessageTest extends ServiceTestBase
       session.start();
 
       ClientMessage message = consumer.receive(1000);
-      assertEquals("m2", message.getBuffer().readString());
+      assertEquals("m2", message.getBodyBuffer().readString());
       message.acknowledge();
       message = consumer.receive(1000);
-      assertEquals("m4", message.getBuffer().readString());
+      assertEquals("m4", message.getBodyBuffer().readString());
       message.acknowledge();
       message = consumer.receive(10250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m1", message.getBuffer().readString());
+      assertEquals("m1", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m3", message.getBuffer().readString());
+      assertEquals("m3", message.getBodyBuffer().readString());
       message.acknowledge();
       time += 1000;
       message = consumer.receive(1250);
       assertTrue(System.currentTimeMillis() >= time);
-      assertEquals("m5", message.getBuffer().readString());
+      assertEquals("m5", message.getBodyBuffer().readString());
       message.acknowledge();
 
       // Make sure no more messages
@@ -593,7 +593,7 @@ public class ScheduledMessageTest extends ServiceTestBase
       System.out.println("elapsed time = " + (end - time));
       assertTrue(end  >= time);
       assertNotNull(message2);
-      assertEquals("testINVMCoreClient", message2.getBuffer().readString());
+      assertEquals("testINVMCoreClient", message2.getBodyBuffer().readString());
 
       message2.acknowledge();
       session.end(xid2, XAResource.TMSUCCESS);
@@ -698,25 +698,25 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage rm1 = consumer.receive(250);
       assertNotNull(rm1);
-      assertEquals("testScheduled2", rm1.getBuffer().readString());
+      assertEquals("testScheduled2", rm1.getBodyBuffer().readString());
 
       ClientMessage rm2 = consumer.receive(250);
       assertNotNull(rm2);
-      assertEquals("testScheduled3", rm2.getBuffer().readString());
+      assertEquals("testScheduled3", rm2.getBodyBuffer().readString());
 
       ClientMessage rm3 = consumer.receive(250);
       assertNotNull(rm3);
-      assertEquals("testScheduled4", rm3.getBuffer().readString());
+      assertEquals("testScheduled4", rm3.getBodyBuffer().readString());
 
       //Now the one with a scheduled with a -ve number
       ClientMessage rm5 = consumer.receive(250);
       assertNotNull(rm5);
-      assertEquals("testScheduled9", rm5.getBuffer().readString());
+      assertEquals("testScheduled9", rm5.getBodyBuffer().readString());
 
       //Now the scheduled
       ClientMessage rm6 = consumer.receive(3250);
       assertNotNull(rm6);
-      assertEquals("testScheduled7", rm6.getBuffer().readString());
+      assertEquals("testScheduled7", rm6.getBodyBuffer().readString());
 
       long now2 = System.currentTimeMillis();
 
@@ -724,7 +724,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage rm7 = consumer.receive(1250);
       assertNotNull(rm7);
-      assertEquals("testScheduled6", rm7.getBuffer().readString());
+      assertEquals("testScheduled6", rm7.getBodyBuffer().readString());
 
       now2 = System.currentTimeMillis();
 
@@ -732,7 +732,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage rm8 = consumer.receive(1250);
       assertNotNull(rm8);
-      assertEquals("testScheduled5", rm8.getBuffer().readString());
+      assertEquals("testScheduled5", rm8.getBodyBuffer().readString());
 
       now2 = System.currentTimeMillis();
 
@@ -740,7 +740,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage rm9 = consumer.receive(1250);
       assertNotNull(rm9);
-      assertEquals("testScheduled8", rm9.getBuffer().readString());
+      assertEquals("testScheduled8", rm9.getBodyBuffer().readString());
 
       now2 = System.currentTimeMillis();
 
@@ -748,7 +748,7 @@ public class ScheduledMessageTest extends ServiceTestBase
 
       ClientMessage rm10 = consumer.receive(1250);
       assertNotNull(rm10);
-      assertEquals("testScheduled1", rm10.getBuffer().readString());
+      assertEquals("testScheduled1", rm10.getBodyBuffer().readString());
 
       now2 = System.currentTimeMillis();
 
@@ -772,7 +772,7 @@ public class ScheduledMessageTest extends ServiceTestBase
                                                           0,
                                                           System.currentTimeMillis(),
                                                           (byte)1);
-      message.getBuffer().writeString(body);
+      message.getBodyBuffer().writeString(body);
       return message;
    }
 }

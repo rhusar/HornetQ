@@ -18,6 +18,7 @@ import static org.hornetq.utils.DataConstants.SIZE_INT;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
 
 import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
@@ -37,6 +38,9 @@ public class PagedMessageImpl implements PagedMessage
 {
    // Constants -----------------------------------------------------
 
+   private static final Logger log = Logger.getLogger(PagedMessageImpl.class);
+
+   
    // Attributes ----------------------------------------------------
 
    // Static --------------------------------------------------------
@@ -107,7 +111,7 @@ public class PagedMessageImpl implements PagedMessage
          
          message = new ServerMessageImpl();
          
-         message.decodeHeadersAndProperties(buffer);
+         message.decode(buffer);
       }
 
    }
@@ -119,7 +123,7 @@ public class PagedMessageImpl implements PagedMessage
       buffer.writeBoolean(message instanceof LargeServerMessage);
       
       buffer.writeInt(message.getEncodeSize());
-      
+         
       message.encode(buffer);
    }
 

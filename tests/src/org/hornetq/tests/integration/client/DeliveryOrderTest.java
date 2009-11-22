@@ -56,7 +56,7 @@ public class DeliveryOrderTest extends ServiceTestBase
             for (int i = 0; i < numMessages; i++)
             {
                ClientMessage cm = sendSession.createClientMessage(false);
-               cm.getBuffer().writeInt(i);
+               cm.getBodyBuffer().writeInt(i);
                cp.send(cm);
                if (i % 10 == 0)
                {
@@ -70,7 +70,7 @@ public class DeliveryOrderTest extends ServiceTestBase
             {
                ClientMessage cm = c.receive(5000);
                assertNotNull(cm);
-               assertEquals(i, cm.getBuffer().readInt());
+               assertEquals(i, cm.getBodyBuffer().readInt());
             }
             sendSession.close();
          }
@@ -97,7 +97,7 @@ public class DeliveryOrderTest extends ServiceTestBase
             for (int i = 0; i < numMessages; i++)
             {
                ClientMessage cm = sendSession.createClientMessage(false);
-               cm.getBuffer().writeInt(i);
+               cm.getBodyBuffer().writeInt(i);
                cp.send(cm);
             }
             ClientConsumer c = sendSession.createConsumer(queueA);
@@ -107,7 +107,7 @@ public class DeliveryOrderTest extends ServiceTestBase
                ClientMessage cm = c.receive(5000);
                assertNotNull(cm);
                cm.acknowledge();
-               assertEquals(i, cm.getBuffer().readInt());
+               assertEquals(i, cm.getBodyBuffer().readInt());
             }
             sendSession.rollback();
             for (int i = 0; i < numMessages; i++)
@@ -115,7 +115,7 @@ public class DeliveryOrderTest extends ServiceTestBase
                ClientMessage cm = c.receive(5000);
                assertNotNull(cm);
                cm.acknowledge();
-               assertEquals(i, cm.getBuffer().readInt());
+               assertEquals(i, cm.getBodyBuffer().readInt());
             }
             sendSession.close();
          }
@@ -155,7 +155,7 @@ public class DeliveryOrderTest extends ServiceTestBase
             for (int i = 0; i < numMessage; i++)
             {
                ClientMessage cm = sendSession.createClientMessage(false);
-               cm.getBuffer().writeInt(count.getAndIncrement());
+               cm.getBodyBuffer().writeInt(count.getAndIncrement());
                clientProducer.send(cm);
             }
             assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -194,7 +194,7 @@ public class DeliveryOrderTest extends ServiceTestBase
 
          public void onMessage(ClientMessage message)
          {
-            int i = message.getBuffer().readInt();
+            int i = message.getBodyBuffer().readInt();
             try
             {
                message.acknowledge();

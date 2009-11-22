@@ -21,7 +21,6 @@ import org.hornetq.core.client.ClientProducer;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.MessageHandler;
-import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
 import org.hornetq.core.server.HornetQServer;
@@ -29,6 +28,7 @@ import org.hornetq.core.server.impl.ServerProducerCreditManager;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.SimpleString;
 
@@ -212,6 +212,8 @@ public class ProducerFlowControlTest extends ServiceTestBase
       {
          session.createQueue(address, new SimpleString(queueName + i), null, false);
       }
+      
+      final byte[] bytes = RandomUtil.randomBytes(messageSize);
 
       class MyHandler implements MessageHandler
       {
@@ -225,15 +227,11 @@ public class ProducerFlowControlTest extends ServiceTestBase
          {
             try
             {
-               // log.info("got message " + count);
+               byte[] bytesRead = new byte[messageSize];
 
-               int availBytes = message.getBuffer().readableBytes();
-
-               assertEquals(messageSize, availBytes);
-
-               byte[] bytes = new byte[availBytes];
-
-               message.getBuffer().readBytes(bytes);
+               message.getBodyBuffer().readBytes(bytesRead);
+               
+               assertEqualsByteArrays(bytes, bytesRead);
 
                message.acknowledge();
 
@@ -250,8 +248,10 @@ public class ProducerFlowControlTest extends ServiceTestBase
             catch (Exception e)
             {
                log.error("Failed to handle message", e);
-
+                              
                this.exception = e;
+               
+               latch.countDown();
             }
          }
       }
@@ -285,11 +285,13 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       long start = System.currentTimeMillis();
 
-      byte[] bytes = new byte[messageSize];
+      
 
       for (int i = 0; i < numMessages; i++)
       {
-         ClientMessage message = new ClientMessageImpl(false, bytes);
+         ClientMessage message = session.createClientMessage(false);
+         
+         message.getBodyBuffer().writeBytes(bytes);
 
          for (int j = 0; j < numProducers; j++)
          {
@@ -386,7 +388,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       byte[] bytes = new byte[0];
 
-      ClientMessage message = new ClientMessageImpl(false, bytes);
+      ClientMessage message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
 
@@ -416,7 +420,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       t.start();
 
-      ClientMessage message2 = new ClientMessageImpl(false, bytes);
+      ClientMessage message2 = session.createClientMessage(false);
+      
+      message2.getBodyBuffer().writeBytes(bytes);
 
       producer2.send(message2);
 
@@ -467,7 +473,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       byte[] bytes = new byte[0];
 
-      ClientMessage message = new ClientMessageImpl(false, bytes);
+      ClientMessage message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
 
@@ -495,7 +503,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       assertEquals(1, waiting);
 
-      message = new ClientMessageImpl(false, bytes);
+      message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       producer2.send(message);
 
@@ -541,7 +551,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       byte[] bytes = new byte[0];
 
-      ClientMessage message = new ClientMessageImpl(false, bytes);
+      ClientMessage message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
 
@@ -587,7 +599,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       session.close();
 
-      message = new ClientMessageImpl(false, bytes);
+      message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       producer3.send(message);
 
@@ -633,7 +647,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       byte[] bytes = new byte[2000];
 
-      ClientMessage message = new ClientMessageImpl(false, bytes);
+      ClientMessage message = session.createClientMessage(false);
+      
+      message.getBodyBuffer().writeBytes(bytes);
 
       final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -704,7 +720,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       for (int i = 0; i < numMessages; i++)
       {
-         ClientMessage message = new ClientMessageImpl(false, bytes);
+         ClientMessage message = session.createClientMessage(false);
+         
+         message.getBodyBuffer().writeBytes(bytes);
 
          producer.send(message);
       }

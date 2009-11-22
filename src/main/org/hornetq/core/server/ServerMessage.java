@@ -67,4 +67,6 @@ public interface ServerMessage extends Message, EncodingSupport
    void setEndMessagePosition(int pos);
    
    int getEndMessagePosition();
+   
+   void encodeMessageIDToBuffer();;
 }

@@ -18,7 +18,6 @@ import java.io.OutputStream;
 
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.message.Message;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * 
@@ -34,9 +33,7 @@ public interface ClientMessage extends Message
    
    void setDeliveryCount(int deliveryCount);
    
-   void acknowledge() throws HornetQException;   
-   
-   void resetBuffer();
+   void acknowledge() throws HornetQException;  
         
    //FIXME - the following are only used for large messages - they should be put somewhere else:
    
@@ -56,4 +53,6 @@ public interface ClientMessage extends Message
    boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException;
             
    void setBodyInputStream(InputStream bodyInputStream);  
+   
+   int getBodySize();
 }

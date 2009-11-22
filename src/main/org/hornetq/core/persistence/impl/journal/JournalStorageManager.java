@@ -408,7 +408,7 @@ public class JournalStorageManager implements StorageManager
 
    public LargeServerMessage createLargeMessage()
    {
-      return new FileLargeServerMessage(this);
+      return new LargeServerMessageImpl(this);
    }
 
    public void addBytesToLargeMessage(SequentialFile file, long messageId, final byte[] bytes) throws Exception
@@ -430,7 +430,7 @@ public class JournalStorageManager implements StorageManager
          replicator.largeMessageBegin(id);
       }
 
-      FileLargeServerMessage largeMessage = (FileLargeServerMessage)createLargeMessage();
+      LargeServerMessageImpl largeMessage = (LargeServerMessageImpl)createLargeMessage();
 
       HornetQBuffer headerBuffer = HornetQChannelBuffers.wrappedBuffer(header);
 
@@ -450,8 +450,6 @@ public class JournalStorageManager implements StorageManager
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "MessageId was not assigned to Message");
       }
-      
-      log.info("storing message");
       
       // Note that we don't sync, the add reference that comes immediately after will sync if appropriate
 
@@ -740,7 +738,7 @@ public class JournalStorageManager implements StorageManager
                break;
             }
             case ADD_MESSAGE:
-            {
+            {              
                ServerMessage message = new ServerMessageImpl(record.id);
 
                message.decode(buff);

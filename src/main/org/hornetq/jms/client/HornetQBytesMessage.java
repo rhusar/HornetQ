@@ -47,6 +47,8 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
 
    // Attributes ----------------------------------------------------
    
+   private int bodyLength;
+   
    // Constructor ---------------------------------------------------
 
    /*
@@ -387,6 +389,8 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
       if (!readOnly)
       {
          readOnly = true;
+         
+         bodyLength = message.getBodySize();
 
          getBuffer().resetReaderIndex();
       }
@@ -394,6 +398,13 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
       {
          getBuffer().resetReaderIndex();
       }
+   }
+   
+   public void doBeforeReceive() throws Exception
+   {
+      bodyLength = message.getBodySize();
+      
+      super.doBeforeReceive();
    }
 
    // HornetQRAMessage overrides ----------------------------------------
@@ -409,7 +420,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
    {
       checkRead();
       
-      return message.getLargeBodySize();
+      return bodyLength;
    }
 
    public void doBeforeSend() throws Exception
@@ -432,7 +443,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
    
    private HornetQBuffer getBuffer()
    {
-      return message.getBuffer();
+      return message.getBodyBuffer();
    }
    
    // Inner classes -------------------------------------------------

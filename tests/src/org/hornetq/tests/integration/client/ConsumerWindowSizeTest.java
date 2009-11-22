@@ -264,7 +264,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          ClientMessage msg = createTextMessage(session, "This one will expire");
          if (largeMessages)
          {
-            msg.getBuffer().writeBytes(new byte[600]);
+            msg.getBodyBuffer().writeBytes(new byte[600]);
          }
 
          msg.setExpiration(System.currentTimeMillis() + 100);
@@ -291,7 +291,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
             if (largeMessages)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
 
             prod.send(msg);
@@ -395,7 +395,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = createTextMessage(session1, "Msg" + i);
             if (largeMessages)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
             prod.send(msg);
          }
@@ -421,7 +421,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
             assertNotNull("expected message at i = " + i, msg);
 
-            assertEquals("Msg" + i, msg.getBuffer().readString());
+            assertEquals("Msg" + i, msg.getBodyBuffer().readString());
 
             msg.acknowledge();
 
@@ -456,7 +456,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = createTextMessage(session1, "Msg" + i);
             if (largeMessages)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
             prod.send(msg);
          }
@@ -470,7 +470,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = cons2.receive(1000);
             assertNotNull("expected message at i = " + i, msg);
 
-            assertEquals("Msg" + i, msg.getBuffer().readString());
+            assertEquals("Msg" + i, msg.getBodyBuffer().readString());
 
             msg.acknowledge();
 
@@ -484,7 +484,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
             assertNotNull("expected message at i = " + i, msg);
 
-            assertEquals("Msg" + i, msg.getBuffer().readString());
+            assertEquals("Msg" + i, msg.getBodyBuffer().readString());
 
             msg.acknowledge();
 
@@ -607,7 +607,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
                      if (largeMessages)
                      {
-                        message.getBuffer().readBytes(new byte[600]);
+                        message.getBodyBuffer().readBytes(new byte[600]);
                      }
 
                      latchRead.countDown();
@@ -632,7 +632,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = createTextMessage(session, "Msg" + i);
             if (largeMessages)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
             prod.send(msg);
          }
@@ -790,7 +790,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = createTextMessage(session, "Msg" + i);
             if (largeMessage)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
             prod.send(msg);
          }
@@ -934,7 +934,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
             ClientMessage msg = createTextMessage(sessionA, "Msg" + i);
             if (largeMessages)
             {
-               msg.getBuffer().writeBytes(new byte[600]);
+               msg.getBodyBuffer().writeBytes(new byte[600]);
             }
             prod.send(msg);
          }

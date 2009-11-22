@@ -184,7 +184,7 @@ public class BridgeTest extends ServiceTestBase
 
             message.putIntProperty(propKey, i);
 
-            message.getBuffer().writeBytes(bytes);
+            message.getBodyBuffer().writeBytes(bytes);
 
             producer0.send(message);
          }
@@ -261,7 +261,7 @@ public class BridgeTest extends ServiceTestBase
 
       for (int j = 0; j < 1024; j++)
       {
-         message.getBuffer().readBytes(byteRead);
+         message.getBodyBuffer().readBytes(byteRead);
       }
    }
 
@@ -540,7 +540,7 @@ public class BridgeTest extends ServiceTestBase
 
          message.putStringProperty(propKey, new SimpleString("bing"));
 
-         message.getBuffer().writeString("doo be doo be doo be doo");
+         message.getBodyBuffer().writeString("doo be doo be doo be doo");
 
          producer0.send(message);
       }
@@ -555,7 +555,7 @@ public class BridgeTest extends ServiceTestBase
 
          assertEquals(new SimpleString("bong"), val);
 
-         String sval = message.getBuffer().readString();
+         String sval = message.getBodyBuffer().readString();
 
          assertEquals("dee be dee be dee be dee", sval);
 

@@ -64,6 +64,9 @@ public interface Message
    int getEncodeSize();
 
    boolean isLargeMessage();
+   
+   HornetQBuffer getBodyBuffer();
+   
 
    // Properties
    // ------------------------------------------------------------------
@@ -173,7 +176,7 @@ public interface Message
    
    int getHeadersAndPropertiesEncodeSize();
    
-   HornetQBuffer getBuffer();
+   HornetQBuffer getWholeBuffer();
    
    void setBuffer(HornetQBuffer buffer);
    
@@ -188,11 +191,7 @@ public interface Message
    
    
    // Sending stuff
-   
-   void afterSend();
-   
-   boolean isBufferWritten();
-   
+
    boolean isEncodedToBuffer();
    
    void decodeFromWire(HornetQBuffer buffer);

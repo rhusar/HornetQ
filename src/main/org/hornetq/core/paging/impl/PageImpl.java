@@ -117,11 +117,12 @@ public class PageImpl implements Page
                {
                   PagedMessage msg = new PagedMessageImpl();
                   msg.decode(fileBuffer);
-                  if (fileBuffer.readByte() != END_BYTE)
+                  byte b = fileBuffer.readByte();
+                  if (b != END_BYTE)
                   {
                      // Sanity Check: This would only happen if there is a bug on decode or any internal code, as this
                      // constraint was already checked
-                     throw new IllegalStateException("Internal error, it wasn't possible to locate END_BYTE");
+                     throw new IllegalStateException("Internal error, it wasn't possible to locate END_BYTE " + b);
                   }
                   messages.add(msg);
                }
@@ -151,10 +152,13 @@ public class PageImpl implements Page
       HornetQChannelBuffer wrap = HornetQChannelBuffers.wrappedBuffer(buffer);
       
       wrap.writeByte(START_BYTE);
-      wrap.writeInt(message.getEncodeSize());
+      wrap.writeInt(0);
+      int startIndex = wrap.writerIndex();
       message.encode(wrap);
+      int endIndex = wrap.writerIndex();
+      wrap.setInt(1, endIndex - startIndex); // The encoded length    
       wrap.writeByte(END_BYTE);
-
+      
       buffer.rewind();
 
       file.writeDirect(buffer, false);

@@ -70,6 +70,10 @@ public class HornetQMapMessage extends HornetQMessage implements MapMessage
    {
       super(message, session);
    }
+   
+   public HornetQMapMessage()
+   {      
+   }
 
    /**
     * 
@@ -366,7 +370,7 @@ public class HornetQMapMessage extends HornetQMessage implements MapMessage
    
    public void doBeforeSend() throws Exception
    {
-      map.encode(message.getBuffer());
+      map.encode(message.getBodyBuffer());
       
       super.doBeforeSend();
    }
@@ -375,7 +379,7 @@ public class HornetQMapMessage extends HornetQMessage implements MapMessage
    {        
       super.doBeforeReceive();
       
-      map.decode(message.getBuffer());
+      map.decode(message.getBodyBuffer());
    }
    
    // Package protected ---------------------------------------------

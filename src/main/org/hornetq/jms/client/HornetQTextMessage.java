@@ -73,7 +73,7 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
    {
       super(foreign, HornetQTextMessage.TYPE, session);
       
-      text = new SimpleString(foreign.getText());
+      setText(foreign.getText());
    }
 
    // Public --------------------------------------------------------
@@ -89,12 +89,20 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
    {
       checkWrite();
       
-      this.text = new SimpleString(text);
+      HornetQBuffer buff = message.getBodyBuffer();
       
-      //Reset buffer to just after standard headers space
-      message.resetBuffer();
+      buff.clear();
       
-      message.getBuffer().writeNullableSimpleString(this.text);
+      if (text != null)
+      {
+         this.text = new SimpleString(text);
+         
+         buff.writeNullableSimpleString(this.text);
+      }
+      else
+      {
+         this.text = null;
+      }
    }
 
    public String getText() throws JMSException
@@ -118,11 +126,16 @@ public class HornetQTextMessage extends HornetQMessage implements TextMessage
 
    // HornetQRAMessage override -----------------------------------------
    
+   public void doBeforeSend() throws Exception
+   {
+      super.doBeforeSend();          
+   }
+   
    public void doBeforeReceive() throws Exception
    {
       super.doBeforeReceive();
       
-      text = message.getBuffer().readNullableSimpleString();                        
+      text = message.getBodyBuffer().readNullableSimpleString();                        
    }
    
    // Package protected ---------------------------------------------

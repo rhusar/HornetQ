@@ -303,7 +303,7 @@ public class NIOMultiThreadCompactorStressTest extends ServiceTestBase
       for (int i = 0; i < nmessages; i++)
       {
          ClientMessage msg = session.createClientMessage(true);
-         msg.getBuffer().writeBytes(new byte[1024]);
+         msg.getBodyBuffer().writeBytes(new byte[1024]);
          prod.send(msg);
       }
       session.commit();

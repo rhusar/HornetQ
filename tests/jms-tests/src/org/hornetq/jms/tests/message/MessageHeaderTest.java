@@ -675,7 +675,8 @@ public class MessageHeaderTest extends MessageHeaderTestBase
       HornetQBuffer body = HornetQChannelBuffers.buffer(1024);
       ClientMessage clientMessage = new ClientMessageImpl(HornetQTextMessage.TYPE, true, 0, System.currentTimeMillis(), (byte)4, body);
       ClientSession session = new FakeSession(clientMessage);
-      HornetQMessage jbossMessage = new HornetQMessage();
+      HornetQMessage jbossMessage = HornetQMessage.createMessage(clientMessage, session);
+      jbossMessage.clearProperties();
 
       configureMessage(jbossMessage);
 

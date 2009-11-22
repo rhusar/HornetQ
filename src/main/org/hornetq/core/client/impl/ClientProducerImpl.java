@@ -32,7 +32,6 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TokenBucketLimiter;
 import org.hornetq.utils.UUIDGenerator;
-import org.jboss.netty.buffer.ChannelBuffers;
 
 /**
  * The client-side Producer connectionFactory class.
@@ -304,9 +303,9 @@ public class ClientProducerImpl implements ClientProducerInternal
       }
 
       // msg.getBody() could be Null on LargeServerMessage
-      if (msg.getBodyInputStream() == null && msg.getBuffer() != null)
+      if (msg.getBodyInputStream() == null && msg.getWholeBuffer() != null)
       {
-         msg.getBuffer().readerIndex(0);
+         msg.getWholeBuffer().readerIndex(0);
       }
 
       HornetQBuffer headerBuffer = HornetQChannelBuffers.buffer(headerSize);

@@ -55,7 +55,7 @@ public class MultiThreadRandomReattachTest extends MultiThreadRandomReattachTest
    @Override
    protected boolean checkSize(final ClientMessage message)
    {
-      return 0 == message.getBuffer().writerIndex();
+      return 0 == message.getBodyBuffer().writerIndex();
    }
 
 }

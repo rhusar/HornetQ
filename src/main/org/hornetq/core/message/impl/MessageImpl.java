@@ -13,7 +13,6 @@
 
 package org.hornetq.core.message.impl;
 
-import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.PACKET_HEADERS_SIZE;
 import static org.hornetq.utils.DataConstants.SIZE_BOOLEAN;
 import static org.hornetq.utils.DataConstants.SIZE_BYTE;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
@@ -24,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.ResetLimitWrappedHornetQBuffer;
+import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
@@ -139,36 +140,11 @@ public abstract class MessageImpl implements Message
 
    // Message implementation ----------------------------------------
 
-   public void afterSend()
-   {      
-   }
-   
-   public boolean isBufferWritten()
-   {
-      return false;
-   }
-   
-   public void resetBuffer()
-   {     
-      //There is a bug in Netty which requires us to initially write a byte
-      if (buffer.capacity() == 0)
-      {
-         buffer.writeByte((byte)0);
-      }
-
-      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);        
-   }
-   
    public int getEncodeSize()
    {
       return encodeSize;
    }
   
-   public int getBodySize()
-   {
-      return buffer.writerIndex();
-   }
-
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
    {     
       buffer.writeLong(messageID);          
@@ -179,7 +155,7 @@ public abstract class MessageImpl implements Message
       buffer.writeLong(timestamp);
       buffer.writeByte(priority);
       properties.encode(buffer);
-      encodeSize = buffer.writerIndex();
+      encodeSize = buffer.writerIndex() - PacketImpl.PACKET_HEADERS_SIZE;
    }
    
    public void decodeFromWire(final HornetQBuffer buffer)
@@ -197,16 +173,16 @@ public abstract class MessageImpl implements Message
    }
        
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
-   {     
-      messageID = buffer.readLong();    
-      destination = buffer.readSimpleString();         
+   {             
+      messageID = buffer.readLong();        
+      destination = buffer.readSimpleString();      
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();
       timestamp = buffer.readLong();
       priority = buffer.readByte();
       properties.decode(buffer);
-      encodeSize = buffer.readerIndex();
+      encodeSize = buffer.readerIndex() - PacketImpl.PACKET_HEADERS_SIZE;
    }
 
    public long getMessageID()
@@ -278,9 +254,7 @@ public abstract class MessageImpl implements Message
 
       return System.currentTimeMillis() - expiration >= 0;
    }
-
  
-
    public Map<String, Object> toMap()
    {
       Map<String, Object> map = new HashMap<String, Object>();
@@ -597,19 +571,43 @@ public abstract class MessageImpl implements Message
       return properties;
    }
 
-   public HornetQBuffer getBuffer()
+   public HornetQBuffer getWholeBuffer()
    {
       return buffer;
    }
    
    public void setBuffer(HornetQBuffer buffer)
    {
-      this.buffer = buffer;
+      this.buffer = buffer; 
+      
+      if (bodyBuffer != null)
+      {
+         bodyBuffer.setBuffer(buffer);
+      }
    }
 
    public BodyEncoder getBodyEncoder()
    {
       return new DecodingContext();
+   }
+   
+   private ResetLimitWrappedHornetQBuffer bodyBuffer;
+
+   public HornetQBuffer getBodyBuffer()
+   {
+      if (bodyBuffer == null)
+      {
+         if (buffer instanceof LargeMessageBuffer == false)
+         {
+            bodyBuffer = new ResetLimitWrappedHornetQBuffer(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, buffer);
+         }
+         else
+         {
+            return buffer;
+         }
+      }
+      
+      return bodyBuffer;
    }
 
    // Public --------------------------------------------------------
@@ -617,6 +615,17 @@ public abstract class MessageImpl implements Message
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
+   
+   protected void resetBuffer()
+   {
+      // There is a bug in Netty which requires us to initially write a byte
+      if (buffer.capacity() == 0)
+      {
+         buffer.writeByte((byte)0);
+      }
+
+      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT);
+   }
 
    // Private -------------------------------------------------------
 
@@ -646,7 +655,7 @@ public abstract class MessageImpl implements Message
 
       public int encode(HornetQBuffer bufferOut, int size)
       {
-         bufferOut.writeBytes(getBuffer(), lastPos, size);
+         bufferOut.writeBytes(getWholeBuffer(), lastPos, size);
          lastPos += size;
          return size;
       }

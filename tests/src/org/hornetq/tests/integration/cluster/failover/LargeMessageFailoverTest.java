@@ -95,7 +95,7 @@ public class LargeMessageFailoverTest extends FailoverTest
     */
    protected void assertMessageBody(int i, ClientMessage message)
    {
-      HornetQBuffer buffer = message.getBuffer();
+      HornetQBuffer buffer = message.getBodyBuffer();
 
       for (int j = 0; j < ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE * 3; j++)
       {

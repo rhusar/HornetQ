@@ -97,7 +97,7 @@ public class CoreClientTest extends UnitTestCase
          
          message.setDestination(QUEUE);
          
-         message.getBuffer().writeString("testINVMCoreClient");
+         message.getBodyBuffer().writeString("testINVMCoreClient");
 
          producer.send(message);
       }
@@ -112,7 +112,7 @@ public class CoreClientTest extends UnitTestCase
       {
          ClientMessage message2 = consumer.receive();
          
-         HornetQBuffer buffer = message2.getBuffer();
+         HornetQBuffer buffer = message2.getBodyBuffer();
          
          assertEquals("testINVMCoreClient", buffer.readString());
 

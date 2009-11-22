@@ -131,7 +131,7 @@ public class ExpiryRunnerTest extends UnitTestCase
          ClientMessage cm = consumer.receive(500);
          assertNotNull("message not received " + i, cm);
          cm.acknowledge();
-         assertEquals("m" + i, cm.getBuffer().readString());
+         assertEquals("m" + i, cm.getBodyBuffer().readString());
       }
       consumer.close();
       Thread.sleep(2100);
@@ -208,7 +208,7 @@ public class ExpiryRunnerTest extends UnitTestCase
          {
             break;
          }
-         String text = cm.getBuffer().readString();
+         String text = cm.getBodyBuffer().readString();
          cm.acknowledge();
          assertFalse(dummyMessageHandler.payloads.contains(text));
          dummyMessageHandler.payloads.add(text);
@@ -327,7 +327,7 @@ public class ExpiryRunnerTest extends UnitTestCase
                   break;
                }
                message.acknowledge();
-               payloads.add(message.getBuffer().readString());
+               payloads.add(message.getBodyBuffer().readString());
 
                Thread.sleep(110);
             }

@@ -90,7 +90,7 @@ public class PagingManagerImplTest extends UnitTestCase
 
       assertEquals(1, msgs.size());
 
-      assertEqualsByteArrays(msg.getBuffer().array(), (msgs.get(0).getMessage(null)).getBuffer().array());
+      assertEqualsByteArrays(msg.getBodyBuffer().array(), (msgs.get(0).getMessage(null)).getBodyBuffer().array());
 
       assertTrue(store.isPaging());
 
@@ -112,12 +112,7 @@ public class PagingManagerImplTest extends UnitTestCase
 
    protected ServerMessage createMessage(final long messageId, final SimpleString destination, final ByteBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl((byte)1,
-                                                true,
-                                                0,
-                                                System.currentTimeMillis(),
-                                                (byte)0,
-                                                HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
+      ServerMessage msg = new ServerMessageImpl();
 
       msg.setMessageID(messageId);
 

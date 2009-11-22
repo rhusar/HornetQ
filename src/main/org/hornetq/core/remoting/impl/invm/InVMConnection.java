@@ -97,7 +97,7 @@ public class InVMConnection implements Connection
 
    public HornetQBuffer createBuffer(final int size)
    {
-      return HornetQChannelBuffers.buffer(size);
+      return HornetQChannelBuffers.dynamicBuffer(size);
    }
 
    public Object getID()

@@ -182,7 +182,6 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
 
             if (isXA)
             {
-
                session.end(xid, XAResource.TMSUCCESS);
                session.prepare(xid);
 
@@ -349,7 +348,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
                         else
                         {
 
-                           HornetQBuffer buffer = message.getBuffer();
+                           HornetQBuffer buffer = message.getBodyBuffer();
                            buffer.resetReaderIndex();
                            assertEquals(numberOfBytes, buffer.writerIndex());
                            for (long b = 0; b < numberOfBytes; b++)
@@ -422,7 +421,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
                      assertEquals(i, ((Integer)message.getObjectProperty(new SimpleString("counter-message"))).intValue());
                   }
 
-                  HornetQBuffer buffer = message.getBuffer();
+                  HornetQBuffer buffer = message.getBodyBuffer();
                   buffer.resetReaderIndex();
 
                   if (useStreamOnConsume)
@@ -571,7 +570,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
             {
                bytes[j] = getSamplebyte(j);
             }
-            message.getBuffer().writeBytes(bytes);
+            message.getBodyBuffer().writeBytes(bytes);
          }
          message.putIntProperty(new SimpleString("counter-message"), i);
          if (delayDelivery > 0)

@@ -295,7 +295,7 @@ public class PagingStoreImplTest extends UnitTestCase
       for (int i = 0; i < 10; i++)
       {
          assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-         assertEqualsByteArrays(buffers.get(i).array(), msg.get(i).getMessage(null).getBuffer().array());
+         assertEqualsByteArrays(buffers.get(i).array(), msg.get(i).getMessage(null).getBodyBuffer().array());
       }
 
    }
@@ -366,7 +366,7 @@ public class PagingStoreImplTest extends UnitTestCase
          for (int i = 0; i < 5; i++)
          {
             assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-            assertEqualsByteArrays(buffers.get(pageNr * 5 + i).array(), msg.get(i).getMessage(null).getBuffer().array());
+            assertEqualsByteArrays(buffers.get(pageNr * 5 + i).array(), msg.get(i).getMessage(null).getBodyBuffer().array());
          }
       }
 
@@ -410,7 +410,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(0l, msgs.get(0).getMessage(null).getMessageID());
 
-      assertEqualsByteArrays(buffers.get(0).array(), msgs.get(0).getMessage(null).getBuffer().array());
+      assertEqualsByteArrays(buffers.get(0).array(), msgs.get(0).getMessage(null).getBodyBuffer().array());
 
       assertEquals(1, storeImpl.getNumberOfPages());
 
@@ -589,14 +589,14 @@ public class PagingStoreImplTest extends UnitTestCase
 
          for (PagedMessage msg : msgs)
          {
-            long id = msg.getMessage(null).getBuffer().readLong();
-            msg.getMessage(null).getBuffer().resetReaderIndex();
+            long id = msg.getMessage(null).getBodyBuffer().readLong();
+            msg.getMessage(null).getBodyBuffer().resetReaderIndex();
 
             ServerMessage msgWritten = buffers.remove(id);
             buffers2.put(id, msg.getMessage(null));
             assertNotNull(msgWritten);
             assertEquals(msg.getMessage(null).getDestination(), msgWritten.getDestination());
-            assertEqualsByteArrays(msgWritten.getBuffer().array(), msg.getMessage(null).getBuffer().array());
+            assertEqualsByteArrays(msgWritten.getBodyBuffer().array(), msg.getMessage(null).getBodyBuffer().array());
          }
       }
 
@@ -662,11 +662,11 @@ public class PagingStoreImplTest extends UnitTestCase
          for (PagedMessage msg : msgs)
          {
 
-            long id = msg.getMessage(null).getBuffer().readLong();
+            long id = msg.getMessage(null).getBodyBuffer().readLong();
             ServerMessage msgWritten = buffers2.remove(id);
             assertNotNull(msgWritten);
             assertEquals(msg.getMessage(null).getDestination(), msgWritten.getDestination());
-            assertEqualsByteArrays(msgWritten.getBuffer().array(), msg.getMessage(null).getBuffer().array());
+            assertEqualsByteArrays(msgWritten.getBodyBuffer().array(), msg.getMessage(null).getBodyBuffer().array());
          }
       }
 
@@ -675,9 +675,9 @@ public class PagingStoreImplTest extends UnitTestCase
       lastPage.close();
       assertEquals(1, lastMessages.size());
 
-      lastMessages.get(0).getMessage(null).getBuffer().resetReaderIndex();
-      assertEquals(lastMessages.get(0).getMessage(null).getBuffer().readLong(), lastMessageId);
-      assertEqualsByteArrays(lastMessages.get(0).getMessage(null).getBuffer().array(), lastMsg.getBuffer().array());
+      lastMessages.get(0).getMessage(null).getBodyBuffer().resetReaderIndex();
+      assertEquals(lastMessages.get(0).getMessage(null).getBodyBuffer().readLong(), lastMessageId);
+      assertEqualsByteArrays(lastMessages.get(0).getMessage(null).getBodyBuffer().array(), lastMsg.getBodyBuffer().array());
 
       assertEquals(0, buffers2.size());
 
@@ -706,7 +706,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                        final SimpleString destination,
                                        final HornetQBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl((byte)1, true, 0, System.currentTimeMillis(), (byte)0, buffer);
+      ServerMessage msg = new ServerMessageImpl();
 
       msg.setDestination(destination);
 
@@ -1230,6 +1230,12 @@ public class PagingStoreImplTest extends UnitTestCase
        */
       public void setReplicator(ReplicationManager replicator)
       {
+      }
+
+      public void storeReference(long queueID, long messageID, boolean last) throws Exception
+      {
+         // TODO Auto-generated method stub
+         
       }
 
    }

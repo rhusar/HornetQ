@@ -64,25 +64,23 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
     * Construct a MessageImpl from storage
     */
    public ServerMessageImpl(final long messageID)
-   {      
-      super(messageID);
-      
-      log.info("creating server message from storage, with id " + messageID);
+   {
+      super(messageID);      
    }
-   
+
    /*
     * Constructor when creating a ServerMessage for sending - e.g. notification
     */
    public ServerMessageImpl(final long messageID, final HornetQBuffer buffer)
    {
       super(messageID);
-      
+
       this.buffer = buffer;
-      
-      //Must align the body after the packet headers
+
+      // Must align the body after the packet headers
       resetBuffer();
    }
-        
+
    /*
     * Copy constructor
     */
@@ -97,21 +95,8 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       timestamp = other.getTimestamp();
       priority = other.getPriority();
       properties = new TypedProperties(other.getProperties());
-      buffer = other.getBuffer();
+      buffer = other.getWholeBuffer();
    }
-
-//   /**
-//    * Only used in testing
-//    */
-//   public ServerMessageImpl(final byte type,
-//                            final boolean durable,
-//                            final long expiration,
-//                            final long timestamp,
-//                            final byte priority,
-//                            final HornetQBuffer buffer)
-//   {
-//      super(type, durable, expiration, timestamp, priority, buffer);
-//   }
 
    public void setMessageID(final long id)
    {
@@ -186,7 +171,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
 
    public long getLargeBodySize()
    {
-      return getBodySize();
+      return -1;
    }
 
    public int getMemoryEstimate()
@@ -260,7 +245,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
 
          putLongProperty(HDR_ACTUAL_EXPIRY_TIME, actualExpiryTime);
       }
-      
+
       setNeedsEncoding();
    }
 
@@ -313,9 +298,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
          return false;
       }
    }
-   
 
-   
    @Override
    public String toString()
    {
@@ -326,91 +309,111 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
              getDestination() +
              "]";
    }
-   
-   //FIXME - this is stuff that is only used in large messages
-   
-   //This is only valid on the client side - why is it here?
+
+   // FIXME - this is stuff that is only used in large messages
+
+   // This is only valid on the client side - why is it here?
    public InputStream getBodyInputStream()
    {
       return null;
    }
-   
-   
-   
+
    // Encoding stuff
-   
-   
+
    public void setNeedsEncoding()
    {
-      //This wil force the message to be re-encoded if it gets sent to a client
-      //Typically this is called after properties or headers are changed on the server side
+      // This wil force the message to be re-encoded if it gets sent to a client
+      // Typically this is called after properties or headers are changed on the server side
       this.encodedToBuffer = false;
    }
-   
+
    private int endMessagePosition;
-   
+
    public void setEndMessagePosition(int pos)
    {
       this.endMessagePosition = pos;
    }
-   
+
    public int getEndMessagePosition()
    {
       return this.endMessagePosition;
    }
-   
+
+   public void encodeToWire()
+   {
+   }
+
    // EncodingSupport implementation
-   
+
    // Used when storing to/from journal
-   
+
    public void encode(final HornetQBuffer buffer)
    {
-      //Encode the message to a buffer for storage in the journal
-      
+      // Encode the message to a buffer for storage in the journal
+
       if (this.encodedToBuffer)
       {
-         //The body starts after the standard packet headers
+         // The body starts after the standard packet headers
          int bodyStart = PacketImpl.PACKET_HEADERS_SIZE;
-         
+
          int end = this.endMessagePosition;
          
-         buffer.writeBytes(this.buffer, bodyStart, end);
+         buffer.writeBytes(this.buffer, bodyStart, end - bodyStart);                          
       }
       else
       {
-         //encodeToBuffer();
-         
+         // encodeToBuffer();
+
          throw new IllegalStateException("Not encoded to buffer and storing to journal");
-      }      
+      }
    }
-   
+
    public void decode(final HornetQBuffer buffer)
    {
-      //TODO optimise
+      // TODO optimise
+
+      int start = buffer.readerIndex();
+
+      int bodyEndPos = buffer.readInt();
       
-      log.info("decoding server message");
+      this.endMessagePosition = buffer.readInt(bodyEndPos - PacketImpl.PACKET_HEADERS_SIZE + start);
       
+      int endPos = endMessagePosition + start -
+                   PacketImpl.PACKET_HEADERS_SIZE;
+
       this.buffer = HornetQChannelBuffers.dynamicBuffer(1500);
-      
-      //work around Netty bug
+
+      // work around Netty bug
       this.buffer.writeByte((byte)0);
-      
+
       this.buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
+
+      this.buffer.writeBytes(buffer, start, endPos - start);
       
-      this.buffer.writeBytes(buffer, 0, buffer.readableBytes());
-      
-      
+      // Position to beginning of encoded message headers/properties
+
+      this.buffer.readerIndex(0);
+  
       //Position to beginning of encoded message headers/properties
       
-      int msgHeadersPos = this.buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE);
-      
-      this.buffer.readerIndex(msgHeadersPos);
-      
+      this.buffer.readerIndex(bodyEndPos + DataConstants.SIZE_INT);
+
       this.decodeHeadersAndProperties(this.buffer);
       
-      log.info("priority is now " + this.getPriority());
+      buffer.setIndex(endPos, buffer.capacity());
       
-      
+      this.encodedToBuffer = true;     
+   }
+
+   public void encodeMessageIDToBuffer()
+   {
+      // We first set the message id - this needs to be set on the buffer since this buffer will be re-used
+
+      buffer.readerIndex(0);
+
+      buffer.writerIndex(buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE) + DataConstants.SIZE_INT);
+
+      buffer.writeLong(messageID);
    }
 
 }

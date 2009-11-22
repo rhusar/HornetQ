@@ -13,12 +13,14 @@
 
 package org.hornetq.integration.transports.netty;
 
+import org.hornetq.core.buffers.HornetQChannelBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.Connection;
 import org.hornetq.core.remoting.spi.ConnectionLifeCycleListener;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.handler.ssl.SslHandler;
@@ -117,9 +119,26 @@ public class NettyConnection implements Connection
       write(buffer, false);
    }
 
-   public void write(final HornetQBuffer buffer, final boolean flush)
+   public void write(HornetQBuffer buffer, final boolean flush)
    {
-      ChannelFuture future = channel.write(buffer.getUnderlyingBuffer());
+      Object underlying = buffer.getUnderlyingBuffer();
+      
+      if (underlying instanceof ChannelBuffer == false)
+      {
+         //Need to copy it
+         
+         //TODO we can avoid this if we use Netty buffers everywhere!!
+         
+         HornetQBuffer hq = (HornetQBuffer)underlying;
+         
+         ChannelBuffer cb = ChannelBuffers.copiedBuffer(hq.array());
+         
+         cb.setIndex(hq.readerIndex(), hq.writerIndex());
+         
+         underlying = cb;
+      }
+                     
+      ChannelFuture future = channel.write(underlying);
 
       if (flush)
       {

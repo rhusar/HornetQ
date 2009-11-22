@@ -89,7 +89,16 @@ public class SessionReceiveMessage extends PacketImpl
    {
       //We re-use the same packet buffer - but we need to change the extra data
       
-      HornetQBuffer buffer = serverMessage.getBuffer();
+      //Since many consumers could be delivering the same message concurrently, we must copy the buffer before sending
+      //since otherwise they will all write different consumer ids and delivering counts on the same buffer concurrently
+      //and indexes will get screwed up
+      
+      //TODO - optimise this
+      HornetQBuffer origBuffer = serverMessage.getWholeBuffer();
+      
+      HornetQBuffer buffer = origBuffer.copy();
+      
+      buffer.setIndex(origBuffer.readerIndex(), origBuffer.writerIndex());
            
       if (serverMessage.isEncodedToBuffer())
       {
@@ -104,10 +113,17 @@ public class SessionReceiveMessage extends PacketImpl
          
          //Message hasn't been encoded yet - probably it's something like a notification message generated on the server
          
+         //End of message position
+         buffer.writeInt(0);
+         
          // We now write the message headers and properties
          serverMessage.encodeHeadersAndProperties(buffer);
          
-         serverMessage.setEndMessagePosition(buffer.writerIndex());
+         int endMessage = buffer.writerIndex();
+         
+         buffer.setInt(afterBody, endMessage);
+         
+         serverMessage.setEndMessagePosition(endMessage);
          
          //Now we need to fill in the afterBody 
          buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, afterBody);
@@ -128,13 +144,7 @@ public class SessionReceiveMessage extends PacketImpl
       buffer.writeByte(type);
       buffer.writeLong(channelID);
                       
-      //And fill in the message id, since this was set on the server side so won't already be in the buffer
-      
-      buffer.writerIndex(buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE));            
-      buffer.writeLong(serverMessage.getMessageID());
-      
-      //Set the reader and writer position to be read fully by remoting
-      buffer.setIndex(0, size);
+      buffer.writerIndex(size);
 
       return buffer;
    }
@@ -151,10 +161,12 @@ public class SessionReceiveMessage extends PacketImpl
       
       //At this point standard headers have been decoded and we are positioned at the beginning of the body
       int bodyStart = buffer.readerIndex();
-      
+         
       // We now read message headers/properties
 
       buffer.readerIndex(afterBody);
+      
+      int endMessage = buffer.readInt();
             
       clientMessage.decodeFromWire(buffer);
       
@@ -169,8 +181,8 @@ public class SessionReceiveMessage extends PacketImpl
       size = buffer.readerIndex();
 
       // Set reader index back to beginning of body
-      
-      buffer.readerIndex(bodyStart);
+           
+      buffer.setIndex(bodyStart, afterBody);
       
       clientMessage.setBuffer(buffer);
    }

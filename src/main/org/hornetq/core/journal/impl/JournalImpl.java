@@ -416,14 +416,14 @@ public class JournalImpl implements TestableJournal
                                      final EncodingSupport record,
                                      final int size,
                                      final HornetQChannelBuffer bb)
-   {
+   {     
       bb.writeByte(ADD_RECORD);
       bb.writeInt(fileId);
       bb.writeLong(id);
       bb.writeInt(record.getEncodeSize());
       bb.writeByte(recordType);
-      record.encode(bb);
-      bb.writeInt(size);
+      record.encode(bb);       
+      bb.writeInt(size);     
    }
 
    /**
@@ -511,12 +511,10 @@ public class JournalImpl implements TestableJournal
                                      final JournalFile file,
                                      final JournalReaderCallback reader) throws Exception
    {
-
       file.getFile().open(1);
       ByteBuffer wholeFileBuffer = null;
       try
       {
-
          final int filesize = (int)file.getFile().size();
 
          wholeFileBuffer = fileFactory.newBuffer((int)filesize);
@@ -736,13 +734,13 @@ public class JournalImpl implements TestableJournal
             switch (recordType)
             {
                case ADD_RECORD:
-               {
+               {                 
                   reader.onReadAddRecord(new RecordInfo(recordID, userRecordType, record, false));
                   break;
                }
 
                case UPDATE_RECORD:
-               {
+               {                 
                   reader.onReadUpdateRecord(new RecordInfo(recordID, userRecordType, record, true));
                   break;
                }
@@ -857,7 +855,7 @@ public class JournalImpl implements TestableJournal
       compactingLock.readLock().lock();
 
       try
-      {
+      {  
          int size = SIZE_ADD_RECORD + record.getEncodeSize();
 
          HornetQChannelBuffer bb = newBuffer(size);
@@ -1706,7 +1704,6 @@ public class JournalImpl implements TestableJournal
       int lastDataPos = SIZE_HEADER;
 
       final AtomicLong maxID = new AtomicLong(-1);
-      // long maxID = -1;
 
       for (final JournalFile file : orderedFiles)
       {

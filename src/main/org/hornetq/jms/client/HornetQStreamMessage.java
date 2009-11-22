@@ -84,6 +84,10 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          // Ignore
       }
    }
+   
+   public HornetQStreamMessage()
+   {
+   }
 
    // Public --------------------------------------------------------
 
@@ -561,7 +565,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    
    private HornetQBuffer getBuffer()
    {
-      return message.getBuffer();
+      return message.getBodyBuffer();
    }
 
    // Inner classes -------------------------------------------------

@@ -63,14 +63,18 @@ public class ClientProducerCreditsImpl implements ClientProducerCredits
    public void acquireCredits(int credits) throws InterruptedException
    {
       // credits += offset;
-
-      checkCredits(credits);
       
+     // log.info("trying to acquire " + credits);
+      
+      checkCredits(credits);
+            
       semaphore.acquire(credits);
    }
 
    public void receiveCredits(final int credits, final int offset)
    {
+     // log.info("receiving credits " + credits);
+      
       synchronized (this)
       {
          arriving -= credits;
@@ -117,6 +121,7 @@ public class ClientProducerCreditsImpl implements ClientProducerCredits
 
       if (toRequest != -1)
       {
+         //log.info("sending request for credits " + toRequest);
          requestCredits(toRequest);
       }
    }

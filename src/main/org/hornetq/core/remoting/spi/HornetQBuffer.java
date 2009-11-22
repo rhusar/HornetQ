@@ -13,8 +13,6 @@
 
 package org.hornetq.core.remoting.spi;
 
-import java.nio.ByteBuffer;
-
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -127,4 +125,6 @@ public interface HornetQBuffer
    byte[] array();
    
    HornetQBuffer copy();
+   
+   HornetQBuffer slice(int index, int length);
 }

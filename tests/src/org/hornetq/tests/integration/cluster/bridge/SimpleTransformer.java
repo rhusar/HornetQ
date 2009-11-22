@@ -46,7 +46,7 @@ public class SimpleTransformer implements Transformer
       message.putStringProperty(new SimpleString("wibble"), new SimpleString("bong"));
       
       //Change the body
-      HornetQBuffer buffer = message.getBuffer();
+      HornetQBuffer buffer = message.getBodyBuffer();
       
       buffer.readerIndex(0);
       

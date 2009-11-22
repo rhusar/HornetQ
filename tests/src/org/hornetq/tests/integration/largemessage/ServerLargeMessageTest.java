@@ -19,7 +19,7 @@ import org.hornetq.core.client.ClientProducer;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.persistence.impl.journal.FileLargeServerMessage;
+import org.hornetq.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -57,7 +57,7 @@ public class ServerLargeMessageTest extends ServiceTestBase
       
       try
       {
-         FileLargeServerMessage fileMessage = new FileLargeServerMessage((JournalStorageManager)server.getStorageManager());
+         LargeServerMessageImpl fileMessage = new LargeServerMessageImpl((JournalStorageManager)server.getStorageManager());
          
          fileMessage.setMessageID(1005);
          
@@ -90,7 +90,7 @@ public class ServerLargeMessageTest extends ServiceTestBase
          
          for (int i = 0 ; i < 2 * ClientSessionFactoryImpl.DEFAULT_MIN_LARGE_MESSAGE_SIZE; i++)
          {
-            assertEquals(getSamplebyte(i), msg.getBuffer().readByte());
+            assertEquals(getSamplebyte(i), msg.getBodyBuffer().readByte());
          }
          
          msg.acknowledge();

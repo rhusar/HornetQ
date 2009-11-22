@@ -19,9 +19,7 @@ import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
-import org.hornetq.integration.transports.netty.ChannelBufferWrapper;
 import org.hornetq.utils.DataConstants;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
@@ -43,7 +41,7 @@ public class SessionSendMessage extends PacketImpl
    private ServerMessage receivedMessage;
 
    private boolean requiresResponse;
-
+   
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -93,12 +91,14 @@ public class SessionSendMessage extends PacketImpl
        *
        * Then the message body:
        * 
-       * bodySize:int
+       * position of end of body: int
        * body:byte[]
        * 
        * {Note we store the message body before the message headers/properties since this allows the user to 
        * construct a message, add stuff to the body buffer, and send it without us having to copy the body into a new
        * buffer before sending it, this minmises buffer copying}
+       * 
+       * position of end of encoded message headers/properties: int
        * 
        * Then followed by the message headers and properties:
        * 
@@ -115,15 +115,24 @@ public class SessionSendMessage extends PacketImpl
        *  
        */
 
-      HornetQBuffer buffer = sentMessage.getBuffer();
+      HornetQBuffer buffer = sentMessage.getWholeBuffer();
 
       // The body will already be written (if any) at this point, so we take note of the position of the end of the
       // body
       
       int afterBody = buffer.writerIndex();
+      
+      //The next int is the position of after the encoded message headers/properties, so we skip this for now
+      buffer.writeInt(0);
 
       // We now write the message headers and properties
       sentMessage.encodeHeadersAndProperties(buffer);
+      
+      //Write the position of the end of the message
+      
+      int endMessage = buffer.writerIndex();
+      
+      buffer.setInt(afterBody, endMessage);
 
       // We now write the extra data for the packet
       buffer.writeBoolean(requiresResponse);
@@ -133,7 +142,7 @@ public class SessionSendMessage extends PacketImpl
       
       // We now set the standard packet headers at the beginning of the buffer
 
-      buffer.writerIndex(0);
+      buffer.clear();
       
       int len = size - DataConstants.SIZE_INT;
       buffer.writeInt(len);
@@ -145,14 +154,14 @@ public class SessionSendMessage extends PacketImpl
 
       // And we set the indexes back for reading and writing
       buffer.setIndex(0, size);
-            
+           
       //We must make a copy of the buffer, since the message might get sent again, and the body might get read or written
       //this might occur while the same send is in operatio since netty send is asynch
       //this could cause incorrect data to be send and/or reader/writer positions to become corrupted
       
       HornetQBuffer newBuffer = buffer.copy();
       
-      newBuffer.setIndex(0, afterBody);
+      newBuffer.setIndex(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, afterBody);
       
       this.sentMessage.setBuffer(newBuffer);
 
@@ -169,18 +178,22 @@ public class SessionSendMessage extends PacketImpl
       // At this point, the standard packet headers will already have been read
 
       // We read the position of the end of the body - this is where the message headers and properties are stored
-      int afterBody = buffer.readInt();
-
-      // We now read message headers/properties
-
+      int afterBody = buffer.readInt();    
+        
       buffer.setIndex(afterBody, buffer.writerIndex());
-
+      
+      int endMessage = buffer.readInt();
+      
+      receivedMessage.setEndMessagePosition(endMessage);
+            
+      // We now read message headers/properties
+      
       receivedMessage.decodeFromWire(buffer);
            
       //We store the position of the end of the encoded message, where the extra data starts - this
       //will be needed if we re-deliver this packet, since we need to reset to there to rewrite the extra data
       //for the different packet
-      receivedMessage.setEndMessagePosition(buffer.readerIndex());
+      //receivedMessage.setEndMessagePosition(endMessage);
 
       // And we read extra data in the packet
 

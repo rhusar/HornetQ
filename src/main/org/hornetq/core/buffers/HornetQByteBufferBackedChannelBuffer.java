@@ -378,7 +378,23 @@ public class HornetQByteBufferBackedChannelBuffer extends HornetQAbstractChannel
    {
       ByteBuffer newBuffer = ByteBuffer.allocate(buffer.remaining());
       newBuffer.put(buffer);
-      newBuffer.flip();
+      newBuffer.flip();                 
       return new HornetQByteBufferBackedChannelBuffer(newBuffer);
+   }
+        
+   public HornetQBuffer slice(int index, int length)
+   {
+      int currentPos = buffer.position();
+      int currentLimit = buffer.limit();
+      
+      buffer.position(index);
+      buffer.limit(length);
+      
+      ByteBuffer sliced = buffer.slice();
+                 
+      buffer.position(currentPos);
+      buffer.limit(currentLimit);
+      
+      return new HornetQByteBufferBackedChannelBuffer(sliced);
    }
 }

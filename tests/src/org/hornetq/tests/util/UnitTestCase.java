@@ -833,16 +833,11 @@ public class UnitTestCase extends TestCase
 
    protected ServerMessage generateMessage(long id)
    {
-      ServerMessage message = new ServerMessageImpl((byte)0,
-                                                    true,
-                                                    0,
-                                                    System.currentTimeMillis(),
-                                                    (byte)4,
-                                                    HornetQChannelBuffers.dynamicBuffer(1024));
+      ServerMessage message = new ServerMessageImpl();
 
       message.setMessageID(id);
 
-      message.getBuffer().writeString(UUID.randomUUID().toString());
+      message.getBodyBuffer().writeString(UUID.randomUUID().toString());
       
       message.setDestination(new SimpleString("foo"));
 
@@ -873,7 +868,7 @@ public class UnitTestCase extends TestCase
                                                                 0,
                                                                 System.currentTimeMillis(),
                                                                 (byte)1);
-      message.getBuffer().writeString(s);
+      message.getBodyBuffer().writeString(s);
       return message;
    }
    

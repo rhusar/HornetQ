@@ -17,16 +17,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.hornetq.core.buffers.ResetLimitWrappedHornetQBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.integration.transports.netty.ChannelBufferWrapper;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * 
@@ -64,15 +63,15 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    /*
     * Construct messages before sending
     */
-   ClientMessageImpl(final byte type,
-                     final boolean durable,
-                     final long expiration,
-                     final long timestamp,
-                     final byte priority,
-                     final HornetQBuffer buffer)
+   public ClientMessageImpl(final byte type,
+                            final boolean durable,
+                            final long expiration,
+                            final long timestamp,
+                            final byte priority,
+                            final HornetQBuffer buffer)
    {
-      super(type, durable, expiration, timestamp, priority, buffer);     
-      
+      super(type, durable, expiration, timestamp, priority, buffer);
+
       this.resetBuffer();
    }
 
@@ -129,11 +128,11 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
       this.largeMessage = largeMessage;
    }
 
-   @Override
-   public void afterSend()
+   public int getBodySize()
    {      
+      return buffer.writerIndex() - buffer.readerIndex();
    }
-     
+
    @Override
    public String toString()
    {
@@ -154,7 +153,7 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       if (largeMessage)
       {
-         return ((LargeMessageBuffer)getBuffer()).getSize();
+         return ((LargeMessageBuffer)getWholeBuffer()).getSize();
       }
       else
       {
@@ -169,13 +168,13 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       if (largeMessage)
       {
-         ((LargeMessageBufferImpl)this.getBuffer()).saveBuffer(out);
+         ((LargeMessageBufferImpl)this.getWholeBuffer()).saveBuffer(out);
       }
       else
       {
          try
          {
-            out.write(this.getBuffer().array());
+            out.write(this.getWholeBuffer().array());
          }
          catch (IOException e)
          {
@@ -192,7 +191,7 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       if (largeMessage)
       {
-         ((LargeMessageBufferImpl)this.getBuffer()).setOutputStream(out);
+         ((LargeMessageBufferImpl)this.getWholeBuffer()).setOutputStream(out);
       }
       else
       {
@@ -208,7 +207,7 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       if (largeMessage)
       {
-         return ((LargeMessageBufferImpl)this.getBuffer()).waitCompletion(timeMilliseconds);
+         return ((LargeMessageBufferImpl)this.getWholeBuffer()).waitCompletion(timeMilliseconds);
       }
       else
       {
@@ -223,13 +222,8 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       if (largeMessage)
       {
-         ((LargeMessageBuffer)getBuffer()).discardUnusedPackets();
+         ((LargeMessageBuffer)getWholeBuffer()).discardUnusedPackets();
       }
-   }
-
-   public void setBuffer(final HornetQBuffer buffer)
-   {
-      this.buffer = buffer;
    }
 
    /**

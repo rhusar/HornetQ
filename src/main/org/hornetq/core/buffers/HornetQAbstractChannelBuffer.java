@@ -454,7 +454,23 @@ public abstract class HornetQAbstractChannelBuffer implements HornetQChannelBuff
 
    public void writeBytes(final HornetQBuffer src, final int srcIndex, final int length)
    {
-      writeBytes((HornetQChannelBuffer)src, srcIndex, length);
+      if (src instanceof HornetQChannelBuffer)
+      {
+         writeBytes((HornetQChannelBuffer)src, srcIndex, length);
+      }
+      else
+      {         
+         //There is a bug in Netty readBytes() which doesn't let us to do this, so we workaround it
+//         byte[] bytes = new byte[length];
+//                  
+//         src.readBytes(bytes, srcIndex, length);
+//         
+//         writeBytes(bytes);
+         
+         byte[] bytes = src.array();
+         
+         writeBytes(bytes, srcIndex, length);         
+      }
    }
 
    public void writeBytes(final ByteBuffer src)
@@ -784,5 +800,5 @@ public abstract class HornetQAbstractChannelBuffer implements HornetQChannelBuff
    {
       UTF8Util.saveUTF(this, utf);
    }
-   
+        
 }

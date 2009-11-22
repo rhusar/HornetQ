@@ -313,5 +313,19 @@ public class HornetQHeapChannelBuffer extends HornetQAbstractChannelBuffer
    {
       return new HornetQHeapChannelBuffer(array.clone());
    }
+   
+   public HornetQBuffer slice(int index, int length)
+   {
+      //FIXME - this is currently very inefficient since we just copy the underlying array
+      //We should really get rid of these versions of the Netty classes and just use the real
+      //Netty classes, since these don't have all the functionality and fixes.
+      //However this will introduce a dependency on Netty on core
+      
+      byte[] copied = new byte[length];
+      
+      System.arraycopy(array, index, copied, 0, length);
+      
+      return new HornetQHeapChannelBuffer(copied);
+   }
 
 }

@@ -108,14 +108,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(50, dummyMessageHandler2.list.size());
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer.close();
@@ -155,14 +155,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(50, dummyMessageHandler2.list.size());
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer.close();
@@ -196,11 +196,11 @@ public class MessageGroupingTest extends UnitTestCase
       {
          ClientMessage cm = consumer.receive(500);
          assertNotNull(cm);
-         assertEquals(cm.getBuffer().readString(), "m" + i);
+         assertEquals(cm.getBodyBuffer().readString(), "m" + i);
          i++;
          cm = consumer2.receive(500);
          assertNotNull(cm);
-         assertEquals(cm.getBuffer().readString(), "m" + i);
+         assertEquals(cm.getBodyBuffer().readString(), "m" + i);
       }
       
       log.info("closing consumers");
@@ -218,13 +218,13 @@ public class MessageGroupingTest extends UnitTestCase
       {
          ClientMessage cm = consumer.receive(500);
          assertNotNull(cm);
-         assertEquals(cm.getBuffer().readString(), "m" + i);
+         assertEquals(cm.getBodyBuffer().readString(), "m" + i);
       }
       for (int i = 1; i < numMessages; i += 2)
       {
          ClientMessage cm = consumer.receive(500);
          assertNotNull(cm);
-         assertEquals(cm.getBuffer().readString(), "m" + i);
+         assertEquals(cm.getBodyBuffer().readString(), "m" + i);
       }
       consumer.close();
    }
@@ -258,7 +258,7 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 1;
       }
       consumer.close();
@@ -300,14 +300,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer.close();
@@ -352,14 +352,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       latch = new CountDownLatch(numMessages);
@@ -371,14 +371,14 @@ public class MessageGroupingTest extends UnitTestCase
       i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer = this.clientSession.createConsumer(qName);
@@ -426,14 +426,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer.close();
@@ -482,14 +482,14 @@ public class MessageGroupingTest extends UnitTestCase
       int i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       latch = new CountDownLatch(numMessages);
@@ -505,14 +505,14 @@ public class MessageGroupingTest extends UnitTestCase
       i = 0;
       for (ClientMessage message : dummyMessageHandler.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       assertEquals(dummyMessageHandler2.list.size(), 50);
       i = 1;
       for (ClientMessage message : dummyMessageHandler2.list)
       {
-         assertEquals(message.getBuffer().readString(), "m" + i);
+         assertEquals(message.getBodyBuffer().readString(), "m" + i);
          i += 2;
       }
       consumer = this.clientSession.createConsumer(qName);

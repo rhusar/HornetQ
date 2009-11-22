@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
@@ -35,6 +36,8 @@ import org.hornetq.core.remoting.spi.HornetQBuffer;
  */
 public class HornetQDynamicChannelBuffer extends HornetQAbstractChannelBuffer
 {
+   private static final Logger log = Logger.getLogger(HornetQDynamicChannelBuffer.class);
+
    private final int initialCapacity;
 
    private HornetQChannelBuffer buffer = HornetQChannelBuffers.EMPTY_BUFFER;
@@ -199,7 +202,7 @@ public class HornetQDynamicChannelBuffer extends HornetQAbstractChannelBuffer
 
    @Override
    public void writeBytes(final byte[] src, final int srcIndex, final int length)
-   {
+   {      
       ensureWritableBytes(length);
       super.writeBytes(src, srcIndex, length);
    }
@@ -217,7 +220,7 @@ public class HornetQDynamicChannelBuffer extends HornetQAbstractChannelBuffer
       ensureWritableBytes(src.remaining());
       super.writeBytes(src);
    }
-
+      
    @Override
    public void writeZero(final int length)
    {
@@ -277,6 +280,11 @@ public class HornetQDynamicChannelBuffer extends HornetQAbstractChannelBuffer
    public HornetQBuffer copy()
    {
       return new HornetQDynamicChannelBuffer(buffer.copy().array());
+   }
+   
+   public HornetQBuffer slice(int index, int length)
+   {
+      return buffer.slice(index, length);
    }
 
 }

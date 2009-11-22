@@ -27,7 +27,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.hornetq.core.buffers.HornetQChannelBuffer;
-import org.hornetq.core.buffers.HornetQDynamicChannelBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
@@ -1197,6 +1196,11 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
    }
    
    public HornetQBuffer copy()
+   {
+      throw new UnsupportedOperationException();
+   }
+   
+   public HornetQBuffer slice(int index, int length)
    {
       throw new UnsupportedOperationException();
    }

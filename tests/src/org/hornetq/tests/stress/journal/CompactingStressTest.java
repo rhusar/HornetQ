@@ -115,7 +115,7 @@ public class CompactingStressTest extends ServiceTestBase
          for (int j = 0; j < 1000; j++)
          {
             Message msg = session.createClientMessage(true);
-            msg.getBuffer().writeBytes(new byte[1024]);
+            msg.getBodyBuffer().writeBytes(new byte[1024]);
 
             prod.send(msg);
          }

@@ -109,7 +109,7 @@ public class PageImplTest extends UnitTestCase
 
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
-         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBuffer().array());
+         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBodyBuffer().array());
       }
 
       impl.delete();
@@ -182,7 +182,7 @@ public class PageImplTest extends UnitTestCase
 
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
-         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBuffer().array());
+         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBodyBuffer().array());
       }
 
       impl.delete();
@@ -218,12 +218,7 @@ public class PageImplTest extends UnitTestCase
 
          buffers.add(buffer);
 
-         ServerMessage msg = new ServerMessageImpl((byte)1,
-                                                   true,
-                                                   0,
-                                                   System.currentTimeMillis(),
-                                                   (byte)0,
-                                                   buffer);
+         ServerMessage msg = new ServerMessageImpl();
 
          msg.setMessageID(i);
 

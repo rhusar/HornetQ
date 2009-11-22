@@ -29,7 +29,7 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 
 /**
- * A JournalLargeServerMessage
+ * A LargeServerMessageImpl
  *
  * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  * 
@@ -37,11 +37,11 @@ import org.hornetq.core.server.impl.ServerMessageImpl;
  *
  *
  */
-public class FileLargeServerMessage extends ServerMessageImpl implements LargeServerMessage
+public class LargeServerMessageImpl extends ServerMessageImpl implements LargeServerMessage
 {
    // Constants -----------------------------------------------------
 
-   private static final Logger log = Logger.getLogger(FileLargeServerMessage.class);
+   private static final Logger log = Logger.getLogger(LargeServerMessageImpl.class);
 
    private static boolean isTrace = log.isTraceEnabled();
 
@@ -62,7 +62,7 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
 
    // Constructors --------------------------------------------------
 
-   public FileLargeServerMessage(final JournalStorageManager storageManager)
+   public LargeServerMessageImpl(final JournalStorageManager storageManager)
    {
       this.storageManager = storageManager;
    }
@@ -72,7 +72,7 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
     * @param copy
     * @param fileCopy
     */
-   private FileLargeServerMessage(final FileLargeServerMessage copy, final SequentialFile fileCopy, final long newID)
+   private LargeServerMessageImpl(final LargeServerMessageImpl copy, final SequentialFile fileCopy, final long newID)
    {
       super(copy);
       this.linkMessage = copy;
@@ -103,6 +103,7 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
 
    public void encodeBody(final HornetQBuffer bufferOut, BodyEncoder context, int size)
    {
+      log.info("large server message, encodebody");
       try
       {
          // This could maybe be optimized (maybe reading directly into bufferOut)
@@ -125,20 +126,6 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
    }
 
    @Override
-   public synchronized int getBodySize()
-   {
-      try
-      {
-         validateFile();
-      }
-      catch (Exception e)
-      {
-         throw new RuntimeException(e.getMessage(), e);
-      }
-      return (int)Math.min(bodySize, Integer.MAX_VALUE);
-   }
-
-   @Override
    public synchronized long getLargeBodySize()
    {
       try
@@ -158,17 +145,18 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
       return getHeadersAndPropertiesEncodeSize();
    }
 
-//   @Override
-//   public void encode(final HornetQBuffer buffer)
-//   {
-//      encodeHeadersAndProperties(buffer);
-//   }
-
    @Override
-   public void decodeHeadersAndProperties(final HornetQBuffer buffer)
-   {
+   public void encode(final HornetQBuffer buffer)
+   {      
+      super.encodeHeadersAndProperties(buffer);
+   }
+   
+   @Override
+   public void decode(final HornetQBuffer buffer)
+   {      
       file = null;
-      decodeHeadersAndProperties(buffer);
+      
+      super.decodeHeadersAndProperties(buffer);
    }
 
    public synchronized void incrementDelayDeletionCount()
@@ -299,8 +287,8 @@ public class FileLargeServerMessage extends ServerMessageImpl implements LargeSe
 
       SequentialFile newfile = storageManager.createFileForLargeMessage(idToUse, durable);
 
-      ServerMessage newMessage = new FileLargeServerMessage(linkMessage == null ? this
-                                                                               : (FileLargeServerMessage)linkMessage,
+      ServerMessage newMessage = new LargeServerMessageImpl(linkMessage == null ? this
+                                                                               : (LargeServerMessageImpl)linkMessage,
                                                             newfile,
                                                             newID);
 
