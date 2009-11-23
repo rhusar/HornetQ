@@ -111,6 +111,12 @@ public class OperationContextImpl implements OperationContext
    /** You may have several actions to be done after a replication operation is completed. */
    public void executeOnCompletion(final IOAsyncTask completion)
    {
+      if (errorCode != -1)
+      {
+         completion.onError(errorCode, errorMessage);
+         return;
+      }
+
       boolean executeNow = false;
 
       synchronized (this)
@@ -175,10 +181,8 @@ public class OperationContextImpl implements OperationContext
          while (iter.hasNext())
          {
             TaskHolder holder = iter.next();
-            if (!holder.executed && stored >= holder.storeLined && replicated >= holder.replicationLined)
+            if (stored >= holder.storeLined && replicated >= holder.replicationLined)
             {
-               holder.executed = true;
-
                if (executor != null)
                {
                   // If set, we use an executor to avoid the server being single threaded
@@ -224,15 +228,6 @@ public class OperationContextImpl implements OperationContext
     */
    public void complete()
    {
-      // TODO: test and fix exceptions on the Context
-      if (tasks != null && errorMessage != null)
-      {
-         for (TaskHolder run : tasks)
-         {
-            run.task.onError(errorCode, errorMessage);
-         }
-      }
-
       // We hold errors until the complete is set, or the callbacks will never get informed
       errorCode = -1;
       errorMessage = null;
@@ -241,10 +236,21 @@ public class OperationContextImpl implements OperationContext
    /* (non-Javadoc)
     * @see org.hornetq.core.asyncio.AIOCallback#onError(int, java.lang.String)
     */
-   public void onError(int errorCode, String errorMessage)
+   public synchronized void onError(int errorCode, String errorMessage)
    {
       this.errorCode = errorCode;
       this.errorMessage = errorMessage;
+
+      if (tasks != null)
+      {
+         Iterator<TaskHolder> iter = tasks.iterator();
+         while (iter.hasNext())
+         {
+            TaskHolder holder = iter.next();
+            holder.task.onError(errorCode, errorMessage);
+            iter.remove();
+         }
+      }
    }
 
    class TaskHolder
@@ -252,8 +258,6 @@ public class OperationContextImpl implements OperationContext
       int storeLined;
 
       int replicationLined;
-
-      boolean executed;
 
       IOAsyncTask task;
 

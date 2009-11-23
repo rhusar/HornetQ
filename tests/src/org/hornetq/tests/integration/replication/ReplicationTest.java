@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.buffers.ChannelBuffers;
 import org.hornetq.core.client.ClientSessionFactory;
@@ -54,6 +55,7 @@ import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
@@ -411,6 +413,95 @@ public class ReplicationTest extends ServiceTestBase
       {
          server.stop();
       }
+   }
+   
+   public void testExceptionSettingActionBefore() throws Exception
+   {
+      OperationContext ctx = OperationContextImpl.getContext(factory);
+      
+      ctx.lineUp();
+      
+      String msg = "I'm an exception";
+      
+      ctx.onError(5, msg);
+      
+      final AtomicInteger lastError = new AtomicInteger(0);
+      
+      final List<String> msgsResult = new ArrayList<String>();
+      
+      final CountDownLatch latch = new CountDownLatch(1);
+      
+      ctx.executeOnCompletion(new IOAsyncTask()
+      {
+         public void onError(int errorCode, String errorMessage)
+         {
+            lastError.set(errorCode);
+            msgsResult.add(errorMessage);
+            latch.countDown();
+         }
+         
+         public void done()
+         {
+         }
+      });
+      
+      assertTrue(latch.await(5, TimeUnit.SECONDS));
+      
+      assertEquals(5, lastError.get());
+      
+      assertEquals(1, msgsResult.size());
+      
+      assertEquals(msg, msgsResult.get(0));
+      
+      final CountDownLatch latch2 = new CountDownLatch(1);
+      
+      // Adding the Task after the exception should still throw an exception
+      ctx.executeOnCompletion(new IOAsyncTask()
+      {
+         public void onError(int errorCode, String errorMessage)
+         {
+            lastError.set(errorCode);
+            msgsResult.add(errorMessage);
+            latch2.countDown();
+         }
+         
+         public void done()
+         {
+         }
+      });
+      
+      assertTrue(latch2.await(5, TimeUnit.SECONDS));
+      
+      assertEquals(2, msgsResult.size());
+
+      assertEquals(msg, msgsResult.get(0));
+      
+      assertEquals(msg, msgsResult.get(1));
+      
+      // Clearing any exception from the Context, so we can use the context again
+      ctx.complete();
+      
+
+      final CountDownLatch latch3 = new CountDownLatch(1);
+      
+      ctx.executeOnCompletion(new IOAsyncTask()
+      {
+         public void onError(int errorCode, String errorMessage)
+         {
+         }
+         
+         public void done()
+         {
+            latch3.countDown();
+         }
+      });
+      
+      
+      assertTrue(latch2.await(5, TimeUnit.SECONDS));
+      
+      
+      
+      
    }
 
    /**
