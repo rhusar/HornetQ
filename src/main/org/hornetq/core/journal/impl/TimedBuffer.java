@@ -259,36 +259,55 @@ public class TimedBuffer
       }
    }
 
-   public synchronized void flush()
+   public void flush()
    {
-      if (buffer.writerIndex() > 0)
+      ByteBuffer bufferToFlush = null;
+      
+      boolean useSync = false;
+      
+      List<IOAsyncTask> callbacksToCall = null;
+      
+      synchronized (this)
       {
-         latchTimer.up();
-
-         int pos = buffer.writerIndex();
-
-         if (logRates)
+         if (buffer.writerIndex() > 0)
          {
-            bytesFlushed += pos;
+            latchTimer.up();
+   
+            int pos = buffer.writerIndex();
+   
+            if (logRates)
+            {
+               bytesFlushed += pos;
+            }
+   
+            bufferToFlush = bufferObserver.newBuffer(bufferSize, pos);
+   
+            // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
+            // Using bufferToFlush.put(buffer) would make several append calls for each byte
+   
+            bufferToFlush.put(buffer.array(), 0, pos);
+
+            callbacksToCall = callbacks;
+            
+            callbacks = new LinkedList<IOAsyncTask>();
+   
+            useSync = pendingSync;
+            
+            active = false;
+            pendingSync = false;
+   
+            buffer.clear();
+            bufferLimit = 0;
          }
-
-         ByteBuffer directBuffer = bufferObserver.newBuffer(bufferSize, pos);
-
-         // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
-         // Using directBuffer.put(buffer) would make several append calls for each byte
-
-         directBuffer.put(buffer.array(), 0, pos);
-
-         bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
-
-         callbacks = new LinkedList<IOAsyncTask>();
-
-         active = false;
-         pendingSync = false;
-
-         buffer.clear();
-         bufferLimit = 0;
       }
+      
+      // Execute the flush outside of the lock
+      // This is important for NIO performance while we are using NIO Callbacks
+      if (bufferToFlush != null)
+      {
+         bufferObserver.flushBuffer(bufferToFlush, useSync, callbacksToCall);
+      }
+
    }
 
    // Package protected ---------------------------------------------
