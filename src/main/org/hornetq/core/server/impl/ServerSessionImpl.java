@@ -1078,7 +1078,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleXARollback(final SessionXARollbackMessage packet)
    {
-      System.out.println("XARollback");
       Packet response = null;
 
       Xid xid = packet.getXid();
