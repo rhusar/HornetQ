@@ -876,11 +876,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
       
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-
       compactingLock.readLock().lock();
 
       try
@@ -890,6 +885,11 @@ public class JournalImpl implements TestableJournal
          ChannelBuffer bb = newBuffer(size);
 
          writeAddRecord(-1, id, recordType, record, size, bb); // fileID will be filled later
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
@@ -958,16 +958,16 @@ public class JournalImpl implements TestableJournal
             }
          }
 
-         if (callback != null)
-         {
-            callback.lineUp();
-         }
-
          int size = SIZE_UPDATE_RECORD + record.getEncodeSize();
 
          ChannelBuffer bb = newBuffer(size);
 
          writeUpdateRecord(-1, id, recordType, record, size, bb);
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
@@ -1021,11 +1021,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
       
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-
       compactingLock.readLock().lock();
 
       try
@@ -1040,12 +1035,17 @@ public class JournalImpl implements TestableJournal
                throw new IllegalStateException("Cannot find add info " + id);
             }
          }
-
+         
          int size = SIZE_DELETE_RECORD;
 
          ChannelBuffer bb = newBuffer(size);
 
          writeDeleteRecord(-1, id, size, bb);
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
@@ -1282,11 +1282,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = getTransactionInfo(txID);
@@ -1298,6 +1293,11 @@ public class JournalImpl implements TestableJournal
          ChannelBuffer bb = newBuffer(size);
 
          writeTransaction(-1, PREPARE_RECORD, txID, transactionData, size, -1, bb);
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
@@ -1359,11 +1359,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = transactions.remove(txID);
@@ -1378,7 +1373,7 @@ public class JournalImpl implements TestableJournal
             callback.done();
             return;
          }
-
+         
          ChannelBuffer bb = newBuffer(SIZE_COMPLETE_TRANSACTION_RECORD);
 
          writeTransaction(-1,
@@ -1388,6 +1383,11 @@ public class JournalImpl implements TestableJournal
                           SIZE_COMPLETE_TRANSACTION_RECORD,
                           -1 /* number of records on this transaction will be filled later inside append record */,
                           bb);
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
@@ -1429,11 +1429,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
 
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-      
       compactingLock.readLock().lock();
 
       JournalTransaction tx = null;
@@ -1446,10 +1441,15 @@ public class JournalImpl implements TestableJournal
          {
             throw new IllegalStateException("Cannot find tx with id " + txID);
          }
-
+         
          ChannelBuffer bb = newBuffer(SIZE_ROLLBACK_RECORD);
 
          writeRollback(-1, txID, bb);
+
+         if (callback != null)
+         {
+            callback.lineUp();
+         }
 
          lockAppend.lock();
          try
