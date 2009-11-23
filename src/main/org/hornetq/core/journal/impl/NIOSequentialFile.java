@@ -155,6 +155,8 @@ public class NIOSequentialFile extends AbstractSequentialFile
             log.warn("Couldn't get lock after 60 seconds on closing AsynchronousFileImpl::" + this.getFileName());
          }
       }
+      
+      maxIOSemaphore = null;
 
       notifyAll();
    }
@@ -252,6 +254,19 @@ public class NIOSequentialFile extends AbstractSequentialFile
 
    private void internalWrite(final ByteBuffer bytes, final boolean sync, final IOAsyncTask callback) throws Exception
    {
+      if (!isOpen())
+      {
+         if (callback != null)
+         {
+            callback.onError(HornetQException.IO_ERROR, "File not opened");
+         }
+         else
+         {
+            throw new HornetQException(HornetQException.IO_ERROR, "File not opened");
+         }
+         return;
+      }
+      
       if (writerExecutor == null)
       {
          doInternalWrite(bytes, sync, callback);
@@ -271,7 +286,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
                   {
                      doInternalWrite(bytes, sync, callback);
                   }
-                  catch (Exception e)
+                  catch (Throwable e)
                   {
                      log.warn("Exception on submitting write", e);
                      callback.onError(HornetQException.IO_ERROR, e.getMessage());
