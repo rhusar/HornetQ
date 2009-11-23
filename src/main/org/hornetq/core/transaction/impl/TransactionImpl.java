@@ -203,9 +203,9 @@ public class TransactionImpl implements Transaction
             }
          }
 
-         if (xid != null && !onePhase)
+         if (xid != null)
          {
-            if (state != State.PREPARED)
+            if (onePhase && state != State.ACTIVE || !onePhase && state != State.PREPARED)
             {
                throw new IllegalStateException("Transaction is in invalid state " + state);
             }
