@@ -113,10 +113,7 @@ public class ServerSessionPacketHandler implements ChannelHandler
    {
       byte type = packet.getType();
 
-      if (sessionContext != null)
-      {
-         storageManager.setContext(sessionContext);
-      }
+      storageManager.setContext(sessionContext);
       
       try
       {
@@ -308,10 +305,8 @@ public class ServerSessionPacketHandler implements ChannelHandler
       }
       finally
       {
-         if (sessionContext != null)
-         {
-            storageManager.completeOperations();
-         }
+         storageManager.completeOperations();
+         storageManager.clearContext();
       }
    }
 }
