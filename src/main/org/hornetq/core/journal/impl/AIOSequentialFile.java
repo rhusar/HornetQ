@@ -15,9 +15,7 @@ package org.hornetq.core.journal.impl;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import org.hornetq.core.asyncio.AsynchronousFile;
 import org.hornetq.core.asyncio.BufferCallback;
@@ -49,9 +47,6 @@ public class AIOSequentialFile extends AbstractSequentialFile
    /** The pool for Thread pollers */
    private final Executor pollerExecutor;
    
-   /** Context switch on AIO could fire unnecessary flushes, so we use a single thread for write */
-   private final Executor writerExecutor;
-   
 
    public AIOSequentialFile(final SequentialFileFactory factory,
                             final int bufferSize,
@@ -63,9 +58,8 @@ public class AIOSequentialFile extends AbstractSequentialFile
                             final Executor writerExecutor,
                             final Executor pollerExecutor)
    {
-      super(directory, new File(directory + "/" + fileName), factory);
+      super(directory, new File(directory + "/" + fileName), factory, writerExecutor);
       this.maxIO = maxIO;
-      this.writerExecutor = writerExecutor;
       this.bufferCallback = bufferCallback;
       this.pollerExecutor = pollerExecutor;
    }
@@ -102,26 +96,12 @@ public class AIOSequentialFile extends AbstractSequentialFile
       {
          return;
       }
+      
+      super.close();
+      
       opened = false;
 
       timedBuffer = null;
-
-      final CountDownLatch donelatch = new CountDownLatch(1);
-
-      writerExecutor.execute(new Runnable()
-      {
-         public void run()
-         {
-            donelatch.countDown();
-         }
-      });
-
-      while (!donelatch.await(60, TimeUnit.SECONDS))
-      {
-         log.warn("Executor on file " + getFile().getName() + " couldn't complete its tasks in 60 seconds.",
-                  new Exception("Warning: Executor on file " + getFile().getName() +
-                                " couldn't complete its tasks in 60 seconds."));
-      }
 
       aioFile.close();
       aioFile = null;
@@ -193,13 +173,18 @@ public class AIOSequentialFile extends AbstractSequentialFile
       open(maxIO);
    }
 
-   public synchronized void open(final int currentMaxIO) throws Exception
+   public synchronized void open(final int maxIO) throws Exception
    {
       opened = true;
+      
       aioFile = new AsynchronousFileImpl(writerExecutor, pollerExecutor);
-      aioFile.open(getFile().getAbsolutePath(), currentMaxIO);
+      
+      aioFile.open(getFile().getAbsolutePath(), maxIO);
+      
       position.set(0);
+      
       aioFile.setBufferCallback(bufferCallback);
+      
       this.fileSize = aioFile.size();
    }
 

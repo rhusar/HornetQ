@@ -38,7 +38,7 @@ public interface SequentialFile
    boolean exists();
 
    /**
-    * For certain operations (like loading) we don't need open the file with full maxIO
+    * The maximum number of simultaneous writes accepted
     * @param maxIO
     * @throws Exception
     */

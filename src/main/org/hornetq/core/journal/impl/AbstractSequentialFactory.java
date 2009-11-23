@@ -44,13 +44,6 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
 
    private static final Logger log = Logger.getLogger(AbstractSequentialFactory.class);
 
-   /** 
-    * 
-    * We can't execute callbacks directly from any of the IO module. We need to do it through another thread,
-    * So, we will use an executor for this. 
-    *   */
-   protected ExecutorService callbacksExecutor;
-
    protected final String journalDir;
 
    protected final TimedBuffer timedBuffer;
@@ -58,6 +51,15 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
    protected final int bufferSize;
 
    protected final long bufferTimeout;
+   
+   /** 
+    * Asynchronous writes need to be done at another executor.
+    * This needs to be done at NIO, or else we would have the callers thread blocking for the return.
+    * At AIO this is necessary as context switches on writes would fire flushes at the kernel.
+    *  */
+   protected ExecutorService writeExecutor;
+
+   
 
    public AbstractSequentialFactory(final String journalDir,
                                     final boolean buffered,
@@ -86,13 +88,13 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          timedBuffer.stop();
       }
 
-      if (callbacksExecutor != null)
+      if (isSupportsCallbacks())
       {
-         callbacksExecutor.shutdown();
-
+         writeExecutor.shutdown();
+   
          try
          {
-            if (!callbacksExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
+            if (!writeExecutor.awaitTermination(EXECUTOR_TIMEOUT, TimeUnit.SECONDS))
             {
                log.warn("Timed out on AIO writer shutdown", new Exception("Timed out on AIO writer shutdown"));
             }
@@ -101,6 +103,8 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
          {
          }
       }
+
+      
    }
 
    public void start()
@@ -109,16 +113,13 @@ public abstract class AbstractSequentialFactory implements SequentialFileFactory
       {
          timedBuffer.start();
       }
-
+      
       if (isSupportsCallbacks())
       {
-         callbacksExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-callbacks" + System.identityHashCode(this),
+         writeExecutor = Executors.newSingleThreadExecutor(new HornetQThreadFactory("HornetQ-Asynchronous-Persistent-Writes" + System.identityHashCode(this),
                                                                                     true));
       }
-      else
-      {
-         callbacksExecutor = null;
-      }
+
 
    }
 

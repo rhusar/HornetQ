@@ -16,7 +16,9 @@ package org.hornetq.core.journal.impl;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.core.journal.IOAsyncTask;
@@ -43,7 +45,7 @@ public abstract class AbstractSequentialFile implements SequentialFile
    private File file;
 
    private final String directory;
-   
+
    protected final SequentialFileFactory factory;
 
    protected long fileSize = 0;
@@ -56,6 +58,9 @@ public abstract class AbstractSequentialFile implements SequentialFile
     *  This is the class returned to the factory when the file is being activated. */
    protected final TimedBufferObserver timedBufferObserver = new LocalBufferObserver();
 
+   /** Used for asynchronous writes */
+   protected final Executor writerExecutor;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -64,12 +69,16 @@ public abstract class AbstractSequentialFile implements SequentialFile
     * @param file
     * @param directory
     */
-   public AbstractSequentialFile(final String directory, final File file, final SequentialFileFactory factory)
+   public AbstractSequentialFile(final String directory,
+                                 final File file,
+                                 final SequentialFileFactory factory,
+                                 final Executor writerExecutor)
    {
       super();
       this.file = file;
       this.directory = directory;
       this.factory = factory;
+      this.writerExecutor = writerExecutor;
    }
 
    // Public --------------------------------------------------------
@@ -113,6 +122,29 @@ public abstract class AbstractSequentialFile implements SequentialFile
       {
          file.renameTo(newFile);
          file = newFile;
+      }
+   }
+
+   public synchronized void close() throws Exception
+   {
+      final CountDownLatch donelatch = new CountDownLatch(1);
+
+      if (writerExecutor != null)
+      {
+         writerExecutor.execute(new Runnable()
+         {
+            public void run()
+            {
+               donelatch.countDown();
+            }
+         });
+
+         while (!donelatch.await(60, TimeUnit.SECONDS))
+         {
+            log.warn("Executor on file " + getFile().getName() + " couldn't complete its tasks in 60 seconds.",
+                     new Exception("Warning: Executor on file " + getFile().getName() +
+                                   " couldn't complete its tasks in 60 seconds."));
+         }
       }
    }
 
