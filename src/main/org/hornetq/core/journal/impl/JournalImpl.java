@@ -943,11 +943,6 @@ public class JournalImpl implements TestableJournal
          throw new IllegalStateException("Journal must be loaded first");
       }
       
-      if (callback != null)
-      {
-         callback.lineUp();
-      }
-
       compactingLock.readLock().lock();
 
       try
@@ -961,6 +956,11 @@ public class JournalImpl implements TestableJournal
             {
                throw new IllegalStateException("Cannot find add info " + id);
             }
+         }
+
+         if (callback != null)
+         {
+            callback.lineUp();
          }
 
          int size = SIZE_UPDATE_RECORD + record.getEncodeSize();
