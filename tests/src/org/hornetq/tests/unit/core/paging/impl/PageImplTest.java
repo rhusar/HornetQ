@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
@@ -25,7 +25,6 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.impl.PageImpl;
 import org.hornetq.core.paging.impl.PagedMessageImpl;
 import org.hornetq.core.persistence.impl.nullpm.NullStorageManager;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
@@ -109,7 +108,7 @@ public class PageImplTest extends UnitTestCase
 
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
-         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBodyBuffer().array());
+         assertEqualsByteArrays(buffers.get(i).toByteBuffer().array(), (msgs.get(i).getMessage(null)).getBodyBuffer().toByteBuffer().array());
       }
 
       impl.delete();
@@ -182,7 +181,7 @@ public class PageImplTest extends UnitTestCase
 
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
-         assertEqualsByteArrays(buffers.get(i).array(), (msgs.get(i).getMessage(null)).getBodyBuffer().array());
+         assertEqualsByteArrays(buffers.get(i).toByteBuffer().array(), (msgs.get(i).getMessage(null)).getBodyBuffer().toByteBuffer().array());
       }
 
       impl.delete();
@@ -208,19 +207,14 @@ public class PageImplTest extends UnitTestCase
 
       for (int i = 0; i < numberOfElements; i++)
       {
-         HornetQBuffer buffer = HornetQChannelBuffers.buffer(10); 
+         ServerMessage msg = new ServerMessageImpl(i, 1000);                 
 
-         for (int j = 0; j < buffer.capacity(); j++)
-         {
-            //buffer.writeByte(RandomUtil.randomByte());
-            buffer.writeByte((byte)'b');
+         for (int j = 0; j < msg.getBodyBuffer().capacity(); j++)
+         {           
+            msg.getBodyBuffer().writeByte((byte)'b');
          }
 
-         buffers.add(buffer);
-
-         ServerMessage msg = new ServerMessageImpl();
-
-         msg.setMessageID(i);
+         buffers.add(msg.getBodyBuffer());
 
          msg.setDestination(simpleDestination);
 

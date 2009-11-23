@@ -21,10 +21,10 @@ import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.VariableLatch;
 
 /**
@@ -104,7 +104,7 @@ public class TimedBuffer
       }
       // Setting the interval for nano-sleeps
 
-      buffer = HornetQChannelBuffers.buffer(bufferSize);
+      buffer = HornetQChannelBuffers.fixedBuffer(bufferSize);
       buffer.clear();
       bufferLimit = 0;
 
@@ -280,7 +280,7 @@ public class TimedBuffer
          // Putting a byteArray on a native buffer is much faster, since it will do in a single native call.
          // Using directBuffer.put(buffer) would make several append calls for each byte
 
-         directBuffer.put(buffer.array(), 0, pos);
+         directBuffer.put(buffer.toByteBuffer().array(), 0, pos);
 
          bufferObserver.flushBuffer(directBuffer, pendingSync, callbacks);
 

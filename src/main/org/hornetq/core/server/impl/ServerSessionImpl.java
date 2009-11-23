@@ -28,7 +28,6 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
@@ -1435,8 +1434,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleSendLargeMessage(final SessionSendLargeMessage packet)
    {
-      log.info("Got large message on server");
-      
+ 
       // need to create the LargeMessage before continue
       long id = storageManager.generateUniqueID();
 
@@ -1456,10 +1454,10 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void handleSend(final SessionSendMessage packet)
-   {
+   {  
       Packet response = null;
 
-      ServerMessage message = packet.getServerMessage();
+      ServerMessage message = (ServerMessage)packet.getMessage();
 
       try
       {
@@ -1597,8 +1595,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          }
       });
       
-      //log.info("session requesting " + credits + " got " + gotCredits);
-
       if (gotCredits > 0)
       {
          sendProducerCredits(holder, gotCredits, address);
@@ -1904,8 +1900,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
     */
    private void releaseOutStanding(final ServerMessage message, final int credits) throws Exception
    {
-      //log.info("releasing outstanding credits " + credits);
-      
       CreditManagerHolder holder = getCreditManagerHolder(message);
 
       holder.outstandingCredits -= credits;
@@ -1949,8 +1943,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    {
       holder.outstandingCredits += credits;
       
-     // log.info("sending producer credits " + credits);
-
       Packet packet = new SessionProducerCreditsMessage(credits, address, -1);
 
       channel.send(packet);

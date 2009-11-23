@@ -19,10 +19,10 @@ import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientSession;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * This class implements javax.jms.BytesMessage.
@@ -157,7 +157,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
       checkRead();
       try
       {
-         return getBuffer().readChar();
+         return (char)getBuffer().readShort();
       }
       catch (IndexOutOfBoundsException e)
       {
@@ -196,7 +196,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
       checkRead();
       try
       {
-         return getBuffer().readFloat();
+         return Float.intBitsToFloat(getBuffer().readInt());
       }
       catch (IndexOutOfBoundsException e)
       {
@@ -209,7 +209,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
       checkRead();
       try
       {
-         return getBuffer().readDouble();
+         return Double.longBitsToDouble(getBuffer().readLong());
       }
       catch (IndexOutOfBoundsException e)
       {
@@ -279,7 +279,7 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
    public void writeChar(final char value) throws JMSException
    {
       checkWrite();
-      getBuffer().writeChar(value);
+      getBuffer().writeShort((short)value);
    }
 
    public void writeInt(final int value) throws JMSException
@@ -297,13 +297,13 @@ public class HornetQBytesMessage extends HornetQMessage implements BytesMessage
    public void writeFloat(final float value) throws JMSException
    {
       checkWrite();
-      getBuffer().writeFloat(value);
+      getBuffer().writeInt(Float.floatToIntBits(value));
    }
 
    public void writeDouble(final double value) throws JMSException
    {
       checkWrite();
-      getBuffer().writeDouble(value);
+      getBuffer().writeLong(Double.doubleToLongBits(value));
    }
 
    public void writeUTF(final String value) throws JMSException

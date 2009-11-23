@@ -823,7 +823,7 @@ public class ClusterTestBase extends ServiceTestBase
                   message.acknowledge();
                }
 
-               // log.info("consumer " + consumerIDs[i] +" returns " + count);
+               log.info("consumer " + consumerIDs[i] +" returns " + count);
             }
             else
             {

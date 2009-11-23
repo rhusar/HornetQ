@@ -18,10 +18,12 @@ import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 import javax.jms.StreamMessage;
 
+import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientSession;
+import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 
 /**
@@ -84,9 +86,11 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          // Ignore
       }
    }
-   
+
+   // For testing only
    public HornetQStreamMessage()
    {
+      this.message = new ClientMessageImpl((byte)0, false, 0, 0, (byte)4, 1500);
    }
 
    // Public --------------------------------------------------------
@@ -180,7 +184,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          switch (type)
          {
             case DataConstants.CHAR:
-               return getBuffer().readChar();
+               return (char)getBuffer().readShort();
             default:
                throw new MessageFormatException("Invalid conversion");
          }
@@ -256,7 +260,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          switch (type)
          {
             case DataConstants.FLOAT:
-               return getBuffer().readFloat();
+               return Float.intBitsToFloat(getBuffer().readInt());
             case DataConstants.STRING:
                String s = getBuffer().readNullableString();
                return Float.parseFloat(s);
@@ -279,9 +283,9 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          switch (type)
          {
             case DataConstants.FLOAT:
-               return getBuffer().readFloat();
+               return Float.intBitsToFloat(getBuffer().readInt());
             case DataConstants.DOUBLE:
-               return getBuffer().readDouble();
+               return Double.longBitsToDouble(getBuffer().readLong());
             case DataConstants.STRING:
                String s = getBuffer().readNullableString();
                return Double.parseDouble(s);
@@ -310,15 +314,15 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
             case DataConstants.SHORT:
                return String.valueOf(getBuffer().readShort());
             case DataConstants.CHAR:
-               return String.valueOf(getBuffer().readChar());
+               return String.valueOf((char)getBuffer().readShort());
             case DataConstants.INT:
                return String.valueOf(getBuffer().readInt());
             case DataConstants.LONG:
                return String.valueOf(getBuffer().readLong());
             case DataConstants.FLOAT:
-               return String.valueOf(getBuffer().readFloat());
+               return String.valueOf(Float.intBitsToFloat(getBuffer().readInt()));
             case DataConstants.DOUBLE:
-               return String.valueOf(getBuffer().readDouble());
+               return String.valueOf(Double.longBitsToDouble(getBuffer().readLong()));
             case DataConstants.STRING:
                return getBuffer().readNullableString();
             default:
@@ -380,15 +384,15 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
          case DataConstants.SHORT:
             return getBuffer().readShort();
          case DataConstants.CHAR:
-            return getBuffer().readChar();
+            return (char)getBuffer().readShort();
          case DataConstants.INT:
             return getBuffer().readInt();
          case DataConstants.LONG:
             return getBuffer().readLong();
          case DataConstants.FLOAT:
-            return getBuffer().readFloat();
+            return Float.intBitsToFloat(getBuffer().readInt());
          case DataConstants.DOUBLE:
-            return getBuffer().readDouble();
+            return Double.longBitsToDouble(getBuffer().readLong());
          case DataConstants.STRING:
             return getBuffer().readNullableString();
          case DataConstants.BYTES:
@@ -426,7 +430,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    {
       checkWrite();
       getBuffer().writeByte(DataConstants.CHAR);
-      getBuffer().writeChar(value);
+      getBuffer().writeShort((short)value);
    }
 
    public void writeInt(final int value) throws JMSException
@@ -447,14 +451,14 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    {
       checkWrite();
       getBuffer().writeByte(DataConstants.FLOAT);
-      getBuffer().writeFloat(value);
+      getBuffer().writeInt(Float.floatToIntBits(value));
    }
 
    public void writeDouble(final double value) throws JMSException
    {
       checkWrite();
       getBuffer().writeByte(DataConstants.DOUBLE);
-      getBuffer().writeDouble(value);
+      getBuffer().writeLong(Double.doubleToLongBits(value));
    }
 
    public void writeString(final String value) throws JMSException
@@ -562,7 +566,7 @@ public class HornetQStreamMessage extends HornetQMessage implements StreamMessag
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
-   
+
    private HornetQBuffer getBuffer()
    {
       return message.getBodyBuffer();

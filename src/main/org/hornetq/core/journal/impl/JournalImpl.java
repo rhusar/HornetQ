@@ -41,7 +41,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.IOCompletion;
@@ -54,7 +54,6 @@ import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.TestableJournal;
 import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.concurrent.LinkedBlockingDeque;
@@ -322,7 +321,7 @@ public class JournalImpl implements TestableJournal
                                        final EncodingSupport transactionData,
                                        final int size,
                                        final int numberOfRecords,
-                                       final HornetQChannelBuffer bb) throws Exception
+                                       final HornetQBuffer bb) throws Exception
    {
       bb.writeByte(recordType);
       bb.writeInt(fileID); // skip ID part
@@ -356,7 +355,7 @@ public class JournalImpl implements TestableJournal
                                           final byte recordType,
                                           final EncodingSupport record,
                                           final int size,
-                                          final HornetQChannelBuffer bb)
+                                          final HornetQBuffer bb)
    {
       bb.writeByte(UPDATE_RECORD_TX);
       bb.writeInt(fileID);
@@ -372,7 +371,7 @@ public class JournalImpl implements TestableJournal
     * @param txID
     * @param bb
     */
-   public static void writeRollback(final int fileID, final long txID, HornetQChannelBuffer bb)
+   public static void writeRollback(final int fileID, final long txID, HornetQBuffer bb)
    {
       bb.writeByte(ROLLBACK_RECORD);
       bb.writeInt(fileID);
@@ -392,7 +391,7 @@ public class JournalImpl implements TestableJournal
                                         final byte recordType,
                                         final EncodingSupport record,
                                         final int size,
-                                        final HornetQChannelBuffer bb)
+                                        final HornetQBuffer bb)
    {
       bb.writeByte(UPDATE_RECORD);
       bb.writeInt(fileId);
@@ -415,7 +414,7 @@ public class JournalImpl implements TestableJournal
                                      final byte recordType,
                                      final EncodingSupport record,
                                      final int size,
-                                     final HornetQChannelBuffer bb)
+                                     final HornetQBuffer bb)
    {     
       bb.writeByte(ADD_RECORD);
       bb.writeInt(fileId);
@@ -431,7 +430,7 @@ public class JournalImpl implements TestableJournal
     * @param size
     * @param bb
     */
-   public static void writeDeleteRecord(final int fileId, final long id, int size, HornetQChannelBuffer bb)
+   public static void writeDeleteRecord(final int fileId, final long id, int size, HornetQBuffer bb)
    {
       bb.writeByte(DELETE_RECORD);
       bb.writeInt(fileId);
@@ -451,7 +450,7 @@ public class JournalImpl implements TestableJournal
                                                      final long id,
                                                      final EncodingSupport record,
                                                      final int size,
-                                                     final HornetQChannelBuffer bb)
+                                                     final HornetQBuffer bb)
    {
       bb.writeByte(DELETE_RECORD_TX);
       bb.writeInt(fileID);
@@ -480,7 +479,7 @@ public class JournalImpl implements TestableJournal
                                        final byte recordType,
                                        final EncodingSupport record,
                                        final int size,
-                                       final HornetQChannelBuffer bb)
+                                       final HornetQBuffer bb)
    {
       bb.writeByte(ADD_RECORD_TX);
       bb.writeInt(fileID);
@@ -858,7 +857,7 @@ public class JournalImpl implements TestableJournal
       {  
          int size = SIZE_ADD_RECORD + record.getEncodeSize();
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeAddRecord(-1, id, recordType, record, size, bb); // fileID will be filled later
 
@@ -918,7 +917,7 @@ public class JournalImpl implements TestableJournal
 
          int size = SIZE_UPDATE_RECORD + record.getEncodeSize();
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeUpdateRecord(-1, id, recordType, record, size, bb);
 
@@ -982,7 +981,7 @@ public class JournalImpl implements TestableJournal
 
          int size = SIZE_DELETE_RECORD;
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeDeleteRecord(-1, id, size, bb);
 
@@ -1044,7 +1043,7 @@ public class JournalImpl implements TestableJournal
 
          int size = SIZE_ADD_RECORD_TX + record.getEncodeSize();
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeAddRecordTX(-1, txID, id, recordType, record, size, bb);
 
@@ -1093,7 +1092,7 @@ public class JournalImpl implements TestableJournal
 
          int size = SIZE_UPDATE_RECORD_TX + record.getEncodeSize();
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeUpdateRecordTX(-1, txID, id, recordType, record, size, bb);
 
@@ -1135,7 +1134,7 @@ public class JournalImpl implements TestableJournal
       {
          int size = SIZE_DELETE_RECORD_TX + record.getEncodeSize();
 
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeDeleteRecordTransactional(-1, txID, id, record, size, bb);
 
@@ -1205,7 +1204,7 @@ public class JournalImpl implements TestableJournal
       {
 
          int size = SIZE_COMPLETE_TRANSACTION_RECORD + transactionData.getEncodeSize() + DataConstants.SIZE_INT;
-         HornetQChannelBuffer bb = newBuffer(size);
+         HornetQBuffer bb = newBuffer(size);
 
          writeTransaction(-1, PREPARE_RECORD, txID, transactionData, size, -1, bb);
 
@@ -1267,7 +1266,7 @@ public class JournalImpl implements TestableJournal
             throw new IllegalStateException("Cannot find tx with id " + txID);
          }
 
-         HornetQChannelBuffer bb = newBuffer(SIZE_COMPLETE_TRANSACTION_RECORD);
+         HornetQBuffer bb = newBuffer(SIZE_COMPLETE_TRANSACTION_RECORD);
 
          writeTransaction(-1,
                           COMMIT_RECORD,
@@ -1322,7 +1321,7 @@ public class JournalImpl implements TestableJournal
             throw new IllegalStateException("Cannot find tx with id " + txID);
          }
 
-         HornetQChannelBuffer bb = newBuffer(SIZE_ROLLBACK_RECORD);
+         HornetQBuffer bb = newBuffer(SIZE_ROLLBACK_RECORD);
 
          writeRollback(-1, txID, bb);
 
@@ -3330,9 +3329,9 @@ public class JournalImpl implements TestableJournal
       }
    }
 
-   private HornetQChannelBuffer newBuffer(final int size)
+   private HornetQBuffer newBuffer(final int size)
    {
-      return HornetQChannelBuffers.buffer(size);
+      return HornetQChannelBuffers.fixedBuffer(size);
    }
 
    // Inner classes

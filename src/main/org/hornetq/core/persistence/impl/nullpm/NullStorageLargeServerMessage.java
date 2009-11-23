@@ -13,8 +13,8 @@
 
 package org.hornetq.core.persistence.impl.nullpm;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 

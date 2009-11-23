@@ -14,8 +14,8 @@
 
 package org.hornetq.tests.integration.cluster.bridge;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.utils.SimpleString;

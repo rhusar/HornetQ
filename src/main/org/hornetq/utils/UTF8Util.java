@@ -16,8 +16,8 @@ package org.hornetq.utils;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * 

@@ -114,7 +114,6 @@ public class PagingFailoverTest extends FailoverTestBase
                session.commit();
             }
             ClientMessage msg = session.createClientMessage(true);
-            msg.setBuffer(HornetQChannelBuffers.buffer(1024));
             msg.putIntProperty(new SimpleString("key"), i);
             prod.send(msg);
          }

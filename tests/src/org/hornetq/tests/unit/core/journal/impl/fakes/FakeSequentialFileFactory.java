@@ -20,12 +20,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.hornetq.core.asyncio.BufferCallback;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.impl.TimedBuffer;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * 
@@ -607,7 +607,7 @@ public class FakeSequentialFileFactory implements SequentialFileFactory
        */
       public void write(HornetQBuffer bytes, boolean sync, IOCompletion callback) throws Exception
       {
-         writeDirect(ByteBuffer.wrap(bytes.array()), sync, callback);
+         writeDirect(bytes.toByteBuffer(), sync, callback);
 
       }
 
@@ -616,7 +616,7 @@ public class FakeSequentialFileFactory implements SequentialFileFactory
        */
       public void write(HornetQBuffer bytes, boolean sync) throws Exception
       {
-         writeDirect(ByteBuffer.wrap(bytes.array()), sync);
+         writeDirect(bytes.toByteBuffer(), sync);
       }
 
       /* (non-Javadoc)

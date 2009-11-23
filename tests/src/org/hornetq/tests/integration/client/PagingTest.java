@@ -19,6 +19,7 @@ import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
@@ -29,7 +30,6 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
@@ -130,6 +130,8 @@ public class PagingTest extends ServiceTestBase
 
             producer.send(message);
          }
+         
+         log.info("** sent messages");
 
          session.close();
 
@@ -175,7 +177,7 @@ public class PagingTest extends ServiceTestBase
             catch (AssertionFailedError e)
             {
                log.info("Expected buffer:" + dumbBytesHex(body, 40));
-               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().array(), 40));
+               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().toByteBuffer().array(), 40));
                throw e;
             }
          }
@@ -455,7 +457,7 @@ public class PagingTest extends ServiceTestBase
             catch (AssertionFailedError e)
             {
                log.info("Expected buffer:" + dumbBytesHex(body, 40));
-               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().array(), 40));
+               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().toByteBuffer().array(), 40));
                throw e;
             }
          }

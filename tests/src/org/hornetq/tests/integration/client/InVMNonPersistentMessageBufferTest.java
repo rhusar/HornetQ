@@ -63,6 +63,17 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
 
       assertEquals(body, received.getBodyBuffer().readString());
    }
+   
+   public void testSimpleSendReceiveWithEmptyBody() throws Exception
+   {
+      ClientMessage message = session.createClientMessage(false);
+      
+      ClientMessage received = sendAndReceive(message);
+
+      assertNotNull(received);
+
+      assertEquals(0, received.getBodySize());
+   }
 
    public void testSendSameMessageMultipleTimes() throws Exception
    {
@@ -74,8 +85,12 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
       
       int bodySize = message.getBodySize();
       
+      log.info("body size is " + bodySize);
+      
       for (int i = 0; i < 10; i++)
       {  
+         log.info("sending " + i);
+         
          ClientMessage received = sendAndReceive(message);
 
          assertNotNull(received);
@@ -94,6 +109,7 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
 
       for (int i = 0; i < 10; i++)
       {
+         log.info("iteration " + i);
          final String body = RandomUtil.randomString();
          
          message.getBodyBuffer().writeString(body);

@@ -79,6 +79,7 @@ import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_SET_T
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_START;
 import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_SUSPEND;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
@@ -140,7 +141,6 @@ import org.hornetq.core.remoting.impl.wireformat.SessionXARollbackMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionXAStartMessage;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 
 /**
  * A PacketDecoder

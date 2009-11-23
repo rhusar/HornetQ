@@ -19,7 +19,10 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import junit.framework.AssertionFailedError;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
@@ -31,9 +34,8 @@ import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
-import org.hornetq.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -53,6 +55,13 @@ import org.hornetq.utils.SimpleString;
  */
 public class LargeMessageTest extends LargeMessageTestBase
 {
+   public static Test suite()
+   {
+      TestSuite suite = new TestSuite();
+
+      return suite;
+   }
+
    // Constants -----------------------------------------------------
 
    final static int RECEIVE_WAIT_TIME = 60000;
@@ -304,9 +313,9 @@ public class LargeMessageTest extends LargeMessageTestBase
          assertNotNull(msg);
          msg.acknowledge();
          assertEquals(1, msg.getDeliveryCount());
-         
+
          log.info("body buffer is " + msg.getBodyBuffer());
-         
+
          for (int i = 0; i < messageSize; i++)
          {
             assertEquals(getSamplebyte(i), msg.getBodyBuffer().readByte());
@@ -2202,29 +2211,24 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientProducer producer = session.createProducer(ADDRESS);
 
-         // printBuffer("body to be sent : " , body);
-
          ClientMessage message = null;
 
          HornetQBuffer body = null;
 
          for (int i = 0; i < 100; i++)
          {
-            HornetQBuffer bodyLocal = HornetQChannelBuffers.buffer(DataConstants.SIZE_INT * numberOfBytes);
-
+            message = session.createClientMessage(true);
+            
             for (int j = 1; j <= numberOfBytes; j++)
             {
-               bodyLocal.writeInt(j);
+               message.getBodyBuffer().writeInt(j);
             }
 
             if (i == 0)
             {
-               body = bodyLocal;
+               body = message.getBodyBuffer();
             }
-
-            message = session.createClientMessage(true);
-            message.setBuffer(bodyLocal);
-
+   
             producer.send(message);
          }
 
@@ -2262,12 +2266,13 @@ public class LargeMessageTest extends LargeMessageTestBase
 
             try
             {
-               assertEqualsByteArrays(body.writerIndex(), body.array(), message2.getBodyBuffer().array());
+               assertEqualsByteArrays(body.writerIndex(), body.toByteBuffer().array(), message2.getBodyBuffer().toByteBuffer().
+                                      array());
             }
             catch (AssertionFailedError e)
             {
-               log.info("Expected buffer:" + dumbBytesHex(body.array(), 40));
-               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().array(), 40));
+               log.info("Expected buffer:" + dumbBytesHex(body.toByteBuffer().array(), 40));
+               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().toByteBuffer().array(), 40));
                throw e;
             }
          }

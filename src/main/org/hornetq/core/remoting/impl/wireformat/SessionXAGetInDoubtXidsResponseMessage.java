@@ -18,7 +18,7 @@ import java.util.List;
 
 import javax.transaction.xa.Xid;
 
-import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 
 /**

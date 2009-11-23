@@ -26,15 +26,15 @@ import java.nio.channels.ScatteringByteChannel;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.wireformat.SessionReceiveContinuationMessage;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.UTF8Util;
+import org.jboss.netty.buffer.ChannelBuffer;
 
 /**
  * This class aggregates several SessionReceiveContinuationMessages as it was being handled by a single buffer.
@@ -44,7 +44,7 @@ import org.hornetq.utils.UTF8Util;
  *
  *
  */
-public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessageBuffer
+public class LargeMessageBufferImpl implements LargeMessageBuffer
 {
    // Constants -----------------------------------------------------
 
@@ -359,7 +359,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#getBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void getBytes(final int index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final int index, final HornetQBuffer dst, final int dstIndex, final int length)
    {
       byte[] destBytes = new byte[length];
       getBytes(index, destBytes);
@@ -369,7 +369,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#getBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void getBytes(final long index, final HornetQChannelBuffer dst, final int dstIndex, final int length)
+   public void getBytes(final long index, final HornetQBuffer dst, final int dstIndex, final int length)
    {
       byte[] destBytes = new byte[length];
       getBytes(index, destBytes);
@@ -520,7 +520,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#setBytes(int, org.hornetq.core.buffers.ChannelBuffer, int, int)
     */
-   public void setBytes(final int index, final HornetQChannelBuffer src, final int srcIndex, final int length)
+   public void setBytes(final int index, final HornetQBuffer src, final int srcIndex, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -762,12 +762,12 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       }
    }
 
-   public void getBytes(final int index, final HornetQChannelBuffer dst)
+   public void getBytes(final int index, final HornetQBuffer dst)
    {
       getBytes(index, dst, dst.writableBytes());
    }
 
-   public void getBytes(final int index, final HornetQChannelBuffer dst, final int length)
+   public void getBytes(final int index, final HornetQBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -782,12 +782,12 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void setBytes(final int index, final HornetQChannelBuffer src)
+   public void setBytes(final int index, final HornetQBuffer src)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void setBytes(final int index, final HornetQChannelBuffer src, final int length)
+   public void setBytes(final int index, final HornetQBuffer src, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -867,12 +867,12 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       readBytes(dst, 0, dst.length);
    }
 
-   public void readBytes(final HornetQChannelBuffer dst)
+   public void readBytes(final HornetQBuffer dst)
    {
       readBytes(dst, dst.writableBytes());
    }
 
-   public void readBytes(final HornetQChannelBuffer dst, final int length)
+   public void readBytes(final HornetQBuffer dst, final int length)
    {
       if (length > dst.writableBytes())
       {
@@ -882,7 +882,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       dst.writerIndex(dst.writerIndex() + length);
    }
 
-   public void readBytes(final HornetQChannelBuffer dst, final int dstIndex, final int length)
+   public void readBytes(final HornetQBuffer dst, final int dstIndex, final int length)
    {
       getBytes(readerIndex, dst, dstIndex, length);
       readerIndex += length;
@@ -951,22 +951,12 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final HornetQChannelBuffer src)
+   public void writeBytes(final HornetQBuffer src)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final HornetQChannelBuffer src, final int length)
-   {
-      throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
-   }
-
-   public void writeBytes(final HornetQBuffer src, final int srcIndex, final int length)
-   {
-      throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
-   }
-
-   public void writeBytes(final HornetQChannelBuffer src, final int srcIndex, final int length)
+   public void writeBytes(final HornetQBuffer src, final int length)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -976,7 +966,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
 
-   public void writeBytes(final InputStream in, final int length) throws IOException
+   public int writeBytes(final InputStream in, final int length) throws IOException
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }
@@ -1190,7 +1180,7 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
    /* (non-Javadoc)
     * @see org.hornetq.core.buffers.ChannelBuffer#compareTo(org.hornetq.core.buffers.ChannelBuffer)
     */
-   public int compareTo(final HornetQChannelBuffer buffer)
+   public int compareTo(final HornetQBuffer buffer)
    {
       return -1;
    }
@@ -1446,6 +1436,84 @@ public class LargeMessageBufferImpl implements HornetQChannelBuffer, LargeMessag
          }
       }
 
+   }
+
+   public ChannelBuffer channelBuffer()
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public HornetQBuffer copy(int index, int length)
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public HornetQBuffer duplicate()
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public char getChar(int index)
+   {
+      // TODO Auto-generated method stub
+      return 0;
+   }
+
+   public double getDouble(int index)
+   {
+      // TODO Auto-generated method stub
+      return 0;
+   }
+
+   public float getFloat(int index)
+   {
+      // TODO Auto-generated method stub
+      return 0;
+   }
+
+   public HornetQBuffer readBytes(int length)
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public HornetQBuffer readSlice(int length)
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public void setChar(int index, char value)
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   public void setDouble(int index, double value)
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   public void setFloat(int index, float value)
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   public HornetQBuffer slice()
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
+   public void writeBytes(HornetQBuffer src, int srcIndex, int length)
+   {
+      // TODO Auto-generated method stub
+      
    }
 
 }

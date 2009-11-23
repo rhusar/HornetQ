@@ -14,12 +14,14 @@
 package org.hornetq.tests.unit.core.postoffice.impl;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.message.BodyEncoder;
@@ -28,7 +30,6 @@ import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.postoffice.impl.BindingsImpl;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.Bindable;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -886,6 +887,78 @@ public class BindingsImplTest extends UnitTestCase
       }
 
       public void encode(HornetQBuffer buffer)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void setEncodedToBuffer(boolean encoded)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void decodeFromBuffer(HornetQBuffer buffer)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public HornetQBuffer encodeToBuffer()
+      {
+         // TODO Auto-generated method stub
+         return null;
+      }
+
+      public int getBodySize()
+      {
+         // TODO Auto-generated method stub
+         return 0;
+      }
+
+      public int getEndOfMessagePosition()
+      {
+         // TODO Auto-generated method stub
+         return 0;
+      }
+
+      public void saveToOutputStream(OutputStream out) throws HornetQException
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void setBodyInputStream(InputStream bodyInputStream)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void setOutputStream(OutputStream out) throws HornetQException
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException
+      {
+         // TODO Auto-generated method stub
+         return false;
+      }
+
+      public void beforeDeliver()
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void beforeSend()
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void forceCopy()
       {
          // TODO Auto-generated method stub
          

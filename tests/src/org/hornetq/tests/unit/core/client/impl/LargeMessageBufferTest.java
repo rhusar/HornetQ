@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.MessageHandler;
@@ -114,7 +114,7 @@ public class LargeMessageBufferTest extends UnitTestCase
    {
       LargeMessageBufferImpl buffer = create15BytesSample();
 
-      HornetQChannelBuffer dstBuffer = HornetQChannelBuffers.buffer(20);
+      HornetQBuffer dstBuffer = HornetQChannelBuffers.fixedBuffer(20);
 
       dstBuffer.setIndex(0, 5);
 
@@ -168,7 +168,7 @@ public class LargeMessageBufferTest extends UnitTestCase
 
    public void testReadData() throws Exception
    {
-      HornetQChannelBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
+      HornetQBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
 
       String str1 = RandomUtil.randomString();
       String str2 = RandomUtil.randomString();
@@ -180,7 +180,7 @@ public class LargeMessageBufferTest extends UnitTestCase
       dynamic.writeDouble(d1);
       dynamic.writeFloat(f1);
 
-      LargeMessageBufferImpl readBuffer = splitBuffer(3, dynamic.array());
+      LargeMessageBufferImpl readBuffer = splitBuffer(3, dynamic.toByteBuffer().array());
 
       assertEquals(str1, readBuffer.readUTF());
       assertEquals(str2, readBuffer.readString());
@@ -197,7 +197,7 @@ public class LargeMessageBufferTest extends UnitTestCase
    {
       clearData();
       
-      HornetQChannelBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
+      HornetQBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
 
       String str1 = RandomUtil.randomString();
       String str2 = RandomUtil.randomString();
@@ -209,7 +209,7 @@ public class LargeMessageBufferTest extends UnitTestCase
       dynamic.writeDouble(d1);
       dynamic.writeFloat(f1);
 
-      LargeMessageBufferImpl readBuffer = splitBuffer(3, dynamic.array(), getTestFile());
+      LargeMessageBufferImpl readBuffer = splitBuffer(3, dynamic.toByteBuffer().array(), getTestFile());
 
       assertEquals(str1, readBuffer.readUTF());
       assertEquals(str2, readBuffer.readString());

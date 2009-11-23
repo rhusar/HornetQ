@@ -19,8 +19,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.DataConstants;
@@ -41,7 +41,7 @@ public class UTF8Test extends UnitTestCase
 
    public void testValidateUTF() throws Exception
    {
-      HornetQBuffer buffer = HornetQChannelBuffers.buffer(60 * 1024); 
+      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(60 * 1024); 
 
       byte[] bytes = new byte[20000];
 
@@ -75,7 +75,7 @@ public class UTF8Test extends UnitTestCase
 
          testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.dynamicBuffer(100));
 
-         testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.buffer(100 * 1024));
+         testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.fixedBuffer(100 * 1024));
       }
    }
 
@@ -83,7 +83,7 @@ public class UTF8Test extends UnitTestCase
    {
       UTF8Util.saveUTF(wrap, str);
 
-      DataInputStream data = new DataInputStream(new ByteArrayInputStream(wrap.array()));
+      DataInputStream data = new DataInputStream(new ByteArrayInputStream(wrap.toByteBuffer().array()));
 
       String newStr = data.readUTF();
 
@@ -113,7 +113,7 @@ public class UTF8Test extends UnitTestCase
 
       String str = new String(chars);
 
-      HornetQBuffer buffer = HornetQChannelBuffers.buffer(0xffff + 4);
+      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(0xffff + 4);
 
       try
       {

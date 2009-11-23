@@ -16,13 +16,11 @@ package org.hornetq.core.server.impl;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.message.Message;
+import org.hornetq.core.message.PropertyConversionException;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
@@ -61,30 +59,17 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    }
 
    /*
-    * Construct a MessageImpl from storage
+    * Construct a MessageImpl from storage, or notification
     */
-   public ServerMessageImpl(final long messageID)
+   public ServerMessageImpl(final long messageID, final int initialMessageBufferSize)
    {
-      super(messageID);      
-   }
-
-   /*
-    * Constructor when creating a ServerMessage for sending - e.g. notification
-    */
-   public ServerMessageImpl(final long messageID, final HornetQBuffer buffer)
-   {
-      super(messageID);
-
-      this.buffer = buffer;
-
-      // Must align the body after the packet headers
-      resetBuffer();
+      super(messageID, initialMessageBufferSize);   
    }
 
    /*
     * Copy constructor
     */
-   protected ServerMessageImpl(final Message other)
+   protected ServerMessageImpl(final ServerMessageImpl other)
    {
       this();
       messageID = other.getMessageID();
@@ -95,7 +80,8 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       timestamp = other.getTimestamp();
       priority = other.getPriority();
       properties = new TypedProperties(other.getProperties());
-      buffer = other.getWholeBuffer();
+      //Note, this is a shallow copy - does not copy the buffer
+      buffer = other.buffer;
    }
 
    public void setMessageID(final long id)
@@ -246,7 +232,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
          putLongProperty(HDR_ACTUAL_EXPIRY_TIME, actualExpiryTime);
       }
 
-      setNeedsEncoding();
+      bufferValid = false;
    }
 
    public void setPagingStore(final PagingStore pagingStore)
@@ -320,100 +306,223 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
 
    // Encoding stuff
 
-   public void setNeedsEncoding()
-   {
-      // This wil force the message to be re-encoded if it gets sent to a client
-      // Typically this is called after properties or headers are changed on the server side
-      this.encodedToBuffer = false;
-   }
-
-   private int endMessagePosition;
-
-   public void setEndMessagePosition(int pos)
-   {
-      this.endMessagePosition = pos;
-   }
-
-   public int getEndMessagePosition()
-   {
-      return this.endMessagePosition;
-   }
-
-   public void encodeToWire()
-   {
-   }
-
-   // EncodingSupport implementation
-
-   // Used when storing to/from journal
-
-   public void encode(final HornetQBuffer buffer)
-   {
-      // Encode the message to a buffer for storage in the journal
-
-      if (this.encodedToBuffer)
-      {
-         // The body starts after the standard packet headers
-         int bodyStart = PacketImpl.PACKET_HEADERS_SIZE;
-
-         int end = this.endMessagePosition;
-         
-         buffer.writeBytes(this.buffer, bodyStart, end - bodyStart);                          
-      }
-      else
-      {
-         // encodeToBuffer();
-
-         throw new IllegalStateException("Not encoded to buffer and storing to journal");
-      }
-   }
-
-   public void decode(final HornetQBuffer buffer)
-   {
-      // TODO optimise
-
-      int start = buffer.readerIndex();
-
-      int bodyEndPos = buffer.readInt();
-      
-      this.endMessagePosition = buffer.readInt(bodyEndPos - PacketImpl.PACKET_HEADERS_SIZE + start);
-      
-      int endPos = endMessagePosition + start -
-                   PacketImpl.PACKET_HEADERS_SIZE;
-
-      this.buffer = HornetQChannelBuffers.dynamicBuffer(1500);
-
-      // work around Netty bug
-      this.buffer.writeByte((byte)0);
-
-      this.buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
-
-      this.buffer.writeBytes(buffer, start, endPos - start);
-      
-      // Position to beginning of encoded message headers/properties
-
-      this.buffer.readerIndex(0);
-  
-      //Position to beginning of encoded message headers/properties
-      
-      this.buffer.readerIndex(bodyEndPos + DataConstants.SIZE_INT);
-
-      this.decodeHeadersAndProperties(this.buffer);
-      
-      buffer.setIndex(endPos, buffer.capacity());
-      
-      this.encodedToBuffer = true;     
-   }
-
    public void encodeMessageIDToBuffer()
    {
       // We first set the message id - this needs to be set on the buffer since this buffer will be re-used
-
-      buffer.readerIndex(0);
-
-      buffer.writerIndex(buffer.readInt(PacketImpl.PACKET_HEADERS_SIZE) + DataConstants.SIZE_INT);
-
-      buffer.writeLong(messageID);
+      
+      //log.info(System.identityHashCode(this) + " encoded message id " + messageID + " etb " + this.encodedToBuffer);
+      
+      buffer.setLong(buffer.getInt(PacketImpl.PACKET_HEADERS_SIZE) + DataConstants.SIZE_INT, messageID);
    }
+
+   @Override
+   public void putBooleanProperty(SimpleString key, boolean value)
+   {      
+      super.putBooleanProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putBooleanProperty(String key, boolean value)
+   {      
+      super.putBooleanProperty(key, value);
+      
+      bufferValid = false;;
+   }
+
+   @Override
+   public void putByteProperty(SimpleString key, byte value)
+   {      
+      super.putByteProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putByteProperty(String key, byte value)
+   {      
+      super.putByteProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putBytesProperty(SimpleString key, byte[] value)
+   {      
+      super.putBytesProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putBytesProperty(String key, byte[] value)
+   {      
+      super.putBytesProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putDoubleProperty(SimpleString key, double value)
+   {      
+      super.putDoubleProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putDoubleProperty(String key, double value)
+   {      
+      super.putDoubleProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putFloatProperty(SimpleString key, float value)
+   {      
+      super.putFloatProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putFloatProperty(String key, float value)
+   {      
+      super.putFloatProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putIntProperty(SimpleString key, int value)
+   {      
+      super.putIntProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putIntProperty(String key, int value)
+   {      
+      super.putIntProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putLongProperty(SimpleString key, long value)
+   {      
+      super.putLongProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putLongProperty(String key, long value)
+   {      
+      super.putLongProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putObjectProperty(SimpleString key, Object value) throws PropertyConversionException
+   {      
+      super.putObjectProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putObjectProperty(String key, Object value) throws PropertyConversionException
+   {      
+      super.putObjectProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putShortProperty(SimpleString key, short value)
+   {      
+      super.putShortProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putShortProperty(String key, short value)
+   {      
+      super.putShortProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putStringProperty(SimpleString key, SimpleString value)
+   {      
+      super.putStringProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putStringProperty(String key, String value)
+   {      
+      super.putStringProperty(key, value);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void putTypedProperties(TypedProperties otherProps)
+   {      
+      super.putTypedProperties(otherProps);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void setDestination(SimpleString destination)
+   {      
+      super.setDestination(destination);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void setDurable(boolean durable)
+   {      
+      super.setDurable(durable);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void setExpiration(long expiration)
+   {      
+      super.setExpiration(expiration);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void setPriority(byte priority)
+   {      
+      super.setPriority(priority);
+      
+      bufferValid = false;
+   }
+
+   @Override
+   public void setTimestamp(long timestamp)
+   {      
+      super.setTimestamp(timestamp);
+      
+      bufferValid = false;
+   }
+   
+   
 
 }

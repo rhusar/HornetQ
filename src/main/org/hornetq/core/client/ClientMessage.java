@@ -34,9 +34,12 @@ public interface ClientMessage extends Message
    void setDeliveryCount(int deliveryCount);
    
    void acknowledge() throws HornetQException;  
-        
-   //FIXME - the following are only used for large messages - they should be put somewhere else:
    
+   int getBodySize();
+   
+   //FIXME - these are only used for large messages - they should be moved elsewhere
+
+
    /** Sets the OutputStream that will receive the content of a message received in a non blocking way
     * @throws HornetQException */
    void setOutputStream(OutputStream out) throws HornetQException;
@@ -53,6 +56,5 @@ public interface ClientMessage extends Message
    boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException;
             
    void setBodyInputStream(InputStream bodyInputStream);  
-   
-   int getBodySize();
+
 }

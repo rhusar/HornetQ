@@ -18,11 +18,11 @@ import static org.hornetq.utils.DataConstants.SIZE_INT;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.ServerMessage;
@@ -103,7 +103,6 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
 
    public void encodeBody(final HornetQBuffer bufferOut, BodyEncoder context, int size)
    {
-      log.info("large server message, encodebody");
       try
       {
          // This could maybe be optimized (maybe reading directly into bufferOut)

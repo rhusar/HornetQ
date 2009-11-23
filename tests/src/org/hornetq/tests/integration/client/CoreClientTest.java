@@ -13,6 +13,7 @@
 
 package org.hornetq.tests.integration.client;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -23,7 +24,6 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.client.HornetQTextMessage;
@@ -79,7 +79,7 @@ public class CoreClientTest extends UnitTestCase
 
       ClientProducer producer = session.createProducer(QUEUE);
 
-      final int numMessages = 10;
+      final int numMessages = 1000;
 
       for (int i = 0; i < numMessages; i++)
       {         
@@ -117,8 +117,6 @@ public class CoreClientTest extends UnitTestCase
          assertEquals("testINVMCoreClient", buffer.readString());
 
          message2.acknowledge();
-         
-         log.info("got message " + i);
       }
 
       session.close();

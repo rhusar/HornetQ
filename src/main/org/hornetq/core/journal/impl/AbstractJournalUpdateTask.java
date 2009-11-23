@@ -18,12 +18,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.Pair;
 
@@ -57,7 +56,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
 
    protected int nextOrderingID;
 
-   private HornetQChannelBuffer writingChannel;
+   private HornetQBuffer writingChannel;
 
    private final Set<Long> recordsSnapshot = new ConcurrentHashSet<Long>();
 
@@ -98,7 +97,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
       {
          controlFile.open(1);
 
-         HornetQChannelBuffer renameBuffer = HornetQChannelBuffers.dynamicBuffer(1);
+         HornetQBuffer renameBuffer = HornetQChannelBuffers.dynamicBuffer(1);
 
          renameBuffer.writeInt(-1);
          renameBuffer.writeInt(-1);
@@ -155,13 +154,13 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
          JournalImpl.writeAddRecord(-1,
                                     1,
                                     (byte)0,
-                                    new JournalImpl.ByteArrayEncoding(filesToRename.array()),
-                                    JournalImpl.SIZE_ADD_RECORD + filesToRename.array().length,
+                                    new JournalImpl.ByteArrayEncoding(filesToRename.toByteBuffer().array()),
+                                    JournalImpl.SIZE_ADD_RECORD + filesToRename.toByteBuffer().array().length,
                                     renameBuffer);
 
          ByteBuffer writeBuffer = fileFactory.newBuffer(renameBuffer.writerIndex());
 
-         writeBuffer.put(renameBuffer.array(), 0, renameBuffer.writerIndex());
+         writeBuffer.put(renameBuffer.toByteBuffer().array(), 0, renameBuffer.writerIndex());
 
          writeBuffer.rewind();
 
@@ -226,7 +225,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
    /**
     * @return the writingChannel
     */
-   protected HornetQChannelBuffer getWritingChannel()
+   protected HornetQBuffer getWritingChannel()
    {
       return writingChannel;
    }

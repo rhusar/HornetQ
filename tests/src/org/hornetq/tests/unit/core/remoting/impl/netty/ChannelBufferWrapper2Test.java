@@ -13,8 +13,8 @@
 
 package org.hornetq.tests.unit.core.remoting.impl.netty;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.unit.core.remoting.HornetQBufferTestBase;
 
 /**

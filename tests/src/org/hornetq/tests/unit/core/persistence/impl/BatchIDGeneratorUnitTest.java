@@ -16,6 +16,7 @@ package org.hornetq.tests.unit.core.persistence.impl;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.PreparedTransactionInfo;
@@ -24,7 +25,6 @@ import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
 import org.hornetq.core.persistence.impl.journal.BatchingIDGenerator;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.util.UnitTestCase;
 
 /**

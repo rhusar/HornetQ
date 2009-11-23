@@ -149,7 +149,6 @@ public class ManagementHelperTest extends TestCase
       Object[] params = new Object[] { i, s, d, b, l, map, strArray, maps };
 
       Message msg = new ClientMessageImpl();
-      msg.setBuffer(HornetQChannelBuffers.dynamicBuffer(1024));
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);
@@ -215,8 +214,7 @@ public class ManagementHelperTest extends TestCase
       
       Object[] params = new Object[] { "hello", map };
 
-      Message msg = new ClientMessageImpl();
-      msg.setBuffer(HornetQChannelBuffers.dynamicBuffer(1024));
+      Message msg = new ClientMessageImpl();      
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);

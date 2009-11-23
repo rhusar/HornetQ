@@ -12,6 +12,7 @@
  */
 package org.hornetq.integration.transports.netty;
 
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.BufferHandler;

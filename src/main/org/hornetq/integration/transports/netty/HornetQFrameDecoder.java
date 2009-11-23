@@ -15,6 +15,7 @@ package org.hornetq.integration.transports.netty;
 
 import static org.hornetq.utils.DataConstants.SIZE_INT;
 
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.BufferHandler;
 import org.hornetq.utils.DataConstants;

@@ -1504,7 +1504,7 @@ public class HornetQServerImpl implements HornetQServer
 
          for (int i = 0; i < numMessages; i++)
          {
-            ServerMessage msg = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.wrappedBuffer(body));
+            ServerMessage msg = new ServerMessageImpl(storageManager.generateUniqueID(), 1500);
 
             msg.setDestination(address);
 

@@ -13,12 +13,12 @@
 
 package org.hornetq.integration.transports.netty;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.spi.Connection;
 import org.hornetq.core.remoting.spi.ConnectionLifeCycleListener;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -102,11 +102,7 @@ public class NettyConnection implements Connection
 
    public HornetQBuffer createBuffer(final int size)
    {
-      ChannelBuffer cb = org.jboss.netty.buffer.ChannelBuffers.dynamicBuffer(size);
-      
-      HornetQBuffer buff = new ChannelBufferWrapper(cb);
-
-      return buff;
+      return new ChannelBufferWrapper(ChannelBuffers.dynamicBuffer(size));
    }
 
    public Object getID()
@@ -121,24 +117,7 @@ public class NettyConnection implements Connection
 
    public void write(HornetQBuffer buffer, final boolean flush)
    {
-      Object underlying = buffer.getUnderlyingBuffer();
-      
-      if (underlying instanceof ChannelBuffer == false)
-      {
-         //Need to copy it
-         
-         //TODO we can avoid this if we use Netty buffers everywhere!!
-         
-         HornetQBuffer hq = (HornetQBuffer)underlying;
-         
-         ChannelBuffer cb = ChannelBuffers.copiedBuffer(hq.array());
-         
-         cb.setIndex(hq.readerIndex(), hq.writerIndex());
-         
-         underlying = cb;
-      }
-                     
-      ChannelFuture future = channel.write(underlying);
+      ChannelFuture future = channel.write(buffer.channelBuffer());
 
       if (flush)
       {

@@ -833,7 +833,7 @@ public class UnitTestCase extends TestCase
 
    protected ServerMessage generateMessage(long id)
    {
-      ServerMessage message = new ServerMessageImpl();
+      ServerMessage message = new ServerMessageImpl(id, 1000);
 
       message.setMessageID(id);
 

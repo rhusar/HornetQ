@@ -16,7 +16,6 @@ package org.hornetq.tests.integration.cluster.failover;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -77,8 +76,6 @@ public class ReplicatedDistributionTest extends ClusterTestBase
          for (int i = 0; i < 100; i++)
          {
             ClientMessage msg = sessionOne.createClientMessage(true);
-            
-            msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
             
             msg.putIntProperty(new SimpleString("key"), i);
             
@@ -181,8 +178,7 @@ public class ReplicatedDistributionTest extends ClusterTestBase
 
          for (int i = 0; i < 100; i++)
          {
-            ClientMessage msg = sessionOne.createClientMessage(true);
-            msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
+            ClientMessage msg = sessionOne.createClientMessage(true);           
             msg.putIntProperty(new SimpleString("key"), i);
             producer.send(msg);
          }

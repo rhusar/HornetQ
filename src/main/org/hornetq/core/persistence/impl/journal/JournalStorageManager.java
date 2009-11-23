@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
@@ -59,7 +60,6 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.impl.wireformat.XidCodecSupport;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.impl.ReplicatedJournal;
 import org.hornetq.core.server.JournalType;
@@ -739,7 +739,7 @@ public class JournalStorageManager implements StorageManager
             }
             case ADD_MESSAGE:
             {              
-               ServerMessage message = new ServerMessageImpl(record.id);
+               ServerMessage message = new ServerMessageImpl(record.id, 50);
 
                message.decode(buff);
 
@@ -1022,7 +1022,7 @@ public class JournalStorageManager implements StorageManager
                }
                case ADD_MESSAGE:
                {
-                  ServerMessage message = new ServerMessageImpl(record.id);
+                  ServerMessage message = new ServerMessageImpl(record.id, 50);
 
                   message.decode(buff);
 

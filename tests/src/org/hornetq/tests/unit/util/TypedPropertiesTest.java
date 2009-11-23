@@ -26,8 +26,8 @@ import static org.hornetq.tests.util.RandomUtil.randomSimpleString;
 
 import java.util.Iterator;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;

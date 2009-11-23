@@ -18,6 +18,7 @@ import static org.hornetq.utils.SimpleString.toSimpleString;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
@@ -28,7 +29,6 @@ import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.impl.wireformat.SessionSendContinuationMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionSendLargeMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionSendMessage;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TokenBucketLimiter;
 import org.hornetq.utils.UUIDGenerator;
@@ -308,11 +308,11 @@ public class ClientProducerImpl implements ClientProducerInternal
          msg.getWholeBuffer().readerIndex(0);
       }
 
-      HornetQBuffer headerBuffer = HornetQChannelBuffers.buffer(headerSize);
+      HornetQBuffer headerBuffer = HornetQChannelBuffers.fixedBuffer(headerSize);
       
       msg.encodeHeadersAndProperties(headerBuffer);
 
-      SessionSendLargeMessage initialChunk = new SessionSendLargeMessage(headerBuffer.array());
+      SessionSendLargeMessage initialChunk = new SessionSendLargeMessage(headerBuffer.toByteBuffer().array());
 
       channel.send(initialChunk);
 
@@ -359,7 +359,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
             final int chunkLength = Math.min((int)(bodySize - pos), minLargeMessageSize);
 
-            final HornetQBuffer bodyBuffer = HornetQChannelBuffers.buffer(chunkLength);
+            final HornetQBuffer bodyBuffer = HornetQChannelBuffers.fixedBuffer(chunkLength);
 
             context.encode(bodyBuffer, chunkLength);
 
@@ -367,7 +367,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
             lastChunk = pos >= bodySize;
 
-            final SessionSendContinuationMessage chunk = new SessionSendContinuationMessage(bodyBuffer.array(),
+            final SessionSendContinuationMessage chunk = new SessionSendContinuationMessage(bodyBuffer.toByteBuffer().array(),
                                                                                             !lastChunk,
                                                                                             lastChunk && sendBlocking);
 

@@ -283,8 +283,6 @@ public class PagingStoreImpl implements TestSupportPageStore
    {            
       long size = message.getMemoryEstimate();
 
-      //log.info((add ? "adding" : "subtracting") + " message size " + size);
-      
       if (add)
       {
          checkReleaseProducerFlowControlCredits(size);
@@ -303,8 +301,6 @@ public class PagingStoreImpl implements TestSupportPageStore
    {
       long size = MessageReferenceImpl.getMemoryEstimate();
       
-      //log.info((add ? "adding" : "subtracting") + " reference size " + size);
-
       if (add)
       {
          checkReleaseProducerFlowControlCredits(size);

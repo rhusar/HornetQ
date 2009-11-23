@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hornetq.core.buffers.HornetQChannelBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
@@ -98,7 +98,7 @@ public class PageImpl implements Page
       
       buffer2.rewind();
 
-      HornetQChannelBuffer fileBuffer = HornetQChannelBuffers.wrappedBuffer(buffer2); 
+      HornetQBuffer fileBuffer = HornetQChannelBuffers.wrappedBuffer(buffer2); 
       fileBuffer.writerIndex(fileBuffer.capacity());
 
       while (fileBuffer.readable())
@@ -147,9 +147,14 @@ public class PageImpl implements Page
 
    public void write(final PagedMessage message) throws Exception
    {
+      log.info("encode size is " + message.getEncodeSize());
+      
       ByteBuffer buffer = fileFactory.newBuffer(message.getEncodeSize() + SIZE_RECORD);
       
-      HornetQChannelBuffer wrap = HornetQChannelBuffers.wrappedBuffer(buffer);
+      HornetQBuffer wrap = HornetQChannelBuffers.wrappedBuffer(buffer);
+      wrap.clear();
+      
+      log.info("wrapped " + wrap.channelBuffer());
       
       wrap.writeByte(START_BYTE);
       wrap.writeInt(0);
@@ -167,6 +172,8 @@ public class PageImpl implements Page
       size.addAndGet(buffer.limit());
       
       storageManager.pageWrite(message, pageId);
+      
+      log.info("wrote page");
    }
 
    public void sync() throws Exception

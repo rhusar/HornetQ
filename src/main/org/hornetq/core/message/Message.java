@@ -14,10 +14,12 @@
 package org.hornetq.core.message;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 
-import org.hornetq.core.remoting.spi.HornetQBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -67,7 +69,16 @@ public interface Message
    
    HornetQBuffer getBodyBuffer();
    
-
+   void decodeFromBuffer(HornetQBuffer buffer);
+   
+   HornetQBuffer encodeToBuffer();
+   
+   int getEndOfMessagePosition();
+   
+   int getEndOfBodyPosition();
+   
+   void forceCopy();
+   
    // Properties
    // ------------------------------------------------------------------
 
@@ -171,16 +182,16 @@ public interface Message
 
    Map<String, Object> toMap();
 
+      
    // FIXME - All this stuff is only necessary here for large messages - it should be refactored to be put in a better place
-   
-   
+      
    int getHeadersAndPropertiesEncodeSize();
    
    HornetQBuffer getWholeBuffer();
    
-   void setBuffer(HornetQBuffer buffer);
-   
    void encodeHeadersAndProperties(HornetQBuffer buffer);
+   
+   void decodeHeadersAndProperties(HornetQBuffer buffer);
    
    long getLargeBodySize();
    
@@ -190,12 +201,5 @@ public interface Message
    InputStream getBodyInputStream();
    
    
-   // Sending stuff
-
-   boolean isEncodedToBuffer();
    
-   void decodeFromWire(HornetQBuffer buffer);
-   
-   void decodeHeadersAndProperties(HornetQBuffer buffer);
-
 }

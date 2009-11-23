@@ -635,7 +635,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          bindings.route(message, context);
       }
-
       if (context.getQueueCount() == 0)
       {
          // Send to DLA if appropriate
@@ -780,7 +779,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          // First send a reset message
 
-         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.dynamicBuffer(50));        
+         ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), 50);        
 
          message.setDestination(queueName);
          message.putBooleanProperty(HDR_RESET_QUEUE_DATA, true);
@@ -885,7 +884,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
 
       Iterator<Queue> iter = context.getDurableQueues().iterator();
-
+      
       while (iter.hasNext())
       {
          Queue queue = iter.next();
@@ -980,7 +979,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    private void addReferences(final List<MessageReference> refs)
    {
       for (MessageReference ref : refs)
-      {
+      {        
          ref.getQueue().addLast(ref);
       }
    }
@@ -999,7 +998,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private ServerMessage createQueueInfoMessage(final NotificationType type, final SimpleString queueName)
    {
-      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), HornetQChannelBuffers.dynamicBuffer(100));
+      ServerMessage message = new ServerMessageImpl(storageManager.generateUniqueID(), 50);
 
       message.setDestination(queueName);
       // message.setDurable(true);

@@ -666,8 +666,6 @@ public class BridgeTest extends ServiceTestBase
          {
             ClientMessage message = session0.createClientMessage(false);
 
-            message.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
-
             message.putIntProperty(propKey, i);
 
             producer0.send(message);

@@ -116,8 +116,7 @@ public class LargeJournalStressTest extends ServiceTestBase
                      }
                      slowProd.send(session.createClientMessage(true));
                   }
-                  ClientMessage msg = session.createClientMessage(true);
-                  msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
+                  ClientMessage msg = session.createClientMessage(true);                  
                   prod.send(msg);
                }
                sessionSlow.commit();

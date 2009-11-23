@@ -17,13 +17,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.hornetq.core.buffers.ResetLimitWrappedHornetQBuffer;
+import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.buffers.impl.ResetLimitWrappedHornetQBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 
@@ -68,11 +68,9 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
                             final long expiration,
                             final long timestamp,
                             final byte priority,
-                            final HornetQBuffer buffer)
+                            final int initialMessageBufferSize)
    {
-      super(type, durable, expiration, timestamp, priority, buffer);
-
-      this.resetBuffer();
+      super(type, durable, expiration, timestamp, priority, initialMessageBufferSize);
    }
 
    public void onReceipt(final ClientConsumerInternal consumer)
@@ -174,7 +172,7 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
       {
          try
          {
-            out.write(this.getWholeBuffer().array());
+            out.write(this.getWholeBuffer().toByteBuffer().array());
          }
          catch (IOException e)
          {

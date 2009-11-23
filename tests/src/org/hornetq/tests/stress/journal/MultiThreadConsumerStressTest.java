@@ -248,8 +248,7 @@ public class MultiThreadConsumerStressTest extends ServiceTestBase
                {
                   System.out.println(Thread.currentThread().getName() + "::received #" + i);
                }
-               ClientMessage msg = session.createClientMessage(true);
-               msg.setBuffer(HornetQChannelBuffers.wrappedBuffer(new byte[1024]));
+               ClientMessage msg = session.createClientMessage(true);               
                prod.send(msg);
             }
 

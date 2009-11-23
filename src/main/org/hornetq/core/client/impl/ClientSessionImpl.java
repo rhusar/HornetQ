@@ -26,6 +26,7 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -74,7 +75,6 @@ import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutResponseMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionXAStartMessage;
 import org.hornetq.core.remoting.spi.Connection;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.IDGenerator;
 import org.hornetq.utils.SimpleIDGenerator;
@@ -518,9 +518,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
                                             final long timestamp,
                                             final byte priority)
    {
-      HornetQBuffer body = remotingConnection.createBuffer(initialMessagePacketSize);
-
-      return new ClientMessageImpl(type, durable, expiration, timestamp, priority, body);
+      return new ClientMessageImpl(type, durable, expiration, timestamp, priority, initialMessagePacketSize);
    }
 
    public ClientMessage createClientMessage(final byte type, final boolean durable)
@@ -690,7 +688,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       if (consumer != null)
       {
-         ClientMessageInternal clMessage = message.getClientMessage();
+         ClientMessageInternal clMessage = (ClientMessageInternal)message.getMessage();
 
          if (trace)
          {
@@ -699,7 +697,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
        
          clMessage.setFlowControlSize(message.getPacketSize());
 
-         consumer.handleMessage(message.getClientMessage());
+         consumer.handleMessage(clMessage);
       }
    }
 
@@ -948,7 +946,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       {
          SessionSendMessage ssm = (SessionSendMessage)packet;
 
-         sendAckHandler.sendAcknowledged(ssm.getClientMessage());
+         sendAckHandler.sendAcknowledged(ssm.getMessage());
       }
    }
 

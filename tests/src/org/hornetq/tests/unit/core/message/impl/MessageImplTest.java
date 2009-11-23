@@ -25,13 +25,9 @@ import static org.hornetq.tests.util.RandomUtil.randomString;
 
 import java.util.Set;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.client.impl.ClientMessageImpl;
-import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.SimpleString;
 
@@ -53,14 +49,13 @@ public class MessageImplTest extends UnitTestCase
          {
             bytes[i] = randomByte();
          }
-         HornetQBuffer body = HornetQChannelBuffers.wrappedBuffer(bytes);      
-         
+
          final byte type = randomByte();
          final boolean durable = randomBoolean();
          final long expiration = randomLong();
          final long timestamp = randomLong();
          final byte priority = randomByte();
-         Message message1 = new ClientMessageImpl(type, durable, expiration, timestamp, priority, body);
+         Message message1 = new ClientMessageImpl(type, durable, expiration, timestamp, priority, 100);
    
          Message message = message1;
          
@@ -90,9 +85,7 @@ public class MessageImplTest extends UnitTestCase
          
          message.setPriority(priority2);
          assertEquals(priority2, message.getPriority());
-         
-         message.setBuffer(body);
-         assertTrue(body == message.getBodyBuffer());
+
       }      
    }
    
@@ -254,7 +247,7 @@ public class MessageImplTest extends UnitTestCase
 
       assertEquals(msg1.getType(), msg2.getType());         
 
-      assertEqualsByteArrays(msg1.getBodyBuffer().array(), msg2.getBodyBuffer().array());      
+      assertEqualsByteArrays(msg1.getBodyBuffer().toByteBuffer().array(), msg2.getBodyBuffer().toByteBuffer().array());      
 
       assertEquals(msg1.getDestination(), msg2.getDestination());
       

@@ -13,9 +13,9 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.journal.EncodingSupport;
-import org.hornetq.core.remoting.spi.HornetQBuffer;
-import org.hornetq.utils.DataConstants;
+import org.hornetq.core.logging.Logger;
 
 /**
  * A ReplicationAddMessage
@@ -28,6 +28,9 @@ public class ReplicationAddMessage extends PacketImpl
 {
 
    // Constants -----------------------------------------------------
+   
+   private static final Logger log = Logger.getLogger(ReplicationAddMessage.class);
+
 
    // Attributes ----------------------------------------------------
 
@@ -76,6 +79,7 @@ public class ReplicationAddMessage extends PacketImpl
       buffer.writeBoolean(isUpdate);
       buffer.writeLong(id);
       buffer.writeByte(recordType);
+      log.info("encode size is " + encodingData.getEncodeSize());
       buffer.writeInt(encodingData.getEncodeSize());
       encodingData.encode(buffer);
    }
