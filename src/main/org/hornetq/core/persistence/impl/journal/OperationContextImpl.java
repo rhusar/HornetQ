@@ -211,6 +211,8 @@ public class OperationContextImpl implements OperationContext
       {
          public void run()
          {
+            // If any IO is done inside the callback, it needs to be done on a new context
+            clearContext();
             task.done();
             executorsPending.decrementAndGet();
          }

@@ -50,7 +50,7 @@ public class ServerLargeMessageTest extends ServiceTestBase
 
    // Public --------------------------------------------------------
    
-   protected void setup() throws Exception
+   protected void setUp() throws Exception
    {
       super.setUp();
       
