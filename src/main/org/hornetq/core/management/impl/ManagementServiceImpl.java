@@ -747,14 +747,8 @@ public class ManagementServiceImpl implements ManagementService
       
       if (storageManager != null)
       {
-         System.out.println("Waiting on management...");
          storageManager.waitOnOperations(managementRequestTimeout);
          storageManager.clearContext();
-         System.out.println("Done");
-      }
-      else
-      {
-         new Exception("storagemanager is null, can't wait on operations").printStackTrace();
       }
    }
 

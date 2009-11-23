@@ -422,8 +422,6 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
       for (final CloseListener listener : listenersClone)
       {
-         System.out.println("Calling listener -> " + listener);
-         System.out.println("Calling listener " + listener.getClass().getName());
          try
          {
             listener.connectionClosed();

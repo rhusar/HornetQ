@@ -766,7 +766,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleRollback(final RollbackMessage packet)
    {
-      new Exception("Rollback").printStackTrace();
       Packet response = null;
 
       try

@@ -467,7 +467,6 @@ public class AsynchronousFileImpl implements AsynchronousFile
             }
             else
             {
-               // System.out.println("Buffering callback");
                pendingCallbacks.add(new CallbackHolder(sequence, callback));
             }
          }

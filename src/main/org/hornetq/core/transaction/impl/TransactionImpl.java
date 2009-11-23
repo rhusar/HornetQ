@@ -162,7 +162,6 @@ public class TransactionImpl implements Transaction
             {
                if (operations != null)
                {
-                  System.out.println("Prepare was executed fine");
                   for (TransactionOperation operation : operations)
                   {
                      try
@@ -213,7 +212,6 @@ public class TransactionImpl implements Transaction
                   // Why do we need a prepare record on the onePhase optimization?
                   // Why we can't just go straight to commit, if we are doing one phase anyway?
                   state = State.PREPARED;
-//                  System.out.println("Adding Prepare");
 //                  prepare();
                }
             }
@@ -240,7 +238,6 @@ public class TransactionImpl implements Transaction
 
          if (containsPersistent || (xid != null && state == State.PREPARED))
          {
-            System.out.println("Adding commit");
             storageManager.commit(id);
 
             state = State.COMMITTED;
@@ -259,7 +256,6 @@ public class TransactionImpl implements Transaction
 
             public void done()
             {
-               System.out.println("Commit was executed fine");
                if (operations != null)
                {
                   for (TransactionOperation operation : operations)
@@ -328,7 +324,6 @@ public class TransactionImpl implements Transaction
             {
                if (operations != null)
                {
-                  System.out.println("Rollback was executed fine");
                   for (TransactionOperation operation : operations)
                   {
                      try
