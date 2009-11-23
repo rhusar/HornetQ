@@ -35,14 +35,12 @@ public class FakeQueueFactory implements QueueFactory
 {
    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
    
-   private final ExecutorService executor = Executors.newSingleThreadExecutor();
-   
 	private PostOffice postOffice;
 
 	public Queue createQueue(long persistenceID, final SimpleString address, SimpleString name, Filter filter,
 			                   boolean durable, boolean temporary)
 	{
-		return new QueueImpl(persistenceID, address, name, filter, durable, temporary, executor, scheduledExecutor, postOffice, null, null);
+		return new QueueImpl(persistenceID, address, name, filter, durable, temporary, scheduledExecutor, postOffice, null, null);
 	}
 	
    public void setPostOffice(PostOffice postOffice)
@@ -54,8 +52,6 @@ public class FakeQueueFactory implements QueueFactory
    public void stop() throws Exception
    {
       scheduledExecutor.shutdown();
-      
-      executor.shutdown();
    }
 
 }

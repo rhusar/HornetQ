@@ -21,8 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.persistence.OperationContext;
-
-import sun.security.util.PendingException;
+import org.hornetq.utils.ExecutorFactory;
 
 /**
  * 
@@ -33,24 +32,31 @@ import sun.security.util.PendingException;
  */
 public class OperationContextImpl implements OperationContext
 {
-   private static final ThreadLocal<OperationContext> tlContext = new ThreadLocal<OperationContext>();
+   
+   private static final ThreadLocal<OperationContext> threadLocalContext = new ThreadLocal<OperationContext>();
 
-   public static void setInstance(OperationContext context)
+   public static void clearContext()
    {
-      tlContext.set(context);
+      threadLocalContext.set(null);
    }
    
-   public static OperationContext getInstance()
+   public static OperationContext getContext(final ExecutorFactory executorFactory)
    {
-      OperationContext token = tlContext.get();
+      OperationContext token = threadLocalContext.get();
       if (token == null)
       {
-         token = new OperationContextImpl();
-         tlContext.set(token);
+         token = new OperationContextImpl(executorFactory.getExecutor());
+         threadLocalContext.set(token);
       }
       return token;
    }
-
+   
+   public static void setContext(OperationContext context)
+   {
+      threadLocalContext.set(context);
+   }
+   
+   
    private List<TaskHolder> tasks;
 
    private volatile int storeLineUp = 0;
@@ -64,37 +70,20 @@ public class OperationContextImpl implements OperationContext
    private int stored = 0;
 
    private int replicated = 0;
-   
-   private int errorCode = -1;
-   
-   private String errorMessage = null;
-   
-   private Executor executor;
-   
-   private final AtomicInteger executorsPending = new AtomicInteger(0);
 
-   /**
-    * @param executor
-    */
-   public OperationContextImpl()
-   {
-      super();
-   }
+   private int errorCode = -1;
+
+   private String errorMessage = null;
+
+   private Executor executor;
+
+   private final AtomicInteger executorsPending = new AtomicInteger(0);
 
    public OperationContextImpl(final Executor executor)
    {
       super();
       this.executor = executor;
    }
-   
-   /*
-    * @see org.hornetq.core.persistence.OperationContext#reinstall()
-    */
-   public void reinstall()
-   {
-      setInstance(this);
-   }
-
 
    /** To be called by the replication manager, when new replication is added to the queue */
    public void lineUp()
@@ -106,7 +95,7 @@ public class OperationContextImpl implements OperationContext
    {
       replicationLineUp++;
    }
-   
+
    /** this method needs to be called before the executor became operational */
    public void setExecutor(Executor executor)
    {
@@ -119,50 +108,56 @@ public class OperationContextImpl implements OperationContext
       checkTasks();
    }
 
-   public boolean hasReplication()
-   {
-      return replicationLineUp > 0;
-   }
-
    /** You may have several actions to be done after a replication operation is completed. */
-   public synchronized void executeOnCompletion(final IOAsyncTask completion)
+   public void executeOnCompletion(final IOAsyncTask completion)
    {
-      if (tasks == null)
-      {
-         tasks = new LinkedList<TaskHolder>();
-         minimalReplicated = replicationLineUp;
-         minimalStore = storeLineUp;
-      }
+      boolean executeNow = false;
 
-      // On this case, we can just execute the context directly
-      if (replicationLineUp == replicated && storeLineUp == stored)
+      synchronized (this)
       {
-         if (executor != null)
+         if (tasks == null)
          {
-            // We want to avoid the executor if everything is complete...
-            // However, we can't execute the context if there are executions pending
-            // We need to use the executor on this case
-            if (executorsPending.get() == 0)
+            tasks = new LinkedList<TaskHolder>();
+            minimalReplicated = replicationLineUp;
+            minimalStore = storeLineUp;
+         }
+
+         // On this case, we can just execute the context directly
+         if (replicationLineUp == replicated && storeLineUp == stored)
+         {
+            if (executor != null)
             {
-               // No need to use an executor here or a context switch
-               // there are no actions pending.. hence we can just execute the task directly on the same thread
-               completion.done();
+               // We want to avoid the executor if everything is complete...
+               // However, we can't execute the context if there are executions pending
+               // We need to use the executor on this case
+               if (executorsPending.get() == 0)
+               {
+                  // No need to use an executor here or a context switch
+                  // there are no actions pending.. hence we can just execute the task directly on the same thread
+                  executeNow = true;
+               }
+               else
+               {
+                  execute(completion);
+               }
             }
             else
             {
-               execute(completion);
+               executeNow = true;
             }
          }
          else
          {
-            // Execute without an executor
-            completion.done();
+            tasks.add(new TaskHolder(completion));
          }
       }
-      else
+      
+      if (executeNow)
       {
-         tasks.add(new TaskHolder(completion));
+         // Executing outside of any locks
+         completion.done();
       }
+
    }
 
    /** To be called by the storage manager, when data is confirmed on the channel */
@@ -183,7 +178,7 @@ public class OperationContextImpl implements OperationContext
             if (!holder.executed && stored >= holder.storeLined && replicated >= holder.replicationLined)
             {
                holder.executed = true;
-                
+
                if (executor != null)
                {
                   // If set, we use an executor to avoid the server being single threaded
@@ -193,7 +188,7 @@ public class OperationContextImpl implements OperationContext
                {
                   holder.task.done();
                }
-               
+
                iter.remove();
             }
             else
@@ -227,8 +222,6 @@ public class OperationContextImpl implements OperationContext
     */
    public void complete()
    {
-      tlContext.set(null);
-      
       // TODO: test and fix exceptions on the Context
       if (tasks != null && errorMessage != null)
       {
@@ -237,15 +230,10 @@ public class OperationContextImpl implements OperationContext
             run.task.onError(errorCode, errorMessage);
          }
       }
-      
+
       // We hold errors until the complete is set, or the callbacks will never get informed
       errorCode = -1;
       errorMessage = null;
-   }
-   
-   public boolean isSync()
-   {
-      return false;
    }
 
    /* (non-Javadoc)
@@ -274,6 +262,5 @@ public class OperationContextImpl implements OperationContext
          this.task = task;
       }
    }
-
 
 }

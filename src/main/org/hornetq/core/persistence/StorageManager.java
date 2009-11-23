@@ -52,8 +52,11 @@ public interface StorageManager extends HornetQComponent
    /** Get the context associated with the thread for later reuse */
    OperationContext getContext();
    
-   /** It just creates an OperationContext without associating it to any threads */
+   /** It just creates an OperationContext without associating it */
    OperationContext newContext(Executor executor);
+   
+   /** Set the context back to the thread */
+   void setContext(OperationContext context);
    
    // Message related operations
 
@@ -77,6 +80,8 @@ public interface StorageManager extends HornetQComponent
 
    /** To close the OperationsContext */
    void completeOperations();
+   
+   void clearContext();
 
    UUID getPersistentID();
    

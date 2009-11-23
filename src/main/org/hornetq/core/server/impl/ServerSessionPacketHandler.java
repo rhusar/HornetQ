@@ -46,6 +46,7 @@ import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_SUSPE
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.OperationContext;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
@@ -90,10 +91,16 @@ public class ServerSessionPacketHandler implements ChannelHandler
    private final ServerSession session;
    
    private final OperationContext sessionContext;
+   
+   // Storagemanager here is used to set the Context
+   private final StorageManager storageManager;
 
-   public ServerSessionPacketHandler(final ServerSession session, OperationContext sessionContext)
+   public ServerSessionPacketHandler(final ServerSession session, OperationContext sessionContext, StorageManager storageManager)
    {
       this.session = session;
+      
+      this.storageManager = storageManager;
+      
       this.sessionContext = sessionContext;
    }
 
@@ -108,7 +115,7 @@ public class ServerSessionPacketHandler implements ChannelHandler
 
       if (sessionContext != null)
       {
-         sessionContext.reinstall();
+         storageManager.setContext(sessionContext);
       }
       
       try
@@ -303,7 +310,7 @@ public class ServerSessionPacketHandler implements ChannelHandler
       {
          if (sessionContext != null)
          {
-            sessionContext.complete();
+            storageManager.completeOperations();
          }
       }
    }

@@ -1264,6 +1264,20 @@ public class PagingStoreImplTest extends UnitTestCase
          return null;
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#clearContext()
+       */
+      public void clearContext()
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#setContext(org.hornetq.core.persistence.OperationContext)
+       */
+      public void setContext(OperationContext context)
+      {
+      }
+
    }
 
    class FakeStoreFactory implements PagingStoreFactory

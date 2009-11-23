@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,6 +39,8 @@ import org.hornetq.core.transaction.impl.ResourceManagerImpl;
 import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.ServiceTestBase;
+import org.hornetq.utils.ExecutorFactory;
+import org.hornetq.utils.OrderedExecutorFactory;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
 
@@ -60,6 +63,8 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
    ExecutorService executor;
    
+   ExecutorFactory factory;
+   
    @Override
    protected void tearDown() throws Exception
    {
@@ -71,6 +76,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
    {
       super.setUp();
       executor = Executors.newSingleThreadExecutor();
+      factory = new OrderedExecutorFactory(executor);
    }
 
    // Public --------------------------------------------------------
@@ -96,7 +102,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          ScheduledExecutorService scheduledThreadPool = Executors.newScheduledThreadPool(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE);
 
-         journal = new JournalStorageManager(configuration, Executors.newCachedThreadPool());
+         journal = new JournalStorageManager(configuration, factory);
 
          journal.start();
          journal.loadBindingJournal(new ArrayList<QueueBindingInfo>(), new ArrayList<GroupingInfo>());
@@ -111,7 +117,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          assertEquals(0, mapDups.size());
 
-         DuplicateIDCacheImpl cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true, executor);
+         DuplicateIDCacheImpl cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true);
 
          for (int i = 0; i < 100; i++)
          {
@@ -120,7 +126,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          journal.stop();
 
-         journal = new JournalStorageManager(configuration, Executors.newCachedThreadPool());
+         journal = new JournalStorageManager(configuration, factory);
          journal.start();
          journal.loadBindingJournal(new ArrayList<QueueBindingInfo>(), new ArrayList<GroupingInfo>());
 
@@ -136,7 +142,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          assertEquals(10, values.size());
 
-         cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true, executor);
+         cacheID = new DuplicateIDCacheImpl(ADDRESS, 10, journal, true);
          cacheID.load(values);
 
          for (int i = 0; i < 100; i++)
@@ -148,7 +154,7 @@ public class DuplicateDetectionUnitTest extends ServiceTestBase
 
          mapDups.clear();
 
-         journal = new JournalStorageManager(configuration, Executors.newCachedThreadPool());
+         journal = new JournalStorageManager(configuration, factory);
          journal.start();
          journal.loadBindingJournal(new ArrayList<QueueBindingInfo>(), new ArrayList<GroupingInfo>());
 

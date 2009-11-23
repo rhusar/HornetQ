@@ -115,9 +115,6 @@ public class QueueImpl implements Queue
 
    private final ScheduledExecutorService scheduledExecutor;
    
-   /** We can't perform any operation on the journal while inside the Transactional operations. */
-   private final Executor journalExecutor;
-
    private final SimpleString address;
 
    private Redistributor redistributor;
@@ -142,7 +139,6 @@ public class QueueImpl implements Queue
                     final Filter filter,
                     final boolean durable,
                     final boolean temporary,
-                    final Executor executor,
                     final ScheduledExecutorService scheduledExecutor,
                     final PostOffice postOffice,
                     final StorageManager storageManager,
@@ -167,8 +163,6 @@ public class QueueImpl implements Queue
       this.addressSettingsRepository = addressSettingsRepository;
 
       this.scheduledExecutor = scheduledExecutor;
-      
-      this.journalExecutor = executor;
 
       direct = true;
 
@@ -939,37 +933,12 @@ public class QueueImpl implements Queue
 
    public boolean checkDLQ(final MessageReference reference) throws Exception
    {
-      return checkDLQ(reference, null);
-   }
-   
-   public boolean checkDLQ(final MessageReference reference, Executor ioExecutor) throws Exception
-   {
       ServerMessage message = reference.getMessage();
 
       if (message.isDurable() && durable)
       {
-         if (ioExecutor != null)
-         {
-            ioExecutor.execute(new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     storageManager.updateDeliveryCount(reference);
-                     storageManager.completeOperations();
-                  }
-                  catch (Exception e)
-                  {
-                     log.warn("Can't update delivery count on checkDLQ", e);
-                  }
-               }
-            });
-         }
-         else
-         {
-            storageManager.updateDeliveryCount(reference);
-         }
+         storageManager.updateDeliveryCount(reference);
+         storageManager.waitOnOperations();
       }
 
       AddressSettings addressSettings = addressSettingsRepository.getMatch(address.toString());
@@ -978,28 +947,8 @@ public class QueueImpl implements Queue
 
       if (maxDeliveries > 0 && reference.getDeliveryCount() >= maxDeliveries)
       {
-         if (ioExecutor != null)
-         {
-            ioExecutor.execute(new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     sendToDeadLetterAddress(reference);
-                     storageManager.completeOperations();
-                  }
-                  catch (Exception e)
-                  {
-                     log.warn("Error on DLQ send", e);
-                  }
-               }
-            });
-         }
-         else
-         {
-            sendToDeadLetterAddress(reference);
-         }
+         sendToDeadLetterAddress(reference);
+         storageManager.waitOnOperations();
 
          return false;
       }
@@ -1011,28 +960,7 @@ public class QueueImpl implements Queue
          {
             reference.setScheduledDeliveryTime(System.currentTimeMillis() + redeliveryDelay);
 
-            if (ioExecutor != null)
-            {
-               ioExecutor.execute(new Runnable()
-               {
-                  public void run()
-                  {
-                     try
-                     {
-                        storageManager.updateScheduledDeliveryTime(reference);
-                        storageManager.completeOperations();
-                     }
-                     catch (Exception e)
-                     {
-                        log.warn("Error on DLQ send", e);
-                     }
-                  }
-               });
-            }
-            else
-            {
-               storageManager.updateScheduledDeliveryTime(reference);
-            }
+            storageManager.updateScheduledDeliveryTime(reference);
          }
 
          deliveringCount.decrementAndGet();
@@ -1495,23 +1423,14 @@ public class QueueImpl implements Queue
 
             // also note then when this happens as part of a trasaction its the tx commt of the ack that is important
             // not this
-            
-            // and this has to happen in a different thread
-            
-            journalExecutor.execute(new Runnable()
+            try
             {
-               public void run()
-               {
-                  try
-                  {
-                     storageManager.deleteMessage(message.getMessageID());
-                  }
-                  catch (Exception e)
-                  {
-                     log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
-                  }
-               }
-            });
+               storageManager.deleteMessage(message.getMessageID());
+            }
+            catch (Exception e)
+            {
+               log.warn("Unable to remove message id = " + message.getMessageID() + " please remove manually");
+            }
          }
       }
 
@@ -1584,7 +1503,7 @@ public class QueueImpl implements Queue
          {
             try
             {
-               if (ref.getQueue().checkDLQ(ref, journalExecutor))
+               if (ref.getQueue().checkDLQ(ref))
                {
                   LinkedList<MessageReference> toCancel = queueMap.get(ref.getQueue());
    
@@ -1600,8 +1519,6 @@ public class QueueImpl implements Queue
             }
             catch (Exception e)
             {
-               // checkDLQ here will be using an executor, this shouldn't happen
-               // don't you just hate checked exceptions in java?
                log.warn("Error on checkDLQ", e);
             }
          }

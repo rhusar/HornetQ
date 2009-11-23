@@ -59,7 +59,6 @@ import org.hornetq.core.messagecounter.MessageCounterManager;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.spi.Acceptor;
@@ -180,6 +179,11 @@ public class ManagementServiceImpl implements ManagementService
    public MessageCounterManager getMessageCounterManager()
    {
       return messageCounterManager;
+   }
+   
+   public void setStorageManager(StorageManager storageManager)
+   {
+      this.storageManager = storageManager;
    }
 
    public HornetQServerControlImpl registerServer(final PostOffice postOffice,
@@ -741,28 +745,17 @@ public class ManagementServiceImpl implements ManagementService
          }
       }
       
-      // TODO: Talk to Andy and Jeff about a better way to sync this...
-      System.out.println("Waiting");
-      final CountDownLatch latch = new CountDownLatch(1);
-      OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
+      if (storageManager != null)
       {
-
-         public void done()
-         {
-            System.out.println("Done on management");
-            latch.countDown();
-         }
-
-         public void onError(int errorCode, String errorMessage)
-         {
-         }
-         
-      });
-      
-      OperationContextImpl.getInstance().complete();
-      
-      latch.await(5, TimeUnit.SECONDS);
-      System.out.println("Done");
+         System.out.println("Waiting on management...");
+         storageManager.waitOnOperations(managementRequestTimeout);
+         storageManager.clearContext();
+         System.out.println("Done");
+      }
+      else
+      {
+         new Exception("storagemanager is null, can't wait on operations").printStackTrace();
+      }
    }
 
    public void enableNotifications(boolean enabled)

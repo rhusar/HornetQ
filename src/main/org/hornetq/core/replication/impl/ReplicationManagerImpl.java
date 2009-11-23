@@ -14,8 +14,6 @@
 package org.hornetq.core.replication.impl;
 
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -28,6 +26,7 @@ import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.persistence.OperationContext;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
@@ -49,6 +48,7 @@ import org.hornetq.core.remoting.impl.wireformat.ReplicationPageWriteMessage;
 import org.hornetq.core.remoting.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.remoting.spi.HornetQBuffer;
 import org.hornetq.core.replication.ReplicationManager;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -83,6 +83,8 @@ public class ReplicationManagerImpl implements ReplicationManager
    private final Object replicationLock = new Object();
 
    private final Queue<OperationContext> pendingTokens = new ConcurrentLinkedQueue<OperationContext>();
+   
+   private final ExecutorFactory executorFactory;
 
    // Static --------------------------------------------------------
 
@@ -91,11 +93,12 @@ public class ReplicationManagerImpl implements ReplicationManager
    /**
     * @param replicationConnectionManager
     */
-   public ReplicationManagerImpl(final FailoverManager failoverManager, final int backupWindowSize)
+   public ReplicationManagerImpl(final FailoverManager failoverManager, final ExecutorFactory executorFactory, final int backupWindowSize)
    {
       super();
       this.failoverManager = failoverManager;
       this.backupWindowSize = backupWindowSize;
+      this.executorFactory = executorFactory;
    }
 
    // Public --------------------------------------------------------
@@ -430,7 +433,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    {
       boolean runItNow = false;
 
-      OperationContext repliToken = getContext();
+      OperationContext repliToken = OperationContextImpl.getContext(executorFactory);
       repliToken.replicationLineUp();
 
       synchronized (replicationLock)
@@ -459,66 +462,15 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private void replicated()
    {
-      List<OperationContext> tokensToExecute = getTokens();
+      OperationContext ctx = pendingTokens.poll();
 
-      for (OperationContext ctx : tokensToExecute)
+      if (ctx == null)
       {
-         ctx.replicationDone();
-      }
-   }
-
-   public OperationContext getContext()
-   {
-      return OperationContextImpl.getInstance();
-   }
-
-   /**
-    * This method will first get all the sync tokens (that won't go to the backup node)
-    * Then it will get the round trip tokens.
-    * At last, if the list is empty, it will verify if there are any future tokens that are sync tokens, to avoid a case where no more replication is done due to inactivity.
-    * @return
-    */
-   private List<OperationContext> getTokens()
-   {
-      List<OperationContext> retList = new LinkedList<OperationContext>();
-
-      OperationContext tokenPolled = null;
-
-      // First will get all the non replicated tokens up to the first one that is not replicated
-      do
-      {
-         tokenPolled = pendingTokens.poll();
-
-         if (tokenPolled == null)
-         {
-            throw new IllegalStateException("Missing replication token on the queue.");
-         }
-
-         retList.add(tokenPolled);
-
-      }
-      while (tokenPolled.isSync());
-
-      // This is to avoid a situation where we won't have more replicated packets
-      // We need to make sure we process any pending sync packet up to the next non empty packet
-      synchronized (replicationLock)
-      {
-         while (!pendingTokens.isEmpty() && pendingTokens.peek().isSync())
-         {
-            tokenPolled = pendingTokens.poll();
-            if (!tokenPolled.isSync())
-            {
-               throw new IllegalStateException("Replicatoin context is not a roundtrip token as expected");
-            }
-
-            retList.add(tokenPolled);
-
-         }
+         throw new IllegalStateException("Missing replication token on the queue.");
       }
 
-      return retList;
+      ctx.replicationDone();
    }
-
 
    // Inner classes -------------------------------------------------
 

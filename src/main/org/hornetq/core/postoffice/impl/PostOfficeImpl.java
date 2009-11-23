@@ -743,9 +743,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       if (cache == null)
       {
-         // TODO: What's the right executor? 
-         //       Is there another way
-         cache = new DuplicateIDCacheImpl(address, idCacheSize, storageManager, persistIDCache, redistributorExecutorFactory.getExecutor());
+         cache = new DuplicateIDCacheImpl(address, idCacheSize, storageManager, persistIDCache);
 
          DuplicateIDCache oldCache = duplicateIDCaches.putIfAbsent(address, cache);
 

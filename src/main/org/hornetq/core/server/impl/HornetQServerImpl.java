@@ -651,7 +651,7 @@ public class HornetQServerImpl implements HornetQServer
       
       Executor sessionExecutor = executorFactory.getExecutor();
       
-      OperationContext sessionContext = storageManager.newContext(sessionExecutor);
+      storageManager.newContext(sessionExecutor);
 
       final ServerSessionImpl session = new ServerSessionImpl(name,
                                                               username,
@@ -667,7 +667,6 @@ public class HornetQServerImpl implements HornetQServer
                                                               postOffice,
                                                               resourceManager,
                                                               securityStore,
-                                                              sessionContext,
                                                               sessionExecutor,
                                                               channel,
                                                               managementService,
@@ -677,7 +676,8 @@ public class HornetQServerImpl implements HornetQServer
 
       sessions.put(name, session);
 
-      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session, sessionContext);
+      // The executor on the OperationContext here has to be the same as the session, or we would have ordering issues on messages
+      ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session, storageManager.newContext(sessionExecutor), storageManager);
 
       session.setHandler(handler);
 
@@ -906,7 +906,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       if (configuration.isPersistenceEnabled())
       {
-         return new JournalStorageManager(configuration, threadPool, replicationManager);
+         return new JournalStorageManager(configuration, this.executorFactory, replicationManager);
       }
       else
       {
@@ -935,6 +935,7 @@ public class HornetQServerImpl implements HornetQServer
             replicationFailoverManager = createBackupConnection(backupConnector, threadPool, scheduledPool);
 
             replicationManager = new ReplicationManagerImpl(replicationFailoverManager,
+                                                            executorFactory,
                                                             configuration.getBackupWindowSize());
             replicationManager.start();
          }

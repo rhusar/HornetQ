@@ -39,9 +39,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.ManagementService;
 import org.hornetq.core.management.Notification;
 import org.hornetq.core.paging.PagingStore;
-import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.postoffice.Bindings;
@@ -189,10 +187,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    private final SimpleString managementAddress;
    
-   /** We always use the same operation context for the session.
-    *  With that we can perform extra checks */
-   private final OperationContext sessionOperationContext;
-
    // The current currentLargeMessage being processed
    private volatile LargeServerMessage currentLargeMessage;
 
@@ -218,7 +212,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
                             final PostOffice postOffice,
                             final ResourceManager resourceManager,
                             final SecurityStore securityStore,
-                            final OperationContext sessionOperationContext,
                             final Executor executor,
                             final Channel channel,
                             final ManagementService managementService,
@@ -249,8 +242,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
       this.securityStore = securityStore;
       
-      this.sessionOperationContext = sessionOperationContext;
-
       this.executor = executor;
 
       if (!xa)

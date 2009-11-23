@@ -30,11 +30,6 @@ import org.hornetq.core.journal.IOCompletion;
 public interface OperationContext extends IOCompletion
 {
    
-   boolean hasReplication();
-   
-   /** Reattach the context to the current thread */
-   void reinstall();
-   
    /** The executor used on responses.
     *  If this is not set, it will use the current thread. */
    void setExecutor(Executor executor);
@@ -49,8 +44,5 @@ public interface OperationContext extends IOCompletion
 
    /** To be called when there are no more operations pending */
    void complete();
-   
-   /** Is this a special operation to sync replication. */
-   boolean isSync();
 
 }

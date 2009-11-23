@@ -15,6 +15,8 @@ package org.hornetq.tests.performance.persistence;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,6 +31,7 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -110,6 +113,17 @@ public class StorageManagerTimingTest extends UnitTestCase
                                        final int transInterval,
                                        final int numberOfThreads) throws Exception
    {
+      
+      final ExecutorService executor = Executors.newCachedThreadPool();
+     
+      ExecutorFactory factory = new ExecutorFactory()
+      {
+         public Executor getExecutor()
+         {
+            return executor;
+         }
+      };
+      
       FileConfiguration configuration = new FileConfiguration();
 
       configuration.start();
@@ -122,7 +136,7 @@ public class StorageManagerTimingTest extends UnitTestCase
       PostOffice postOffice = new FakePostOffice();
 
       final JournalStorageManager journal = new JournalStorageManager(configuration,
-                                                                      Executors.newCachedThreadPool());
+                                                                      factory);
       journal.start();
 
       HashMap<Long, Queue> queues = new HashMap<Long, Queue>();
@@ -187,6 +201,7 @@ public class StorageManagerTimingTest extends UnitTestCase
                   if (transInterval > 0 && i % transInterval == 0)
                   {
                      journal.commit(trans);
+                     journal.waitOnOperations();
                      commits++;
                      trans = transactionGenerator.incrementAndGet();
                      commitPending = false;
@@ -194,7 +209,10 @@ public class StorageManagerTimingTest extends UnitTestCase
                }
 
                if (commitPending)
+               {
                   journal.commit(trans);
+                  journal.waitOnOperations();
+               }
 
                long end = System.currentTimeMillis();
 

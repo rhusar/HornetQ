@@ -374,4 +374,18 @@ public class NullStorageManager implements StorageManager
       return null;
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#setContext(org.hornetq.core.persistence.OperationContext)
+    */
+   public void setContext(OperationContext context)
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#clearContext()
+    */
+   public void clearContext()
+   {
+   }
+
 }

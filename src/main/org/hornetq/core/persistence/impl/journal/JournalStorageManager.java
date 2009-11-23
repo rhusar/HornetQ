@@ -78,6 +78,7 @@ import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.DataConstants;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.UUID;
@@ -93,6 +94,7 @@ import org.hornetq.utils.UUID;
  */
 public class JournalStorageManager implements StorageManager
 {
+   
    private static final Logger log = Logger.getLogger(JournalStorageManager.class);
 
    private static final long CHECKPOINT_BATCH_SIZE = Integer.MAX_VALUE;
@@ -144,6 +146,9 @@ public class JournalStorageManager implements StorageManager
    private final SequentialFileFactory largeMessagesFactory;
 
    private volatile boolean started;
+   
+   /** Used to create Operation Contexts */
+   private final ExecutorFactory executorFactory;
 
    private final Executor executor;
 
@@ -163,14 +168,16 @@ public class JournalStorageManager implements StorageManager
 
    private final String largeMessagesDirectory;
 
-   public JournalStorageManager(final Configuration config, final Executor executor)
+   public JournalStorageManager(final Configuration config, final ExecutorFactory executorFactory)
    {
-      this(config, executor, null);
+      this(config, executorFactory, null);
    }
 
-   public JournalStorageManager(final Configuration config, final Executor executor, final ReplicationManager replicator)
+   public JournalStorageManager(final Configuration config, final ExecutorFactory executorFactory, final ReplicationManager replicator)
    {
-      this.executor = executor;
+      this.executorFactory = executorFactory;
+
+      this.executor = executorFactory.getExecutor();
 
       this.replicator = replicator;
 
@@ -295,7 +302,12 @@ public class JournalStorageManager implements StorageManager
     */
    public void completeOperations()
    {
-      OperationContextImpl.getInstance().complete();
+      getContext().complete();
+   }
+   
+   public void clearContext()
+   {
+      OperationContextImpl.clearContext();
    }
 
    public boolean isReplicated()
@@ -373,7 +385,12 @@ public class JournalStorageManager implements StorageManager
     */
    public OperationContext getContext()
    {
-      return OperationContextImpl.getInstance();
+      return OperationContextImpl.getContext(executorFactory);
+   }
+   
+   public void setContext(OperationContext context)
+   {
+      OperationContextImpl.setContext(context);
    }
 
    /* (non-Javadoc)
@@ -386,7 +403,7 @@ public class JournalStorageManager implements StorageManager
 
    public void afterCompleteOperations(IOAsyncTask run)
    {
-      OperationContextImpl.getInstance().executeOnCompletion(run);
+      getContext().executeOnCompletion(run);
    }
 
    public UUID getPersistentID()
@@ -469,27 +486,27 @@ public class JournalStorageManager implements StorageManager
          messageJournal.appendAddRecord(message.getMessageID(),
                                         ADD_LARGE_MESSAGE,
                                         new LargeMessageEncoding((LargeServerMessage)message),
-                                        false, getIOContext());
+                                        false, getContext());
       }
       else
       {
-         messageJournal.appendAddRecord(message.getMessageID(), ADD_MESSAGE, message, false, getIOContext());
+         messageJournal.appendAddRecord(message.getMessageID(), ADD_MESSAGE, message, false, getContext());
       }
    }
 
    public void storeReference(final long queueID, final long messageID) throws Exception
    {
-      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), syncNonTransactional, getIOContext());
+      messageJournal.appendUpdateRecord(messageID, ADD_REF, new RefEncoding(queueID), syncNonTransactional, getContext());
    }
 
    public void storeAcknowledge(final long queueID, final long messageID) throws Exception
    {
-      messageJournal.appendUpdateRecord(messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional, getIOContext());
+      messageJournal.appendUpdateRecord(messageID, ACKNOWLEDGE_REF, new RefEncoding(queueID), syncNonTransactional, getContext());
    }
 
    public void deleteMessage(final long messageID) throws Exception
    {
-      messageJournal.appendDeleteRecord(messageID, syncNonTransactional, getIOContext());
+      messageJournal.appendDeleteRecord(messageID, syncNonTransactional, getContext());
    }
 
    public void updateScheduledDeliveryTime(final MessageReference ref) throws Exception
@@ -500,19 +517,19 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
                                         SET_SCHEDULED_DELIVERY_TIME,
                                         encoding,
-                                        syncNonTransactional, getIOContext());
+                                        syncNonTransactional, getContext());
    }
 
    public void storeDuplicateID(final SimpleString address, final byte[] duplID, final long recordID) throws Exception
    {
       DuplicateIDEncoding encoding = new DuplicateIDEncoding(address, duplID);
 
-      messageJournal.appendAddRecord(recordID, DUPLICATE_ID, encoding, syncNonTransactional, getIOContext());
+      messageJournal.appendAddRecord(recordID, DUPLICATE_ID, encoding, syncNonTransactional, getContext());
    }
 
    public void deleteDuplicateID(long recordID) throws Exception
    {
-      messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getIOContext());
+      messageJournal.appendDeleteRecord(recordID, syncNonTransactional, getContext());
    }
 
    // Transactional operations
@@ -568,13 +585,13 @@ public class JournalStorageManager implements StorageManager
    public long storeHeuristicCompletion(Xid xid, boolean isCommit) throws Exception
    {
       long id = generateUniqueID();
-      messageJournal.appendAddRecord(id, HEURISTIC_COMPLETION, new HeuristicCompletionEncoding(xid, isCommit), true, getIOContext());
+      messageJournal.appendAddRecord(id, HEURISTIC_COMPLETION, new HeuristicCompletionEncoding(xid, isCommit), true, getContext());
       return id;
    }
 
    public void deleteHeuristicCompletion(long id) throws Exception
    {
-      messageJournal.appendDeleteRecord(id, true, getIOContext());
+      messageJournal.appendDeleteRecord(id, true, getContext());
    }
 
    public void deletePageTransactional(final long txID, final long recordID) throws Exception
@@ -600,17 +617,17 @@ public class JournalStorageManager implements StorageManager
 
    public void prepare(final long txID, final Xid xid) throws Exception
    {
-      messageJournal.appendPrepareRecord(txID, new XidEncoding(xid), syncTransactional, getIOContext());
+      messageJournal.appendPrepareRecord(txID, new XidEncoding(xid), syncTransactional, getContext());
    }
 
    public void commit(final long txID) throws Exception
    {
-      messageJournal.appendCommitRecord(txID, syncTransactional, getIOContext());
+      messageJournal.appendCommitRecord(txID, syncTransactional, getContext());
    }
 
    public void rollback(final long txID) throws Exception
    {
-      messageJournal.appendRollbackRecord(txID, syncTransactional, getIOContext());
+      messageJournal.appendRollbackRecord(txID, syncTransactional, getContext());
    }
 
    public void storeDuplicateIDTransactional(final long txID,
@@ -648,7 +665,7 @@ public class JournalStorageManager implements StorageManager
       messageJournal.appendUpdateRecord(ref.getMessage().getMessageID(),
                                         UPDATE_DELIVERY_COUNT,
                                         updateInfo,
-                                        syncNonTransactional, getIOContext());
+                                        syncNonTransactional, getContext());
    }
 
    private static final class AddMessageRecord
@@ -1394,11 +1411,6 @@ public class JournalStorageManager implements StorageManager
 
    // Private ----------------------------------------------------------------------------------
    
-   private IOCompletion getIOContext()
-   {
-      return OperationContextImpl.getInstance();
-   }
-
    private void checkAndCreateDir(final String dir, final boolean create)
    {
       File f = new File(dir);

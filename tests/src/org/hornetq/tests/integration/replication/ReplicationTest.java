@@ -53,7 +53,7 @@ import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
+import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.remoting.Interceptor;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.RemotingConnection;
@@ -70,6 +70,7 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
+import org.hornetq.utils.OrderedExecutorFactory;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -89,6 +90,8 @@ public class ReplicationTest extends ServiceTestBase
    private ThreadFactory tFactory;
 
    private ExecutorService executor;
+   
+   private ExecutorFactory factory;
 
    private ScheduledExecutorService scheduledExecutor;
 
@@ -114,6 +117,7 @@ public class ReplicationTest extends ServiceTestBase
       try
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
          manager.stop();
@@ -140,6 +144,7 @@ public class ReplicationTest extends ServiceTestBase
       try
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
          try
@@ -182,6 +187,7 @@ public class ReplicationTest extends ServiceTestBase
       try
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
 
          manager.start();
@@ -189,6 +195,7 @@ public class ReplicationTest extends ServiceTestBase
          try
          {
             ReplicationManagerImpl manager2 = new ReplicationManagerImpl(failoverManager,
+                                                                         this.factory,
                                                                          ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
 
             manager2.start();
@@ -223,6 +230,7 @@ public class ReplicationTest extends ServiceTestBase
       try
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
 
          try
@@ -241,7 +249,7 @@ public class ReplicationTest extends ServiceTestBase
          server.stop();
       }
    }
-
+   
    public void testSendPackets() throws Exception
    {
 
@@ -257,7 +265,10 @@ public class ReplicationTest extends ServiceTestBase
 
       try
       {
+         StorageManager storage = getStorage();
+         
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
 
@@ -276,7 +287,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(3, new FakeData(), false);
          replicatedJournal.appendRollbackRecord(3, false);
 
-         blockOnReplication(manager);
+         blockOnReplication(storage, manager);
 
          assertEquals(0, manager.getActiveTokens().size());
 
@@ -294,7 +305,7 @@ public class ReplicationTest extends ServiceTestBase
          manager.pageWrite(pgmsg, 3);
          manager.pageWrite(pgmsg, 4);
 
-         blockOnReplication(manager);
+         blockOnReplication(storage, manager);
 
          PagingManager pagingManager = createPageManager(server.getStorageManager(),
                                                          server.getConfiguration(),
@@ -313,7 +324,7 @@ public class ReplicationTest extends ServiceTestBase
          manager.pageDeleted(dummy, 5);
          manager.pageDeleted(dummy, 6);
 
-         blockOnReplication(manager);
+         blockOnReplication(storage, manager);
 
          ServerMessageImpl serverMsg = new ServerMessageImpl();
          serverMsg.setMessageID(500);
@@ -328,7 +339,7 @@ public class ReplicationTest extends ServiceTestBase
 
          manager.largeMessageDelete(500);
 
-         blockOnReplication(manager);
+         blockOnReplication(storage, manager);
 
          store.start();
 
@@ -363,7 +374,9 @@ public class ReplicationTest extends ServiceTestBase
 
       try
       {
+         StorageManager storage = getStorage();
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
 
@@ -377,7 +390,7 @@ public class ReplicationTest extends ServiceTestBase
          }
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
+         storage.afterCompleteOperations(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -401,13 +414,21 @@ public class ReplicationTest extends ServiceTestBase
    }
 
    /**
+    * @return
+    */
+   private JournalStorageManager getStorage()
+   {
+      return new JournalStorageManager(createDefaultConfig(), factory);
+   }
+
+   /**
     * @param manager
     * @return
     */
-   private void blockOnReplication(ReplicationManagerImpl manager) throws Exception
+   private void blockOnReplication(StorageManager storage, ReplicationManagerImpl manager) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(1);
-      OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
+      storage.afterCompleteOperations(new IOAsyncTask()
       {
 
          public void onError(int errorCode, String errorMessage)
@@ -430,6 +451,7 @@ public class ReplicationTest extends ServiceTestBase
       try
       {
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
          fail("Exception expected");
@@ -455,7 +477,9 @@ public class ReplicationTest extends ServiceTestBase
 
       try
       {
+         StorageManager storage = getStorage();
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
 
@@ -464,7 +488,7 @@ public class ReplicationTest extends ServiceTestBase
          replicatedJournal.appendPrepareRecord(1, new FakeData(), false);
 
          final CountDownLatch latch = new CountDownLatch(1);
-         OperationContextImpl.getInstance().executeOnCompletion(new IOAsyncTask()
+         storage.afterCompleteOperations(new IOAsyncTask()
          {
 
             public void onError(int errorCode, String errorMessage)
@@ -505,7 +529,9 @@ public class ReplicationTest extends ServiceTestBase
 
       try
       {
+         StorageManager storage = getStorage();
          ReplicationManagerImpl manager = new ReplicationManagerImpl(failoverManager,
+                                                                     this.factory,
                                                                      ConfigurationImpl.DEFAULT_BACKUP_WINDOW_SIZE);
          manager.start();
 
@@ -515,7 +541,7 @@ public class ReplicationTest extends ServiceTestBase
 
          final CountDownLatch latch = new CountDownLatch(numberOfAdds);
 
-         OperationContext ctx = OperationContextImpl.getInstance();
+         OperationContext ctx = storage.getContext();
          
          for (int i = 0; i < numberOfAdds; i++)
          {
@@ -593,8 +619,25 @@ public class ReplicationTest extends ServiceTestBase
       executor = Executors.newCachedThreadPool(tFactory);
 
       scheduledExecutor = new ScheduledThreadPoolExecutor(10, tFactory);
+      
+      factory = new OrderedExecutorFactory(executor);
+   }
+
+   protected void tearDown() throws Exception
+   {
+
+      executor.shutdown();
+
+      scheduledExecutor.shutdown();
+
+      tFactory = null;
+
+      scheduledExecutor = null;
+
+      super.tearDown();
 
    }
+
 
    private FailoverManagerImpl createFailoverManager()
    {
@@ -622,22 +665,6 @@ public class ReplicationTest extends ServiceTestBase
                                      scheduledExecutor,
                                      interceptors);
    }
-
-   protected void tearDown() throws Exception
-   {
-
-      executor.shutdown();
-
-      scheduledExecutor.shutdown();
-
-      tFactory = null;
-
-      scheduledExecutor = null;
-
-      super.tearDown();
-
-   }
-
    protected PagingManager createPageManager(StorageManager storageManager,
                                              Configuration configuration,
                                              ExecutorFactory executorFactory,

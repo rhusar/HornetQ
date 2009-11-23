@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.StorageManager;
@@ -59,14 +58,11 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
    private final StorageManager storageManager;
 
    private final boolean persist;
-   
-   private final Executor executor;
 
    public DuplicateIDCacheImpl(final SimpleString address,
                                final int size,
                                final StorageManager storageManager,
-                               final boolean persist,
-                               final Executor executor)
+                               final boolean persist)
    {
       this.address = address;
 
@@ -77,8 +73,6 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       this.storageManager = storageManager;
 
       this.persist = persist;
-      
-      this.executor = executor;
    }
 
    public void load(final List<Pair<byte[], Long>> theIds) throws Exception
@@ -144,7 +138,7 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
             storageManager.storeDuplicateID(address, duplID, recordID);
          }
 
-         addToCacheInMemory(duplID, recordID, null);
+         addToCacheInMemory(duplID, recordID);
       }
       else
       {
@@ -161,12 +155,11 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       }
    }
 
-   
-   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID, final Executor journalExecutor) throws Exception
+   private synchronized void addToCacheInMemory(final byte[] duplID, final long recordID)
    {
       cache.add(new ByteArrayHolder(duplID));
 
-      final Pair<ByteArrayHolder, Long> id;
+      Pair<ByteArrayHolder, Long> id;
 
       if (pos < ids.size())
       {
@@ -180,27 +173,13 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
          // reclaimed
          id.a = new ByteArrayHolder(duplID);
 
-         if (journalExecutor != null)
-         {
-            // We can't execute any IO inside the Journal callback, so taking it outside
-            journalExecutor.execute(new Runnable()
-            {
-               public void run()
-               {
-                  try
-                  {
-                     storageManager.deleteDuplicateID(id.b);
-                  }
-                  catch (Exception e)
-                  {
-                     log.warn("Error on deleting duplicate cache");
-                  }
-               }
-            });
-         }
-         else
+         try
          {
             storageManager.deleteDuplicateID(id.b);
+         }
+         catch (Exception e)
+         {
+            log.warn("Error on deleting duplicate cache", e);
          }
 
          id.b = recordID;
@@ -237,14 +216,8 @@ public class DuplicateIDCacheImpl implements DuplicateIDCache
       {
          if (!done)
          {
-            try
-            {
-               addToCacheInMemory(duplID, recordID, executor);
-            }
-            catch (Exception shouldNotHappen)
-            {
-               // if you pass an executor to addtoCache, an exception will never happen here
-            }
+            addToCacheInMemory(duplID, recordID);
+
             done = true;
          }
       }
