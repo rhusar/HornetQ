@@ -1366,14 +1366,12 @@ public class JournalImpl implements TestableJournal
       try
       {
 
+
          if (tx == null)
          {
-            log.warn("Commit being called on an empty transaction, ignoring call. ID = " + txID);
-            // Commit being called on an empty transaction
-            callback.done();
-            return;
+            throw new IllegalStateException("Cannot find tx with id " + txID);
          }
-         
+
          ChannelBuffer bb = newBuffer(SIZE_COMPLETE_TRANSACTION_RECORD);
 
          writeTransaction(-1,

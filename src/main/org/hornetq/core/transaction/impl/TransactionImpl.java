@@ -203,18 +203,8 @@ public class TransactionImpl implements Transaction
             }
          }
 
-         if (xid != null)
+         if (xid != null && !onePhase)
          {
-            if (onePhase)
-            {
-               if (state == State.ACTIVE)
-               {
-                  // Why do we need a prepare record on the onePhase optimization?
-                  // Why we can't just go straight to commit, if we are doing one phase anyway?
-                  state = State.PREPARED;
-//                  prepare();
-               }
-            }
             if (state != State.PREPARED)
             {
                throw new IllegalStateException("Transaction is in invalid state " + state);
@@ -246,6 +236,8 @@ public class TransactionImpl implements Transaction
          // We use the Callback even for non persistence
          // If we are using non-persistence with replication, the replication manager will have
          // to execute this runnable in the correct order
+         // This also will only use a different thread if there are any IO pendings.
+         // If the IO finished early by the time we got here, we won't need an executor
          storageManager.afterCompleteOperations(new IOAsyncTask()
          {
 
