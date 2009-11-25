@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.buffers.impl.ResetLimitWrappedHornetQBuffer;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
@@ -96,8 +96,6 @@ public abstract class MessageImpl implements Message
 
    protected HornetQBuffer buffer;
 
-  // private int encodeSize;
-
    // Constructors --------------------------------------------------
 
    protected MessageImpl()
@@ -139,7 +137,7 @@ public abstract class MessageImpl implements Message
 
    private void createBody(final int initialMessageBufferSize)
    {
-      buffer = HornetQChannelBuffers.dynamicBuffer(initialMessageBufferSize);
+      buffer = HornetQBuffers.dynamicBuffer(initialMessageBufferSize);
 
       // There's a bug in netty which means a dynamic buffer won't resize until you write a byte
       buffer.writeByte((byte)0);
@@ -148,17 +146,17 @@ public abstract class MessageImpl implements Message
 
       buffer.setIndex(limit, limit);
 
-      //endOfBodyPosition = limit;
+      // endOfBodyPosition = limit;
    }
 
    // Message implementation ----------------------------------------
 
    public int getEncodeSize()
-   {    
-      int headersPropsSize = this.getHeadersAndPropertiesEncodeSize();     
-      
+   {
+      int headersPropsSize = this.getHeadersAndPropertiesEncodeSize();
+
       int bodyPos = this.endOfBodyPosition == -1 ? buffer.writerIndex() : this.endOfBodyPosition;
-                       
+
       int bodySize = bodyPos - PacketImpl.PACKET_HEADERS_SIZE - DataConstants.SIZE_INT;
 
       return SIZE_INT + bodySize + SIZE_INT + headersPropsSize;
@@ -176,27 +174,27 @@ public abstract class MessageImpl implements Message
    }
 
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
-   {
+   {      
       buffer.writeLong(messageID);
-      buffer.writeSimpleString(destination);
+      buffer.writeSimpleString(destination);      
       buffer.writeByte(type);
       buffer.writeBoolean(durable);
       buffer.writeLong(expiration);
       buffer.writeLong(timestamp);
-      buffer.writeByte(priority);
+      buffer.writeByte(priority);      
       properties.encode(buffer);      
    }
 
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
    {
-      messageID = buffer.readLong();
-      destination = buffer.readSimpleString();
+      messageID = buffer.readLong();      
+      destination = buffer.readSimpleString();      
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();
       timestamp = buffer.readLong();
-      priority = buffer.readByte();
-      properties.decode(buffer);      
+      priority = buffer.readByte();            
+      properties.decode(buffer);
    }
 
    public long getMessageID()
@@ -679,7 +677,7 @@ public abstract class MessageImpl implements Message
 
       public int encode(ByteBuffer bufferRead) throws HornetQException
       {
-         HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(bufferRead);
+         HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bufferRead);
          return encode(buffer, bufferRead.capacity());
       }
 
@@ -690,7 +688,6 @@ public abstract class MessageImpl implements Message
          return size;
       }
    }
-
 
    protected ResetLimitWrappedHornetQBuffer bodyBuffer;
 
@@ -724,8 +721,8 @@ public abstract class MessageImpl implements Message
    /*
     * Copy constructor
     */
-   protected MessageImpl(final MessageImpl other)
-   {
+   protected MessageImpl(final MessageImpl other, final boolean shallow)
+   {     
       messageID = other.getMessageID();
       destination = other.getDestination();
       type = other.getType();
@@ -734,12 +731,23 @@ public abstract class MessageImpl implements Message
       timestamp = other.getTimestamp();
       priority = other.getPriority();
       properties = new TypedProperties(other.getProperties());
-      // Note, this is a shallow copy - does not copy the buffer
-      buffer = other.buffer;
+
       this.bufferValid = other.bufferValid;
       this.endOfBodyPosition = other.endOfBodyPosition;
       this.endOfMessagePosition = other.endOfMessagePosition;
       this.copied = other.copied;
+
+      if (shallow)
+      {
+         this.buffer = other.buffer;
+      }
+      else
+      {
+         // We need to copy the underlying buffer too, since the different messsages thereafter might have different
+         // properties set on them, making their encoding different
+         buffer = other.buffer.copy(0, other.buffer.capacity());
+         buffer.setIndex(other.buffer.readerIndex(), other.buffer.writerIndex());
+      }
    }
 
    public void bodyChanged()
@@ -749,7 +757,7 @@ public abstract class MessageImpl implements Message
       checkCopy();
 
       bufferValid = false;
-      
+
       this.endOfBodyPosition = -1;
    }
 
@@ -762,7 +770,7 @@ public abstract class MessageImpl implements Message
          copied = true;
       }
    }
-   
+
    public void resetCopied()
    {
       copied = false;
@@ -771,17 +779,17 @@ public abstract class MessageImpl implements Message
    private void forceCopy()
    {
       // Must copy buffer before sending it
-      
+
       buffer = buffer.copy(0, buffer.capacity());
-      
+
       buffer.setIndex(0, this.endOfBodyPosition);
-            
+
       if (bodyBuffer != null)
       {
          bodyBuffer.setBuffer(buffer);
       }
    }
-   
+
    public int getEndOfMessagePosition()
    {
       return this.endOfMessagePosition;
@@ -791,12 +799,12 @@ public abstract class MessageImpl implements Message
    {
       return this.endOfBodyPosition;
    }
-   
+
    // Encode to journal or paging
    public void encode(HornetQBuffer buff)
    {
       encodeToBuffer();
-      
+
       buff.writeBytes(buffer, PacketImpl.PACKET_HEADERS_SIZE, endOfMessagePosition - PacketImpl.PACKET_HEADERS_SIZE);
    }
 
@@ -820,18 +828,18 @@ public abstract class MessageImpl implements Message
       buff.readerIndex(start + length);
    }
 
-   //This must be synchronized as it can be called concurrently id the message is being delivered concurently to
-   //many queues - the first caller in this case will actually encode it
+   // This must be synchronized as it can be called concurrently id the message is being delivered concurently to
+   // many queues - the first caller in this case will actually encode it
    public synchronized HornetQBuffer encodeToBuffer()
-   {     
+   {      
       if (!bufferValid)
-      {                 
+      {
          if (endOfBodyPosition == -1)
          {
             // Means sending message for first time
-            endOfBodyPosition = buffer.writerIndex();           
+            endOfBodyPosition = buffer.writerIndex();
          }
-         
+
          // write it
          buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, endOfBodyPosition);
 
@@ -848,7 +856,7 @@ public abstract class MessageImpl implements Message
 
          this.bufferValid = true;
       }
-            
+
       return buffer;
    }
 

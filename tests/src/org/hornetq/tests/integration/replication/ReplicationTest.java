@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientSessionFactory;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.FailoverManager;
@@ -326,7 +326,7 @@ public class ReplicationTest extends ServiceTestBase
          serverMsg.setMessageID(500);
          serverMsg.setDestination(new SimpleString("tttt"));
 
-         HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(100);
+         HornetQBuffer buffer = HornetQBuffers.dynamicBuffer(100);
          serverMsg.encodeHeadersAndProperties(buffer);
 
          manager.largeMessageBegin(500);

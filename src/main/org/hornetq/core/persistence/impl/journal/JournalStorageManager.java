@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
@@ -432,7 +432,7 @@ public class JournalStorageManager implements StorageManager
 
       LargeServerMessageImpl largeMessage = (LargeServerMessageImpl)createLargeMessage();
 
-      HornetQBuffer headerBuffer = HornetQChannelBuffers.wrappedBuffer(header);
+      HornetQBuffer headerBuffer = HornetQBuffers.wrappedBuffer(header);
 
       largeMessage.decodeHeadersAndProperties(headerBuffer);
 
@@ -680,7 +680,7 @@ public class JournalStorageManager implements StorageManager
             {
                byte[] data = record.data;
 
-               HornetQBuffer buff = HornetQChannelBuffers.wrappedBuffer(data);
+               HornetQBuffer buff = HornetQBuffers.wrappedBuffer(data);
 
                try
                {
@@ -721,7 +721,7 @@ public class JournalStorageManager implements StorageManager
       {
          byte[] data = record.data;
 
-         HornetQBuffer buff = HornetQChannelBuffers.wrappedBuffer(data);
+         HornetQBuffer buff = HornetQBuffers.wrappedBuffer(data);
 
          byte recordType = record.getUserRecordType();
 
@@ -1008,7 +1008,7 @@ public class JournalStorageManager implements StorageManager
          {
             byte[] data = record.data;
 
-            HornetQBuffer buff = HornetQChannelBuffers.wrappedBuffer(data);
+            HornetQBuffer buff = HornetQBuffers.wrappedBuffer(data);
 
             byte recordType = record.getUserRecordType();
 
@@ -1140,7 +1140,7 @@ public class JournalStorageManager implements StorageManager
          {
             byte[] data = record.data;
 
-            HornetQBuffer buff = HornetQChannelBuffers.wrappedBuffer(data);
+            HornetQBuffer buff = HornetQBuffers.wrappedBuffer(data);
 
             long messageID = record.id;
 
@@ -1224,7 +1224,7 @@ public class JournalStorageManager implements StorageManager
       {
          long id = record.id;
 
-         HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(record.data);
+         HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(record.data);
 
          byte rec = record.getUserRecordType();
 
@@ -1441,7 +1441,7 @@ public class JournalStorageManager implements StorageManager
 
       XidEncoding(final byte[] data)
       {
-         xid = XidCodecSupport.decodeXid(HornetQChannelBuffers.wrappedBuffer(data));
+         xid = XidCodecSupport.decodeXid(HornetQBuffers.wrappedBuffer(data));
       }
 
       public void decode(final HornetQBuffer buffer)

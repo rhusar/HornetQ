@@ -13,10 +13,10 @@
 
 package org.hornetq.tests.unit.core.filter.impl;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.tests.util.RandomUtil;
@@ -32,6 +32,8 @@ import org.hornetq.utils.SimpleString;
  */
 public class FilterTest  extends UnitTestCase
 {
+   private static final Logger log = Logger.getLogger(FilterTest.class);
+
    private Filter filter;
    
    private ServerMessage message;
@@ -40,7 +42,7 @@ public class FilterTest  extends UnitTestCase
    {
       super.setUp();
       
-      message = new ServerMessageImpl();
+      message = new ServerMessageImpl(1, 1000);
    }
 
    public void testFilterForgets() throws Exception
@@ -103,16 +105,19 @@ public class FilterTest  extends UnitTestCase
    {
       message.setDestination(RandomUtil.randomSimpleString());      
 
-      assertTrue(message.getEncodeSize() < 1024);
-            
-      Filter moreThan128 = FilterImpl.createFilter(new SimpleString("HQSize > 128"));
-      Filter lessThan1024 = FilterImpl.createFilter(new SimpleString("HQSize < 1024"));
+      int encodeSize = message.getEncodeSize();
+          
+      Filter moreThanSmall = FilterImpl.createFilter(new SimpleString("HQSize > " + (encodeSize - 1)));
+      Filter lessThanLarge = FilterImpl.createFilter(new SimpleString("HQSize < " + (encodeSize + 1)));
       
-      assertFalse(moreThan128.match(message));
-      assertTrue(lessThan1024.match(message));
+      Filter lessThanSmall = FilterImpl.createFilter(new SimpleString("HQSize < " + encodeSize));
+      Filter moreThanLarge = FilterImpl.createFilter(new SimpleString("HQSize > " + encodeSize));
+      
+      assertTrue(moreThanSmall.match(message));
+      assertTrue(lessThanLarge.match(message));
 
-      assertTrue(moreThan128.match(message));
-      assertFalse(lessThan1024.match(message));
+      assertFalse(lessThanSmall.match(message));
+      assertFalse(moreThanLarge.match(message));
 
    }
 

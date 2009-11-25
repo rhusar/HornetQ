@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -98,7 +98,7 @@ public class PageImpl implements Page
       
       buffer2.rewind();
 
-      HornetQBuffer fileBuffer = HornetQChannelBuffers.wrappedBuffer(buffer2); 
+      HornetQBuffer fileBuffer = HornetQBuffers.wrappedBuffer(buffer2); 
       fileBuffer.writerIndex(fileBuffer.capacity());
 
       while (fileBuffer.readable())
@@ -149,7 +149,7 @@ public class PageImpl implements Page
    {
       ByteBuffer buffer = fileFactory.newBuffer(message.getEncodeSize() + SIZE_RECORD);
       
-      HornetQBuffer wrap = HornetQChannelBuffers.wrappedBuffer(buffer);
+      HornetQBuffer wrap = HornetQBuffers.wrappedBuffer(buffer);
       wrap.clear();
       
       wrap.writeByte(START_BYTE);

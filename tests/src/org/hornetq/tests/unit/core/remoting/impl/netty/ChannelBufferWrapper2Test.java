@@ -14,7 +14,7 @@
 package org.hornetq.tests.unit.core.remoting.impl.netty;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.tests.unit.core.remoting.HornetQBufferTestBase;
 
 /**
@@ -43,7 +43,7 @@ public class ChannelBufferWrapper2Test extends HornetQBufferTestBase
    @Override
    protected HornetQBuffer createBuffer()
    {
-      return HornetQChannelBuffers.dynamicBuffer(512);
+      return HornetQBuffers.dynamicBuffer(512);
    }
 
    // Package protected ---------------------------------------------

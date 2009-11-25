@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -97,12 +97,12 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
       {
          controlFile.open(1);
 
-         HornetQBuffer renameBuffer = HornetQChannelBuffers.dynamicBuffer(1);
+         HornetQBuffer renameBuffer = HornetQBuffers.dynamicBuffer(1);
 
          renameBuffer.writeInt(-1);
          renameBuffer.writeInt(-1);
 
-         HornetQBuffer filesToRename = HornetQChannelBuffers.dynamicBuffer(1);
+         HornetQBuffer filesToRename = HornetQBuffers.dynamicBuffer(1);
 
          // DataFiles first
 
@@ -205,8 +205,8 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
       flush();
 
       ByteBuffer bufferWrite = fileFactory.newBuffer(journal.getFileSize());
-      writingChannel = HornetQChannelBuffers.wrappedBuffer(bufferWrite);
-
+      writingChannel = HornetQBuffers.wrappedBuffer(bufferWrite);
+      
       currentFile = journal.getFile(false, false, false, true);
       sequentialFile = currentFile.getFile();
 

@@ -24,7 +24,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.client.impl.ClientSessionImpl;

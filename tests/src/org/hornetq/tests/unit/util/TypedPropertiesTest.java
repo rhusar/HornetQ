@@ -27,7 +27,7 @@ import static org.hornetq.tests.util.RandomUtil.randomSimpleString;
 import java.util.Iterator;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
@@ -210,7 +210,7 @@ public class TypedPropertiesTest extends UnitTestCase
       SimpleString keyToRemove = randomSimpleString();
       props.putSimpleStringProperty(keyToRemove, randomSimpleString());
 
-      HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(1024); 
+      HornetQBuffer buffer = HornetQBuffers.dynamicBuffer(1024); 
       props.encode(buffer);
       
       assertEquals(props.getEncodeSize(), buffer.writerIndex());
@@ -234,7 +234,7 @@ public class TypedPropertiesTest extends UnitTestCase
    {
       TypedProperties emptyProps = new TypedProperties();
 
-      HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(1024); 
+      HornetQBuffer buffer = HornetQBuffers.dynamicBuffer(1024); 
       emptyProps.encode(buffer);
       
       assertEquals(props.getEncodeSize(), buffer.writerIndex());

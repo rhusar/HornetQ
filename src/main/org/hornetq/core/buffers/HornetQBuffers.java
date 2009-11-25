@@ -28,7 +28,7 @@ import org.jboss.netty.buffer.ChannelBuffers;
  *
  *
  */
-public class HornetQChannelBuffers
+public class HornetQBuffers
 {
    public static HornetQBuffer dynamicBuffer(int estimatedLength)
    {
@@ -46,7 +46,11 @@ public class HornetQChannelBuffers
    
    public static HornetQBuffer wrappedBuffer(ByteBuffer underlying)
    {
-      return new ChannelBufferWrapper(ChannelBuffers.wrappedBuffer(underlying));
+      HornetQBuffer buff = new ChannelBufferWrapper(ChannelBuffers.wrappedBuffer(underlying));
+      
+      buff.clear();
+      
+      return buff;
    }
    
    public static HornetQBuffer wrappedBuffer(byte[] underlying)

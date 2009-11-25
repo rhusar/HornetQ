@@ -39,9 +39,11 @@ public interface ServerMessage extends Message, EncodingSupport
 
    int decrementDurableRefCount();
 
-   ServerMessage copy(long newID) throws Exception;
+   ServerMessage copy(long newID);
 
-   ServerMessage copy() throws Exception;
+   ServerMessage copy();
+   
+   ServerMessage shallowCopy();
 
    int getMemoryEstimate();
 

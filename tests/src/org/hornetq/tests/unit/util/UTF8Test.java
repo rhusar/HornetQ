@@ -20,7 +20,7 @@ import java.io.DataOutputStream;
 import java.nio.ByteBuffer;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.DataConstants;
@@ -41,7 +41,7 @@ public class UTF8Test extends UnitTestCase
 
    public void testValidateUTF() throws Exception
    {
-      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(60 * 1024); 
+      HornetQBuffer buffer = HornetQBuffers.fixedBuffer(60 * 1024); 
 
       byte[] bytes = new byte[20000];
 
@@ -71,11 +71,11 @@ public class UTF8Test extends UnitTestCase
          String str = new String(bytes);
          
          // The maximum size the encoded UTF string would reach is str.length * 3 (look at the UTF8 implementation)
-         testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.wrappedBuffer(ByteBuffer.allocate(str.length() * 3 + DataConstants.SIZE_SHORT))); 
+         testValidateUTFOnDataInputStream(str, HornetQBuffers.wrappedBuffer(ByteBuffer.allocate(str.length() * 3 + DataConstants.SIZE_SHORT))); 
 
-         testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.dynamicBuffer(100));
+         testValidateUTFOnDataInputStream(str, HornetQBuffers.dynamicBuffer(100));
 
-         testValidateUTFOnDataInputStream(str, HornetQChannelBuffers.fixedBuffer(100 * 1024));
+         testValidateUTFOnDataInputStream(str, HornetQBuffers.fixedBuffer(100 * 1024));
       }
    }
 
@@ -94,7 +94,7 @@ public class UTF8Test extends UnitTestCase
 
       outData.writeUTF(str);
 
-      HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(byteOut.toByteArray());
+      HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(byteOut.toByteArray());
 
       newStr = UTF8Util.readUTF(buffer);
 
@@ -113,7 +113,7 @@ public class UTF8Test extends UnitTestCase
 
       String str = new String(chars);
 
-      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(0xffff + 4);
+      HornetQBuffer buffer = HornetQBuffers.fixedBuffer(0xffff + 4);
 
       try
       {

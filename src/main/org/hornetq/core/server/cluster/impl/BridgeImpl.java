@@ -416,7 +416,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             // the one pertinent for the destination node - this is important since different queues on different
             // nodes could have same queue ids
             // Note we must copy since same message may get routed to other nodes which require different headers
-            message = message.copy();
+            message = message.shallowCopy();
 
             // TODO - we can optimise this
 

@@ -25,7 +25,7 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -590,7 +590,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
 
    protected HornetQBuffer createLargeBuffer(final int numberOfIntegers)
    {
-      HornetQBuffer body = HornetQChannelBuffers.fixedBuffer(DataConstants.SIZE_INT * numberOfIntegers);
+      HornetQBuffer body = HornetQBuffers.fixedBuffer(DataConstants.SIZE_INT * numberOfIntegers);
 
       for (int i = 0; i < numberOfIntegers; i++)
       {

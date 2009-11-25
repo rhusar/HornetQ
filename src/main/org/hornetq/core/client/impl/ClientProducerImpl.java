@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
@@ -308,7 +308,7 @@ public class ClientProducerImpl implements ClientProducerInternal
          msg.getWholeBuffer().readerIndex(0);
       }
 
-      HornetQBuffer headerBuffer = HornetQChannelBuffers.fixedBuffer(headerSize);
+      HornetQBuffer headerBuffer = HornetQBuffers.fixedBuffer(headerSize);
       
       msg.encodeHeadersAndProperties(headerBuffer);
 
@@ -359,7 +359,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
             final int chunkLength = Math.min((int)(bodySize - pos), minLargeMessageSize);
 
-            final HornetQBuffer bodyBuffer = HornetQChannelBuffers.fixedBuffer(chunkLength);
+            final HornetQBuffer bodyBuffer = HornetQBuffers.fixedBuffer(chunkLength);
 
             context.encode(bodyBuffer, chunkLength);
 

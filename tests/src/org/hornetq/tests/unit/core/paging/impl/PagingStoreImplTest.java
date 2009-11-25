@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
@@ -107,7 +107,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(nr1, trans.getNumberOfMessages());
 
-      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(trans.getEncodeSize());
+      HornetQBuffer buffer = HornetQBuffers.fixedBuffer(trans.getEncodeSize());
 
       trans.encode(buffer);
 
@@ -205,7 +205,7 @@ public class PagingStoreImplTest extends UnitTestCase
       buffers.add(buffer);
       SimpleString destination = new SimpleString("test");
 
-      ServerMessage msg = createMessage(storeImpl, destination, buffer);
+      ServerMessage msg = createMessage(1, storeImpl, destination, buffer);
 
       assertTrue(storeImpl.isPaging());
 
@@ -268,7 +268,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
          buffers.add(buffer);
 
-         ServerMessage msg = createMessage(storeImpl, destination, buffer);
+         ServerMessage msg = createMessage(i, storeImpl, destination, buffer);
 
          assertTrue(storeImpl.page(msg, true));
       }
@@ -342,7 +342,7 @@ public class PagingStoreImplTest extends UnitTestCase
             storeImpl.forceAnotherPage();
          }
 
-         ServerMessage msg = createMessage(storeImpl, destination, buffer);
+         ServerMessage msg = createMessage(i, storeImpl, destination, buffer);
 
          assertTrue(storeImpl.page(msg, true));
       }
@@ -374,7 +374,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertTrue(storeImpl.isPaging());
 
-      ServerMessage msg = createMessage(storeImpl, destination, buffers.get(0));
+      ServerMessage msg = createMessage(1, storeImpl, destination, buffers.get(0));
 
       assertTrue(storeImpl.page(msg, true));
 
@@ -493,7 +493,7 @@ public class PagingStoreImplTest extends UnitTestCase
                   // Each thread will Keep paging until all the messages are depaged.
                   // This is possible because the depage thread is not actually reading the pages.
                   // Just using the internal API to remove it from the page file system
-                  ServerMessage msg = createMessage(storeImpl, destination, createRandomBuffer(id, 5));
+                  ServerMessage msg = createMessage(id, storeImpl, destination, createRandomBuffer(id, 5));
                   if (storeImpl.page(msg, false))
                   {
                      buffers.put(id, msg);
@@ -637,7 +637,7 @@ public class PagingStoreImplTest extends UnitTestCase
       assertEquals(numberOfPages, storeImpl2.getNumberOfPages());
 
       long lastMessageId = messageIdGenerator.incrementAndGet();
-      ServerMessage lastMsg = createMessage(storeImpl, destination, createRandomBuffer(lastMessageId, 5));
+      ServerMessage lastMsg = createMessage(lastMessageId, storeImpl, destination, createRandomBuffer(lastMessageId, 5));
 
       storeImpl2.page(lastMsg, true);
       buffers2.put(lastMessageId, lastMsg);
@@ -702,22 +702,24 @@ public class PagingStoreImplTest extends UnitTestCase
       return new FakePostOffice();
    }
 
-   private ServerMessage createMessage(final PagingStore store,
+   private ServerMessage createMessage(final long id, final PagingStore store,
                                        final SimpleString destination,
                                        final HornetQBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl();
+      ServerMessage msg = new ServerMessageImpl(id, 1000);
 
       msg.setDestination(destination);
 
       msg.setPagingStore(store);
+      
+      msg.getBodyBuffer().writeBytes(buffer, buffer.capacity());
 
       return msg;
    }
 
    private HornetQBuffer createRandomBuffer(final long id, final int size)
    {
-      HornetQBuffer buffer = HornetQChannelBuffers.fixedBuffer(size + 8);
+      HornetQBuffer buffer = HornetQBuffers.fixedBuffer(size + 8);
 
       buffer.writeLong(id);
 

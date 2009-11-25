@@ -68,9 +68,9 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    /*
     * Copy constructor
     */
-   protected ServerMessageImpl(final ServerMessageImpl other)
+   protected ServerMessageImpl(final ServerMessageImpl other, final boolean shallow)
    {
-      super(other);           
+      super(other, shallow);           
    }
 
    public void setMessageID(final long id)
@@ -162,18 +162,23 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       return memoryEstimate;
    }
 
-   public ServerMessage copy(final long newID) throws Exception
+   public ServerMessage copy(final long newID)
    {
-      ServerMessage m = new ServerMessageImpl(this);
+      ServerMessage m = new ServerMessageImpl(this, false);
 
       m.setMessageID(newID);
 
       return m;
    }
 
-   public ServerMessage copy() throws Exception
+   public ServerMessage copy()
    {
-      return new ServerMessageImpl(this);
+      return new ServerMessageImpl(this, false);
+   }
+   
+   public ServerMessage shallowCopy()
+   {
+      return new ServerMessageImpl(this, true);
    }
 
    public ServerMessage makeCopyForExpiryOrDLA(final long newID, final boolean expiry) throws Exception

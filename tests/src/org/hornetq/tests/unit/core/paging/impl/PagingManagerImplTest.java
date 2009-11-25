@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.Executors;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.impl.PagedMessageImpl;
@@ -112,11 +112,12 @@ public class PagingManagerImplTest extends UnitTestCase
 
    protected ServerMessage createMessage(final long messageId, final SimpleString destination, final ByteBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl();
-
-      msg.setMessageID(messageId);
+      ServerMessage msg = new ServerMessageImpl(messageId, 1000);
 
       msg.setDestination(destination);
+      
+      msg.getBodyBuffer().writeBytes(buffer);
+      
       return msg;
    }
 

@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
@@ -145,7 +145,7 @@ public class BatchIDGeneratorUnitTest extends UnitTestCase
       {
          if (record.userRecordType == JournalStorageManager.ID_COUNTER_RECORD)
          {
-            HornetQBuffer buffer = HornetQChannelBuffers.wrappedBuffer(record.data);
+            HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(record.data);
             batch.loadState(record.id, buffer);
          }
       }

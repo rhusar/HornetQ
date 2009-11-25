@@ -17,7 +17,7 @@ import static org.hornetq.tests.util.RandomUtil.randomSimpleString;
 import static org.hornetq.tests.util.RandomUtil.randomString;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;

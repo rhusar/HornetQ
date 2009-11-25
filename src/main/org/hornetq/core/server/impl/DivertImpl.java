@@ -83,6 +83,8 @@ public class DivertImpl implements Divert
 
       // TODO we can optimise this so it doesn't copy if it's not routed anywhere else
 
+      log.info("making copy for divert");
+      
       ServerMessage copy = message.copy();
 
       copy.setDestination(forwardAddress);

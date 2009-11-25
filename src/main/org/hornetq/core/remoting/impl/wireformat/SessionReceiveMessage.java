@@ -43,13 +43,6 @@ public class SessionReceiveMessage extends MessagePacket
       this.consumerID = consumerID;
 
       this.deliveryCount = deliveryCount;
-      
-      //If the message hasn't already been copied when the headers/properties/body was changed since last send
-      //(which will prompt an invalidate(), which will cause a copy if not copied already)
-      //Then the message needs to be copied before delivering - the previous send may be in the Netty write queue
-      //so we can't just use the same buffer. Also we can't just duplicate, since the extra data (consumerID, deliveryCount)
-      //may well be different on different calls
-      //message.forceCopy();
    }
 
    public SessionReceiveMessage()
@@ -76,8 +69,6 @@ public class SessionReceiveMessage extends MessagePacket
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
-      //message.setEndOfBodyPosition();
-      
       HornetQBuffer orig = message.encodeToBuffer();
       
       //Now we must copy this buffer, before sending to Netty, as it could be concurrently delivered to many consumers
@@ -85,7 +76,7 @@ public class SessionReceiveMessage extends MessagePacket
       HornetQBuffer buffer = orig.copy(0, orig.capacity());
 
       buffer.setIndex(0, message.getEndOfMessagePosition());
-      
+        
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
       

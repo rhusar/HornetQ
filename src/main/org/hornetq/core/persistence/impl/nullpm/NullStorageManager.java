@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.xa.Xid;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
@@ -196,7 +196,7 @@ public class NullStorageManager implements StorageManager
    {
       NullStorageLargeServerMessage largeMessage = new NullStorageLargeServerMessage();
 
-      HornetQBuffer headerBuffer = HornetQChannelBuffers.wrappedBuffer(header);
+      HornetQBuffer headerBuffer = HornetQBuffers.wrappedBuffer(header);
 
       largeMessage.decodeHeadersAndProperties(headerBuffer);
 

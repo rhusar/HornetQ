@@ -22,7 +22,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.impl.ClientConsumerImpl;
 import org.hornetq.core.client.management.impl.ManagementHelper;
 import org.hornetq.core.exception.HornetQException;
@@ -676,7 +676,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
             if (!sentInitialPacket)
             {
-               HornetQBuffer headerBuffer = HornetQChannelBuffers.fixedBuffer(largeMessage.getHeadersAndPropertiesEncodeSize());
+               HornetQBuffer headerBuffer = HornetQBuffers.fixedBuffer(largeMessage.getHeadersAndPropertiesEncodeSize());
 
                largeMessage.encodeHeadersAndProperties(headerBuffer);
 
@@ -805,7 +805,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
          localChunkLen = (int)Math.min(sizePendingLargeMessage - positionPendingLargeMessage, minLargeMessageSize);
 
-         HornetQBuffer bodyBuffer = HornetQChannelBuffers.fixedBuffer(localChunkLen);
+         HornetQBuffer bodyBuffer = HornetQBuffers.fixedBuffer(localChunkLen);
 
          context.encode(bodyBuffer, localChunkLen);
 

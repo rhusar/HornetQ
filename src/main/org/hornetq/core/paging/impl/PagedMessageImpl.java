@@ -18,7 +18,7 @@ import static org.hornetq.utils.DataConstants.SIZE_INT;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.persistence.StorageManager;
@@ -76,7 +76,7 @@ public class PagedMessageImpl implements PagedMessage
       if (largeMessageLazyData != null)
       {
          message = storage.createLargeMessage();
-         HornetQBuffer buffer = HornetQChannelBuffers.dynamicBuffer(largeMessageLazyData); 
+         HornetQBuffer buffer = HornetQBuffers.dynamicBuffer(largeMessageLazyData); 
          message.decodeHeadersAndProperties(buffer);
          largeMessageLazyData = null;
       }

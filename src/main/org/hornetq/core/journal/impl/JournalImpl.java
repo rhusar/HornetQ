@@ -42,7 +42,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.IOCompletion;
 import org.hornetq.core.journal.JournalLoadInformation;
@@ -3331,7 +3331,7 @@ public class JournalImpl implements TestableJournal
 
    private HornetQBuffer newBuffer(final int size)
    {
-      return HornetQChannelBuffers.fixedBuffer(size);
+      return HornetQBuffers.fixedBuffer(size);
    }
 
    // Inner classes

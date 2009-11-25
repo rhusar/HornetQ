@@ -454,7 +454,7 @@ public class TypedProperties
 
          for (int i = 0; i < numHeaders; i++)
          {
-            int len = buffer.readInt();
+            int len = buffer.readInt();        
             byte[] data = new byte[len];
             buffer.readBytes(data);
             SimpleString key = new SimpleString(data);

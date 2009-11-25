@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.MessageHandler;
 import org.hornetq.core.client.impl.ClientConsumerInternal;
@@ -114,7 +114,7 @@ public class LargeMessageBufferTest extends UnitTestCase
    {
       LargeMessageBufferImpl buffer = create15BytesSample();
 
-      HornetQBuffer dstBuffer = HornetQChannelBuffers.fixedBuffer(20);
+      HornetQBuffer dstBuffer = HornetQBuffers.fixedBuffer(20);
 
       dstBuffer.setIndex(0, 5);
 
@@ -168,7 +168,7 @@ public class LargeMessageBufferTest extends UnitTestCase
 
    public void testReadData() throws Exception
    {
-      HornetQBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
+      HornetQBuffer dynamic = HornetQBuffers.dynamicBuffer(1);
 
       String str1 = RandomUtil.randomString();
       String str2 = RandomUtil.randomString();
@@ -197,7 +197,7 @@ public class LargeMessageBufferTest extends UnitTestCase
    {
       clearData();
       
-      HornetQBuffer dynamic = HornetQChannelBuffers.dynamicBuffer(1);
+      HornetQBuffer dynamic = HornetQBuffers.dynamicBuffer(1);
 
       String str1 = RandomUtil.randomString();
       String str2 = RandomUtil.randomString();

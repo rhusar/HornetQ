@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.MessageHandler;
 import org.hornetq.core.exception.HornetQException;
@@ -491,7 +491,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
       //FIXME - this is really inefficient - decoding from a buffer to a byte[] then from the byte[] to another buffer
       //which is then decoded to form the message! Clebert, what were you thinking?
-      currentChunkMessage.decodeHeadersAndProperties(HornetQChannelBuffers.wrappedBuffer(packet.getLargeMessageHeader()));
+      currentChunkMessage.decodeHeadersAndProperties(HornetQBuffers.wrappedBuffer(packet.getLargeMessageHeader()));
 
       currentChunkMessage.setLargeMessage(true);
 

@@ -16,7 +16,7 @@ package org.hornetq.tests.stress.journal;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
-import org.hornetq.core.buffers.HornetQChannelBuffers;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.*;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
