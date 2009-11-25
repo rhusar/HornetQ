@@ -68,7 +68,7 @@ public class ClientSessionPacketHandler implements ChannelHandler
                break;
             }
             case SESS_RECEIVE_MSG:
-            {
+            {              
                SessionReceiveMessage message = (SessionReceiveMessage) packet;
                
                clientSession.handleReceiveMessage(message.getConsumerID(), message);               

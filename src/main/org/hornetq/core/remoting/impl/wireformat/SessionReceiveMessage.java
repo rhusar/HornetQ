@@ -17,6 +17,7 @@ import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.impl.ClientMessageImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.utils.DataConstants;
 
 /**
@@ -43,7 +44,12 @@ public class SessionReceiveMessage extends MessagePacket
 
       this.deliveryCount = deliveryCount;
       
-      message.forceCopy();
+      //If the message hasn't already been copied when the headers/properties/body was changed since last send
+      //(which will prompt an invalidate(), which will cause a copy if not copied already)
+      //Then the message needs to be copied before delivering - the previous send may be in the Netty write queue
+      //so we can't just use the same buffer. Also we can't just duplicate, since the extra data (consumerID, deliveryCount)
+      //may well be different on different calls
+      //message.forceCopy();
    }
 
    public SessionReceiveMessage()
@@ -67,31 +73,55 @@ public class SessionReceiveMessage extends MessagePacket
 
    // Protected -----------------------------------------------------
    
-   protected void encodeExtraData(HornetQBuffer buffer)
+   @Override
+   public HornetQBuffer encode(final RemotingConnection connection)
    {
+      //message.setEndOfBodyPosition();
+      
+      HornetQBuffer orig = message.encodeToBuffer();
+      
+      //Now we must copy this buffer, before sending to Netty, as it could be concurrently delivered to many consumers
+      
+      HornetQBuffer buffer = orig.copy(0, orig.capacity());
+
+      buffer.setIndex(0, message.getEndOfMessagePosition());
+      
       buffer.writeLong(consumerID);
       buffer.writeInt(deliveryCount);
+      
+      size = buffer.writerIndex();
+                       
+      //Write standard headers
+      
+      int len = size - DataConstants.SIZE_INT;
+      buffer.setInt(0, len);
+      buffer.setByte(DataConstants.SIZE_INT, type);
+      buffer.setLong(DataConstants.SIZE_INT + DataConstants.SIZE_BYTE, channelID);
+      
+      //Position reader for reading by Netty
+      buffer.readerIndex(0);
+      
+      return buffer;
    }
    
-   protected void decodeExtraData(HornetQBuffer buffer)
-   {
-      consumerID = buffer.readLong();
-      deliveryCount = buffer.readInt();
-   }
    @Override
-   public void decodeRest(HornetQBuffer buffer)
+   public void decode(HornetQBuffer buffer)
    {
-      //Buffer comes in after having read standard headers and positioned at Beginning of body part
-      
+      channelID = buffer.readLong();
+
       message.decodeFromBuffer(buffer);
       
-      decodeExtraData(buffer);      
+      consumerID = buffer.readLong();
+      
+      deliveryCount = buffer.readInt();  
+      
+      size = buffer.readerIndex();
       
       //Need to position buffer for reading
       
-      buffer.setIndex(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, message.getEndOfBodyPosition());
+      buffer.setIndex(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, message.getEndOfBodyPosition());    
    }
-
+   
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------

@@ -184,12 +184,13 @@ public class ServerConsumerImpl implements ServerConsumer
    }
 
    public HandleStatus handle(final MessageReference ref) throws Exception
-   { 
+   {
       if (availableCredits != null && availableCredits.get() <= 0)
-      {         
+      {
+
          return HandleStatus.BUSY;
       }
-      
+
       lock.lock();
 
       try
@@ -210,7 +211,7 @@ public class ServerConsumerImpl implements ServerConsumer
          }
 
          final ServerMessage message = ref.getMessage();
-         
+
          if (filter != null && !filter.match(message))
          {
             return HandleStatus.NO_MATCH;
@@ -344,17 +345,23 @@ public class ServerConsumerImpl implements ServerConsumer
       {
          public void run()
          {
-            promptDelivery(false);
+            try
+            {            
+               promptDelivery(false);
 
-            ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID(),
-                                                                        50);
+               ServerMessage forcedDeliveryMessage = new ServerMessageImpl(storageManager.generateUniqueID(), 50);
 
-            forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
-            forcedDeliveryMessage.setDestination(messageQueue.getName());
+               forcedDeliveryMessage.putLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE, sequence);
+               forcedDeliveryMessage.setDestination(messageQueue.getName());
 
-            final SessionReceiveMessage packet = new SessionReceiveMessage(id, forcedDeliveryMessage, 0);
+               final SessionReceiveMessage packet = new SessionReceiveMessage(id, forcedDeliveryMessage, 0);
 
-            channel.send(packet);
+               channel.send(packet);
+            }
+            catch (Exception e)
+            {
+               log.error("Failed to send forced delivery message", e);
+            }
          }
       });
    }
@@ -409,7 +416,8 @@ public class ServerConsumerImpl implements ServerConsumer
    }
 
    public void receiveCredits(final int credits) throws Exception
-   {      
+   {
+
       if (credits == -1)
       {
          // No flow control
@@ -449,7 +457,7 @@ public class ServerConsumerImpl implements ServerConsumer
 
       // Acknowledge acknowledges all refs delivered by the consumer up to and including the one explicitly
       // acknowledged
-      
+
       MessageReference ref;
       do
       {
@@ -576,13 +584,13 @@ public class ServerConsumerImpl implements ServerConsumer
     * @param message
     */
    private void deliverStandardMessage(final MessageReference ref, final ServerMessage message)
-   {
+   {     
       final SessionReceiveMessage packet = new SessionReceiveMessage(id, message, ref.getDeliveryCount());
-      
+
       channel.send(packet);
-      
+
       if (availableCredits != null)
-      {         
+      {
          availableCredits.addAndGet(-packet.getPacketSize());
       }
 
@@ -673,18 +681,19 @@ public class ServerConsumerImpl implements ServerConsumer
                largeMessage.encodeHeadersAndProperties(headerBuffer);
 
                SessionReceiveLargeMessage initialPacket = new SessionReceiveLargeMessage(id,
-                                                                                         headerBuffer.toByteBuffer().array(),
+                                                                                         headerBuffer.toByteBuffer()
+                                                                                                     .array(),
                                                                                          largeMessage.getLargeBodySize(),
                                                                                          ref.getDeliveryCount());
 
                context = largeMessage.getBodyEncoder();
 
                context.open();
-               
+
                sentInitialPacket = true;
 
                channel.send(initialPacket);
-               
+
                if (availableCredits != null)
                {
                   availableCredits.addAndGet(-initialPacket.getPacketSize());
@@ -712,16 +721,16 @@ public class ServerConsumerImpl implements ServerConsumer
                SessionReceiveContinuationMessage chunk = createChunkSend(context);
 
                int chunkLen = chunk.getBody().length;
-                              
+
                channel.send(chunk);
-               
+
                if (trace)
                {
                   trace("deliverLargeMessage: Sending " + chunk.getPacketSize() +
                         " availableCredits now is " +
                         availableCredits);
                }
-               
+
                if (availableCredits != null)
                {
                   availableCredits.addAndGet(-chunk.getPacketSize());
@@ -847,7 +856,7 @@ public class ServerConsumerImpl implements ServerConsumer
          {
             MessageReference ref = iterator.next();
             try
-            {
+            {              
                HandleStatus status = handle(ref);
                if (status == HandleStatus.BUSY)
                {

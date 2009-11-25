@@ -1098,7 +1098,7 @@ public class LargeMessageBufferImpl implements LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.remoting.spi.HornetQBuffer#readUTF()
     */
-   public String readUTF() throws Exception
+   public String readUTF()
    {
       return UTF8Util.readUTF(this);
    }
@@ -1172,7 +1172,7 @@ public class LargeMessageBufferImpl implements LargeMessageBuffer
    /* (non-Javadoc)
     * @see org.hornetq.core.remoting.spi.HornetQBuffer#writeUTF(java.lang.String)
     */
-   public void writeUTF(final String utf) throws Exception
+   public void writeUTF(final String utf)
    {
       throw new IllegalAccessError(READ_ONLY_ERROR_MESSAGE);
    }

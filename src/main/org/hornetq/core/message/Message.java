@@ -69,15 +69,26 @@ public interface Message
    
    HornetQBuffer getBodyBuffer();
    
+   
+   //Should the following methods really be on the public API?
+   
    void decodeFromBuffer(HornetQBuffer buffer);
    
    HornetQBuffer encodeToBuffer();
    
    int getEndOfMessagePosition();
    
+  // void setEndOfBodyPosition();
+   
    int getEndOfBodyPosition();
    
-   void forceCopy();
+   void checkCopy();
+   
+   void bodyChanged();
+   
+   void resetCopied();
+   
+//   void resetEndOfBodyPosition();
    
    // Properties
    // ------------------------------------------------------------------

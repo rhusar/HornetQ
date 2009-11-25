@@ -41,7 +41,7 @@ public class UTF8Util
 
    private static ThreadLocal<SoftReference<StringUtilBuffer>> currenBuffer = new ThreadLocal<SoftReference<StringUtilBuffer>>();
 
-   public static void saveUTF(final HornetQBuffer out, final String str) throws IOException
+   public static void saveUTF(final HornetQBuffer out, final String str)
    {
       StringUtilBuffer buffer = getThreadLocalBuffer();
 
@@ -107,7 +107,7 @@ public class UTF8Util
       }
    }
 
-   public static String readUTF(final HornetQBuffer input) throws IOException
+   public static String readUTF(final HornetQBuffer input)
    {
       StringUtilBuffer buffer = getThreadLocalBuffer();
 

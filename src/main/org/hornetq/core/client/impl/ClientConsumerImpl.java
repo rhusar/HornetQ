@@ -216,7 +216,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
                      
                      // we only force delivery once per call to receive
                      if (!deliveryForced)
-                     {
+                     {                   
                         session.forceDelivery(id, forceDeliveryCount.incrementAndGet());
                         
                         deliveryForced = true;
@@ -249,7 +249,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
                session.workDone();
                
                if (m.containsProperty(FORCED_DELIVERY_MESSAGE))
-               {
+               {               
                   long seq = m.getLongProperty(FORCED_DELIVERY_MESSAGE);
                   if (seq >= forceDeliveryCount.longValue())
                   {
@@ -451,7 +451,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
          // This is ok - we just ignore the message
          return;
       }
-
+ 
       ClientMessageInternal messageToHandle = message;
 
       messageToHandle.onReceipt(this);

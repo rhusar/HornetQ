@@ -85,12 +85,8 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
       
       int bodySize = message.getBodySize();
       
-      log.info("body size is " + bodySize);
-      
       for (int i = 0; i < 10; i++)
       {  
-         log.info("sending " + i);
-         
          ClientMessage received = sendAndReceive(message);
 
          assertNotNull(received);
@@ -107,10 +103,12 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
    {
       ClientMessage message = session.createClientMessage(false);
 
+      String body = RandomUtil.randomString();
+      
       for (int i = 0; i < 10; i++)
       {
-         log.info("iteration " + i);
-         final String body = RandomUtil.randomString();
+         //Make the body a bit longer each time
+         body += "XX";
          
          message.getBodyBuffer().writeString(body);
          

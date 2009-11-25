@@ -239,5 +239,16 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
    {
       this.bodyInputStream = bodyInputStream;
    }
+   
+ public void setBuffer(HornetQBuffer buffer)
+ {
+    this.buffer = buffer; 
+    
+    if (bodyBuffer != null)
+    {
+       bodyBuffer.setBuffer(buffer);
+    }
+ }
+
 
 }

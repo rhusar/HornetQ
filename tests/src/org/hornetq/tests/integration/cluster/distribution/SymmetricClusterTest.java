@@ -64,8 +64,6 @@ public class SymmetricClusterTest extends ClusterTestBase
 
          startServers();
 
-         log.info("********** started servers");
-
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
          setupSessionFactory(2, isNetty());
@@ -109,8 +107,6 @@ public class SymmetricClusterTest extends ClusterTestBase
          this.removeConsumer(4);
 
          this.closeAllSessionFactories();
-
-         log.info("** stopping servers");
 
          stopServers(0, 1, 2, 3, 4);
 
@@ -167,33 +163,24 @@ public class SymmetricClusterTest extends ClusterTestBase
 
       startServers();
       
-      log.info("*** started servers");
-
       setupSessionFactory(0, isNetty());
       setupSessionFactory(1, isNetty());
       setupSessionFactory(2, isNetty());
       setupSessionFactory(3, isNetty());
       setupSessionFactory(4, isNetty());
       
-      log.info("** created session factories");
-
-      createQueue(0, "queues.testaddress", "queue0", null, false);
-           
+      createQueue(0, "queues.testaddress", "queue0", null, false);           
       createQueue(1, "queues.testaddress", "queue0", null, false);
       createQueue(2, "queues.testaddress", "queue0", null, false);
       createQueue(3, "queues.testaddress", "queue0", null, false);
       createQueue(4, "queues.testaddress", "queue0", null, false);
       
-      log.info("**** created queues");
-
       addConsumer(0, 0, "queue0", null);
       addConsumer(1, 1, "queue0", null);
       addConsumer(2, 2, "queue0", null);
       addConsumer(3, 3, "queue0", null);
       addConsumer(4, 4, "queue0", null);
       
-      log.info("*** created consumers");
-
       waitForBindings(0, "queues.testaddress", 1, 1, true);
       waitForBindings(1, "queues.testaddress", 1, 1, true);
       waitForBindings(2, "queues.testaddress", 1, 1, true);
@@ -206,14 +193,8 @@ public class SymmetricClusterTest extends ClusterTestBase
       waitForBindings(3, "queues.testaddress", 4, 4, false);
       waitForBindings(4, "queues.testaddress", 4, 4, false);
 
-      log.info("** sending messages");
-      
       send(0, "queues.testaddress", 10, false, null);
       
-      log.info("** sent messages");
-      
-    //  this.checkReceive(0, 1, 2, 3, 4);
-
       verifyReceiveRoundRobinInSomeOrder(10, 0, 1, 2, 3, 4);
 
       this.verifyNotReceive(0, 1, 2, 3, 4);
@@ -1181,6 +1162,10 @@ public class SymmetricClusterTest extends ClusterTestBase
       waitForBindings(2, "queues.testaddress", 4, 4, false);
       waitForBindings(3, "queues.testaddress", 4, 4, false);
       waitForBindings(4, "queues.testaddress", 4, 4, false);
+      
+     // this.checkReceive(0, 1, 2, 3, 4);
+      
+      //Thread.sleep(300000);
 
       verifyReceiveAll(10, 0, 1, 2, 3, 4);
    }
@@ -1436,12 +1421,9 @@ public class SymmetricClusterTest extends ClusterTestBase
       closeSessionFactory(3);
 
       stopServers(0, 3);
-      log.info("stopped servers");
 
       startServers(3, 0);
-      
-      log.info("restarted servers");
-      
+       
       Thread.sleep(2000);
 
       setupSessionFactory(0, isNetty());

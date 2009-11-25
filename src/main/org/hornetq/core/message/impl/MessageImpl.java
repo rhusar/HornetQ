@@ -15,6 +15,7 @@ package org.hornetq.core.message.impl;
 
 import static org.hornetq.utils.DataConstants.SIZE_BOOLEAN;
 import static org.hornetq.utils.DataConstants.SIZE_BYTE;
+import static org.hornetq.utils.DataConstants.SIZE_INT;
 import static org.hornetq.utils.DataConstants.SIZE_LONG;
 
 import java.nio.ByteBuffer;
@@ -73,7 +74,7 @@ public abstract class MessageImpl implements Message
    public static final SimpleString HDR_FROM_CLUSTER = new SimpleString("_HQ_FROM_CLUSTER");
 
    public static final SimpleString HDR_LAST_VALUE_NAME = new SimpleString("_HQ_LVQ_NAME");
-   
+
    // Attributes ----------------------------------------------------
 
    protected long messageID;
@@ -94,9 +95,9 @@ public abstract class MessageImpl implements Message
    protected byte priority;
 
    protected HornetQBuffer buffer;
-   
-   private int encodeSize;
-     
+
+  // private int encodeSize;
+
    // Constructors --------------------------------------------------
 
    protected MessageImpl()
@@ -126,61 +127,76 @@ public abstract class MessageImpl implements Message
       this.expiration = expiration;
       this.timestamp = timestamp;
       this.priority = priority;
-      createBody(initialMessageBufferSize);      
+      createBody(initialMessageBufferSize);
    }
-         
+
    protected MessageImpl(final long messageID, final int initialMessageBufferSize)
    {
       this();
       this.messageID = messageID;
       createBody(initialMessageBufferSize);
    }
-   
+
    private void createBody(final int initialMessageBufferSize)
    {
       buffer = HornetQChannelBuffers.dynamicBuffer(initialMessageBufferSize);
-      
-      //There's a bug in netty which means a dynamic buffer won't resize until you write a byte
+
+      // There's a bug in netty which means a dynamic buffer won't resize until you write a byte
       buffer.writeByte((byte)0);
-      
+
       int limit = PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
-      
+
       buffer.setIndex(limit, limit);
-      
-      endOfBodyPosition = -1;
+
+      //endOfBodyPosition = limit;
    }
 
    // Message implementation ----------------------------------------
 
    public int getEncodeSize()
-   {
-      return encodeSize;
+   {    
+      int headersPropsSize = this.getHeadersAndPropertiesEncodeSize();     
+      
+      int bodyPos = this.endOfBodyPosition == -1 ? buffer.writerIndex() : this.endOfBodyPosition;
+                       
+      int bodySize = bodyPos - PacketImpl.PACKET_HEADERS_SIZE - DataConstants.SIZE_INT;
+
+      return SIZE_INT + bodySize + SIZE_INT + headersPropsSize;
    }
-  
+
+   public int getHeadersAndPropertiesEncodeSize()
+   {
+      return SIZE_LONG + /* Destination */SimpleString.sizeofString(destination) +
+      /* Type */SIZE_BYTE +
+      /* Durable */SIZE_BOOLEAN +
+      /* Expiration */SIZE_LONG +
+      /* Timestamp */SIZE_LONG +
+      /* Priority */SIZE_BYTE +
+      /* PropertySize and Properties */properties.getEncodeSize();
+   }
+
    public void encodeHeadersAndProperties(final HornetQBuffer buffer)
-   {           
-      buffer.writeLong(messageID);          
-      buffer.writeSimpleString(destination);    
+   {
+      buffer.writeLong(messageID);
+      buffer.writeSimpleString(destination);
       buffer.writeByte(type);
       buffer.writeBoolean(durable);
       buffer.writeLong(expiration);
       buffer.writeLong(timestamp);
       buffer.writeByte(priority);
-      properties.encode(buffer);
-      encodeSize = buffer.writerIndex() - PacketImpl.PACKET_HEADERS_SIZE;
+      properties.encode(buffer);      
    }
-   
+
    public void decodeHeadersAndProperties(final HornetQBuffer buffer)
-   {             
-      messageID = buffer.readLong();        
-      destination = buffer.readSimpleString();      
+   {
+      messageID = buffer.readLong();
+      destination = buffer.readSimpleString();
       type = buffer.readByte();
       durable = buffer.readBoolean();
       expiration = buffer.readLong();
       timestamp = buffer.readLong();
       priority = buffer.readByte();
-      properties.decode(buffer);
-      encodeSize = buffer.readerIndex() - PacketImpl.PACKET_HEADERS_SIZE;
+      properties.decode(buffer);      
    }
 
    public long getMessageID()
@@ -196,6 +212,8 @@ public abstract class MessageImpl implements Message
    public void setDestination(final SimpleString destination)
    {
       this.destination = destination;
+
+      bufferValid = false;
    }
 
    public byte getType()
@@ -211,6 +229,8 @@ public abstract class MessageImpl implements Message
    public void setDurable(final boolean durable)
    {
       this.durable = durable;
+
+      bufferValid = false;
    }
 
    public long getExpiration()
@@ -221,6 +241,8 @@ public abstract class MessageImpl implements Message
    public void setExpiration(final long expiration)
    {
       this.expiration = expiration;
+
+      bufferValid = false;
    }
 
    public long getTimestamp()
@@ -231,6 +253,8 @@ public abstract class MessageImpl implements Message
    public void setTimestamp(final long timestamp)
    {
       this.timestamp = timestamp;
+
+      bufferValid = false;
    }
 
    public byte getPriority()
@@ -241,6 +265,8 @@ public abstract class MessageImpl implements Message
    public void setPriority(final byte priority)
    {
       this.priority = priority;
+
+      bufferValid = false;
    }
 
    public boolean isExpired()
@@ -252,7 +278,7 @@ public abstract class MessageImpl implements Message
 
       return System.currentTimeMillis() - expiration >= 0;
    }
- 
+
    public Map<String, Object> toMap()
    {
       Map<String, Object> map = new HashMap<String, Object>();
@@ -277,46 +303,64 @@ public abstract class MessageImpl implements Message
    public void putBooleanProperty(final SimpleString key, final boolean value)
    {
       properties.putBooleanProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putByteProperty(final SimpleString key, final byte value)
    {
       properties.putByteProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putBytesProperty(final SimpleString key, final byte[] value)
    {
       properties.putBytesProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putShortProperty(final SimpleString key, final short value)
    {
       properties.putShortProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putIntProperty(final SimpleString key, final int value)
    {
       properties.putIntProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putLongProperty(final SimpleString key, final long value)
    {
       properties.putLongProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putFloatProperty(final SimpleString key, final float value)
    {
       properties.putFloatProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putDoubleProperty(final SimpleString key, final double value)
    {
       properties.putDoubleProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putStringProperty(final SimpleString key, final SimpleString value)
    {
       properties.putSimpleStringProperty(key, value);
+
+      bufferValid = false;
    }
 
    public void putObjectProperty(final SimpleString key, final Object value) throws PropertyConversionException
@@ -324,10 +368,10 @@ public abstract class MessageImpl implements Message
       if (value == null)
       {
          // This is ok - when we try to read the same key it will return null too
-         return;
-      }
 
-      if (value instanceof Boolean)
+         properties.removeProperty(key);
+      }
+      else if (value instanceof Boolean)
       {
          properties.putBooleanProperty(key, (Boolean)value);
       }
@@ -363,61 +407,85 @@ public abstract class MessageImpl implements Message
       {
          throw new PropertyConversionException(value.getClass() + " is not a valid property type");
       }
+
+      bufferValid = false;
    }
 
    public void putObjectProperty(final String key, final Object value) throws PropertyConversionException
    {
       putObjectProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putBooleanProperty(final String key, final boolean value)
    {
       properties.putBooleanProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putByteProperty(final String key, final byte value)
    {
       properties.putByteProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putBytesProperty(final String key, final byte[] value)
    {
       properties.putBytesProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putShortProperty(final String key, final short value)
    {
       properties.putShortProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putIntProperty(final String key, final int value)
    {
       properties.putIntProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putLongProperty(final String key, final long value)
    {
       properties.putLongProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putFloatProperty(final String key, final float value)
    {
       properties.putFloatProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putDoubleProperty(final String key, final double value)
    {
       properties.putDoubleProperty(new SimpleString(key), value);
+
+      bufferValid = false;
    }
 
    public void putStringProperty(final String key, final String value)
    {
       properties.putSimpleStringProperty(new SimpleString(key), new SimpleString(value));
+
+      bufferValid = false;
    }
 
    public void putTypedProperties(final TypedProperties otherProps)
    {
       properties.putTypedProperties(otherProps);
+
+      bufferValid = false;
    }
 
    public Object getObjectProperty(final SimpleString key)
@@ -541,11 +609,15 @@ public abstract class MessageImpl implements Message
 
    public Object removeProperty(final SimpleString key)
    {
+      bufferValid = false;
+
       return properties.removeProperty(key);
    }
 
    public Object removeProperty(final String key)
    {
+      bufferValid = false;
+
       return properties.removeProperty(new SimpleString(key));
    }
 
@@ -573,32 +645,22 @@ public abstract class MessageImpl implements Message
    {
       return buffer;
    }
-   
-   public void setBuffer(HornetQBuffer buffer)
-   {
-      this.buffer = buffer; 
-      
-      if (bodyBuffer != null)
-      {
-         bodyBuffer.setBuffer(buffer);
-      }
-   }
 
    public BodyEncoder getBodyEncoder()
    {
       return new DecodingContext();
    }
-      
+
    // Public --------------------------------------------------------
 
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
-   
+
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
-   
+
    private class DecodingContext implements BodyEncoder
    {
       private int lastPos = 0;
@@ -628,25 +690,9 @@ public abstract class MessageImpl implements Message
          return size;
       }
    }
-   
-   //FIXME - all this stuff only used by large messages, move it!
-   
-   public int getHeadersAndPropertiesEncodeSize()
-   {
-      return SIZE_LONG + /* Destination */SimpleString.sizeofString(destination) +
-      /* Type */SIZE_BYTE +
-      /* Durable */SIZE_BOOLEAN +
-      /* Expiration */SIZE_LONG +
-      /* Timestamp */SIZE_LONG +
-      /* Priority */SIZE_BYTE +
-      /* PropertySize and Properties */properties.getEncodeSize();
-   }
-   
-   
-   
-   
-   
-   private ResetLimitWrappedHornetQBuffer bodyBuffer;
+
+
+   protected ResetLimitWrappedHornetQBuffer bodyBuffer;
 
    public HornetQBuffer getBodyBuffer()
    {
@@ -654,125 +700,175 @@ public abstract class MessageImpl implements Message
       {
          if (buffer instanceof LargeMessageBuffer == false)
          {
-            bodyBuffer = new ResetLimitWrappedHornetQBuffer(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, buffer);
+            bodyBuffer = new ResetLimitWrappedHornetQBuffer(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT,
+                                                            buffer,
+                                                            this);
          }
          else
          {
             return buffer;
          }
       }
-      
+
       return bodyBuffer;
    }
-   
-     
-   
+
    protected boolean bufferValid;
 
-   private int endOfBodyPosition;
-   
+   private int endOfBodyPosition = -1;
+
    private int endOfMessagePosition;
-   
-   public void forceCopy()
+
+   private boolean copied = true;
+
+   /*
+    * Copy constructor
+    */
+   protected MessageImpl(final MessageImpl other)
    {
-      // Must copy buffer before sending it      
-      int wi = buffer.writerIndex();
-      
-      this.buffer = buffer.copy(0, buffer.capacity());
-      
-      this.buffer.setIndex(0, wi);      
+      messageID = other.getMessageID();
+      destination = other.getDestination();
+      type = other.getType();
+      durable = other.isDurable();
+      expiration = other.getExpiration();
+      timestamp = other.getTimestamp();
+      priority = other.getPriority();
+      properties = new TypedProperties(other.getProperties());
+      // Note, this is a shallow copy - does not copy the buffer
+      buffer = other.buffer;
+      this.bufferValid = other.bufferValid;
+      this.endOfBodyPosition = other.endOfBodyPosition;
+      this.endOfMessagePosition = other.endOfMessagePosition;
+      this.copied = other.copied;
    }
+
+   public void bodyChanged()
+   {
+      // If the body is changed we must copy the buffer otherwise can affect the previously sent message
+      // which might be in the Netty write queue
+      checkCopy();
+
+      bufferValid = false;
       
+      this.endOfBodyPosition = -1;
+   }
+
+   public void checkCopy()
+   {
+      if (!copied)
+      {
+         forceCopy();
+
+         copied = true;
+      }
+   }
+   
+   public void resetCopied()
+   {
+      copied = false;
+   }
+
+   private void forceCopy()
+   {
+      // Must copy buffer before sending it
+      
+      buffer = buffer.copy(0, buffer.capacity());
+      
+      buffer.setIndex(0, this.endOfBodyPosition);
+            
+      if (bodyBuffer != null)
+      {
+         bodyBuffer.setBuffer(buffer);
+      }
+   }
+   
    public int getEndOfMessagePosition()
    {
       return this.endOfMessagePosition;
    }
-   
+
    public int getEndOfBodyPosition()
    {
       return this.endOfBodyPosition;
    }
    
-   //Encode to journal or paging
+   // Encode to journal or paging
    public void encode(HornetQBuffer buff)
    {
       encodeToBuffer();
       
       buff.writeBytes(buffer, PacketImpl.PACKET_HEADERS_SIZE, endOfMessagePosition - PacketImpl.PACKET_HEADERS_SIZE);
    }
-   
-   //Decode from journal or paging
+
+   // Decode from journal or paging
    public void decode(HornetQBuffer buff)
    {
       int start = buff.readerIndex();
 
       endOfBodyPosition = buff.readInt();
-      
+
       endOfMessagePosition = buff.getInt(endOfBodyPosition - PacketImpl.PACKET_HEADERS_SIZE + start);
-      
-      int endPos = endOfMessagePosition + start -
-                   PacketImpl.PACKET_HEADERS_SIZE;
 
-      this.buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
+      int length = endOfMessagePosition - PacketImpl.PACKET_HEADERS_SIZE;
 
-      buff.writeBytes(buffer, start, endPos - start);
-      
-      decode(); 
+      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
+
+      buffer.writeBytes(buff, start, length);
+
+      decode();
+
+      buff.readerIndex(start + length);
    }
 
-   public HornetQBuffer encodeToBuffer()
-   {      
-      log.info("encoding msg to buffer, valid " + bufferValid);
-      
+   //This must be synchronized as it can be called concurrently id the message is being delivered concurently to
+   //many queues - the first caller in this case will actually encode it
+   public synchronized HornetQBuffer encodeToBuffer()
+   {     
       if (!bufferValid)
-      {
+      {                 
          if (endOfBodyPosition == -1)
-         {            
-            //Means sending message for first time
-            endOfBodyPosition = buffer.writerIndex();
-
-            //write it
-            buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, endOfBodyPosition);
-            
-            log.info("setting end of body pos as " + endOfBodyPosition);
+         {
+            // Means sending message for first time
+            endOfBodyPosition = buffer.writerIndex();           
          }
          
+         // write it
+         buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, endOfBodyPosition);
+
          // Position at end of body and skip past the message end position int
-         buffer.writerIndex(endOfBodyPosition + DataConstants.SIZE_INT);
+         buffer.setIndex(0, endOfBodyPosition + DataConstants.SIZE_INT);
 
          encodeHeadersAndProperties(buffer);
 
          // Write end of message position
-         
+
          this.endOfMessagePosition = buffer.writerIndex();
 
          buffer.setInt(endOfBodyPosition, endOfMessagePosition);
-                 
+
          this.bufferValid = true;
       }
-
+            
       return buffer;
    }
 
    public void decode()
    {
       this.endOfBodyPosition = buffer.getInt(PacketImpl.PACKET_HEADERS_SIZE);
-            
+
       buffer.readerIndex(this.endOfBodyPosition + DataConstants.SIZE_INT);
 
       this.decodeHeadersAndProperties(buffer);
-      
+
       this.endOfMessagePosition = buffer.readerIndex();
-      
-      log.info("decoded end of body pos as " + this.endOfBodyPosition);
 
       this.bufferValid = true;
    }
-   
+
    public void decodeFromBuffer(HornetQBuffer buffer)
    {
       this.buffer = buffer;
-      
+
       decode();
    }
 

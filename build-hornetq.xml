@@ -172,6 +172,10 @@
    <!-- Classpath definition                                                                     -->
    <!-- ======================================================================================== -->
 
+   <path id="core.compilation.classpath">
+      <path refid="org.jboss.netty.classpath"/>
+   </path>
+	
    <path id="jms.compilation.classpath">
       <path location="${build.core.classes.dir}"/>
       <path refid="org.jboss.javaee.classpath"/>
@@ -401,6 +405,7 @@
          </src>
          <include name="**/hornetq/core/**/*.java"/>
          <include name="**/hornetq/utils/**/*.java"/>
+      	 <classpath refid="core.compilation.classpath"/>
       </javac>
       <javah class="org.hornetq.core.asyncio.impl.AsynchronousFileImpl"
              classpath="${build.core.classes.dir}" destdir="./native/src"/>

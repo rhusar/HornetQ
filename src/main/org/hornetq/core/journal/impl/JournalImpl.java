@@ -420,7 +420,7 @@ public class JournalImpl implements TestableJournal
       bb.writeInt(fileId);
       bb.writeLong(id);
       bb.writeInt(record.getEncodeSize());
-      bb.writeByte(recordType);
+      bb.writeByte(recordType);      
       record.encode(bb);       
       bb.writeInt(size);     
    }

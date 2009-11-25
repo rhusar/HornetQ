@@ -689,6 +689,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       if (consumer != null)
       {
          ClientMessageInternal clMessage = (ClientMessageInternal)message.getMessage();
+         
+         clMessage.setDeliveryCount(message.getDeliveryCount());
 
          if (trace)
          {

@@ -286,6 +286,18 @@ public class BindingsImplTest extends UnitTestCase
    class FakeMessage implements ServerMessage
    {
 
+      public void decode(HornetQBuffer buffer)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void encode(HornetQBuffer buffer)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
       public ServerMessage copy() throws Exception
       {
          // TODO Auto-generated method stub
@@ -320,12 +332,6 @@ public class BindingsImplTest extends UnitTestCase
       {
          // TODO Auto-generated method stub
          
-      }
-
-      public int getEndMessagePosition()
-      {
-         // TODO Auto-generated method stub
-         return 0;
       }
 
       public int getMemoryEstimate()
@@ -376,19 +382,7 @@ public class BindingsImplTest extends UnitTestCase
          return false;
       }
 
-      public void setEndMessagePosition(int pos)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
       public void setMessageID(long id)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void setNeedsEncoding()
       {
          // TODO Auto-generated method stub
          
@@ -412,7 +406,19 @@ public class BindingsImplTest extends UnitTestCase
          return false;
       }
 
-      public void afterSend()
+      public void bodyChanged()
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void checkCopy()
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      public void clearCopied()
       {
          // TODO Auto-generated method stub
          
@@ -430,7 +436,7 @@ public class BindingsImplTest extends UnitTestCase
          return false;
       }
 
-      public void decodeFromWire(HornetQBuffer buffer)
+      public void decodeFromBuffer(HornetQBuffer buffer)
       {
          // TODO Auto-generated method stub
          
@@ -446,6 +452,12 @@ public class BindingsImplTest extends UnitTestCase
       {
          // TODO Auto-generated method stub
          
+      }
+
+      public HornetQBuffer encodeToBuffer()
+      {
+         // TODO Auto-generated method stub
+         return null;
       }
 
       public HornetQBuffer getBodyBuffer()
@@ -521,6 +533,18 @@ public class BindingsImplTest extends UnitTestCase
       }
 
       public int getEncodeSize()
+      {
+         // TODO Auto-generated method stub
+         return 0;
+      }
+
+      public int getEndOfBodyPosition()
+      {
+         // TODO Auto-generated method stub
+         return 0;
+      }
+
+      public int getEndOfMessagePosition()
       {
          // TODO Auto-generated method stub
          return 0;
@@ -670,19 +694,7 @@ public class BindingsImplTest extends UnitTestCase
          return null;
       }
 
-      public boolean isBufferWritten()
-      {
-         // TODO Auto-generated method stub
-         return false;
-      }
-
       public boolean isDurable()
-      {
-         // TODO Auto-generated method stub
-         return false;
-      }
-
-      public boolean isEncodedToBuffer()
       {
          // TODO Auto-generated method stub
          return false;
@@ -838,12 +850,6 @@ public class BindingsImplTest extends UnitTestCase
          return null;
       }
 
-      public void setBuffer(HornetQBuffer buffer)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
       public void setDestination(SimpleString destination)
       {
          // TODO Auto-generated method stub
@@ -880,89 +886,18 @@ public class BindingsImplTest extends UnitTestCase
          return null;
       }
 
-      public void decode(HornetQBuffer buffer)
+      public void resetCopied()
       {
          // TODO Auto-generated method stub
          
       }
 
-      public void encode(HornetQBuffer buffer)
+      public void setEndOfBodyPosition()
       {
          // TODO Auto-generated method stub
          
       }
 
-      public void setEncodedToBuffer(boolean encoded)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void decodeFromBuffer(HornetQBuffer buffer)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public HornetQBuffer encodeToBuffer()
-      {
-         // TODO Auto-generated method stub
-         return null;
-      }
-
-      public int getBodySize()
-      {
-         // TODO Auto-generated method stub
-         return 0;
-      }
-
-      public int getEndOfMessagePosition()
-      {
-         // TODO Auto-generated method stub
-         return 0;
-      }
-
-      public void saveToOutputStream(OutputStream out) throws HornetQException
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void setBodyInputStream(InputStream bodyInputStream)
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void setOutputStream(OutputStream out) throws HornetQException
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public boolean waitOutputStreamCompletion(long timeMilliseconds) throws HornetQException
-      {
-         // TODO Auto-generated method stub
-         return false;
-      }
-
-      public void beforeDeliver()
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void beforeSend()
-      {
-         // TODO Auto-generated method stub
-         
-      }
-
-      public void forceCopy()
-      {
-         // TODO Auto-generated method stub
-         
-      }
 
 
    }

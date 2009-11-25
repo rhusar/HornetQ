@@ -78,8 +78,7 @@ public class ReplicationAddMessage extends PacketImpl
       buffer.writeByte(journalID);
       buffer.writeBoolean(isUpdate);
       buffer.writeLong(id);
-      buffer.writeByte(recordType);
-      log.info("encode size is " + encodingData.getEncodeSize());
+      buffer.writeByte(recordType);     
       buffer.writeInt(encodingData.getEncodeSize());
       encodingData.encode(buffer);
    }

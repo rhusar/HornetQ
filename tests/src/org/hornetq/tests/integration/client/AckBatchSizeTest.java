@@ -78,21 +78,18 @@ public class AckBatchSizeTest extends ServiceTestBase
             cp.send(sendSession.createClientMessage(false));
          }
 
-         log.info("sent messages");
-
          ClientConsumer consumer = session.createConsumer(queueA);
          session.start();
          for (int i = 0; i < numMessages - 1; i++)
          {
             ClientMessage m = consumer.receive(5000);
             
-            log.info("got message " + i);
             m.acknowledge();
          }
 
          ClientMessage m = consumer.receive(5000);
          Queue q = (Queue)server.getPostOffice().getBinding(queueA).getBindable();
-         assertEquals(1, q.getDeliveringCount());
+         assertEquals(100, q.getDeliveringCount());
          m.acknowledge();
          assertEquals(0, q.getDeliveringCount());
          sendSession.close();

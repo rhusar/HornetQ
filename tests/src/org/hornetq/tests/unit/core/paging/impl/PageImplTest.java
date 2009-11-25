@@ -25,10 +25,12 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.impl.PageImpl;
 import org.hornetq.core.paging.impl.PagedMessageImpl;
 import org.hornetq.core.persistence.impl.nullpm.NullStorageManager;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -207,9 +209,9 @@ public class PageImplTest extends UnitTestCase
 
       for (int i = 0; i < numberOfElements; i++)
       {
-         ServerMessage msg = new ServerMessageImpl(i, 1000);                 
+         ServerMessage msg = new ServerMessageImpl(i, 100);                 
 
-         for (int j = 0; j < msg.getBodyBuffer().capacity(); j++)
+         for (int j = 0; j < 10; j++)
          {           
             msg.getBodyBuffer().writeByte((byte)'b');
          }
@@ -225,8 +227,6 @@ public class PageImplTest extends UnitTestCase
       return buffers;
    }
 
-
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
@@ -238,5 +238,4 @@ public class PageImplTest extends UnitTestCase
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
-
 }

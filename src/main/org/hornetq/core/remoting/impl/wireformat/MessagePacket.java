@@ -13,20 +13,20 @@
 
 package org.hornetq.core.remoting.impl.wireformat;
 
-import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.Message;
-import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.utils.DataConstants;
 
 /**
  * A MessagePacket
  *
- * @author tim
+ * @author Tim Fox
  *
  *
  */
 public abstract class MessagePacket extends PacketImpl
 {
+   private static final Logger log = Logger.getLogger(MessagePacket.class);
+
    protected Message message;
       
    public MessagePacket(final byte type, final Message message)
@@ -41,41 +41,4 @@ public abstract class MessagePacket extends PacketImpl
       return message;
    }
    
-   @Override
-   public HornetQBuffer encode(final RemotingConnection connection)
-   {
-      HornetQBuffer buffer = message.encodeToBuffer();
-      
-      buffer.setIndex(0, message.getEndOfMessagePosition());
-      
-      encodeExtraData(buffer);
-      
-      size = buffer.writerIndex();
-                       
-      //Write standard headers
-      
-      int len = size - DataConstants.SIZE_INT;
-      buffer.setInt(0, len);
-      buffer.setByte(DataConstants.SIZE_INT, type);
-      buffer.setLong(DataConstants.SIZE_INT + DataConstants.SIZE_BYTE, channelID);
-      
-      //Position reader for reading by Netty
-      buffer.readerIndex(0);
-      
-      return buffer;
-   }
-   
-   @Override
-   public void decodeRest(HornetQBuffer buffer)
-   {
-      //Buffer comes in after having read standard headers and positioned at Beginning of body part
-      
-      message.decodeFromBuffer(buffer);
-      
-      decodeExtraData(buffer);      
-   }
-   
-   protected abstract void encodeExtraData(HornetQBuffer buffer);
-   
-   protected abstract void decodeExtraData(HornetQBuffer buffer);
 }

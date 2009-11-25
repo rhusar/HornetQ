@@ -207,7 +207,7 @@ public interface HornetQBuffer
 
    String readString();
 
-   String readUTF() throws Exception;
+   String readUTF();
 
    void writeBoolean(boolean val);
 
@@ -219,5 +219,5 @@ public interface HornetQBuffer
 
    void writeString(String val);
 
-   void writeUTF(String utf) throws Exception;
+   void writeUTF(String utf);
 }

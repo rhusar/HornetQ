@@ -167,12 +167,12 @@ public class StorageManagerTimingTest extends UnitTestCase
 
                   final SimpleString address = new SimpleString("Destination " + i);
 
-                  ServerMessageImpl implMsg = new ServerMessageImpl();
+                  ServerMessageImpl implMsg = new ServerMessageImpl(i, 1000);
 
                   implMsg.putStringProperty(new SimpleString("Key"), new SimpleString("This String is worthless!"));
 
                   implMsg.setMessageID(i);
-                  implMsg.setBuffer(HornetQChannelBuffers.wrappedBuffer(bytes));
+                  implMsg.getBodyBuffer().writeBytes(bytes);
 
                   implMsg.setDestination(address);
 

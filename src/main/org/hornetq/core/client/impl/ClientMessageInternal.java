@@ -34,13 +34,13 @@ public interface ClientMessageInternal extends ClientMessage
    void setFlowControlSize(int flowControlSize);
 
    void onReceipt(ClientConsumerInternal consumer);
-   
+
    void setLargeMessage(boolean largeMessage);
 
    /**
     * Discard unused packets (used on large-message)
     */
-   void discardLargeBody();    
-   
+   void discardLargeBody();
+
    void setBuffer(HornetQBuffer buffer);
 }

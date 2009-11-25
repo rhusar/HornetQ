@@ -68,8 +68,7 @@ public class PagedMessageImpl implements PagedMessage
    }
 
    public PagedMessageImpl()
-   {
-      this(new ServerMessageImpl());
+   {      
    }
 
    public ServerMessage getMessage(final StorageManager storage)
@@ -109,11 +108,10 @@ public class PagedMessageImpl implements PagedMessage
       {
          buffer.readInt(); // This value is only used on LargeMessages for now
          
-         message = new ServerMessageImpl();
+         message = new ServerMessageImpl(-1, 50);         
          
          message.decode(buffer);
       }
-
    }
 
    public void encode(final HornetQBuffer buffer)

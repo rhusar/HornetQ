@@ -26,6 +26,7 @@ import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.TransportConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.exception.HornetQException;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.server.HornetQ;
 import org.hornetq.core.server.HornetQServer;
@@ -39,6 +40,8 @@ import org.hornetq.utils.SimpleString;
  */
 public class DeadLetterAddressTest extends UnitTestCase
 {
+   private static final Logger log = Logger.getLogger(DeadLetterAddressTest.class);
+
    private HornetQServer server;
 
    private ClientSession clientSession;
@@ -236,7 +239,9 @@ public class DeadLetterAddressTest extends UnitTestCase
       for (int i = 0; i < deliveryAttempt; i++)
       {
          ClientMessage m = clientConsumer.receive(500);
-         assertNotNull(m);
+         assertNotNull(m);  
+         log.info("i is " + i);
+         log.info("delivery cout is " +m.getDeliveryCount());
          assertEquals(i + 1, m.getDeliveryCount());
          m.acknowledge();
          clientSession.rollback();

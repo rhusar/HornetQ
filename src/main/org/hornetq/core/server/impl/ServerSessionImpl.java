@@ -1434,7 +1434,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    public void handleSendLargeMessage(final SessionSendLargeMessage packet)
    {
- 
+
       // need to create the LargeMessage before continue
       long id = storageManager.generateUniqueID();
 
@@ -1454,7 +1454,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void handleSend(final SessionSendMessage packet)
-   {  
+   {
       Packet response = null;
 
       ServerMessage message = (ServerMessage)packet.getMessage();
@@ -1574,7 +1574,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
       final CreditManagerHolder holder = this.getCreditManagerHolder(address);
 
       int credits = packet.getCredits();
-            
+
       int gotCredits = holder.manager.acquireCredits(credits, new CreditsAvailableRunnable()
       {
          public boolean run(final int credits)
@@ -1594,7 +1594,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
             }
          }
       });
-      
+
       if (gotCredits > 0)
       {
          sendProducerCredits(holder, gotCredits, address);
@@ -1942,7 +1942,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    private void sendProducerCredits(final CreditManagerHolder holder, final int credits, final SimpleString address)
    {
       holder.outstandingCredits += credits;
-      
+
       Packet packet = new SessionProducerCreditsMessage(credits, address, -1);
 
       channel.send(packet);
@@ -1967,7 +1967,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
       }
 
       if (tx == null || autoCommitSends)
-      {         
+      {
          postOffice.route(msg);
       }
       else

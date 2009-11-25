@@ -115,7 +115,7 @@ public class PageImpl implements Page
                int oldPos = fileBuffer.readerIndex();
                if (fileBuffer.readerIndex() + messageSize < fileBuffer.capacity() && fileBuffer.getByte(oldPos + messageSize) == END_BYTE)
                {
-                  PagedMessage msg = new PagedMessageImpl();
+                  PagedMessage msg = new PagedMessageImpl();                  
                   msg.decode(fileBuffer);
                   byte b = fileBuffer.readByte();
                   if (b != END_BYTE)
@@ -124,7 +124,7 @@ public class PageImpl implements Page
                      // constraint was already checked
                      throw new IllegalStateException("Internal error, it wasn't possible to locate END_BYTE " + b);
                   }
-                  messages.add(msg);
+                  messages.add(msg);                  
                }
                else
                {
@@ -147,14 +147,10 @@ public class PageImpl implements Page
 
    public void write(final PagedMessage message) throws Exception
    {
-      log.info("encode size is " + message.getEncodeSize());
-      
       ByteBuffer buffer = fileFactory.newBuffer(message.getEncodeSize() + SIZE_RECORD);
       
       HornetQBuffer wrap = HornetQChannelBuffers.wrappedBuffer(buffer);
       wrap.clear();
-      
-      log.info("wrapped " + wrap.channelBuffer());
       
       wrap.writeByte(START_BYTE);
       wrap.writeInt(0);
@@ -172,8 +168,6 @@ public class PageImpl implements Page
       size.addAndGet(buffer.limit());
       
       storageManager.pageWrite(message, pageId);
-      
-      log.info("wrote page");
    }
 
    public void sync() throws Exception

@@ -105,7 +105,7 @@ public class CoreClientTest extends UnitTestCase
       log.info("sent messages");
 
       ClientConsumer consumer = session.createConsumer(QUEUE);
-
+      
       session.start();
 
       for (int i = 0; i < numMessages; i++)
