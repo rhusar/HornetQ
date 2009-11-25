@@ -288,7 +288,7 @@ public class ReplicationTest extends ServiceTestBase
 
          assertEquals(0, manager.getActiveTokens().size());
 
-         ServerMessage msg = new ServerMessageImpl(1, 10);
+         ServerMessage msg = new ServerMessageImpl(1, 1024);
 
          SimpleString dummy = new SimpleString("dummy");
          msg.setDestination(dummy);

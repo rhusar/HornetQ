@@ -35,4 +35,6 @@ public interface BodyEncoder
    int encode(ByteBuffer bufferRead) throws HornetQException;
 
    int encode(HornetQBuffer bufferOut, int size) throws HornetQException;
+
+   long getLargeBodySize();
 }

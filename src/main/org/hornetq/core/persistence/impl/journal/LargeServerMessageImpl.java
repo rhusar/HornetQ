@@ -125,20 +125,6 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    }
 
    @Override
-   public synchronized long getLargeBodySize()
-   {
-      try
-      {
-         validateFile();
-      }
-      catch (Exception e)
-      {
-         throw new RuntimeException(e.getMessage(), e);
-      }
-      return bodySize;
-   }
-
-   @Override
    public synchronized int getEncodeSize()
    {
       return getHeadersAndPropertiesEncodeSize();
@@ -146,15 +132,15 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
 
    @Override
    public void encode(final HornetQBuffer buffer)
-   {      
+   {
       super.encodeHeadersAndProperties(buffer);
    }
-   
+
    @Override
    public void decode(final HornetQBuffer buffer)
-   {      
+   {
       file = null;
-      
+
       super.decodeHeadersAndProperties(buffer);
    }
 
@@ -174,8 +160,9 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    }
 
    @Override
-   public BodyEncoder getBodyEncoder()
+   public BodyEncoder getBodyEncoder() throws HornetQException
    {
+      validateFile();
       return new DecodingContext();
    }
 
@@ -312,21 +299,29 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
 
    // Private -------------------------------------------------------
 
-   private synchronized void validateFile() throws Exception
+   private synchronized void validateFile() throws HornetQException
    {
-      if (file == null)
+      try
       {
-         if (messageID <= 0)
+         if (file == null)
          {
-            throw new RuntimeException("MessageID not set on LargeMessage");
+            if (messageID <= 0)
+            {
+               throw new RuntimeException("MessageID not set on LargeMessage");
+            }
+   
+            file = storageManager.createFileForLargeMessage(getMessageID(), durable);
+   
+            file.open();
+   
+            bodySize = file.size();
+   
          }
-
-         file = storageManager.createFileForLargeMessage(getMessageID(), durable);
-
-         file.open();
-
-         bodySize = file.size();
-
+      }
+      catch (Exception e)
+      {
+         // TODO: There is an IO_ERROR on trunk now, this should be used here instead
+         throw new HornetQException(HornetQException.INTERNAL_ERROR, e.getMessage(), e);
       }
    }
 
@@ -414,6 +409,14 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
          }
 
          return bytesRead;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.message.BodyEncoder#getLargeBodySize()
+       */
+      public long getLargeBodySize()
+      {
+         return bodySize;
       }
    }
 }

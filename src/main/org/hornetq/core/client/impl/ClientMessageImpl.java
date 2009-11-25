@@ -16,15 +16,15 @@ package org.hornetq.core.client.impl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.buffers.impl.ResetLimitWrappedHornetQBuffer;
+import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.LargeMessageBuffer;
 import org.hornetq.core.exception.HornetQException;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.message.BodyEncoder;
 import org.hornetq.core.message.impl.MessageImpl;
-import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
-import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.SimpleString;
 
 /**
@@ -147,17 +147,6 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
     */
 
    // FIXME - only used for large messages - move it!
-   public long getLargeBodySize()
-   {
-      if (largeMessage)
-      {
-         return ((LargeMessageBuffer)getWholeBuffer()).getSize();
-      }
-      else
-      {
-         return this.getBodySize();
-      }
-   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.client.ClientMessage#saveToOutputStream(java.io.OutputStream)
@@ -172,7 +161,9 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
       {
          try
          {
-            out.write(this.getWholeBuffer().toByteBuffer().array());
+            byte readBuffer[] = new byte[getBodySize()];
+            getBodyBuffer().readBytes(readBuffer);
+            out.write(readBuffer);
          }
          catch (IOException e)
          {
@@ -249,6 +240,50 @@ public class ClientMessageImpl extends MessageImpl implements ClientMessageInter
        bodyBuffer.setBuffer(buffer);
     }
  }
+ 
+ public BodyEncoder getBodyEncoder() throws HornetQException
+ {
+    return new DecodingContext();
+ }
 
+
+
+ private final class DecodingContext implements BodyEncoder
+ {
+    private int lastPos = 0;
+
+    public DecodingContext()
+    {
+    }
+
+    public void open()
+    {
+    }
+
+    public void close()
+    {
+    }
+    
+    public long getLargeBodySize()
+    {
+       return buffer.writerIndex();
+    }
+
+    public int encode(final ByteBuffer bufferRead) throws HornetQException
+    {
+       HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bufferRead);
+       return encode(buffer, bufferRead.capacity());
+    }
+
+    public int encode(final HornetQBuffer bufferOut, final int size)
+    {
+       byte[] bytes = new byte[size];
+       getWholeBuffer().readBytes(bytes);
+       bufferOut.writeBytes(bytes, 0, size);
+       return size;
+    }
+ }
+
+ 
 
 }

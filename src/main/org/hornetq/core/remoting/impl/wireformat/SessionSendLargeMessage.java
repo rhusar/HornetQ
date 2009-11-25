@@ -32,9 +32,6 @@ public class SessionSendLargeMessage extends PacketImpl
    /** Used only if largeMessage */
    private byte[] largeMessageHeader;
 
-   /** We need to set the MessageID when replicating this on the server */
-   private long largeMessageId = -1;
-
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -58,28 +55,11 @@ public class SessionSendLargeMessage extends PacketImpl
       return largeMessageHeader;
    }
 
-   /**
-    * @return the largeMessageId
-    */
-   public long getLargeMessageID()
-   {
-      return largeMessageId;
-   }
-
-   /**
-    * @param largeMessageId the largeMessageId to set
-    */
-   public void setLargeMessageID(long id)
-   {
-      this.largeMessageId = id;
-   }
-
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeInt(largeMessageHeader.length);
       buffer.writeBytes(largeMessageHeader);
-      buffer.writeLong(largeMessageId);
    }
 
    @Override
@@ -90,8 +70,6 @@ public class SessionSendLargeMessage extends PacketImpl
       largeMessageHeader = new byte[largeMessageLength];
 
       buffer.readBytes(largeMessageHeader);
-
-      largeMessageId = buffer.readLong();
    }
 
    // Package protected ---------------------------------------------

@@ -57,18 +57,13 @@ public class NullStorageLargeServerMessage extends ServerMessageImpl implements 
     */
    public synchronized void addBytes(final byte[] bytes)
    {
-//      HornetQBuffer buffer = getBuffer();
-//
-//      if (buffer != null)
-//      {
-         // expand the buffer
-         buffer.writeBytes(bytes);
-//      }
-//      else
-//      {
-//         // Reuse the initial byte array on the buffer construction
-//         setBuffer(ChannelBuffers.dynamicBuffer(bytes));
-//      }
+      if (buffer == null)
+      {
+         buffer = HornetQBuffers.dynamicBuffer(bytes.length);
+      }
+
+      // expand the buffer
+      buffer.writeBytes(bytes);
    }
 
    /* (non-Javadoc)

@@ -638,7 +638,7 @@ public class ServerConsumerImpl implements ServerConsumer
     *  This Inner class was created to avoid a bunch of loose properties about the current LargeMessage being sent*/
    private final class LargeMessageDeliverer
    {
-      private final long sizePendingLargeMessage;
+      private long sizePendingLargeMessage;
 
       private LargeServerMessage largeMessage;
 
@@ -656,8 +656,6 @@ public class ServerConsumerImpl implements ServerConsumer
          largeMessage = message;
 
          largeMessage.incrementDelayDeletionCount();
-
-         sizePendingLargeMessage = largeMessage.getLargeBodySize();
 
          this.ref = ref;
       }
@@ -684,13 +682,15 @@ public class ServerConsumerImpl implements ServerConsumer
 
                largeMessage.encodeHeadersAndProperties(headerBuffer);
 
+               context = largeMessage.getBodyEncoder();
+
+               sizePendingLargeMessage = context.getLargeBodySize();
+
                SessionReceiveLargeMessage initialPacket = new SessionReceiveLargeMessage(id,
                                                                                          headerBuffer.toByteBuffer()
                                                                                                      .array(),
-                                                                                         largeMessage.getLargeBodySize(),
+                                                                                         context.getLargeBodySize(),
                                                                                          ref.getDeliveryCount());
-
-               context = largeMessage.getBodyEncoder();
 
                context.open();
 

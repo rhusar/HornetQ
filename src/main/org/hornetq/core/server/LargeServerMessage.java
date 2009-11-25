@@ -13,7 +13,6 @@
 
 package org.hornetq.core.server;
 
-import org.hornetq.core.message.BodyEncoder;
 
 /**
  * A LargeMessage
@@ -35,8 +34,6 @@ public interface LargeServerMessage extends ServerMessage
 
    /** Close the files if opened */
    void releaseResources();
-   
-   long getLargeBodySize();
    
    void deleteFile() throws Exception;
    

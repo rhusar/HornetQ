@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hornetq.core.buffers.HornetQBuffer;
+import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -198,9 +199,7 @@ public interface Message
    
    void decodeHeadersAndProperties(HornetQBuffer buffer);
    
-   long getLargeBodySize();
-   
-   BodyEncoder getBodyEncoder();
+   BodyEncoder getBodyEncoder() throws HornetQException;
    
    /** Get the InputStream used on a message that will be sent over a producer */
    InputStream getBodyInputStream();

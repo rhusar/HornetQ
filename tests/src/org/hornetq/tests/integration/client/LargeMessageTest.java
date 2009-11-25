@@ -18,11 +18,6 @@ import java.util.HashMap;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import junit.framework.AssertionFailedError;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.client.ClientConsumer;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientProducer;
@@ -53,13 +48,6 @@ import org.hornetq.utils.SimpleString;
  */
 public class LargeMessageTest extends LargeMessageTestBase
 {
-   public static Test suite()
-   {
-      TestSuite suite = new TestSuite();
-
-      return suite;
-   }
-
    // Constants -----------------------------------------------------
 
    final static int RECEIVE_WAIT_TIME = 60000;
@@ -788,14 +776,18 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          producer2.send(msg1);
 
+         boolean failed = false;
+         
          try
          {
             producer2.send(msg1);
-            fail("Expected Exception");
          }
          catch (Throwable e)
          {
+            failed = true;
          }
+         
+         assertTrue("Exception expected", failed);
 
          session.commit();
 
@@ -926,7 +918,7 @@ public class LargeMessageTest extends LargeMessageTestBase
                  false,
                  true,
                  true,
-                 100,
+                 2,
                  LARGE_MESSAGE_SIZE,
                  RECEIVE_WAIT_TIME,
                  0);
@@ -2211,22 +2203,18 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientMessage message = null;
 
-         HornetQBuffer body = null;
-
          for (int i = 0; i < 100; i++)
          {
             message = session.createClientMessage(true);
+            
+            // TODO: Why do I need to reset the writerIndex?
+            message.getBodyBuffer().writerIndex(0);
             
             for (int j = 1; j <= numberOfBytes; j++)
             {
                message.getBodyBuffer().writeInt(j);
             }
 
-            if (i == 0)
-            {
-               body = message.getBodyBuffer();
-            }
-   
             producer.send(message);
          }
 
@@ -2262,16 +2250,11 @@ public class LargeMessageTest extends LargeMessageTestBase
 
             assertNotNull(message2);
 
-            try
+            message.getBodyBuffer().readerIndex(0);
+               
+            for (int j = 1; j <= numberOfBytes; j++)
             {
-               assertEqualsByteArrays(body.writerIndex(), body.toByteBuffer().array(), message2.getBodyBuffer().toByteBuffer().
-                                      array());
-            }
-            catch (AssertionFailedError e)
-            {
-               log.info("Expected buffer:" + dumbBytesHex(body.toByteBuffer().array(), 40));
-               log.info("Arriving buffer:" + dumbBytesHex(message2.getBodyBuffer().toByteBuffer().array(), 40));
-               throw e;
+               assertEquals(j, message.getBodyBuffer().readInt());
             }
          }
 

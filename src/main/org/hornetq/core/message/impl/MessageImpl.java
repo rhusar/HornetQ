@@ -142,8 +142,12 @@ public abstract class MessageImpl implements Message
 
    protected MessageImpl(final long messageID, final int initialMessageBufferSize)
    {
+      this(initialMessageBufferSize);
+   }
+
+   protected MessageImpl(final int initialMessageBufferSize)
+   {
       this();
-      this.messageID = messageID;
       createBody(initialMessageBufferSize);
    }
 
@@ -165,11 +169,15 @@ public abstract class MessageImpl implements Message
       endOfBodyPosition = other.endOfBodyPosition;
       endOfMessagePosition = other.endOfMessagePosition;
       copied = other.copied;
-
-      // We need to copy the underlying buffer too, since the different messsages thereafter might have different
-      // properties set on them, making their encoding different
-      buffer = other.buffer.copy(0, other.buffer.capacity());
-      buffer.setIndex(other.buffer.readerIndex(), other.buffer.writerIndex());
+      
+      if (other.buffer != null)
+      {
+         createBody(other.buffer.capacity());
+         // We need to copy the underlying buffer too, since the different messsages thereafter might have different
+         // properties set on them, making their encoding different
+         buffer = other.buffer.copy(0, other.buffer.capacity());
+         buffer.setIndex(other.buffer.readerIndex(), other.buffer.writerIndex());
+      }
    }
 
    // Message implementation ----------------------------------------
@@ -779,7 +787,7 @@ public abstract class MessageImpl implements Message
       return buffer;
    }
 
-   public BodyEncoder getBodyEncoder()
+   public BodyEncoder getBodyEncoder() throws HornetQException
    {
       return new DecodingContext();
    }
@@ -888,6 +896,11 @@ public abstract class MessageImpl implements Message
 
       public void close()
       {
+      }
+      
+      public long getLargeBodySize()
+      {
+         return buffer.writerIndex();
       }
 
       public int encode(final ByteBuffer bufferRead) throws HornetQException

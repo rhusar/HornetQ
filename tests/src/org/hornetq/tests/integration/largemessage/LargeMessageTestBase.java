@@ -350,7 +350,6 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
 
                            HornetQBuffer buffer = message.getBodyBuffer();
                            buffer.resetReaderIndex();
-                           assertEquals(numberOfBytes, buffer.writerIndex());
                            for (long b = 0; b < numberOfBytes; b++)
                            {
                               if (b % (1024l * 1024l) == 0)
@@ -359,6 +358,15 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
                               }
 
                               assertEquals(getSamplebyte(b), buffer.readByte());
+                           }
+                           
+                           try
+                           {
+                              buffer.readByte();
+                              fail("Supposed to throw an exception");
+                           }
+                           catch (Exception e)
+                           {
                            }
                         }
                      }
@@ -395,8 +403,6 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
                   ClientMessage message = consumer.receive(waitOnConsumer + delayDelivery);
 
                   assertNotNull(message);
-
-                  log.debug("Message: " + i);
 
                   System.currentTimeMillis();
 

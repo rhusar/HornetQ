@@ -64,6 +64,11 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    {
       super(messageID, initialMessageBufferSize);   
    }
+   
+   protected ServerMessageImpl(final int initialMessageBufferSize)
+   {
+      super(initialMessageBufferSize);
+   }
 
    /*
     * Copy constructor
@@ -142,11 +147,6 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    public boolean isLargeMessage()
    {
       return false;
-   }
-
-   public long getLargeBodySize()
-   {
-      return -1;
    }
 
    public int getMemoryEstimate()

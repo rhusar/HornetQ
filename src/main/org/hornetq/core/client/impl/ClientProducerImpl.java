@@ -232,8 +232,6 @@ public class ClientProducerImpl implements ClientProducerInternal
 
       boolean sendBlocking = msg.isDurable() ? blockOnPersistentSend : blockOnNonPersistentSend;
 
-      SessionSendMessage message = new SessionSendMessage(msg, sendBlocking);
-
       session.workDone();
 
       boolean isLarge;
@@ -251,13 +249,18 @@ public class ClientProducerImpl implements ClientProducerInternal
       {
          largeMessageSend(sendBlocking, msg, theCredits);
       }
-      else if (sendBlocking)
-      {
-         channel.sendBlocking(message);
-      }
       else
       {
-         channel.send(message);
+         SessionSendMessage message = new SessionSendMessage(msg, sendBlocking);
+
+         if (sendBlocking)
+         {
+            channel.sendBlocking(message);
+         }
+         else
+         {
+            channel.send(message);
+         }
       }
 
       try
@@ -345,9 +348,11 @@ public class ClientProducerImpl implements ClientProducerInternal
                                          final Message msg,
                                          final ClientProducerCredits credits) throws HornetQException
    {
-      final long bodySize = msg.getLargeBodySize();
-
       BodyEncoder context = msg.getBodyEncoder();
+      
+      final long bodySize = context.getLargeBodySize();
+
+      
 
       context.open();
       try
