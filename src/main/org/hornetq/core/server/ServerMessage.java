@@ -43,8 +43,6 @@ public interface ServerMessage extends Message, EncodingSupport
 
    ServerMessage copy();
    
-   ServerMessage shallowCopy();
-
    int getMemoryEstimate();
 
    int getRefCount();

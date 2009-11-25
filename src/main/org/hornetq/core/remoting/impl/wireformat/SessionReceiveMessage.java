@@ -69,19 +69,19 @@ public class SessionReceiveMessage extends MessagePacket
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
-      HornetQBuffer orig = message.encodeToBuffer();
+      HornetQBuffer buffer = message.getEncodedBuffer();
       
-      //Now we must copy this buffer, before sending to Netty, as it could be concurrently delivered to many consumers
+      //Sanity check
+      if (buffer.writerIndex() != message.getEndOfMessagePosition())
+      {
+         throw new IllegalStateException("Wrong encode position");
+      }
       
-      HornetQBuffer buffer = orig.copy(0, orig.capacity());
-
-      buffer.setIndex(0, message.getEndOfMessagePosition());
-        
-      buffer.writeLong(consumerID);
+      buffer.writeLong(consumerID);      
       buffer.writeInt(deliveryCount);
-      
+                 
       size = buffer.writerIndex();
-                       
+                
       //Write standard headers
       
       int len = size - DataConstants.SIZE_INT;
@@ -90,7 +90,7 @@ public class SessionReceiveMessage extends MessagePacket
       buffer.setLong(DataConstants.SIZE_INT + DataConstants.SIZE_BYTE, channelID);
       
       //Position reader for reading by Netty
-      buffer.readerIndex(0);
+      buffer.setIndex(0, size);
       
       return buffer;
    }
@@ -107,7 +107,7 @@ public class SessionReceiveMessage extends MessagePacket
       deliveryCount = buffer.readInt();  
       
       size = buffer.readerIndex();
-      
+
       //Need to position buffer for reading
       
       buffer.setIndex(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT, message.getEndOfBodyPosition());    

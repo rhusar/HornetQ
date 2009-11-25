@@ -72,19 +72,16 @@ public class SessionSendMessage extends MessagePacket
    @Override
    public HornetQBuffer encode(final RemotingConnection connection)
    {
-      //this isn't right when forwarding a message that has been already received - because writerindex will
-      //be pointing at end of message
+      HornetQBuffer buffer = message.getEncodedBuffer();
       
-      HornetQBuffer orig = message.encodeToBuffer();
-      
-      //FIXME - for now we are copying due to concurrent sends to many bridges on the server
-      
-      HornetQBuffer buffer = orig.copy(0, orig.capacity());
-      
-      buffer.setIndex(0, message.getEndOfMessagePosition());
+      //Sanity check
+      if (buffer.writerIndex() != message.getEndOfMessagePosition())
+      {
+         throw new IllegalStateException("Wrong encode position");
+      }
       
       buffer.writeBoolean(requiresResponse);
-      
+  
       size = buffer.writerIndex();
                        
       //Write standard headers
@@ -108,8 +105,12 @@ public class SessionSendMessage extends MessagePacket
       //Buffer comes in after having read standard headers and positioned at Beginning of body part
       
       message.decodeFromBuffer(buffer);
-      
-      requiresResponse = buffer.readBoolean();     
+
+      int ri = buffer.readerIndex();
+
+      requiresResponse = buffer.readBoolean(); 
+            
+      buffer.readerIndex(ri);
    }
    
    // Private -------------------------------------------------------

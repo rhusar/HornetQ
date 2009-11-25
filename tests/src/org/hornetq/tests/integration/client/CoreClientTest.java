@@ -71,7 +71,7 @@ public class CoreClientTest extends UnitTestCase
       server.start();
 
       ClientSessionFactory sf = new ClientSessionFactoryImpl(new TransportConfiguration(connectorFactoryClassName));
-      sf.setConsumerWindowSize(0);
+     // sf.setConsumerWindowSize(0);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -103,7 +103,7 @@ public class CoreClientTest extends UnitTestCase
       }
 
       log.info("sent messages");
-
+      
       ClientConsumer consumer = session.createConsumer(QUEUE);
       
       session.start();
@@ -111,6 +111,8 @@ public class CoreClientTest extends UnitTestCase
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message2 = consumer.receive();
+         
+        // log.info("got message " + i);
          
          HornetQBuffer buffer = message2.getBodyBuffer();
          

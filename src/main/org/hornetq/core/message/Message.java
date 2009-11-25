@@ -14,12 +14,10 @@
 package org.hornetq.core.message;
 
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 
 import org.hornetq.core.buffers.HornetQBuffer;
-import org.hornetq.core.exception.HornetQException;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.TypedProperties;
 
@@ -74,11 +72,7 @@ public interface Message
    
    void decodeFromBuffer(HornetQBuffer buffer);
    
-   HornetQBuffer encodeToBuffer();
-   
    int getEndOfMessagePosition();
-   
-  // void setEndOfBodyPosition();
    
    int getEndOfBodyPosition();
    
@@ -88,7 +82,7 @@ public interface Message
    
    void resetCopied();
    
-//   void resetEndOfBodyPosition();
+   HornetQBuffer getEncodedBuffer();
    
    // Properties
    // ------------------------------------------------------------------

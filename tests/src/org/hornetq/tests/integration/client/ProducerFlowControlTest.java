@@ -67,7 +67,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
    public void testFlowControlMultipleConsumers() throws Exception
    {
-      testFlowControl(1000, 500, 10 * 1024, 1024, 1024, 1024, 5, 1, 0, false);
+      testFlowControl(1000, 500, -1, 1024, 1024, 1024, 5, 1, 0, false);
    }
 
    public void testFlowControlZeroConsumerWindowSize() throws Exception
@@ -134,7 +134,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
    {
       testFlowControl(1000, 10000, 100 * 1024, 1024, 1024, 1024, 1, 1, 0, true, 1000, true);
    }
-   
+
    public void testFlowControlLargeMessages7() throws Exception
    {
       testFlowControl(1000, 10000, 100 * 1024, 1024, 1024, 1024, 2, 2, 0, true, 1000, true);
@@ -212,7 +212,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       {
          session.createQueue(address, new SimpleString(queueName + i), null, false);
       }
-      
+
       final byte[] bytes = RandomUtil.randomBytes(messageSize);
 
       class MyHandler implements MessageHandler
@@ -230,7 +230,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
                byte[] bytesRead = new byte[messageSize];
 
                message.getBodyBuffer().readBytes(bytesRead);
-               
+
                assertEqualsByteArrays(bytes, bytesRead);
 
                message.acknowledge();
@@ -244,13 +244,14 @@ public class ProducerFlowControlTest extends ServiceTestBase
                {
                   Thread.sleep(consumerDelay);
                }
+
             }
             catch (Exception e)
             {
                log.error("Failed to handle message", e);
-                              
+
                this.exception = e;
-               
+
                latch.countDown();
             }
          }
@@ -285,12 +286,10 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       long start = System.currentTimeMillis();
 
-      
-
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message = session.createClientMessage(false);
-         
+
          message.getBodyBuffer().writeBytes(bytes);
 
          for (int j = 0; j < numProducers; j++)
@@ -389,7 +388,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       byte[] bytes = new byte[0];
 
       ClientMessage message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
@@ -421,7 +420,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       t.start();
 
       ClientMessage message2 = session.createClientMessage(false);
-      
+
       message2.getBodyBuffer().writeBytes(bytes);
 
       producer2.send(message2);
@@ -474,7 +473,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       byte[] bytes = new byte[0];
 
       ClientMessage message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
@@ -504,7 +503,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       assertEquals(1, waiting);
 
       message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       producer2.send(message);
@@ -552,7 +551,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       byte[] bytes = new byte[0];
 
       ClientMessage message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       producer.send(message);
@@ -600,7 +599,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       session.close();
 
       message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       producer3.send(message);
@@ -648,7 +647,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       byte[] bytes = new byte[2000];
 
       ClientMessage message = session.createClientMessage(false);
-      
+
       message.getBodyBuffer().writeBytes(bytes);
 
       final AtomicBoolean closed = new AtomicBoolean(false);
@@ -721,7 +720,7 @@ public class ProducerFlowControlTest extends ServiceTestBase
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message = session.createClientMessage(false);
-         
+
          message.getBodyBuffer().writeBytes(bytes);
 
          producer.send(message);
@@ -734,6 +733,74 @@ public class ProducerFlowControlTest extends ServiceTestBase
                                                                .getPageStore(address);
 
       assertFalse(store.isExceededAvailableCredits());
+
+      server.stop();
+   }
+
+   //Not technically a flow control test, but what the hell
+   public void testMultipleConsumers() throws Exception
+   {
+      HornetQServer server = createServer(false, isNetty());
+
+      server.start();
+
+      ClientSessionFactory sf = createFactory(isNetty());
+
+      final ClientSession session = sf.createSession(false, true, true, true);
+
+      session.createQueue("address", "queue1", null, false);
+      session.createQueue("address", "queue2", null, false);
+      session.createQueue("address", "queue3", null, false);
+      session.createQueue("address", "queue4", null, false);
+      session.createQueue("address", "queue5", null, false);
+
+      ClientConsumer consumer1 = session.createConsumer("queue1");
+      ClientConsumer consumer2 = session.createConsumer("queue2");
+      ClientConsumer consumer3 = session.createConsumer("queue3");
+      ClientConsumer consumer4 = session.createConsumer("queue4");
+      ClientConsumer consumer5 = session.createConsumer("queue5");
+
+      ClientProducer producer = session.createProducer("address");
+
+      byte[] bytes = new byte[2000];
+
+      ClientMessage message = session.createClientMessage(false);
+
+      message.getBodyBuffer().writeBytes(bytes);
+
+      final int numMessages = 1000;
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         producer.send(message);
+      }
+      
+      session.start();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         ClientMessage msg = consumer1.receive(1000);
+
+         assertNotNull(msg);
+
+         msg = consumer2.receive(5000);
+
+         assertNotNull(msg);
+
+         msg = consumer3.receive(5000);
+
+         assertNotNull(msg);
+
+         msg = consumer4.receive(5000);
+
+         assertNotNull(msg);
+
+         msg = consumer5.receive(5000);
+
+         assertNotNull(msg);
+      }
+      
+      session.close();
 
       server.stop();
    }

@@ -74,7 +74,7 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
     */
    private LargeServerMessageImpl(final LargeServerMessageImpl copy, final SequentialFile fileCopy, final long newID)
    {
-      super(copy, true);
+      super(copy);
       this.linkMessage = copy;
       storageManager = copy.storageManager;
       file = fileCopy;

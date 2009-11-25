@@ -235,7 +235,7 @@ public class PacketImpl implements Packet
       size = buffer.readerIndex();
    }
 
-   public final int getPacketSize()
+   public int getPacketSize()
    {
       if (size == -1)
       {
