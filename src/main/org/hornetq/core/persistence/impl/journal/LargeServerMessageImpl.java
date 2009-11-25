@@ -74,7 +74,7 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
     */
    private LargeServerMessageImpl(final LargeServerMessageImpl copy, final SequentialFile fileCopy, final long newID)
    {
-      super(copy);
+      super(copy, true);
       this.linkMessage = copy;
       storageManager = copy.storageManager;
       file = fileCopy;
@@ -273,7 +273,7 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    }
 
    @Override
-   public synchronized ServerMessage copy(final long newID) throws Exception
+   public synchronized ServerMessage copy(final long newID)
    {
       incrementDelayDeletionCount();
 
