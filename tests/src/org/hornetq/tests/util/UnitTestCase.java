@@ -44,6 +44,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
+import org.hornetq.core.buffers.HornetQBuffer;
 import org.hornetq.core.buffers.HornetQBuffers;
 import org.hornetq.core.client.ClientMessage;
 import org.hornetq.core.client.ClientSession;
@@ -255,11 +256,27 @@ public class UnitTestCase extends TestCase
 
    public static void assertEqualsByteArrays(byte[] expected, byte[] actual)
    {
-      assertEquals(expected.length, actual.length);
+      // assertEquals(expected.length, actual.length);
       for (int i = 0; i < expected.length; i++)
       {
          assertEquals("byte at index " + i, expected[i], actual[i]);
       }
+   }
+
+   public static void assertEqualsBuffers(int size, HornetQBuffer expected, HornetQBuffer actual)
+   {
+      // assertEquals(expected.length, actual.length);
+      expected.readerIndex(0);
+      actual.readerIndex(0);
+      
+      for (int i = 0; i < size; i++)
+      {
+         byte b1 = expected.readByte();
+         byte b2 = actual.readByte();
+         assertEquals("byte at index " + i, b1, b2);
+      }
+      expected.resetReaderIndex();
+      actual.resetReaderIndex();
    }
 
    public static void assertEqualsByteArrays(int length, byte[] expected, byte[] actual)

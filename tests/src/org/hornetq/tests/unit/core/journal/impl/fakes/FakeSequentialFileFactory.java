@@ -144,7 +144,7 @@ public class FakeSequentialFileFactory implements SequentialFileFactory
       {
          size = (size / alignment + 1) * alignment;
       }
-      return ByteBuffer.allocateDirect(size);
+      return ByteBuffer.allocate(size);
    }
 
    public int calculateBlockSize(final int position)

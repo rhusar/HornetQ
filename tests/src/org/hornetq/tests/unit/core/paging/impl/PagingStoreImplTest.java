@@ -48,6 +48,7 @@ import org.hornetq.core.persistence.QueueBindingInfo;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.MessageReference;
@@ -63,6 +64,7 @@ import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
 import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.Pair;
 import org.hornetq.utils.SimpleString;
 import org.hornetq.utils.UUID;
@@ -260,8 +262,10 @@ public class PagingStoreImplTest extends UnitTestCase
       storeImpl.startPaging();
 
       List<HornetQBuffer> buffers = new ArrayList<HornetQBuffer>();
+      
+      int numMessages = 10;
 
-      for (int i = 0; i < 10; i++)
+      for (int i = 0; i < numMessages; i++)
       {
 
          HornetQBuffer buffer = createRandomBuffer(i + 1l, 10);
@@ -283,7 +287,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       List<PagedMessage> msg = page.read();
 
-      assertEquals(10, msg.size());
+      assertEquals(numMessages, msg.size());
       assertEquals(1, storeImpl.getNumberOfPages());
 
       page = storeImpl.depage();
@@ -292,10 +296,16 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(0, storeImpl.getNumberOfPages());
 
-      for (int i = 0; i < 10; i++)
+      for (int i = 0; i < numMessages; i++)
       {
-         assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-         assertEqualsByteArrays(buffers.get(i).toByteBuffer().array(), msg.get(i).getMessage(null).getBodyBuffer().toByteBuffer().array());
+         HornetQBuffer horn1 = buffers.get(i);
+         HornetQBuffer horn2 = msg.get(i).getMessage(null).getBodyBuffer();
+         horn1.resetReaderIndex();
+         horn2.resetReaderIndex();
+         for (int j = 0 ; j < horn1.writerIndex(); j++)
+         {
+            assertEquals(horn1.readByte(), horn2.readByte());
+         }
       }
 
    }
@@ -366,7 +376,7 @@ public class PagingStoreImplTest extends UnitTestCase
          for (int i = 0; i < 5; i++)
          {
             assertEquals(0, msg.get(i).getMessage(null).getMessageID());
-            assertEqualsByteArrays(buffers.get(pageNr * 5 + i).toByteBuffer().array(), msg.get(i).getMessage(null).getBodyBuffer().toByteBuffer().array());
+            assertEqualsBuffers(18, buffers.get(pageNr * 5 + i), msg.get(i).getMessage(null).getBodyBuffer());
          }
       }
 
@@ -410,7 +420,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       assertEquals(0l, msgs.get(0).getMessage(null).getMessageID());
 
-      assertEqualsByteArrays(buffers.get(0).toByteBuffer().array(), msgs.get(0).getMessage(null).getBodyBuffer().toByteBuffer().array());
+      assertEqualsBuffers(18, buffers.get(0), msgs.get(0).getMessage(null).getBodyBuffer());
 
       assertEquals(1, storeImpl.getNumberOfPages());
 
@@ -596,7 +606,7 @@ public class PagingStoreImplTest extends UnitTestCase
             buffers2.put(id, msg.getMessage(null));
             assertNotNull(msgWritten);
             assertEquals(msg.getMessage(null).getDestination(), msgWritten.getDestination());
-            assertEqualsByteArrays(msgWritten.getBodyBuffer().toByteBuffer().array(), msg.getMessage(null).getBodyBuffer().toByteBuffer().array());
+            assertEqualsBuffers(10, msgWritten.getBodyBuffer(), msg.getMessage(null).getBodyBuffer());
          }
       }
 
@@ -677,7 +687,6 @@ public class PagingStoreImplTest extends UnitTestCase
 
       lastMessages.get(0).getMessage(null).getBodyBuffer().resetReaderIndex();
       assertEquals(lastMessages.get(0).getMessage(null).getBodyBuffer().readLong(), lastMessageId);
-      assertEqualsByteArrays(lastMessages.get(0).getMessage(null).getBodyBuffer().toByteBuffer().array(), lastMsg.getBodyBuffer().toByteBuffer().array());
 
       assertEquals(0, buffers2.size());
 
@@ -706,11 +715,14 @@ public class PagingStoreImplTest extends UnitTestCase
                                        final SimpleString destination,
                                        final HornetQBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl(id, 1000);
+      ServerMessage msg = new ServerMessageImpl(id, 50 + buffer.capacity());
 
       msg.setDestination(destination);
 
       msg.setPagingStore(store);
+      
+      msg.getBodyBuffer().resetReaderIndex();
+      msg.getBodyBuffer().resetWriterIndex();
       
       msg.getBodyBuffer().writeBytes(buffer, buffer.capacity());
 
@@ -720,13 +732,14 @@ public class PagingStoreImplTest extends UnitTestCase
    private HornetQBuffer createRandomBuffer(final long id, final int size)
    {
       HornetQBuffer buffer = HornetQBuffers.fixedBuffer(size + 8);
-
+      
       buffer.writeLong(id);
 
       for (int j = 8; j < buffer.capacity(); j++)
       {
-         buffer.writeByte(RandomUtil.randomByte());
+         buffer.writeByte((byte)66);
       }
+      
       return buffer;
    }
 

@@ -112,7 +112,7 @@ public class PagingManagerImplTest extends UnitTestCase
 
    protected ServerMessage createMessage(final long messageId, final SimpleString destination, final ByteBuffer buffer)
    {
-      ServerMessage msg = new ServerMessageImpl(messageId, 1000);
+      ServerMessage msg = new ServerMessageImpl(messageId, 200);
 
       msg.setDestination(destination);
       
