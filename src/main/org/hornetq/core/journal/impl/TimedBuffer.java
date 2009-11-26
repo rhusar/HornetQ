@@ -96,7 +96,7 @@ public class TimedBuffer
 
    public TimedBuffer(final int size, final long timeout, final boolean flushOnSync, final boolean logRates)
    {     
-      bufferSize = 490 * 1024;
+      this.bufferSize = size;
       this.logRates = logRates;
       if (logRates)
       {

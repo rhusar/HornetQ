@@ -60,7 +60,7 @@ public class SendTest
    {
       try
       {
-         new SendTest().runConsume();
+         new SendTest().runTextMessage();
       }
       catch (Exception e)
       {
@@ -74,9 +74,9 @@ public class SendTest
    {
       log.info("*** Starting server");
 
-      //System.setProperty("org.hornetq.opt.dontadd", "true");
+      System.setProperty("org.hornetq.opt.dontadd", "true");
      // System.setProperty("org.hornetq.opt.routeblast", "true");
-      System.setProperty("org.hornetq.opt.generatemessages", "true");
+      //System.setProperty("org.hornetq.opt.generatemessages", "true");
 
       Configuration configuration = new ConfigurationImpl();
       configuration.setSecurityEnabled(false);
@@ -285,25 +285,20 @@ public class SendTest
 
       prod.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
-      byte[] bytes1 = new byte[] { (byte)'A', (byte)'B',(byte)'C',(byte)'D'};
-      
-      String s = new String(bytes1);
-      
-      System.out.println("Str is " + s);
-      
-      byte[] bytes = RandomUtil.randomBytes(512);
+      byte[] bytes = RandomUtil.randomBytes(1024);
 
       String str = new String(bytes);
       
       
       log.info("Warming up");
       
-      TextMessage tm = sess.createTextMessage();
-      
-      tm.setText(str);
-                             
+                                  
       for (int i = 0; i < warmup; i++)
       {                  
+         TextMessage tm = sess.createTextMessage();
+         
+         tm.setText(str);
+         
          prod.send(tm);
 
          if (i % 10000 == 0)
@@ -314,14 +309,15 @@ public class SendTest
       
       log.info("** WARMUP DONE");
        
-      tm = sess.createTextMessage();
-
-      tm.setText(str);
+      
       
       long start = System.currentTimeMillis();
 
       for (int i = 0; i < numMessages; i++)
       {
+         TextMessage tm = sess.createTextMessage();
+
+         tm.setText(str);
          prod.send(tm);
 
          if (i % 10000 == 0)
