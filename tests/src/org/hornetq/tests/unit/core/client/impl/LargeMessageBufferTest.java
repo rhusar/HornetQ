@@ -231,7 +231,7 @@ public class LargeMessageBufferTest extends UnitTestCase
 
       final LargeMessageBufferImpl buffer = new LargeMessageBufferImpl(new FakeConsumerInternal(), 10, 10);
 
-      buffer.addPacket(new SessionReceiveContinuationMessage(-1, new byte[] { 0, 1, 2, 3, 4 }, true, true));
+      buffer.addPacket(new FakePacket(-1, new byte[] { 0, 1, 2, 3, 4 }, true, true));
 
       byte bytes[] = new byte[30];
       buffer.readBytes(bytes, 0, 5);
@@ -355,7 +355,7 @@ public class LargeMessageBufferTest extends UnitTestCase
 
       for (int i = 0; i < 3; i++)
       {
-         outBuffer.addPacket(new SessionReceiveContinuationMessage(-1, new byte[1024], true, false));
+         outBuffer.addPacket(new FakePacket(-1, new byte[1024], true, false));
       }
 
       outBuffer.setOutputStream(output);
@@ -389,12 +389,12 @@ public class LargeMessageBufferTest extends UnitTestCase
 
       for (int i = 0; i < 8; i++)
       {
-         outBuffer.addPacket(new SessionReceiveContinuationMessage(-1, new byte[1024], true, false));
+         outBuffer.addPacket(new FakePacket(-1, new byte[1024], true, false));
       }
 
       assertEquals(1, waiting.getCount());
 
-      outBuffer.addPacket(new SessionReceiveContinuationMessage(-1, new byte[123], false, false));
+      outBuffer.addPacket(new FakePacket(-1, new byte[123], false, false));
 
       assertTrue(done2.await(10, TimeUnit.SECONDS));
 
@@ -430,7 +430,7 @@ public class LargeMessageBufferTest extends UnitTestCase
       long start = System.currentTimeMillis();
       final LargeMessageBufferImpl outBuffer = new LargeMessageBufferImpl(new FakeConsumerInternal(), 5, 30);
 
-      outBuffer.addPacket(new SessionReceiveContinuationMessage(-1, new byte[] { 0, 1, 2, 3, 4 }, true, false));
+      outBuffer.addPacket(new FakePacket(-1, new byte[] { 0, 1, 2, 3, 4 }, true, false));
 
       final CountDownLatch latchBytesWritten1 = new CountDownLatch(5);
       final CountDownLatch latchBytesWritten2 = new CountDownLatch(10);
@@ -513,22 +513,38 @@ public class LargeMessageBufferTest extends UnitTestCase
          {
             break;
          }
+         
+         SessionReceiveContinuationMessage packet = null;
 
          if (size < splitFactor)
          {
             byte[] newSplit = new byte[size];
             System.arraycopy(splitElement, 0, newSplit, 0, size);
 
-            outBuffer.addPacket(new SessionReceiveContinuationMessage(1, newSplit, input.available() > 0, false));
+            packet = new FakePacket(1, newSplit, input.available() > 0, false);
          }
          else
          {
-            outBuffer.addPacket(new SessionReceiveContinuationMessage(1, splitElement, input.available() > 0, false));
+            packet = new FakePacket(1, splitElement, input.available() > 0, false);
          }
+         
+         outBuffer.addPacket(packet);
       }
 
       return outBuffer;
 
+   }
+   
+   private class FakePacket extends SessionReceiveContinuationMessage
+   {
+      public FakePacket(final long consumerID,
+                        final byte[] body,
+                        final boolean continues,
+                        final boolean requiresResponse)
+      {
+         super(consumerID, body, continues, requiresResponse);
+         this.size = 1;
+      }
    }
 
    /**
