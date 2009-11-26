@@ -106,8 +106,6 @@ public class PageImplTest extends UnitTestCase
 
       for (int i = 0; i < msgs.size(); i++)
       {
-         assertEquals(i, (msgs.get(i).getMessage(null)).getMessageID());
-
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
          assertEqualsByteArrays(buffers.get(i).toByteBuffer().array(), (msgs.get(i).getMessage(null)).getBodyBuffer().toByteBuffer().array());
@@ -179,8 +177,6 @@ public class PageImplTest extends UnitTestCase
 
       for (int i = 0; i < msgs.size(); i++)
       {
-         assertEquals(i, (msgs.get(i).getMessage(null)).getMessageID());
-
          assertEquals(simpleDestination, (msgs.get(i).getMessage(null)).getDestination());
 
          assertEqualsByteArrays(buffers.get(i).toByteBuffer().array(), (msgs.get(i).getMessage(null)).getBodyBuffer().toByteBuffer().array());
