@@ -607,6 +607,8 @@ public class FakeSequentialFileFactory implements SequentialFileFactory
        */
       public void write(HornetQBuffer bytes, boolean sync, IOCompletion callback) throws Exception
       {
+         bytes.writerIndex(bytes.capacity());
+         bytes.readerIndex(0);
          writeDirect(bytes.toByteBuffer(), sync, callback);
 
       }
