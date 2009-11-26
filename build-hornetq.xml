@@ -1223,9 +1223,9 @@
                     haltonerror="${junit.batchtest.haltonerror}"
                     failureproperty="tests.failed">
             <formatter type="plain" usefile="${junit.formatter.usefile}"/>
-            <fileset dir="${test.classes.dir}">
-               <!-- <exclude name="**/integration/http/*" /> -->
+            <fileset dir="${test.classes.dir}">            
                <include name="${tests.param}"/>
+               <exclude name="**/integration/cluster/reattach/Netty*" />
             </fileset>
          </batchtest>
       </junit>

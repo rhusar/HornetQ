@@ -81,9 +81,7 @@ public class DivertImpl implements Divert
       // We must make a copy of the message, otherwise things like returning credits to the page won't work
       // properly on ack, since the original destination will be overwritten
 
-      // TODO we can optimise this so it doesn't copy if it's not routed anywhere else
-
-      log.info("making copy for divert");
+      // TODO we can optimise this so it doesn't copy if it's not routed anywhere else   
       
       ServerMessage copy = message.copy();
 

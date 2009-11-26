@@ -111,6 +111,7 @@ public class SessionSendMessage extends MessagePacket
       requiresResponse = buffer.readBoolean(); 
             
       buffer.readerIndex(ri);
+            
    }
    
    // Private -------------------------------------------------------

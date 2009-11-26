@@ -15,11 +15,14 @@ package org.hornetq.tests.opt;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -38,6 +41,7 @@ import org.hornetq.integration.transports.netty.NettyConnectorFactory;
 import org.hornetq.integration.transports.netty.TransportConstants;
 import org.hornetq.jms.HornetQQueue;
 import org.hornetq.jms.client.HornetQConnectionFactory;
+import org.hornetq.jms.client.HornetQMessage;
 import org.hornetq.jms.client.HornetQSession;
 import org.hornetq.tests.util.RandomUtil;
 
@@ -56,7 +60,7 @@ public class SendTest
    {
       try
       {
-         new SendTest().runTextMessage();
+         new SendTest().runConsume();
       }
       catch (Exception e)
       {
@@ -70,8 +74,9 @@ public class SendTest
    {
       log.info("*** Starting server");
 
-      System.setProperty("org.hornetq.opt.dontadd", "true");
+      //System.setProperty("org.hornetq.opt.dontadd", "true");
      // System.setProperty("org.hornetq.opt.routeblast", "true");
+      System.setProperty("org.hornetq.opt.generatemessages", "true");
 
       Configuration configuration = new ConfigurationImpl();
       configuration.setSecurityEnabled(false);
@@ -210,6 +215,134 @@ public class SendTest
       server.stop();
    }
    
+   public void runSendConsume() throws Exception
+   {
+      startServer();
+      
+      Map<String, Object> params = new HashMap<String, Object>();
+
+      // params.put(TransportConstants.HOST_PROP_NAME, "localhost");
+
+      // params.put(TransportConstants.PORT_PROP_NAME, 5445);
+      
+      params.put(TransportConstants.TCP_NODELAY_PROPNAME, Boolean.FALSE);
+      //params.put(TransportConstants.USE_NIO_PROP_NAME, Boolean.FALSE);
+
+       TransportConfiguration tc = new TransportConfiguration(NettyConnectorFactory.class.getCanonicalName(), params);
+
+      //TransportConfiguration tc = new TransportConfiguration(InVMConnectorFactory.class.getCanonicalName(), params);
+
+      HornetQConnectionFactory cf = new HornetQConnectionFactory(tc);
+      
+      cf.setProducerWindowSize(1024 * 1024);
+
+      Connection conn = cf.createConnection();
+
+      Session sess = conn.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+
+      ClientSession coreSession = ((HornetQSession)sess).getCoreSession();
+
+      coreSession.createQueue("jms.queue.test_queue", "jms.queue.test_queue");
+            
+      Queue queue = new HornetQQueue("test_queue");
+      
+      MessageConsumer cons = sess.createConsumer(queue);
+      
+      conn.start();
+      
+      final CountDownLatch latch = new CountDownLatch(1);
+      
+      final int warmup = 500000;
+            
+      final int numMessages = 2000000;
+      
+      MessageListener listener = new MessageListener()
+      {
+         int count;
+         public void onMessage(Message message)
+         {
+            count++;
+            
+            if (count % 10000 == 0)
+            {
+               log.info("received " + count);
+            }
+            
+            if (count == numMessages + warmup)
+            {
+               latch.countDown();
+            }
+         }
+      };
+      
+      cons.setMessageListener(listener);
+
+      MessageProducer prod = sess.createProducer(queue);
+      
+      prod.setDisableMessageID(true);
+      
+      prod.setDisableMessageTimestamp(true);
+
+      prod.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+      byte[] bytes1 = new byte[] { (byte)'A', (byte)'B',(byte)'C',(byte)'D'};
+      
+      String s = new String(bytes1);
+      
+      System.out.println("Str is " + s);
+      
+      byte[] bytes = RandomUtil.randomBytes(512);
+
+      String str = new String(bytes);
+      
+      
+      log.info("Warming up");
+      
+      TextMessage tm = sess.createTextMessage();
+      
+      tm.setText(str);
+                             
+      for (int i = 0; i < warmup; i++)
+      {                  
+         prod.send(tm);
+
+         if (i % 10000 == 0)
+         {
+            log.info("sent " + i);
+         }
+      }
+      
+      log.info("** WARMUP DONE");
+       
+      tm = sess.createTextMessage();
+
+      tm.setText(str);
+      
+      long start = System.currentTimeMillis();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         prod.send(tm);
+
+         if (i % 10000 == 0)
+         {
+            log.info("sent " + i);
+         }
+      }
+      
+      latch.countDown();
+      
+      sess.close();
+
+      long end = System.currentTimeMillis();
+
+      double rate = 1000 * (double)numMessages / (end - start);
+
+      System.out.println("Rate of " + rate + " msgs / sec");
+
+      server.stop();
+   }
+   
    public void runObjectMessage() throws Exception
    {
       startServer();
@@ -259,18 +392,24 @@ public class SendTest
       
       log.info("sending messages");
                              
+      
+      
       for (int i = 0; i < warmup; i++)
       {
-         ObjectMessage om = sess.createObjectMessage(str);
+//         ObjectMessage om = sess.createObjectMessage(str);
+//         
+//         prod.send(om);
          
-         prod.send(om);
+         TextMessage tm = sess.createTextMessage(str);
+         
+         prod.send(tm);
 
          if (i % 10000 == 0)
          {
             log.info("sent " + i);
          }
          
-         om.setObject(str);
+         //om.setObject(str);
       }
       
       log.info("** WARMUP DONE");
@@ -279,18 +418,24 @@ public class SendTest
             
       long start = System.currentTimeMillis();
 
+      
+      
       for (int i = 0; i < numMessages; i++)
-      {
-         ObjectMessage om = sess.createObjectMessage(str);
+      {                 
+//         ObjectMessage om = sess.createObjectMessage(str);
+//         
+//         prod.send(om);
          
-         prod.send(om);
+         TextMessage tm = sess.createTextMessage(str);
+         
+         prod.send(tm);
 
          if (i % 10000 == 0)
          {
             log.info("sent " + i);
          }
          
-         om.setObject(str);
+         //om.setObject(str);
       }
 
       long end = System.currentTimeMillis();
@@ -299,6 +444,122 @@ public class SendTest
 
       System.out.println("Rate of " + rate + " msgs / sec");
 
+      server.stop();
+   }
+   
+   public void runConsume() throws Exception
+   {
+      startServer();
+      
+      Map<String, Object> params = new HashMap<String, Object>();
+
+      // params.put(TransportConstants.HOST_PROP_NAME, "localhost");
+
+      // params.put(TransportConstants.PORT_PROP_NAME, 5445);
+      
+      params.put(TransportConstants.TCP_NODELAY_PROPNAME, Boolean.FALSE);
+      //params.put(TransportConstants.USE_NIO_PROP_NAME, Boolean.FALSE);
+
+       TransportConfiguration tc = new TransportConfiguration(NettyConnectorFactory.class.getCanonicalName(), params);
+
+      //TransportConfiguration tc = new TransportConfiguration(InVMConnectorFactory.class.getCanonicalName(), params);
+
+      HornetQConnectionFactory cf = new HornetQConnectionFactory(tc);
+      
+      Connection conn = cf.createConnection();
+
+      Session sess = conn.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+
+      ClientSession coreSession = ((HornetQSession)sess).getCoreSession();
+
+      coreSession.createQueue("jms.queue.test_queue", "jms.queue.test_queue");
+            
+      Queue queue = new HornetQQueue("test_queue");
+      
+      MessageConsumer cons = sess.createConsumer(queue);
+                  
+      final CountDownLatch latch = new CountDownLatch(1);
+      
+      final int warmup = 50000;
+            
+      final int numMessages = 2000000;
+      
+      MessageListener listener = new MessageListener()
+      {
+         int count;
+         long start;
+         public void onMessage(Message message)
+         {
+            count++;
+            
+            log.info("got message " + ((HornetQMessage)message).getCoreMessage().getMessageID());
+            
+            if (count == warmup)
+            {
+               log.info("** WARMED UP");
+               
+               start = System.currentTimeMillis();
+            }
+            
+            if (count % 10000 == 0)
+            {
+               log.info("received " + count);
+            }
+            
+            if (count == numMessages + warmup)
+            {
+               long end = System.currentTimeMillis();
+
+               double rate = 1000 * (double)numMessages / (end - start);
+
+               System.out.println("Rate of " + rate + " msgs / sec");
+
+               latch.countDown();
+            }
+         }
+      };
+      
+      cons.setMessageListener(listener);
+
+      MessageProducer prod = sess.createProducer(queue);
+      
+      prod.setDisableMessageID(true);
+      
+      prod.setDisableMessageTimestamp(true);
+
+      prod.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+      byte[] bytes = RandomUtil.randomBytes(1);
+
+      String str = new String(bytes);
+            
+      
+      //Load up the queue with messages
+      
+      TextMessage tm = sess.createTextMessage();
+      
+      tm.setText(str);
+      
+      log.info("loading queue with messages");
+      
+      for (int i = 0; i < numMessages + warmup; i++)
+      {        
+         prod.send(tm);
+         
+         if (i % 10000 == 0)
+         {
+            log.info("sent " + i);
+         }
+      }
+      
+      log.info("** loaded queue");
+      
+      conn.start();
+      
+      latch.await();
+      
+      sess.close();
+      
       server.stop();
    }
    

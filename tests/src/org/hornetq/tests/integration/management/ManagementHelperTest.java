@@ -60,7 +60,7 @@ public class ManagementHelperTest extends TestCase
       String operationName = randomString();
       String param = randomString();
       String[] params = new String[] { randomString(), randomString(), randomString() };
-      Message msg = new ClientMessageImpl();
+      Message msg = new ClientMessageImpl((byte)0, false, 0, 0, (byte)4, 1000);
       ManagementHelper.putOperationInvocation(msg, resource, operationName, param, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);
@@ -148,7 +148,7 @@ public class ManagementHelperTest extends TestCase
 
       Object[] params = new Object[] { i, s, d, b, l, map, strArray, maps };
 
-      Message msg = new ClientMessageImpl();
+      Message msg = new ClientMessageImpl((byte)0, false, 0, 0, (byte)4, 1000);
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);
@@ -214,7 +214,7 @@ public class ManagementHelperTest extends TestCase
       
       Object[] params = new Object[] { "hello", map };
 
-      Message msg = new ClientMessageImpl();      
+      Message msg = new ClientMessageImpl((byte)0, false, 0, 0, (byte)4, 1000);
       ManagementHelper.putOperationInvocation(msg, resource, operationName, params);
 
       Object[] parameters = ManagementHelper.retrieveOperationParameters(msg);

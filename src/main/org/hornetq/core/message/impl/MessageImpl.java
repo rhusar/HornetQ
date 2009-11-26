@@ -259,9 +259,12 @@ public abstract class MessageImpl implements Message
 
    public void setDestination(final SimpleString destination)
    {
-      this.destination = destination;
+      if (this.destination != destination)
+      {
+         this.destination = destination;
 
-      bufferValid = false;
+         bufferValid = false;
+      }
    }
 
    public byte getType()
@@ -276,9 +279,12 @@ public abstract class MessageImpl implements Message
 
    public void setDurable(final boolean durable)
    {
-      this.durable = durable;
+      if (this.durable != durable)
+      {
+         this.durable = durable;
 
-      bufferValid = false;
+         bufferValid = false;
+      }
    }
 
    public long getExpiration()
@@ -288,9 +294,12 @@ public abstract class MessageImpl implements Message
 
    public void setExpiration(final long expiration)
    {
+      if (this.expiration != expiration)
+      {
       this.expiration = expiration;
 
       bufferValid = false;
+      }
    }
 
    public long getTimestamp()
@@ -300,9 +309,12 @@ public abstract class MessageImpl implements Message
 
    public void setTimestamp(final long timestamp)
    {
+      if (this.timestamp != timestamp)
+      {
       this.timestamp = timestamp;
 
       bufferValid = false;
+      }
    }
 
    public byte getPriority()
@@ -312,9 +324,12 @@ public abstract class MessageImpl implements Message
 
    public void setPriority(final byte priority)
    {
-      this.priority = priority;
+      if (this.priority != priority)
+      {
+         this.priority = priority;
 
-      bufferValid = false;
+         bufferValid = false;
+      }
    }
 
    public boolean isExpired()

@@ -83,11 +83,6 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
       messageID = id;
    }
 
-   public void setType(final byte type)
-   {
-      this.type = type;
-   }
-
    public MessageReference createReference(final Queue queue)
    {
       MessageReference ref = new MessageReferenceImpl(this, queue);

@@ -387,7 +387,7 @@ public class ChannelImpl implements Channel
       {
          lastReceivedCommandID++;
 
-         receivedBytes += packet.getPacketSize();
+         receivedBytes += packet.getPacketSize();         
 
          if (receivedBytes >= confWindowSize)
          {

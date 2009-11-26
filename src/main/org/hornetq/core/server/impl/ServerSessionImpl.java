@@ -1574,8 +1574,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
       final CreditManagerHolder holder = this.getCreditManagerHolder(address);
 
       int credits = packet.getCredits();
-      
-      //log.info("requesting credits " + credits);
 
       int gotCredits = holder.manager.acquireCredits(credits, new CreditsAvailableRunnable()
       {
@@ -1597,8 +1595,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
          }
       });
       
-      //log.info("got credits " + gotCredits);
-
       if (gotCredits > 0)
       {
          sendProducerCredits(holder, gotCredits, address);

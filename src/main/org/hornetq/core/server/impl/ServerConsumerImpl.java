@@ -185,10 +185,8 @@ public class ServerConsumerImpl implements ServerConsumer
 
    public HandleStatus handle(final MessageReference ref) throws Exception
    {
-      //log.info("handling message");
       if (availableCredits != null && availableCredits.get() <= 0)
       {
-        // log.info("busy");
          return HandleStatus.BUSY;
       }
 
@@ -418,7 +416,6 @@ public class ServerConsumerImpl implements ServerConsumer
 
    public void receiveCredits(final int credits) throws Exception
    {
-  //    log.info("Receiving credits " + credits);
       if (credits == -1)
       {
          // No flow control
@@ -592,12 +589,9 @@ public class ServerConsumerImpl implements ServerConsumer
 
       if (availableCredits != null)
       {
-        //log.info("Subtracting credits " + packet.getPacketSize());
          availableCredits.addAndGet(-packet.getPacketSize());
       }
       
-    //  log.info("delivered message");
-
    }
 
    // Inner classes
