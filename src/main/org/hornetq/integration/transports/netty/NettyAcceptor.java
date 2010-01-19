@@ -31,9 +31,12 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.PacketDecoder;
+import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
+import org.hornetq.integration.stomp.StompPacketDecoder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -102,6 +105,7 @@ public class NettyAcceptor implements Acceptor
 
    private final boolean useInvm;
 
+   private final String protocol;
    private final String host;
 
    private final int port;
@@ -176,6 +180,9 @@ public class NettyAcceptor implements Acceptor
       useInvm = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_INVM_PROP_NAME,
                                                        TransportConstants.DEFAULT_USE_INVM,
                                                        configuration);
+      protocol = ConfigurationHelper.getStringProperty(TransportConstants.PROTOCOL_PROP_NAME,
+                                                TransportConstants.DEFAULT_PROTOCOL,
+                                                configuration);
       host = ConfigurationHelper.getStringProperty(TransportConstants.HOST_PROP_NAME,
                                                    TransportConstants.DEFAULT_HOST,
                                                    configuration);
@@ -279,9 +286,18 @@ public class NettyAcceptor implements Acceptor
                pipeline.addLast("httpResponseEncoder", new HttpResponseEncoder());
                pipeline.addLast("httphandler", new HttpAcceptorHandler(httpKeepAliveRunnable, httpResponseTime));
             }
-
-            ChannelPipelineSupport.addCodecFilter(pipeline, handler);
-            pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
+            PacketDecoder decoder;
+            if (protocol.equals(TransportConstants.STOMP_PROTOCOL))
+            {
+               ChannelPipelineSupport.addStompCodecFilter(pipeline, handler);
+               decoder = new StompPacketDecoder();
+            } else
+            {
+               ChannelPipelineSupport.addHornetQCodecFilter(pipeline, handler);
+               decoder = new CorePacketDecoder();
+            }
+            
+            pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, decoder, handler, new Listener()));
             return pipeline;
          }
       };
@@ -475,10 +491,11 @@ public class NettyAcceptor implements Acceptor
    private final class HornetQServerChannelHandler extends HornetQChannelHandler
    {
       HornetQServerChannelHandler(final ChannelGroup group,
+                                  final PacketDecoder decoder,
                                   final BufferHandler handler,
                                   final ConnectionLifeCycleListener listener)
       {
-         super(group, handler, listener);
+         super(group, decoder, handler, listener);
       }
 
       @Override

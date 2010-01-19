@@ -39,8 +39,10 @@ import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.Packet;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.AbstractBufferHandler;
+import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.RemotingConnectionImpl;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionResponseMessage;
@@ -528,6 +530,8 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
    // ---------------------------------------------------------------------------------------
 
    private volatile boolean stopPingingAfterOne;
+
+   private final PacketDecoder decoder = new CorePacketDecoder();
 
    public void stopPingingAfterOne()
    {
@@ -1086,13 +1090,13 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
 
    private class DelegatingBufferHandler extends AbstractBufferHandler
    {
-      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {
          RemotingConnection theConn = connection;
 
          if (theConn != null && connectionID == theConn.getID())
          {
-            theConn.bufferReceived(connectionID, buffer);
+            theConn.bufferReceived(connectionID, buffer, decoder );
          }
       }
    }

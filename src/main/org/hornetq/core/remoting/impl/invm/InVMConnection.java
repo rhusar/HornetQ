@@ -19,6 +19,8 @@ import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.PacketDecoder;
+import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
@@ -36,6 +38,8 @@ public class InVMConnection implements Connection
 
    private final BufferHandler handler;
 
+   private final PacketDecoder decoder = new CorePacketDecoder();
+   
    private final ConnectionLifeCycleListener listener;
 
    private final String id;
@@ -128,7 +132,7 @@ public class InVMConnection implements Connection
                   {
                      copied.readInt(); // read and discard
 
-                     handler.bufferReceived(id, copied);
+                     handler.bufferReceived(id, copied, decoder);
                   }
                }
                catch (Exception e)

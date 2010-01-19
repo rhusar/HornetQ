@@ -25,6 +25,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.config.impl.ConfigurationImpl;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.integration.transports.netty.NettyAcceptor;
 import org.hornetq.integration.transports.netty.NettyConnector;
@@ -474,7 +475,7 @@ public class NettyHttpTest extends UnitTestCase
          this.latch = latch;
       }
 
-      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {
          int i = buffer.readInt();
          messages.add(i);
@@ -496,7 +497,7 @@ public class NettyHttpTest extends UnitTestCase
          this.latch = latch;
       }
 
-      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {
          int i = buffer.readInt();
 
@@ -529,7 +530,7 @@ public class NettyHttpTest extends UnitTestCase
          return 0;
       }
 
-      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {
          int i = buffer.readInt();
          messages.add(i);

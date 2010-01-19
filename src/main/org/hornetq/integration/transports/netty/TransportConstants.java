@@ -46,6 +46,8 @@ public class TransportConstants
 
    public static final String USE_INVM_PROP_NAME = "use-invm";
 
+   public static final String PROTOCOL_PROP_NAME = "protocol";
+
    public static final String HOST_PROP_NAME = "host";
 
    public static final String PORT_PROP_NAME = "port";
@@ -75,9 +77,17 @@ public class TransportConstants
 
    public static final boolean DEFAULT_USE_SERVLET = false;
 
+   public static final String HORNETQ_PROTOCOL = "hornetq";
+
+   public static final String STOMP_PROTOCOL = "stomp";
+
+   public static final String DEFAULT_PROTOCOL = HORNETQ_PROTOCOL;
+
    public static final String DEFAULT_HOST = "localhost";
 
    public static final int DEFAULT_PORT = 5445;
+
+   public static final int DEFAULT_STOMP_PORT = 61613;
 
    public static final String DEFAULT_KEYSTORE_PATH = "hornetq.keystore";
 
@@ -120,6 +130,7 @@ public class TransportConstants
       allowableAcceptorKeys.add(TransportConstants.HTTP_SERVER_SCAN_PERIOD_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.USE_NIO_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.USE_INVM_PROP_NAME);
+      allowableAcceptorKeys.add(TransportConstants.PROTOCOL_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.HOST_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.PORT_PROP_NAME);
       allowableAcceptorKeys.add(TransportConstants.KEYSTORE_PATH_PROP_NAME);

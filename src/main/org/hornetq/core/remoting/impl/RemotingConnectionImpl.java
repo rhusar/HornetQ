@@ -28,8 +28,8 @@ import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.Packet;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.utils.SimpleIDGenerator;
 
@@ -79,8 +79,6 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private final Object failLock = new Object();
 
-   private final PacketDecoder decoder = new PacketDecoder();
-
    private volatile boolean dataReceived;
 
    private final Executor executor;
@@ -123,7 +121,7 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
       this.interceptors = interceptors;
 
       this.client = client;
-
+      
       this.executor = executor;
    }
 
@@ -351,10 +349,49 @@ public class RemotingConnectionImpl extends AbstractBufferHandler implements Rem
 
    private volatile boolean executing;
 
-   public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+   public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
    {
       final Packet packet = decoder.decode(buffer);
 
+      if (packet.isAsyncExec() && executor != null)
+      {
+         executing = true;
+
+         executor.execute(new Runnable()
+         {
+            public void run()
+            {
+               try
+               {
+                  doBufferReceived(packet);
+               }
+               catch (Throwable t)
+               {
+                  RemotingConnectionImpl.log.error("Unexpected error", t);
+               }
+
+               executing = false;
+            }
+         });
+      }
+      else
+      {
+         //To prevent out of order execution if interleaving sync and async operations on same connection
+         while (executing)
+         {
+            Thread.yield();
+         }
+         
+         // Pings must always be handled out of band so we can send pings back to the client quickly
+         // otherwise they would get in the queue with everything else which might give an intolerable delay
+         doBufferReceived(packet);
+      }
+     
+      dataReceived = true;
+   }
+   
+   public void packetReceived(final Object connectionID, final Packet packet)
+   {
       if (packet.isAsyncExec() && executor != null)
       {
          executing = true;

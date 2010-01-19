@@ -81,6 +81,7 @@ import static org.hornetq.core.remoting.impl.wireformat.PacketImpl.SESS_XA_SUSPE
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Packet;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.remoting.impl.wireformat.CreateSessionMessage;
@@ -142,15 +143,15 @@ import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutResponseMess
 import org.hornetq.core.remoting.impl.wireformat.SessionXAStartMessage;
 
 /**
- * A PacketDecoder
+ * A CorePacketDecoder
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  *
  *
  */
-public class PacketDecoder
+public class CorePacketDecoder implements PacketDecoder
 {
-   private static final Logger log = Logger.getLogger(PacketDecoder.class);
+   private static final Logger log = Logger.getLogger(CorePacketDecoder.class);
 
    public Packet decode(final HornetQBuffer in)
    {

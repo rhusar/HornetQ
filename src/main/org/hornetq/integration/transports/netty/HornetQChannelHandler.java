@@ -15,6 +15,7 @@ package org.hornetq.integration.transports.netty;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -31,11 +32,13 @@ import org.jboss.netty.channel.group.ChannelGroup;
  * @author <a href="mailto:tlee@redhat.com">Trustin Lee</a>
  * @version $Rev$, $Date$
  */
-class HornetQChannelHandler extends SimpleChannelHandler
+public class HornetQChannelHandler extends SimpleChannelHandler
 {
    private static final Logger log = Logger.getLogger(HornetQChannelHandler.class);
 
    private final ChannelGroup group;
+
+   private final PacketDecoder decoder;
 
    private final BufferHandler handler;
 
@@ -43,11 +46,13 @@ class HornetQChannelHandler extends SimpleChannelHandler
 
    volatile boolean active;
 
-   HornetQChannelHandler(final ChannelGroup group,
-                         final BufferHandler handler,
-                         final ConnectionLifeCycleListener listener)
+   public HornetQChannelHandler(final ChannelGroup group,
+                                final PacketDecoder decoder,
+                                final BufferHandler handler,
+                                final ConnectionLifeCycleListener listener)
    {
       this.group = group;
+      this.decoder = decoder;
       this.handler = handler;
       this.listener = listener;
    }
@@ -64,7 +69,7 @@ class HornetQChannelHandler extends SimpleChannelHandler
    {
       ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
 
-      handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer));
+      handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
    }
 
    @Override

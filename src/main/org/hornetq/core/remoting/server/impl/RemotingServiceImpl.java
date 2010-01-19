@@ -32,6 +32,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.Channel;
 import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.core.remoting.impl.RemotingConnectionImpl;
@@ -41,6 +42,7 @@ import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQPacketHandler;
 import org.hornetq.core.server.management.ManagementService;
+import org.hornetq.integration.stomp.StompPacketDecoder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.AcceptorFactory;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -184,7 +186,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          a.start();
       }
 
-      //This thread checks connections that need to be closed, and also flushes confirmations
+      // This thread checks connections that need to be closed, and also flushes confirmations
       failureCheckAndFlushThread = new FailureCheckAndFlushThread(RemotingServiceImpl.CONNECTION_TTL_CHECK_INTERVAL);
 
       failureCheckAndFlushThread.start();
@@ -423,13 +425,13 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    private final class DelegatingBufferHandler extends AbstractBufferHandler
    {
-      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+      public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {
          ConnectionEntry conn = connections.get(connectionID);
 
          if (conn != null)
          {
-            conn.connection.bufferReceived(connectionID, buffer);
+            conn.connection.bufferReceived(connectionID, buffer, decoder);
          }
       }
    }
@@ -495,9 +497,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             for (ConnectionEntry entry : connections.values())
             {
                RemotingConnection conn = entry.connection;
-               
+
                boolean flush = true;
-               
+
                if (entry.ttl != -1)
                {
                   if (now >= entry.lastCheck + entry.ttl)
@@ -505,7 +507,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
                      if (!conn.checkDataReceived())
                      {
                         idsToRemove.add(conn.getID());
-                        
+
                         flush = false;
                      }
                      else
@@ -514,12 +516,12 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
                      }
                   }
                }
-               
+
                if (flush)
                {
-                  //We flush any confirmations on the connection - this prevents idle bridges for example
-                  //sitting there with many unacked messages
-                                    
+                  // We flush any confirmations on the connection - this prevents idle bridges for example
+                  // sitting there with many unacked messages
+
                   conn.flushConfirmations();
                }
             }

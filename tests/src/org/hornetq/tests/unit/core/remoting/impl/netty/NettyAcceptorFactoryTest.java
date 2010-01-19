@@ -21,6 +21,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.config.impl.ConfigurationImpl;
+import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.integration.transports.netty.NettyAcceptor;
 import org.hornetq.integration.transports.netty.NettyAcceptorFactory;
@@ -47,7 +48,7 @@ public class NettyAcceptorFactoryTest extends UnitTestCase
       BufferHandler handler = new AbstractBufferHandler()
       {
 
-         public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
+         public void bufferReceived(Object connectionID, HornetQBuffer buffer, PacketDecoder decoder)
          {
          }
       };
