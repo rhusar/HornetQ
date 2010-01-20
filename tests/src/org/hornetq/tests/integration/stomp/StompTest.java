@@ -79,6 +79,31 @@ public class StompTest extends TestCase {
         Assert.assertTrue(f.startsWith("CONNECTED"));
         Assert.assertTrue(f.indexOf("response-id:1") >= 0);
     }
+    
+    public void testDisconnectAndError() throws Exception {
+
+       String connect_frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n" + "request-id: 1\n" + "\n" + Stomp.NULL;
+       sendFrame(connect_frame);
+
+       String f = receiveFrame(10000);
+       Assert.assertTrue(f.startsWith("CONNECTED"));
+       Assert.assertTrue(f.indexOf("response-id:1") >= 0);
+       
+       connect_frame = "DISCONNECT\n\n" + Stomp.NULL;
+       sendFrame(connect_frame);
+       
+       // sending a message will result in an error
+       String frame =
+          "SEND\n" +
+                  "destination:/queue/" + getQueueName() + "\n\n" +
+                  "Hello World" +
+                  Stomp.NULL;
+       sendFrame(frame);
+
+       f = receiveFrame(10000);
+       Assert.assertTrue(f.startsWith("ERROR"));
+   }
+
 
     public void testSendMessage() throws Exception {
 
@@ -143,6 +168,46 @@ public class StompTest extends TestCase {
        TextMessage message = (TextMessage) consumer.receive(1000);
        Assert.assertNotNull(message);
        Assert.assertEquals("Hello World", message.getText());
+
+       // Make sure that the timestamp is valid - should
+       // be very close to the current time.
+       long tnow = System.currentTimeMillis();
+       long tmsg = message.getJMSTimestamp();
+       Assert.assertTrue(Math.abs(tnow - tmsg) < 1000);
+   }
+    
+    public void testSendMessageWithContentLength() throws Exception {
+
+       MessageConsumer consumer = session.createConsumer(queue);
+
+       String frame =
+               "CONNECT\n" +
+                       "login: brianm\n" +
+                       "passcode: wombats\n\n" +
+                       Stomp.NULL;
+       sendFrame(frame);
+
+       frame = receiveFrame(10000);
+       Assert.assertTrue(frame.startsWith("CONNECTED"));
+
+       byte[] data = new byte[] {1, 2, 3, 4};
+        
+       frame =
+               "SEND\n" +
+                       "destination:/queue/" + getQueueName() + "\n" +
+                       "content-length:" + data.length + "\n\n" +
+                       new String(data) +
+                       Stomp.NULL;
+
+       sendFrame(frame);
+       
+       BytesMessage message = (BytesMessage) consumer.receive(1000);
+       Assert.assertNotNull(message);
+       assertEquals(data.length, message.getBodyLength());
+       assertEquals(data[0], message.readByte());
+       assertEquals(data[1], message.readByte());
+       assertEquals(data[2], message.readByte());
+       assertEquals(data[3], message.readByte());
 
        // Make sure that the timestamp is valid - should
        // be very close to the current time.

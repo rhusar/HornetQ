@@ -13,6 +13,9 @@
 
 package org.hornetq.integration.transports.netty;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -49,8 +52,10 @@ import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.integration.stomp.Stomp;
 import org.hornetq.integration.stomp.StompDestinationConverter;
+import org.hornetq.integration.stomp.StompException;
 import org.hornetq.integration.stomp.StompFrame;
 import org.hornetq.integration.stomp.StompMarshaller;
+import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -565,14 +570,15 @@ public class NettyAcceptor implements Acceptor
 
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
       {
+         StompFrame frame = (StompFrame)e.getMessage();
+         System.out.println(">>> got frame " + frame);
+
+         // need to interact with HornetQ server & session
+         HornetQServer server = serverHandler.getServer();
+         RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
+
          try
          {
-            StompFrame frame = (StompFrame)e.getMessage();
-            System.out.println(">>> got frame " + frame);
-
-            // need to interact with HornetQ server & session
-            HornetQServer server = serverHandler.getServer();
-            RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
 
             String command = frame.getCommand();
 
@@ -580,6 +586,10 @@ public class NettyAcceptor implements Acceptor
             if (Stomp.Commands.CONNECT.equals(command))
             {
                response = onConnect(frame, server, connection);
+            }
+            if (Stomp.Commands.DISCONNECT.equals(command))
+            {
+               response = onDisconnect(frame, server, connection);
             }
             else if (Stomp.Commands.SEND.equals(command))
             {
@@ -598,14 +608,68 @@ public class NettyAcceptor implements Acceptor
                connection.getTransportConnection().write(buffer, true);
             }
          }
+         catch (StompException ex)
+         {
+            // Let the stomp client know about any protocol errors.
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintWriter stream = new PrintWriter(new OutputStreamWriter(baos, "UTF-8"));
+            ex.printStackTrace(stream);
+            stream.append(Stomp.NULL + Stomp.NEWLINE);
+            stream.close();
+
+            Map<String, Object> headers = new HashMap<String, Object>();
+            headers.put(Stomp.Headers.Error.MESSAGE, e.getMessage());
+
+            final String receiptId = (String) frame.getHeaders().get(Stomp.Headers.RECEIPT_REQUESTED);
+            if (receiptId != null) {
+                headers.put(Stomp.Headers.Response.RECEIPT_ID, receiptId);
+            }
+
+            StompFrame errorMessage = new StompFrame(Stomp.Responses.ERROR, headers, baos.toByteArray());
+            byte[] bytes = marshaller.marshal(errorMessage);
+            HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
+            System.out.println("ready to send reply: " + buffer);
+            connection.getTransportConnection().write(buffer, true);
+
+         }
          catch (Exception ex)
          {
             ex.printStackTrace();
          }
       }
 
-      private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws HornetQException
+      private void checkConnected(RemotingConnection connection) throws StompException
       {
+         ServerSession session = sessions.get(connection);
+         if (session == null)
+         {
+            throw new StompException("Not connected");
+         }
+      }
+      private StompFrame onDisconnect(StompFrame frame, HornetQServer server, RemotingConnection connection) throws StompException
+      {
+         checkConnected(connection);
+         
+         ServerSession session = sessions.get(connection);
+         if (session != null)
+         {
+            try
+            {
+               session.close();
+            }
+            catch (Exception e)
+            {
+               throw new StompException(e.getMessage());
+            }
+            sessions.remove(connection);
+         }
+         return null;
+      }
+
+      private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws HornetQException, StompException
+      {
+         checkConnected(connection);
+         
          Map<String, Object> headers = frame.getHeaders();
          String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
          /*
@@ -615,6 +679,10 @@ public class NettyAcceptor implements Acceptor
          boolean durable = (Boolean)headers.get(Stomp.Headers.Send.PERSISTENT);
          */
          byte type = HornetQTextMessage.TYPE;
+         if (headers.containsKey(Stomp.Headers.CONTENT_LENGTH))
+         {
+            type = HornetQBytesMessage.TYPE;
+         }
          long timestamp = System.currentTimeMillis();
          boolean durable = false;
          long expiration = -1;
@@ -625,9 +693,15 @@ public class NettyAcceptor implements Acceptor
          message.setType(type);
          message.setTimestamp(timestamp);
          message.setAddress(address);
-         String content = new String(frame.getContent());
-         System.out.println(">>> got: " + content);
-         message.getBodyBuffer().writeNullableSimpleString(SimpleString.toSimpleString(content));
+         byte[] content = frame.getContent();
+         if (type == HornetQTextMessage.TYPE)
+         {
+            message.getBodyBuffer().writeNullableSimpleString(SimpleString.toSimpleString(new String(content)));
+         }
+         else
+         {
+            message.getBodyBuffer().writeBytes(content);
+         }
 
          ServerSession session = sessions.get(connection);
          SessionSendMessage packet = new SessionSendMessage(message, false);

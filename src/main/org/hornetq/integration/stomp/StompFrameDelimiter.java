@@ -28,6 +28,6 @@ public class StompFrameDelimiter extends DelimiterBasedFrameDecoder
 
    public StompFrameDelimiter()
    {
-      super(MAX_DATA_LENGTH, true, Delimiters.nulDelimiter());
+      super(MAX_DATA_LENGTH, false, Delimiters.nulDelimiter());
    }
 }
