@@ -62,4 +62,6 @@ public interface ServerMessage extends MessageInternal, EncodingSupport
    boolean storeIsPaging();
 
    void encodeMessageIDToBuffer();
+
+   void setType(byte type);
 }

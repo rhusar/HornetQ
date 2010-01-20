@@ -40,13 +40,18 @@ import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
+import org.hornetq.core.remoting.impl.wireformat.SessionSendMessage;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
+import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.integration.stomp.Stomp;
+import org.hornetq.integration.stomp.StompDestinationConverter;
 import org.hornetq.integration.stomp.StompFrame;
 import org.hornetq.integration.stomp.StompMarshaller;
+import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -160,7 +165,7 @@ public class NettyAcceptor implements Acceptor
       this.handler = handler;
 
       this.serverHandler = serverHandler;
-      
+
       this.listener = listener;
 
       sslEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.SSL_ENABLED_PROP_NAME,
@@ -308,7 +313,10 @@ public class NettyAcceptor implements Acceptor
             if (protocol.equals(TransportConstants.STOMP_PROTOCOL))
             {
                ChannelPipelineSupport.addStompStack(pipeline, serverHandler);
-               pipeline.addLast("handler", new StompChannelHandler(serverHandler, new StompMarshaller(), channelGroup, new Listener()));
+               pipeline.addLast("handler", new StompChannelHandler(serverHandler,
+                                                                   new StompMarshaller(),
+                                                                   channelGroup,
+                                                                   new Listener()));
             }
             else
             {
@@ -512,18 +520,19 @@ public class NettyAcceptor implements Acceptor
    private final class HornetQServerChannelHandler extends AbstractServerChannelHandler
    {
       private PacketDecoder decoder;
+
       private BufferHandler handler;
 
       HornetQServerChannelHandler(final ChannelGroup group,
-                                   final PacketDecoder decoder,
-                                   final BufferHandler handler,
-                                   final ConnectionLifeCycleListener listener)
-       {
-          super(group, listener);
-          
-          this.decoder = decoder;
-          this.handler = handler;
-       }
+                                  final PacketDecoder decoder,
+                                  final BufferHandler handler,
+                                  final ConnectionLifeCycleListener listener)
+      {
+         super(group, listener);
+
+         this.decoder = decoder;
+         this.handler = handler;
+      }
 
       @Override
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
@@ -532,13 +541,15 @@ public class NettyAcceptor implements Acceptor
 
          handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
       }
-      
+
    }
-   
+
    @ChannelPipelineCoverage("one")
    public final class StompChannelHandler extends AbstractServerChannelHandler
    {
       private final StompMarshaller marshaller;
+
+      private final Map<RemotingConnection, ServerSession> sessions = new HashMap<RemotingConnection, ServerSession>();
 
       private ServerHolder serverHandler;
 
@@ -554,31 +565,82 @@ public class NettyAcceptor implements Acceptor
 
       public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
       {
-         StompFrame frame = (StompFrame)e.getMessage();
-         System.out.println(">>> got frame " + frame);
-
-         // need to interact with HornetQ server & session
-         HornetQServer server = serverHandler.getServer();
-         RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
-
-         String command = frame.getCommand();
-
-         StompFrame response = null;
-         if (Stomp.Commands.CONNECT.equals(command))
+         try
          {
-            response = onConnect(frame, server, connection);
+            StompFrame frame = (StompFrame)e.getMessage();
+            System.out.println(">>> got frame " + frame);
+
+            // need to interact with HornetQ server & session
+            HornetQServer server = serverHandler.getServer();
+            RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
+
+            String command = frame.getCommand();
+
+            StompFrame response = null;
+            if (Stomp.Commands.CONNECT.equals(command))
+            {
+               response = onConnect(frame, server, connection);
+            }
+            else if (Stomp.Commands.SEND.equals(command))
+            {
+               response = onSend(frame, server, connection);
+            }
+            else
+            {
+               log.error("Unsupported Stomp frame: " + frame);
+            }
+            if (response != null)
+            {
+               System.out.println(">>> will reply " + response);
+               byte[] bytes = marshaller.marshal(response);
+               HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
+               System.out.println("ready to send reply: " + buffer);
+               connection.getTransportConnection().write(buffer, true);
+            }
+         }
+         catch (Exception ex)
+         {
+            ex.printStackTrace();
+         }
+      }
+
+      private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws HornetQException
+      {
+         Map<String, Object> headers = frame.getHeaders();
+         String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
+         /*
+         String type = (String)headers.get(Stomp.Headers.Send.TYPE);
+         long expiration = (Long)headers.get(Stomp.Headers.Send.EXPIRATION_TIME);
+         byte priority = (Byte)headers.get(Stomp.Headers.Send.PRIORITY);
+         boolean durable = (Boolean)headers.get(Stomp.Headers.Send.PERSISTENT);
+         */
+         byte type = HornetQTextMessage.TYPE;
+         long timestamp = System.currentTimeMillis();
+         boolean durable = false;
+         long expiration = -1;
+         byte priority = 9;
+         SimpleString address = StompDestinationConverter.convertDestination(queue);
+
+         ServerMessage message = new ServerMessageImpl(server.getStorageManager().generateUniqueID(), 512);
+         message.setType(type);
+         message.setTimestamp(timestamp);
+         message.setAddress(address);
+         String content = new String(frame.getContent());
+         System.out.println(">>> got: " + content);
+         message.getBodyBuffer().writeNullableSimpleString(SimpleString.toSimpleString(content));
+
+         ServerSession session = sessions.get(connection);
+         SessionSendMessage packet = new SessionSendMessage(message, false);
+         session.handleSend(packet);
+         if (headers.containsKey(Stomp.Headers.RECEIPT_REQUESTED))
+         {
+            Map<String, Object> h = new HashMap<String, Object>();
+            h.put(Stomp.Headers.Response.RECEIPT_ID, headers.get(Stomp.Headers.RECEIPT_REQUESTED));
+            return new StompFrame(Stomp.Responses.RECEIPT, h, new byte[] {});
          }
          else
          {
-            log.error("Unsupported Stomp frame: " + frame);
-         }
-         if (response != null)
-         {
-            System.out.println(">>> will reply " + response);
-            byte[] bytes = marshaller.marshal(response);
-            HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
-            System.out.println("ready to send reply: " + buffer);
-            connection.getTransportConnection().write(buffer, true);
+            return null;
          }
       }
 
@@ -603,6 +665,7 @@ public class NettyAcceptor implements Acceptor
                               false,
                               -1);
          ServerSession session = server.getSession(name);
+         sessions.put(connection, session);
          System.out.println(">>> created session " + session);
          HashMap<String, Object> h = new HashMap<String, Object>();
          h.put(Stomp.Headers.Connected.SESSION, name);
@@ -610,12 +673,11 @@ public class NettyAcceptor implements Acceptor
          return new StompFrame(Stomp.Responses.CONNECTED, h, new byte[] {});
       }
    }
-   
+
    @ChannelPipelineCoverage("one")
    public abstract class AbstractServerChannelHandler extends HornetQChannelHandler
    {
-      protected AbstractServerChannelHandler(final ChannelGroup group,
-                                  final ConnectionLifeCycleListener listener)
+      protected AbstractServerChannelHandler(final ChannelGroup group, final ConnectionLifeCycleListener listener)
       {
          super(group, listener);
       }

@@ -41,11 +41,10 @@ import javax.jms.TextMessage;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
@@ -61,7 +60,7 @@ import org.hornetq.jms.server.config.impl.QueueConfigurationImpl;
 import org.hornetq.jms.server.impl.JMSServerManagerImpl;
 
 public class StompTest extends TestCase {
-    private static final transient Log log = LogFactory.getLog(StompTest.class);
+    private static final transient Logger log = Logger.getLogger(StompTest.class);
     private int port = 61613;
     private Socket stompSocket;
     private ByteArrayOutputStream inputBuffer;
@@ -102,7 +101,7 @@ public class StompTest extends TestCase {
                         Stomp.NULL;
 
         sendFrame(frame);
-
+        
         TextMessage message = (TextMessage) consumer.receive(1000);
         Assert.assertNotNull(message);
         Assert.assertEquals("Hello World", message.getText());
@@ -113,6 +112,44 @@ public class StompTest extends TestCase {
         long tmsg = message.getJMSTimestamp();
         Assert.assertTrue(Math.abs(tnow - tmsg) < 1000);
     }
+    
+    public void testSendMessageWithReceipt() throws Exception {
+
+       MessageConsumer consumer = session.createConsumer(queue);
+
+       String frame =
+               "CONNECT\n" +
+                       "login: brianm\n" +
+                       "passcode: wombats\n\n" +
+                       Stomp.NULL;
+       sendFrame(frame);
+
+       frame = receiveFrame(10000);
+       Assert.assertTrue(frame.startsWith("CONNECTED"));
+
+       frame =
+               "SEND\n" +
+                       "destination:/queue/" + getQueueName() + "\n" +
+                       "receipt: 1234\n\n" +
+                       "Hello World" +
+                       Stomp.NULL;
+
+       sendFrame(frame);
+
+       String f = receiveFrame(10000);
+       Assert.assertTrue(f.startsWith("RECEIPT"));
+       Assert.assertTrue(f.indexOf("receipt-id:1234") >= 0);
+
+       TextMessage message = (TextMessage) consumer.receive(1000);
+       Assert.assertNotNull(message);
+       Assert.assertEquals("Hello World", message.getText());
+
+       // Make sure that the timestamp is valid - should
+       // be very close to the current time.
+       long tnow = System.currentTimeMillis();
+       long tmsg = message.getJMSTimestamp();
+       Assert.assertTrue(Math.abs(tnow - tmsg) < 1000);
+   }
 
     public void _testJMSXGroupIdCanBeSet() throws Exception {
 

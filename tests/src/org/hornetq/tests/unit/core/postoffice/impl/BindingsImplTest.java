@@ -663,6 +663,15 @@ public class BindingsImplTest extends UnitTestCase
          // TODO Auto-generated method stub
          return 0;
       }
+      
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.ServerMessage#setType(byte)
+       */
+      public void setType(byte type)
+      {
+         // TODO Auto-generated method stub
+         
+      }
 
       public HornetQBuffer getWholeBuffer()
       {
