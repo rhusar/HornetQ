@@ -34,7 +34,6 @@ import org.hornetq.core.remoting.ChannelHandler;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.core.remoting.impl.RemotingConnectionImpl;
 import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
 import org.hornetq.core.remoting.impl.wireformat.Ping;
@@ -42,7 +41,6 @@ import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQPacketHandler;
 import org.hornetq.core.server.management.ManagementService;
-import org.hornetq.integration.stomp.StompPacketDecoder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.AcceptorFactory;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -423,7 +421,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    // Inner classes -------------------------------------------------
 
-   private final class DelegatingBufferHandler extends AbstractBufferHandler
+   private final class DelegatingBufferHandler implements BufferHandler
    {
       public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
       {

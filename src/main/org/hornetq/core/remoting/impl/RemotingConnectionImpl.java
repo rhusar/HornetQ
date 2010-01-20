@@ -30,6 +30,7 @@ import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.Packet;
 import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.utils.SimpleIDGenerator;
 
@@ -38,7 +39,7 @@ import org.hornetq.utils.SimpleIDGenerator;
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  * @version <tt>$Revision$</tt> $Id$
  */
-public class RemotingConnectionImpl extends AbstractBufferHandler implements RemotingConnection
+public class RemotingConnectionImpl implements RemotingConnection, BufferHandler
 {
    // Constants
    // ------------------------------------------------------------------------------------

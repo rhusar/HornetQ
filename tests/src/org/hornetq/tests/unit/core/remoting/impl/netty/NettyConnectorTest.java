@@ -22,7 +22,6 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.remoting.PacketDecoder;
-import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.integration.transports.netty.NettyConnector;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -50,7 +49,7 @@ public class NettyConnectorTest extends UnitTestCase
 
    public void testStartStop() throws Exception
    {
-      BufferHandler handler = new AbstractBufferHandler()
+      BufferHandler handler = new BufferHandler()
       {
          public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
          {
@@ -87,7 +86,7 @@ public class NettyConnectorTest extends UnitTestCase
 
    public void testNullParams() throws Exception
    {
-      BufferHandler handler = new AbstractBufferHandler()
+      BufferHandler handler = new BufferHandler()
       {
          public void bufferReceived(final Object connectionID, final HornetQBuffer buffer, final PacketDecoder decoder)
          {

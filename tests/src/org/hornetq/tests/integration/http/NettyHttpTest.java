@@ -26,7 +26,6 @@ import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.PacketDecoder;
-import org.hornetq.core.remoting.impl.AbstractBufferHandler;
 import org.hornetq.integration.transports.netty.NettyAcceptor;
 import org.hornetq.integration.transports.netty.NettyConnector;
 import org.hornetq.integration.transports.netty.TransportConstants;
@@ -462,7 +461,7 @@ public class NettyHttpTest extends UnitTestCase
       }
    }
 
-   class SimpleBufferHandler extends AbstractBufferHandler
+   class SimpleBufferHandler implements BufferHandler
    {
       int messagesReceieved = 0;
 
@@ -484,7 +483,7 @@ public class NettyHttpTest extends UnitTestCase
       }
    }
 
-   class SimpleBufferHandler2 extends AbstractBufferHandler
+   class SimpleBufferHandler2 implements BufferHandler
    {
       int messagesReceieved = 0;
 
