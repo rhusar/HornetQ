@@ -24,6 +24,7 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.integration.transports.netty.NettyAcceptor;
+import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.integration.transports.netty.TransportConstants;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -81,8 +82,11 @@ public class NettyAcceptorTest extends UnitTestCase
          {
          }
       };
+      ServerHolder holder = new DummyServerHolder();
+
       NettyAcceptor acceptor = new NettyAcceptor(params,
                                                  handler,
+                                                 holder,
                                                  listener,
                                                  Executors.newCachedThreadPool(),
                                                  Executors.newScheduledThreadPool(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE));

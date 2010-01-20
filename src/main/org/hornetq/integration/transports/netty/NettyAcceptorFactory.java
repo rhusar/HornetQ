@@ -32,11 +32,12 @@ public class NettyAcceptorFactory implements AcceptorFactory
 {
    public Acceptor createAcceptor(final Map<String, Object> configuration,
                                   final BufferHandler handler,
+                                  final ServerHolder serverHolder,
                                   final ConnectionLifeCycleListener listener,
                                   final Executor threadPool,
                                   final ScheduledExecutorService scheduledThreadPool)
    {
-      return new NettyAcceptor(configuration, handler, listener, threadPool, scheduledThreadPool);
+      return new NettyAcceptor(configuration, handler, serverHolder, listener, threadPool, scheduledThreadPool);
    }
 
    public Set<String> getAllowableProperties()

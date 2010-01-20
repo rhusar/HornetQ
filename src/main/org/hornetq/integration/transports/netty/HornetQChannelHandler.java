@@ -13,12 +13,8 @@
 package org.hornetq.integration.transports.netty;
 
 import org.hornetq.api.core.HornetQException;
-import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.PacketDecoder;
-import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
@@ -32,28 +28,20 @@ import org.jboss.netty.channel.group.ChannelGroup;
  * @author <a href="mailto:tlee@redhat.com">Trustin Lee</a>
  * @version $Rev$, $Date$
  */
-public class HornetQChannelHandler extends SimpleChannelHandler
+public abstract class HornetQChannelHandler extends SimpleChannelHandler
 {
    private static final Logger log = Logger.getLogger(HornetQChannelHandler.class);
 
    private final ChannelGroup group;
-
-   private final PacketDecoder decoder;
-
-   private final BufferHandler handler;
 
    private final ConnectionLifeCycleListener listener;
 
    volatile boolean active;
 
    public HornetQChannelHandler(final ChannelGroup group,
-                                final PacketDecoder decoder,
-                                final BufferHandler handler,
                                 final ConnectionLifeCycleListener listener)
    {
       this.group = group;
-      this.decoder = decoder;
-      this.handler = handler;
       this.listener = listener;
    }
 
@@ -63,14 +51,8 @@ public class HornetQChannelHandler extends SimpleChannelHandler
       group.add(e.getChannel());
       ctx.sendUpstream(e);
    }
-
-   @Override
-   public void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception
-   {
-      ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
-
-      handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
-   }
+   
+   public abstract void messageReceived(final ChannelHandlerContext ctx, final MessageEvent e) throws Exception;
 
    @Override
    public void channelDisconnected(final ChannelHandlerContext ctx, final ChannelStateEvent e) throws Exception

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.AcceptorFactory;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -32,11 +33,12 @@ public class InVMAcceptorFactory implements AcceptorFactory
 {
    public Acceptor createAcceptor(final Map<String, Object> configuration,
                                   final BufferHandler handler,
+                                  final ServerHolder holder,
                                   final ConnectionLifeCycleListener listener,
                                   final Executor threadPool,
                                   final ScheduledExecutorService scheduledThreadPool)
    {
-      return new InVMAcceptor(configuration, handler, listener, threadPool);
+      return new InVMAcceptor(configuration, handler, holder, listener, threadPool);
    }
 
    public Set<String> getAllowableProperties()

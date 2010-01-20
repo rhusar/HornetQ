@@ -14,39 +14,38 @@
 package org.hornetq.integration.stomp;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.core.remoting.Packet;
-import org.hornetq.core.remoting.PacketDecoder;
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
+import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipelineCoverage;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
 
 /**
  * A StompPacketDecoder
  *
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  */
-public class StompPacketDecoder implements PacketDecoder
+@ChannelPipelineCoverage("one")
+public class StompPacketDecoder extends SimpleChannelHandler
 {
-   private final StompMarshaller marshaller = new StompMarshaller();
-
-   private final ProtocolConverter converter = new ProtocolConverter();
-
+   private final StompMarshaller marshaller;
+   
    // PacketDecoder implementation ----------------------------------
 
-   public Packet decode(HornetQBuffer in)
+   public StompPacketDecoder(final StompMarshaller marshaller)
    {
-      StompFrame frame;
-      try
-      {
-         frame = marshaller.unmarshal(in);
-         System.out.println(">>> " + frame);
-         Packet packet = converter.toPacket(frame);
-         packet.setChannelID(1);
-         System.out.println(">>> " + packet);
+      this.marshaller = marshaller;
+   }
 
-         return packet;
-      }
-      catch (Exception e)
-      {
-         e.printStackTrace();
-         return null;
-      }
+   @Override
+   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+   {
+      ChannelBuffer in = (ChannelBuffer)e.getMessage();
+      HornetQBuffer buffer = new ChannelBufferWrapper(in);
+      StompFrame frame = marshaller.unmarshal(buffer);
+      
+      Channels.fireMessageReceived(ctx, frame);
    }
 }

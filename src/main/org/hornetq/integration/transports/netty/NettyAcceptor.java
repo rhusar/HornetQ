@@ -15,6 +15,7 @@ package org.hornetq.integration.transports.netty;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,25 +27,36 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
+import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.PacketDecoder;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
+import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
-import org.hornetq.integration.stomp.StompPacketDecoder;
+import org.hornetq.integration.stomp.Stomp;
+import org.hornetq.integration.stomp.StompFrame;
+import org.hornetq.integration.stomp.StompMarshaller;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
 import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.TypedProperties;
+import org.hornetq.utils.UUIDGenerator;
 import org.hornetq.utils.VersionLoader;
 import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelFuture;
@@ -55,6 +67,7 @@ import org.jboss.netty.channel.ChannelPipelineCoverage;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
@@ -106,6 +119,7 @@ public class NettyAcceptor implements Acceptor
    private final boolean useInvm;
 
    private final String protocol;
+
    private final String host;
 
    private final int port;
@@ -134,14 +148,19 @@ public class NettyAcceptor implements Acceptor
 
    private VirtualExecutorService bossExecutor;
 
+   private ServerHolder serverHandler;
+
    public NettyAcceptor(final Map<String, Object> configuration,
                         final BufferHandler handler,
+                        final ServerHolder serverHandler,
                         final ConnectionLifeCycleListener listener,
                         final Executor threadPool,
                         final ScheduledExecutorService scheduledThreadPool)
    {
       this.handler = handler;
 
+      this.serverHandler = serverHandler;
+      
       this.listener = listener;
 
       sslEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.SSL_ENABLED_PROP_NAME,
@@ -181,8 +200,8 @@ public class NettyAcceptor implements Acceptor
                                                        TransportConstants.DEFAULT_USE_INVM,
                                                        configuration);
       protocol = ConfigurationHelper.getStringProperty(TransportConstants.PROTOCOL_PROP_NAME,
-                                                TransportConstants.DEFAULT_PROTOCOL,
-                                                configuration);
+                                                       TransportConstants.DEFAULT_PROTOCOL,
+                                                       configuration);
       host = ConfigurationHelper.getStringProperty(TransportConstants.HOST_PROP_NAME,
                                                    TransportConstants.DEFAULT_HOST,
                                                    configuration);
@@ -286,18 +305,21 @@ public class NettyAcceptor implements Acceptor
                pipeline.addLast("httpResponseEncoder", new HttpResponseEncoder());
                pipeline.addLast("httphandler", new HttpAcceptorHandler(httpKeepAliveRunnable, httpResponseTime));
             }
-            PacketDecoder decoder;
             if (protocol.equals(TransportConstants.STOMP_PROTOCOL))
             {
-               ChannelPipelineSupport.addStompCodecFilter(pipeline, handler);
-               decoder = new StompPacketDecoder();
-            } else
+               ChannelPipelineSupport.addStompStack(pipeline, serverHandler);
+               pipeline.addLast("handler", new StompChannelHandler(serverHandler, new StompMarshaller(), channelGroup, new Listener()));
+            }
+            else
             {
                ChannelPipelineSupport.addHornetQCodecFilter(pipeline, handler);
-               decoder = new CorePacketDecoder();
+               PacketDecoder decoder = new CorePacketDecoder();
+               pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup,
+                                                                           decoder,
+                                                                           handler,
+                                                                           new Listener()));
             }
-            
-            pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, decoder, handler, new Listener()));
+
             return pipeline;
          }
       };
@@ -487,15 +509,115 @@ public class NettyAcceptor implements Acceptor
 
    // Inner classes -----------------------------------------------------------------------------
 
-   @ChannelPipelineCoverage("one")
-   private final class HornetQServerChannelHandler extends HornetQChannelHandler
+   private final class HornetQServerChannelHandler extends AbstractServerChannelHandler
    {
+      private PacketDecoder decoder;
+      private BufferHandler handler;
+
       HornetQServerChannelHandler(final ChannelGroup group,
-                                  final PacketDecoder decoder,
-                                  final BufferHandler handler,
+                                   final PacketDecoder decoder,
+                                   final BufferHandler handler,
+                                   final ConnectionLifeCycleListener listener)
+       {
+          super(group, listener);
+          
+          this.decoder = decoder;
+          this.handler = handler;
+       }
+
+      @Override
+      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+      {
+         ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
+
+         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
+      }
+      
+   }
+   
+   @ChannelPipelineCoverage("one")
+   public final class StompChannelHandler extends AbstractServerChannelHandler
+   {
+      private final StompMarshaller marshaller;
+
+      private ServerHolder serverHandler;
+
+      public StompChannelHandler(ServerHolder serverHolder,
+                                 StompMarshaller marshaller,
+                                 final ChannelGroup group,
+                                 final ConnectionLifeCycleListener listener)
+      {
+         super(group, listener);
+         this.serverHandler = serverHolder;
+         this.marshaller = marshaller;
+      }
+
+      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+      {
+         StompFrame frame = (StompFrame)e.getMessage();
+         System.out.println(">>> got frame " + frame);
+
+         // need to interact with HornetQ server & session
+         HornetQServer server = serverHandler.getServer();
+         RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
+
+         String command = frame.getCommand();
+
+         StompFrame response = null;
+         if (Stomp.Commands.CONNECT.equals(command))
+         {
+            response = onConnect(frame, server, connection);
+         }
+         else
+         {
+            log.error("Unsupported Stomp frame: " + frame);
+         }
+         if (response != null)
+         {
+            System.out.println(">>> will reply " + response);
+            byte[] bytes = marshaller.marshal(response);
+            HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
+            System.out.println("ready to send reply: " + buffer);
+            connection.getTransportConnection().write(buffer, true);
+         }
+      }
+
+      private StompFrame onConnect(StompFrame frame, HornetQServer server, RemotingConnection connection) throws Exception
+      {
+         Map<String, Object> headers = frame.getHeaders();
+         String login = (String)headers.get(Stomp.Headers.Connect.LOGIN);
+         String passcode = (String)headers.get(Stomp.Headers.Connect.PASSCODE);
+         String requestID = (String)headers.get(Stomp.Headers.Connect.REQUEST_ID);
+
+         String name = UUIDGenerator.getInstance().generateStringUUID();
+         server.createSession(name,
+                              1,
+                              login,
+                              passcode,
+                              HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
+                              VersionLoader.getVersion().getIncrementingVersion(),
+                              connection,
+                              true,
+                              true,
+                              false,
+                              false,
+                              -1);
+         ServerSession session = server.getSession(name);
+         System.out.println(">>> created session " + session);
+         HashMap<String, Object> h = new HashMap<String, Object>();
+         h.put(Stomp.Headers.Connected.SESSION, name);
+         h.put(Stomp.Headers.Connected.RESPONSE_ID, requestID);
+         return new StompFrame(Stomp.Responses.CONNECTED, h, new byte[] {});
+      }
+   }
+   
+   @ChannelPipelineCoverage("one")
+   public abstract class AbstractServerChannelHandler extends HornetQChannelHandler
+   {
+      protected AbstractServerChannelHandler(final ChannelGroup group,
                                   final ConnectionLifeCycleListener listener)
       {
-         super(group, decoder, handler, listener);
+         super(group, listener);
       }
 
       @Override

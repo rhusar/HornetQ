@@ -24,6 +24,7 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.integration.transports.netty.NettyAcceptor;
 import org.hornetq.integration.transports.netty.NettyAcceptorFactory;
+import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -67,9 +68,10 @@ public class NettyAcceptorFactoryTest extends UnitTestCase
          {
          }
       };
-
+      ServerHolder holder = new DummyServerHolder();
       Acceptor acceptor = factory.createAcceptor(params,
                                                  handler,
+                                                 holder,
                                                  listener,
                                                  Executors.newCachedThreadPool(),
                                                  Executors.newScheduledThreadPool(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE));

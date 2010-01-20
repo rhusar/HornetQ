@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.hornetq.integration.transports.netty.ServerHolder;
+
 /**
  * A factory for creating acceptors.
  * <p/>
@@ -41,6 +43,7 @@ public interface AcceptorFactory
     */
    Acceptor createAcceptor(final Map<String, Object> configuration,
                            BufferHandler handler,
+                           ServerHolder holder,
                            ConnectionLifeCycleListener listener,
                            Executor threadPool,
                            ScheduledExecutorService scheduledThreadPool);

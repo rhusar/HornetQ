@@ -41,6 +41,7 @@ import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQPacketHandler;
 import org.hornetq.core.server.management.ManagementService;
+import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.AcceptorFactory;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -161,6 +162,27 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
             Acceptor acceptor = factory.createAcceptor(info.getParams(),
                                                        bufferHandler,
+                                                       new ServerHolder()
+            {
+               public HornetQServer getServer()
+               {
+                  return server;
+               }
+               
+               public RemotingConnection getRemotingConnection(int connectionID)
+               {
+                  ConnectionEntry conn = connections.get(connectionID);
+
+                  if (conn != null)
+                  {
+                     return conn.connection;
+                  }
+                  else
+                  {
+                     return null;
+                  }
+               }
+            },
                                                        this,
                                                        threadPool,
                                                        scheduledThreadPool);

@@ -29,6 +29,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
 import org.hornetq.api.core.HornetQException;
+import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.impl.CorePacketDecoder;
@@ -441,11 +442,22 @@ public class NettyConnector implements Connector
    @ChannelPipelineCoverage("one")
    private final class HornetQClientChannelHandler extends HornetQChannelHandler
    {
+      private BufferHandler handler;
+
       HornetQClientChannelHandler(final ChannelGroup group,
                                   final BufferHandler handler,
                                   final ConnectionLifeCycleListener listener)
       {
-         super(group, decoder, handler, listener);
+         super(group, listener);
+         this.handler = handler;
+      }
+
+      @Override
+      public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+      {
+         ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
+
+         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
       }
    }
 
