@@ -728,6 +728,10 @@ public class StompTest extends TestCase {
                         Stomp.NULL;
         sendFrame(frame);
 
+        waitForFrameToTakeEffect();
+        // check the message is not committed
+        assertNull(consumer.receive(100));
+        
         frame =
                 "COMMIT\n" +
                         "transaction: tx1\n" +
@@ -899,7 +903,6 @@ public class StompTest extends TestCase {
         int c = 0;
         for (; ;) {
             c = is.read();
-            System.out.println(c);
             if (c < 0) {
                 throw new IOException("socket closed.");
             }

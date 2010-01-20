@@ -43,6 +43,9 @@ import org.hornetq.core.remoting.PacketDecoder;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
+import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
+import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessage;
+import org.hornetq.core.remoting.impl.wireformat.SessionCreateConsumerMessage;
 import org.hornetq.core.remoting.impl.wireformat.SessionSendMessage;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.ServerMessage;
@@ -587,7 +590,7 @@ public class NettyAcceptor implements Acceptor
             {
                response = onConnect(frame, server, connection);
             }
-            if (Stomp.Commands.DISCONNECT.equals(command))
+            else if (Stomp.Commands.DISCONNECT.equals(command))
             {
                response = onDisconnect(frame, server, connection);
             }
@@ -595,10 +598,16 @@ public class NettyAcceptor implements Acceptor
             {
                response = onSend(frame, server, connection);
             }
+            else if (Stomp.Commands.SUBSCRIBE.equals(command))
+            {
+               response = onSubscribe(frame, server, connection);
+            }
             else
             {
                log.error("Unsupported Stomp frame: " + frame);
+               response = new StompFrame(Stomp.Responses.ERROR, new HashMap<String, Object>(), ("Unsupported frame: " + command).getBytes());
             }
+            
             if (response != null)
             {
                System.out.println(">>> will reply " + response);
@@ -638,19 +647,44 @@ public class NettyAcceptor implements Acceptor
          }
       }
 
-      private void checkConnected(RemotingConnection connection) throws StompException
+      /**
+       * @param frame
+       * @param server
+       * @param connection
+       * @return
+       * @throws StompException 
+       * @throws HornetQException 
+       */
+      private StompFrame onSubscribe(StompFrame frame, HornetQServer server, RemotingConnection connection) throws StompException, HornetQException
+      {
+         Map<String, Object> headers = frame.getHeaders();
+         String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
+         SimpleString queueName = StompDestinationConverter.convertDestination(queue);
+
+         ServerSession session = checkAndGetSession(connection);
+         long id = server.getStorageManager().generateUniqueID();
+         SessionCreateConsumerMessage packet = new SessionCreateConsumerMessage(id , queueName, null, false, false);
+         session.handleCreateConsumer(packet);
+         SessionConsumerFlowCreditMessage credits = new SessionConsumerFlowCreditMessage(id, -1);
+         session.handleReceiveConsumerCredits(credits );
+         session.handleStart(new PacketImpl(PacketImpl.SESS_START));
+
+         return null;
+      }
+
+      private ServerSession checkAndGetSession(RemotingConnection connection) throws StompException
       {
          ServerSession session = sessions.get(connection);
          if (session == null)
          {
             throw new StompException("Not connected");
          }
+         return session;
       }
+      
       private StompFrame onDisconnect(StompFrame frame, HornetQServer server, RemotingConnection connection) throws StompException
       {
-         checkConnected(connection);
-         
-         ServerSession session = sessions.get(connection);
+         ServerSession session = checkAndGetSession(connection);
          if (session != null)
          {
             try
@@ -668,7 +702,7 @@ public class NettyAcceptor implements Acceptor
 
       private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws HornetQException, StompException
       {
-         checkConnected(connection);
+         ServerSession session = checkAndGetSession(connection);
          
          Map<String, Object> headers = frame.getHeaders();
          String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
@@ -703,7 +737,6 @@ public class NettyAcceptor implements Acceptor
             message.getBodyBuffer().writeBytes(content);
          }
 
-         ServerSession session = sessions.get(connection);
          SessionSendMessage packet = new SessionSendMessage(message, false);
          session.handleSend(packet);
          if (headers.containsKey(Stomp.Headers.RECEIPT_REQUESTED))
