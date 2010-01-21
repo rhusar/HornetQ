@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Red Hat, Inc.
+ * Copyright 2010 Red Hat, Inc.
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
@@ -14,18 +14,13 @@
 package org.hornetq.core.remoting;
 
 /**
- * A CommandConfirmationHandler is used by the channel to confirm confirmations of packets.
+ * A ProtocolType
  *
- * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- *         <p/>
- *         Created 9 Feb 2009 12:39:11
+ * @author Tim Fox
+ *
+ *
  */
-public interface CommandConfirmationHandler
+public enum ProtocolType
 {
-   /**
-    * called by channel after a confirmation has been received.
-    *
-    * @param packet the packet confirmed
-    */
-   void commandConfirmed(Packet packet);
+   CORE, STOMP, AMQP;
 }
