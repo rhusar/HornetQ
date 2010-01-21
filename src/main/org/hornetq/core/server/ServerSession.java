@@ -13,34 +13,11 @@
 
 package org.hornetq.core.server;
 
-import org.hornetq.core.remoting.Channel;
-import org.hornetq.core.remoting.Packet;
-import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.wireformat.CreateQueueMessage;
-import org.hornetq.core.remoting.impl.wireformat.RollbackMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionAcknowledgeMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionBindingQueryMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionConsumerCloseMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionCreateConsumerMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionDeleteQueueMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionExpiredMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionForceConsumerDelivery;
-import org.hornetq.core.remoting.impl.wireformat.SessionQueueQueryMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionRequestProducerCreditsMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionSendContinuationMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionSendLargeMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionSendMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXACommitMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAEndMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAForgetMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAJoinMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAPrepareMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAResumeMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXARollbackMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXASetTimeoutMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionXAStartMessage;
-import org.hornetq.core.server.impl.ServerSessionPacketHandler;
+import java.util.List;
+
+import javax.transaction.xa.Xid;
+
+import org.hornetq.api.core.SimpleString;
 
 /**
  *
@@ -54,8 +31,6 @@ public interface ServerSession
 {
    String getName();
 
-   long getID();
-
    String getUsername();
 
    String getPassword();
@@ -66,75 +41,75 @@ public interface ServerSession
 
    void removeConsumer(ServerConsumer consumer) throws Exception;
 
+   void acknowledge(long consumerID, long messageID) throws Exception;
+
+   void expire(long consumerID, long messageID) throws Exception;
+
+   void rollback(boolean considerLastMessageAsDelivered) throws Exception;
+
+   void commit() throws Exception;
+
+   void xaCommit(Xid xid, boolean onePhase) throws Exception;
+
+   void xaEnd(Xid xid) throws Exception;
+
+   void xaForget(Xid xid) throws Exception;
+
+   void xaJoin(Xid xid) throws Exception;
+
+   void xaPrepare(Xid xid) throws Exception;
+
+   void xaResume(Xid xid) throws Exception;
+
+   void xaRollback(Xid xid) throws Exception;
+
+   void xaStart(Xid xid) throws Exception;
+
+   void xaSuspend() throws Exception;
+
+   List<Xid> xaGetInDoubtXids();
+
+   int xaGetTimeout();
+
+   void xaSetTimeout(int timeout);
+
+   void start();
+
+   void stop();
+
+   void createQueue(SimpleString address,
+                          SimpleString name,
+                          SimpleString filterString,
+                          boolean temporary,
+                          boolean durable) throws Exception;
+
+   void deleteQueue(SimpleString name) throws Exception;
+
+   void createConsumer(long consumerID, SimpleString name, SimpleString filterString, boolean browseOnly) throws Exception;
+
+   QueueQueryResult executeQueueQuery(SimpleString name) throws Exception;
+
+   BindingQueryResult executeBindingQuery(SimpleString address);
+
+   void closeConsumer(long consumerID) throws Exception;
+
+   void receiveConsumerCredits(long consumerID, int credits) throws Exception;
+
+   void sendContinuations(int packetSize, byte[] body, boolean continues) throws Exception;
+
+   void send(ServerMessage message) throws Exception;
+
+   void sendLarge(byte[] largeMessageHeader) throws Exception;
+
+   void forceConsumerDelivery(long consumerID, long sequence) throws Exception;
+
+   void requestProducerCredits(SimpleString address, int credits) throws Exception;
+
    void close() throws Exception;
 
-   void handleAcknowledge(final SessionAcknowledgeMessage packet);
-
-   void handleExpired(final SessionExpiredMessage packet);
-
-   void handleRollback(RollbackMessage packet);
-
-   void handleCommit(Packet packet);
-
-   void handleXACommit(SessionXACommitMessage packet);
-
-   void handleXAEnd(SessionXAEndMessage packet);
-
-   void handleXAForget(SessionXAForgetMessage packet);
-
-   void handleXAJoin(SessionXAJoinMessage packet);
-
-   void handleXAPrepare(SessionXAPrepareMessage packet);
-
-   void handleXAResume(SessionXAResumeMessage packet);
-
-   void handleXARollback(SessionXARollbackMessage packet);
-
-   void handleXAStart(SessionXAStartMessage packet);
-
-   void handleXASuspend(Packet packet);
-
-   void handleGetInDoubtXids(Packet packet);
-
-   void handleGetXATimeout(Packet packet);
-
-   void handleSetXATimeout(SessionXASetTimeoutMessage packet);
-
-   void handleStart(Packet packet);
-
-   void handleStop(Packet packet);
-
-   void handleCreateQueue(CreateQueueMessage packet);
-
-   void handleDeleteQueue(SessionDeleteQueueMessage packet);
-
-   void handleCreateConsumer(SessionCreateConsumerMessage packet);
-
-   void handleExecuteQueueQuery(SessionQueueQueryMessage packet);
-
-   void handleExecuteBindingQuery(SessionBindingQueryMessage packet);
-
-   void handleCloseConsumer(SessionConsumerCloseMessage packet);
-
-   void handleReceiveConsumerCredits(SessionConsumerFlowCreditMessage packet);
-
-   void handleSendContinuations(SessionSendContinuationMessage packet);
-
-   void handleSend(SessionSendMessage packet);
-
-   void handleSendLargeMessage(SessionSendLargeMessage packet);
-
-   void handleForceConsumerDelivery(SessionForceConsumerDelivery message);
-
-   void handleRequestProducerCredits(SessionRequestProducerCreditsMessage message) throws Exception;
-
-   void handleClose(Packet packet);
-
-   int transferConnection(RemotingConnection newConnection, int lastReceivedCommandID);
-
-   Channel getChannel();
-
-   ServerSessionPacketHandler getHandler();
-
-   void setHandler(ServerSessionPacketHandler handler);
+   void setTransferring(boolean transferring);
+   
+   void runConnectionFailureRunners();
+   
+   void setCallback(SessionCallback callback);
 }
