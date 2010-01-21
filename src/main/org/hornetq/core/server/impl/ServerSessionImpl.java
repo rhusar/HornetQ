@@ -42,9 +42,9 @@ import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueBinding;
-import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.remoting.FailureListener;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.SecurityStore;
 import org.hornetq.core.server.BindingQueryResult;
@@ -99,7 +99,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    private final boolean strictUpdateDeliveryCount;
 
-   private CoreRemotingConnection remotingConnection;
+   private RemotingConnection remotingConnection;
 
    private final Map<Long, ServerConsumer> consumers = new ConcurrentHashMap<Long, ServerConsumer>();
 
@@ -134,7 +134,7 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
    private final RoutingContext routingContext = new RoutingContextImpl(null);
 
-   private SessionCallback callback;
+   private final SessionCallback callback;
 
    // Constructors ---------------------------------------------------------------------------------
 
@@ -147,14 +147,15 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
                             final boolean preAcknowledge,
                             final boolean strictUpdateDeliveryCount,
                             final boolean xa,
-                            final CoreRemotingConnection remotingConnection,                     
+                            final RemotingConnection remotingConnection,                     
                             final StorageManager storageManager,
                             final PostOffice postOffice,
                             final ResourceManager resourceManager,
                             final SecurityStore securityStore,
                             final ManagementService managementService,
                             final HornetQServer server,
-                            final SimpleString managementAddress) throws Exception
+                            final SimpleString managementAddress,
+                            final SessionCallback callback) throws Exception
    {
       this.username = username;
 
@@ -193,17 +194,14 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
 
       this.managementAddress = managementAddress;
 
+      this.callback = callback;
+      
       remotingConnection.addFailureListener(this);
 
       remotingConnection.addCloseListener(this);
    }
 
    // ServerSession implementation ----------------------------------------------------------------------------
-
-   public void setCallback(final SessionCallback callback)
-   {
-      this.callback = callback;
-   }
 
    public String getUsername()
    {

@@ -849,6 +849,7 @@ public class StompTest extends TestCase {
    {
       Configuration config = new ConfigurationImpl();
       config.setSecurityEnabled(false);
+      config.setPersistenceEnabled(false);
 
       Map<String, Object> params = new HashMap<String, Object>();
       params.put(TransportConstants.PROTOCOL_PROP_NAME, TransportConstants.STOMP_PROTOCOL);

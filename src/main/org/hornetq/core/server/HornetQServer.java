@@ -24,7 +24,7 @@ import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.protocol.core.Channel;
-import org.hornetq.core.protocol.core.CoreRemotingConnection;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.security.Role;
@@ -76,11 +76,12 @@ public interface HornetQServer extends HornetQComponent
                                String username,
                                String password,
                                int minLargeMessageSize,
-                               CoreRemotingConnection remotingConnection,
+                               RemotingConnection remotingConnection,
                                boolean autoCommitSends,
                                boolean autoCommitAcks,
                                boolean preAcknowledge,
-                               boolean xa) throws Exception;
+                               boolean xa,
+                               final SessionCallback callback) throws Exception;
 
    void removeSession(String name) throws Exception;
 

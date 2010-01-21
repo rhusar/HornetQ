@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author <a href="http://hiramchirino.com">chirino</a>
  */
-public class StompFrame
+class StompFrame
 {
    private static final byte[] NO_DATA = new byte[] {};
 

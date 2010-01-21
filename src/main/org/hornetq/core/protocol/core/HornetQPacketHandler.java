@@ -148,7 +148,7 @@ public class HornetQPacketHandler implements ChannelHandler
                                        "Server will not accept create session requests");
          }
 
-         Channel channel = connection.getChannel(request.getSessionChannelID(), request.getWindowSize());
+         final Channel channel = connection.getChannel(request.getSessionChannelID(), request.getWindowSize());
 
          ServerSession session = server.createSession(request.getName(),                                                      
                                                       request.getUsername(),
@@ -158,17 +158,15 @@ public class HornetQPacketHandler implements ChannelHandler
                                                       request.isAutoCommitSends(),
                                                       request.isAutoCommitAcks(),
                                                       request.isPreAcknowledge(),
-                                                      request.isXA());
+                                                      request.isXA(),
+                                                      new CoreSessionCallback(request.getName(), protocolManager, channel));
 
-         ServerSessionPacketHandler handler = new ServerSessionPacketHandler(protocolManager,
-                                                                             session,
+         ServerSessionPacketHandler handler = new ServerSessionPacketHandler(session,
                                                                              server.getStorageManager()
                                                                                    .newContext(server.getExecutorFactory()
                                                                                                      .getExecutor()),
                                                                              server.getStorageManager(),
                                                                              channel);
-
-         session.setCallback(handler);
 
          channel.setHandler(handler);
 

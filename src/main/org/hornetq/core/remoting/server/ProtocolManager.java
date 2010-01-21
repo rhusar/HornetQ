@@ -26,4 +26,6 @@ public interface ProtocolManager
 {
    ConnectionEntry createConnectionEntry(Connection connection);
 
+   void removeHandler(String name);
+
 }

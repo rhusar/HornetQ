@@ -16,11 +16,9 @@ package org.hornetq.integration.protocol.stomp;
 /**
  * A StompException
  *
- * @author jmesnil
- *
- *
+ * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  */
-public class StompException extends Exception
+class StompException extends Exception
 {
 
    /**

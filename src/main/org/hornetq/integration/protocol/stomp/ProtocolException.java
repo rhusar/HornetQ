@@ -22,7 +22,7 @@ import java.io.IOException;
 /**
  * @author <a href="http://hiramchirino.com">chirino</a>
  */
-public class ProtocolException extends IOException {
+class ProtocolException extends IOException {
     private static final long serialVersionUID = -2869735532997332242L;
     private final boolean fatal;
 

@@ -69,7 +69,7 @@ import org.hornetq.core.postoffice.impl.DivertBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.protocol.core.Channel;
-import org.hornetq.core.protocol.core.CoreRemotingConnection;
+import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.replication.ReplicationEndpoint;
@@ -87,6 +87,7 @@ import org.hornetq.core.server.MemoryManager;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerSession;
+import org.hornetq.core.server.SessionCallback;
 import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.DivertConfiguration;
 import org.hornetq.core.server.cluster.QueueConfiguration;
@@ -538,11 +539,12 @@ public class HornetQServerImpl implements HornetQServer
                                       final String username,
                                       final String password,
                                       final int minLargeMessageSize,
-                                      final CoreRemotingConnection connection,
+                                      final RemotingConnection connection,
                                       final boolean autoCommitSends,
                                       final boolean autoCommitAcks,
                                       final boolean preAcknowledge,
-                                      final boolean xa) throws Exception
+                                      final boolean xa,
+                                      final SessionCallback callback) throws Exception
    {
       if (securityStore != null)
       {
@@ -565,7 +567,8 @@ public class HornetQServerImpl implements HornetQServer
                                                               securityStore,
                                                               managementService,
                                                               this,
-                                                              configuration.getManagementAddress());
+                                                              configuration.getManagementAddress(),
+                                                              callback);
 
       sessions.put(name, session);
 

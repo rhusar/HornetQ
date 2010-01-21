@@ -29,7 +29,6 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.CoreProtocolManager;
-import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.remoting.server.ConnectionEntry;
@@ -170,14 +169,13 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
                   return server;
                }
                
-               public CoreRemotingConnection getRemotingConnection(int connectionID)
+               public RemotingConnection getRemotingConnection(int connectionID)
                {
                   ConnectionEntry conn = connections.get(connectionID);
 
                   if (conn != null)
                   {
-                     // FIXME ....
-                     return (CoreRemotingConnection)conn.connection;
+                     return conn.connection;
                   }
                   else
                   {

@@ -22,7 +22,7 @@ package org.hornetq.integration.protocol.stomp;
  *
  * @author <a href="http://hiramchirino.com">chirino</a>
  */
-public class StompFrameError extends StompFrame {
+class StompFrameError extends StompFrame {
     private final ProtocolException exception;
 
     public StompFrameError(ProtocolException exception) {

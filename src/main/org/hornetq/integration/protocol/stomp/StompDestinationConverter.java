@@ -27,7 +27,7 @@ import org.hornetq.jms.client.HornetQTopic;
  *
  *
  */
-public class StompDestinationConverter
+class StompDestinationConverter
 {
 
    // Constants -----------------------------------------------------
@@ -36,65 +36,69 @@ public class StompDestinationConverter
 
    // Static --------------------------------------------------------
 
-   public static SimpleString convertDestination(String name) throws HornetQException
+   public static SimpleString toHornetQAddress(String stompDestination) throws HornetQException
    {
-      if (name == null)
+      if (stompDestination == null)
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "No destination is specified!");
       }
-      else if (name.startsWith("/queue/"))
+      else if (stompDestination.startsWith("/queue/"))
       {
-         String queueName = name.substring("/queue/".length(), name.length());
+         String queueName = stompDestination.substring("/queue/".length(), stompDestination.length());
          return HornetQQueue.createAddressFromName(queueName);
       }
-      else if (name.startsWith("/topic/"))
+      else if (stompDestination.startsWith("/topic/"))
       {
-         String topicName = name.substring("/topic/".length(), name.length());
+         String topicName = stompDestination.substring("/topic/".length(), stompDestination.length());
          return HornetQTopic.createAddressFromName(topicName);
       }
-      else if (name.startsWith("/temp-queue/"))
+      else if (stompDestination.startsWith("/temp-queue/"))
       {
-         String tempName = name.substring("/temp-queue/".length(), name.length());
+         String tempName = stompDestination.substring("/temp-queue/".length(), stompDestination.length());
          return HornetQTemporaryQueue.createAddressFromName(tempName);
       }
-      else if (name.startsWith("/temp-topic/"))
+      else if (stompDestination.startsWith("/temp-topic/"))
       {
-         String tempName = name.substring("/temp-topic/".length(), name.length());
+         String tempName = stompDestination.substring("/temp-topic/".length(), stompDestination.length());
          return HornetQTemporaryTopic.createAddressFromName(tempName);
       }
       else
       {
-         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Illegal destination name: [" + name +
+         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Illegal destination name: [" + stompDestination +
                                                                     "] -- StompConnect destinations " +
                                                                     "must begine with one of: /queue/ /topic/ /temp-queue/ /temp-topic/");
       }
    }
 
-   public static String toStomp(String address) throws HornetQException
+   public static String toStompDestination(String hornetqAddress) throws HornetQException
    {
-      if (address == null)
+      if (hornetqAddress == null)
       {
          throw new HornetQException(HornetQException.ILLEGAL_STATE, "No destination is specified!");
       }
-      else if (address.startsWith(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX))
+      else if (hornetqAddress.startsWith(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX))
       {
-         return "/queue/" + address.substring(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX.length(), address.length());
+         return "/queue/" + hornetqAddress.substring(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX.length(),
+                                                     hornetqAddress.length());
       }
-      else if (address.startsWith(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX))
+      else if (hornetqAddress.startsWith(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX))
       {
-         return "/temp-queue/" + address.substring(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX.length(), address.length());
+         return "/temp-queue/" + hornetqAddress.substring(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX.length(),
+                                                          hornetqAddress.length());
       }
-      else if (address.startsWith(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX))
+      else if (hornetqAddress.startsWith(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX))
       {
-         return "/topic/" + address.substring(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX.length(), address.length());
+         return "/topic/" + hornetqAddress.substring(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX.length(),
+                                                     hornetqAddress.length());
       }
-      else if (address.startsWith(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX))
+      else if (hornetqAddress.startsWith(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX))
       {
-         return "/temp-topic/" + address.substring(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX.length(), address.length());
+         return "/temp-topic/" + hornetqAddress.substring(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX.length(),
+                                                          hornetqAddress.length());
       }
       else
       {
-         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Illegal address name: [" + address +
+         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Illegal address name: [" + hornetqAddress +
                                                                     "] -- Acceptable address must comply to JMS semantics");
       }
    }

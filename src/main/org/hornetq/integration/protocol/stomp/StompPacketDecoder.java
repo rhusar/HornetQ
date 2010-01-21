@@ -34,9 +34,9 @@ public class StompPacketDecoder extends SimpleChannelHandler
    
    // PacketDecoder implementation ----------------------------------
 
-   public StompPacketDecoder(final StompMarshaller marshaller)
+   public StompPacketDecoder()
    {
-      this.marshaller = marshaller;
+      this.marshaller = new StompMarshaller();
    }
 
    @Override
