@@ -341,6 +341,8 @@ public class StompTest extends TestCase {
 
         frame = receiveFrame(10000);
         Assert.assertTrue(frame.startsWith("MESSAGE"));
+        Assert.assertTrue(frame.indexOf("destination:") > 0);
+        Assert.assertTrue(frame.indexOf(getName()) > 0);
 
         frame =
                 "DISCONNECT\n" +
@@ -408,7 +410,7 @@ public class StompTest extends TestCase {
 
         MessageProducer producer = session.createProducer(queue);
         TextMessage message = session.createTextMessage("Hello World");
-        message.setStringProperty("s", "value");
+        message.setStringProperty("S", "value");
         message.setBooleanProperty("n", false);
         message.setByteProperty("byte", (byte) 9);
         message.setDoubleProperty("d", 2.0);
@@ -420,6 +422,15 @@ public class StompTest extends TestCase {
 
         frame = receiveFrame(10000);
         Assert.assertTrue(frame.startsWith("MESSAGE"));
+        Assert.assertTrue(frame.indexOf("S:") > 0);
+        Assert.assertTrue(frame.indexOf("n:") > 0);
+        Assert.assertTrue(frame.indexOf("byte:") > 0);
+        Assert.assertTrue(frame.indexOf("d:") > 0);
+        Assert.assertTrue(frame.indexOf("f:") > 0);
+        Assert.assertTrue(frame.indexOf("i:") > 0);
+        Assert.assertTrue(frame.indexOf("l:") > 0);
+        Assert.assertTrue(frame.indexOf("s:") > 0);
+        Assert.assertTrue(frame.indexOf("Hello World") > 0);
 
 //        System.out.println("out: "+frame);
 
@@ -908,6 +919,11 @@ public class StompTest extends TestCase {
             }
             else if (c == 0) {
                 c = is.read();
+                if (c != '\n')
+                {
+                   byte[] ba = inputBuffer.toByteArray();
+                   System.out.println(new String(ba, "UTF-8"));
+                }
                 Assert.assertEquals("Expecting stomp frame to terminate with \0\n", c, '\n');
                 byte[] ba = inputBuffer.toByteArray();
                 inputBuffer.reset();

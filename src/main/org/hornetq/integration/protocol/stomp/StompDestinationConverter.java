@@ -70,6 +70,35 @@ public class StompDestinationConverter
       }
    }
 
+   public static String toStomp(String address) throws HornetQException
+   {
+      if (address == null)
+      {
+         throw new HornetQException(HornetQException.ILLEGAL_STATE, "No destination is specified!");
+      }
+      else if (address.startsWith(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX))
+      {
+         return "/queue/" + address.substring(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX.length(), address.length());
+      }
+      else if (address.startsWith(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX))
+      {
+         return "/temp-queue/" + address.substring(HornetQTemporaryQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX.length(), address.length());
+      }
+      else if (address.startsWith(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX))
+      {
+         return "/topic/" + address.substring(HornetQTopic.JMS_TOPIC_ADDRESS_PREFIX.length(), address.length());
+      }
+      else if (address.startsWith(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX))
+      {
+         return "/temp-topic/" + address.substring(HornetQTemporaryTopic.JMS_TEMP_TOPIC_ADDRESS_PREFIX.length(), address.length());
+      }
+      else
+      {
+         throw new HornetQException(HornetQException.ILLEGAL_STATE, "Illegal address name: [" + address +
+                                                                    "] -- Acceptable address must comply to JMS semantics");
+      }
+   }
+
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
