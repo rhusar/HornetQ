@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.hornetq.integration.stomp;
+package org.hornetq.integration.protocol.stomp;
 
 import java.io.IOException;
 

@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.integration.stomp;
+package org.hornetq.integration.protocol.stomp;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
