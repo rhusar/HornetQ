@@ -1,50 +1,50 @@
-/*
- * Copyright 2010 Red Hat, Inc.
- * Red Hat licenses this file to you under the Apache License, version
- * 2.0 (the "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *    http://www.apache.org/licenses/LICENSE-2.0
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
- * implied.  See the License for the specific language governing
- * permissions and limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package org.hornetq.integration.protocol.stomp;
 
+import java.io.IOException;
+
 /**
- * A StompException
- *
- * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
+ * @author <a href="http://hiramchirino.com">chirino</a>
  */
-class StompException extends Exception
-{
+class StompException extends IOException {
+    private static final long serialVersionUID = -2869735532997332242L;
+    private final boolean fatal;
 
-   /**
-    * @param string
-    */
-   public StompException(String string)
-   {
-      super(string);
-   }
+    public StompException() {
+        this(null);
+    }
 
-   // Constants -----------------------------------------------------
+    public StompException(String s) {
+        this(s, false);
+    }
 
-   // Attributes ----------------------------------------------------
+    public StompException(String s, boolean fatal) {
+        this(s, fatal, null);
+    }
 
-   // Static --------------------------------------------------------
+    public StompException(String s, boolean fatal, Throwable cause) {
+        super(s);
+        this.fatal = fatal;
+        initCause(cause);
+    }
 
-   // Constructors --------------------------------------------------
-
-   // Public --------------------------------------------------------
-
-   // Package protected ---------------------------------------------
-
-   // Protected -----------------------------------------------------
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
+    public boolean isFatal() {
+        return fatal;
+    }
 }

@@ -598,11 +598,6 @@ public class HornetQServerImpl implements HornetQServer
       sessions.remove(name);
    }
 
-   public ServerSession getSession(final String name)
-   {
-      return sessions.get(name);
-   }
-
    public synchronized List<ServerSession> getSessions(final String connectionID)
    {
       Set<Entry<String, ServerSession>> sessionEntries = sessions.entrySet();

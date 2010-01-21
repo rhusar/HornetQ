@@ -23,13 +23,13 @@ package org.hornetq.integration.protocol.stomp;
  * @author <a href="http://hiramchirino.com">chirino</a>
  */
 class StompFrameError extends StompFrame {
-    private final ProtocolException exception;
+    private final StompException exception;
 
-    public StompFrameError(ProtocolException exception) {
+    public StompFrameError(StompException exception) {
         this.exception = exception;
     }
 
-    public ProtocolException getException() {
+    public StompException getException() {
         return exception;
     }
 }

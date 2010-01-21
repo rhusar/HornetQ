@@ -85,8 +85,6 @@ public interface HornetQServer extends HornetQComponent
 
    void removeSession(String name) throws Exception;
 
-   ServerSession getSession(String name);
-
    Set<ServerSession> getSessions();
 
    boolean isStarted();

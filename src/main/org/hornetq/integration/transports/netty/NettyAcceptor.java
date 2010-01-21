@@ -37,6 +37,8 @@ import org.hornetq.core.remoting.impl.ssl.SSLSupport;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.integration.protocol.stomp.StompChannelHandler;
+import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
+import org.hornetq.integration.protocol.stomp.StompFrameDecoder;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -132,7 +134,7 @@ public class NettyAcceptor implements Acceptor
 
    private VirtualExecutorService bossExecutor;
 
-   private ServerHolder serverHandler;
+   private ServerHolder serverHolder;
 
    public NettyAcceptor(final Map<String, Object> configuration,
                         final BufferHandler handler,
@@ -143,7 +145,7 @@ public class NettyAcceptor implements Acceptor
    {
       this.handler = handler;
 
-      this.serverHandler = serverHandler;
+      this.serverHolder = serverHandler;
 
       this.listener = listener;
 
@@ -291,8 +293,9 @@ public class NettyAcceptor implements Acceptor
             }
             if (protocol.equals(TransportConstants.STOMP_PROTOCOL))
             {
-               ChannelPipelineSupport.addStompStack(pipeline, serverHandler);
-               pipeline.addLast("handler", new StompChannelHandler(serverHandler,
+               pipeline.addLast("delimiter", new StompFrameDelimiter());
+               pipeline.addLast("codec", new StompFrameDecoder());
+               pipeline.addLast("handler", new StompChannelHandler(serverHolder,
                                                                    channelGroup,
                                                                    NettyAcceptor.this,
                                                                    new Listener()));

@@ -14,6 +14,7 @@
 package org.hornetq.integration.protocol.stomp;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -51,7 +52,7 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
 
    private final Map<RemotingConnection, ServerSession> sessions = new HashMap<RemotingConnection, ServerSession>();
 
-   private ServerHolder serverHandler;
+   private ServerHolder serverHolder;
 
    public StompChannelHandler(ServerHolder serverHolder,
                               final ChannelGroup group,
@@ -59,18 +60,18 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
                               final ConnectionLifeCycleListener listener)
    {
       super(group, listener, acceptor);
-      this.serverHandler = serverHolder;
+      this.serverHolder = serverHolder;
       this.marshaller = new StompMarshaller();
    }
 
    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
    {
       StompFrame frame = (StompFrame)e.getMessage();
-      System.out.println(">>> got frame " + frame);
+      System.out.println("RECEIVED " + frame);
 
       // need to interact with HornetQ server & session
-      HornetQServer server = serverHandler.getServer();
-      RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
+      HornetQServer server = serverHolder.getServer();
+      RemotingConnection connection = serverHolder.getRemotingConnection(e.getChannel().getId());
 
       try
       {
@@ -104,11 +105,7 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
 
          if (response != null)
          {
-            System.out.println(">>> will reply " + response);
-            byte[] bytes = marshaller.marshal(response);
-            HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
-            System.out.println("ready to send reply: " + buffer);
-            connection.getTransportConnection().write(buffer, true);
+            send(connection, response);
          }
       }
       catch (StompException ex)
@@ -129,11 +126,7 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
          }
 
          StompFrame errorMessage = new StompFrame(Stomp.Responses.ERROR, headers, baos.toByteArray());
-         byte[] bytes = marshaller.marshal(errorMessage);
-         HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
-         System.out.println("ready to send reply: " + buffer);
-         connection.getTransportConnection().write(buffer, true);
-
+         send(connection, errorMessage);
       }
       catch (Exception ex)
       {
@@ -141,21 +134,13 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
       }
    }
 
-   /**
-    * @param frame
-    * @param server
-    * @param connection
-    * @return
-    * @throws StompException 
-    * @throws HornetQException 
-    */
    private StompFrame onSubscribe(StompFrame frame, HornetQServer server, RemotingConnection connection) throws Exception,
                                                                                                         StompException,
                                                                                                         HornetQException
    {
       Map<String, Object> headers = frame.getHeaders();
       String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
-      SimpleString queueName = StompDestinationConverter.toHornetQAddress(queue);
+      SimpleString queueName = StompUtils.toHornetQAddress(queue);
 
       ServerSession session = checkAndGetSession(connection);
       long consumerID = server.getStorageManager().generateUniqueID();
@@ -215,7 +200,7 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
       boolean durable = false;
       long expiration = -1;
       byte priority = 9;
-      SimpleString address = StompDestinationConverter.toHornetQAddress(queue);
+      SimpleString address = StompUtils.toHornetQAddress(queue);
 
       ServerMessage message = new ServerMessageImpl(server.getStorageManager().generateUniqueID(), 512);
       message.setType(type);
@@ -252,22 +237,30 @@ public final class StompChannelHandler extends AbstractServerChannelHandler
       String requestID = (String)headers.get(Stomp.Headers.Connect.REQUEST_ID);
 
       String name = UUIDGenerator.getInstance().generateStringUUID();
-      server.createSession(name,
-                           login,
-                           passcode,
-                           HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
-                           connection,
-                           true,
-                           true,
-                           false,
-                           false,
-                           new StompSessionCallback(marshaller, connection));
-      ServerSession session = server.getSession(name);
+      ServerSession session = server.createSession(name,
+                                                   login,
+                                                   passcode,
+                                                   HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
+                                                   connection,
+                                                   true,
+                                                   true,
+                                                   false,
+                                                   false,
+                                                   new StompSessionCallback(marshaller, connection));
       sessions.put(connection, session);
       System.out.println(">>> created session " + session);
       HashMap<String, Object> h = new HashMap<String, Object>();
       h.put(Stomp.Headers.Connected.SESSION, name);
       h.put(Stomp.Headers.Connected.RESPONSE_ID, requestID);
       return new StompFrame(Stomp.Responses.CONNECTED, h, new byte[] {});
+   }
+
+   private void send(RemotingConnection connection, StompFrame frame) throws IOException
+   {
+      System.out.println("SENDING >>> " + frame);
+      byte[] bytes = marshaller.marshal(frame);
+      HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(bytes);
+      System.out.println("ready to send reply: " + buffer);
+      connection.getTransportConnection().write(buffer, true);
    }
 }

@@ -21,13 +21,13 @@ import org.hornetq.jms.client.HornetQTemporaryTopic;
 import org.hornetq.jms.client.HornetQTopic;
 
 /**
- * A StompDestinationConverter
+ * A StompUtils
  *
- * @author jmesnil
+ * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  *
  *
  */
-class StompDestinationConverter
+class StompUtils
 {
 
    // Constants -----------------------------------------------------

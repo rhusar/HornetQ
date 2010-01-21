@@ -49,7 +49,7 @@ class StompSessionCallback implements SessionCallback
       try
       {
          Map<String, Object> headers = new HashMap<String, Object>();
-         headers.put(Stomp.Headers.Message.DESTINATION, StompDestinationConverter.toStompDestination(serverMessage.getAddress()
+         headers.put(Stomp.Headers.Message.DESTINATION, StompUtils.toStompDestination(serverMessage.getAddress()
                                                                                                        .toString()));
          byte[] data = new byte[] {};
          if (serverMessage.getType() == HornetQTextMessage.TYPE)

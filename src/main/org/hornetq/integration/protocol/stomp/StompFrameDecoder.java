@@ -23,18 +23,18 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelHandler;
 
 /**
- * A StompPacketDecoder
+ * A StompFrameDecoder
  *
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  */
 @ChannelPipelineCoverage("one")
-public class StompPacketDecoder extends SimpleChannelHandler
+public class StompFrameDecoder extends SimpleChannelHandler
 {
    private final StompMarshaller marshaller;
    
    // PacketDecoder implementation ----------------------------------
 
-   public StompPacketDecoder()
+   public StompFrameDecoder()
    {
       this.marshaller = new StompMarshaller();
    }

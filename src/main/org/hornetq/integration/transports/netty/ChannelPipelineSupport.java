@@ -16,8 +16,6 @@ package org.hornetq.integration.transports.netty;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
-import org.hornetq.integration.protocol.stomp.StompPacketDecoder;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.ssl.SslHandler;
@@ -45,13 +43,6 @@ public class ChannelPipelineSupport
    }
 
    // Public --------------------------------------------------------
-
-   public static void addStompStack(final ChannelPipeline pipeline, final ServerHolder serverHandler)
-   {
-      assert pipeline != null;
-      pipeline.addLast("delimiter", new StompFrameDelimiter());
-      pipeline.addLast("codec", new StompPacketDecoder());
-   }
 
    public static void addHornetQCodecFilter(final ChannelPipeline pipeline, final BufferHandler handler)
    {
