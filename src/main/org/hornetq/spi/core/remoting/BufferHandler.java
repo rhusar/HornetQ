@@ -13,7 +13,6 @@
 package org.hornetq.spi.core.remoting;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.core.remoting.PacketDecoder;
 
 /**
  * A BufferHandler that will handle buffers received by an acceptor.
@@ -30,5 +29,5 @@ public interface BufferHandler
     * @param connectionID the connection the buffer was received on
     * @param buffer       the buffer to decode
     */
-   void bufferReceived(Object connectionID, HornetQBuffer buffer, PacketDecoder decoder);
+   void bufferReceived(Object connectionID, HornetQBuffer buffer);
 }

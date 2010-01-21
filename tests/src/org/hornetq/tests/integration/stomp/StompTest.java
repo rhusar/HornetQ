@@ -49,7 +49,7 @@ import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
-import org.hornetq.integration.stomp.Stomp;
+import org.hornetq.integration.protocol.stomp.Stomp;
 import org.hornetq.integration.transports.netty.NettyAcceptorFactory;
 import org.hornetq.integration.transports.netty.TransportConstants;
 import org.hornetq.jms.client.HornetQConnectionFactory;

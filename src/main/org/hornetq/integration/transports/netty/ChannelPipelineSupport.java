@@ -16,9 +16,9 @@ package org.hornetq.integration.transports.netty;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.hornetq.integration.stomp.StompFrameDelimiter;
-import org.hornetq.integration.stomp.StompMarshaller;
-import org.hornetq.integration.stomp.StompPacketDecoder;
+import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
+import org.hornetq.integration.protocol.stomp.StompMarshaller;
+import org.hornetq.integration.protocol.stomp.StompPacketDecoder;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.handler.ssl.SslHandler;

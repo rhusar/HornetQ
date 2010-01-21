@@ -31,8 +31,8 @@ import javax.net.ssl.SSLException;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.PacketDecoder;
-import org.hornetq.core.remoting.impl.CorePacketDecoder;
+import org.hornetq.core.protocol.core.PacketDecoder;
+import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -97,7 +97,7 @@ public class NettyConnector implements Connector
 
    private final BufferHandler handler;
    
-   private final PacketDecoder decoder = new CorePacketDecoder();
+   private final PacketDecoder decoder = new PacketDecoder();
 
    private final ConnectionLifeCycleListener listener;
 
@@ -457,7 +457,7 @@ public class NettyConnector implements Connector
       {
          ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
 
-         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
+         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer));
       }
    }
 
@@ -614,7 +614,7 @@ public class NettyConnector implements Connector
 
    private class Listener implements ConnectionLifeCycleListener
    {
-      public void connectionCreated(final Connection connection)
+      public void connectionCreated(final Connection connection, final ProtocolType protocol)
       {
          if (connections.putIfAbsent(connection.getID(), connection) != null)
          {

@@ -13,7 +13,7 @@
 
 package org.hornetq.integration.transports.netty;
 
-import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.server.HornetQServer;
 
 /**
@@ -27,5 +27,6 @@ public interface ServerHolder
 {
    HornetQServer getServer();
 
-   RemotingConnection getRemotingConnection(int connectionID);
+   // FIXME should NOT be CoreRemotingConnection but RemotingConnection
+   CoreRemotingConnection getRemotingConnection(int connectionID);
 }

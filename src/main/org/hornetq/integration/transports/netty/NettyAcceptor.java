@@ -39,25 +39,21 @@ import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.PacketDecoder;
+import org.hornetq.core.protocol.core.CoreRemotingConnection;
+import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.core.remoting.RemotingConnection;
-import org.hornetq.core.remoting.impl.CorePacketDecoder;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
-import org.hornetq.core.remoting.impl.wireformat.PacketImpl;
-import org.hornetq.core.remoting.impl.wireformat.SessionConsumerFlowCreditMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionCreateConsumerMessage;
-import org.hornetq.core.remoting.impl.wireformat.SessionSendMessage;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
-import org.hornetq.integration.stomp.Stomp;
-import org.hornetq.integration.stomp.StompDestinationConverter;
-import org.hornetq.integration.stomp.StompException;
-import org.hornetq.integration.stomp.StompFrame;
-import org.hornetq.integration.stomp.StompMarshaller;
+import org.hornetq.integration.protocol.stomp.Stomp;
+import org.hornetq.integration.protocol.stomp.StompDestinationConverter;
+import org.hornetq.integration.protocol.stomp.StompException;
+import org.hornetq.integration.protocol.stomp.StompFrame;
+import org.hornetq.integration.protocol.stomp.StompMarshaller;
 import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.remoting.Acceptor;
@@ -329,9 +325,7 @@ public class NettyAcceptor implements Acceptor
             else
             {
                ChannelPipelineSupport.addHornetQCodecFilter(pipeline, handler);
-               PacketDecoder decoder = new CorePacketDecoder();
                pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup,
-                                                                           decoder,
                                                                            handler,
                                                                            new Listener()));
             }
@@ -527,18 +521,14 @@ public class NettyAcceptor implements Acceptor
 
    private final class HornetQServerChannelHandler extends AbstractServerChannelHandler
    {
-      private PacketDecoder decoder;
-
       private BufferHandler handler;
 
       HornetQServerChannelHandler(final ChannelGroup group,
-                                  final PacketDecoder decoder,
                                   final BufferHandler handler,
                                   final ConnectionLifeCycleListener listener)
       {
          super(group, listener);
 
-         this.decoder = decoder;
          this.handler = handler;
       }
 
@@ -547,7 +537,7 @@ public class NettyAcceptor implements Acceptor
       {
          ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
 
-         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer), decoder);
+         handler.bufferReceived(e.getChannel().getId(), new ChannelBufferWrapper(buffer));
       }
 
    }
@@ -578,7 +568,7 @@ public class NettyAcceptor implements Acceptor
 
          // need to interact with HornetQ server & session
          HornetQServer server = serverHandler.getServer();
-         RemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
+         CoreRemotingConnection connection = serverHandler.getRemotingConnection(e.getChannel().getId());
 
          try
          {
@@ -655,19 +645,17 @@ public class NettyAcceptor implements Acceptor
        * @throws StompException 
        * @throws HornetQException 
        */
-      private StompFrame onSubscribe(StompFrame frame, HornetQServer server, RemotingConnection connection) throws StompException, HornetQException
+      private StompFrame onSubscribe(StompFrame frame, HornetQServer server, RemotingConnection connection) throws Exception, StompException, HornetQException
       {
          Map<String, Object> headers = frame.getHeaders();
          String queue = (String)headers.get(Stomp.Headers.Send.DESTINATION);
          SimpleString queueName = StompDestinationConverter.convertDestination(queue);
 
          ServerSession session = checkAndGetSession(connection);
-         long id = server.getStorageManager().generateUniqueID();
-         SessionCreateConsumerMessage packet = new SessionCreateConsumerMessage(id , queueName, null, false, false);
-         session.handleCreateConsumer(packet);
-         SessionConsumerFlowCreditMessage credits = new SessionConsumerFlowCreditMessage(id, -1);
-         session.handleReceiveConsumerCredits(credits );
-         session.handleStart(new PacketImpl(PacketImpl.SESS_START));
+         long consumerID = server.getStorageManager().generateUniqueID();
+         session.createConsumer(consumerID, queueName, null, false);
+         session.receiveConsumerCredits(consumerID, -1);
+         session.start();
 
          return null;
       }
@@ -700,7 +688,7 @@ public class NettyAcceptor implements Acceptor
          return null;
       }
 
-      private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws HornetQException, StompException
+      private StompFrame onSend(StompFrame frame, HornetQServer server, RemotingConnection connection) throws Exception
       {
          ServerSession session = checkAndGetSession(connection);
          
@@ -737,8 +725,7 @@ public class NettyAcceptor implements Acceptor
             message.getBodyBuffer().writeBytes(content);
          }
 
-         SessionSendMessage packet = new SessionSendMessage(message, false);
-         session.handleSend(packet);
+         session.send(message);
          if (headers.containsKey(Stomp.Headers.RECEIPT_REQUESTED))
          {
             Map<String, Object> h = new HashMap<String, Object>();
@@ -751,7 +738,7 @@ public class NettyAcceptor implements Acceptor
          }
       }
 
-      private StompFrame onConnect(StompFrame frame, HornetQServer server, RemotingConnection connection) throws Exception
+      private StompFrame onConnect(StompFrame frame, HornetQServer server, CoreRemotingConnection connection) throws Exception
       {
          Map<String, Object> headers = frame.getHeaders();
          String login = (String)headers.get(Stomp.Headers.Connect.LOGIN);
@@ -760,17 +747,14 @@ public class NettyAcceptor implements Acceptor
 
          String name = UUIDGenerator.getInstance().generateStringUUID();
          server.createSession(name,
-                              1,
                               login,
                               passcode,
                               HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
-                              VersionLoader.getVersion().getIncrementingVersion(),
                               connection,
                               true,
                               true,
                               false,
-                              false,
-                              -1);
+                              false);
          ServerSession session = server.getSession(name);
          sessions.put(connection, session);
          System.out.println(">>> created session " + session);
@@ -821,14 +805,14 @@ public class NettyAcceptor implements Acceptor
 
    private class Listener implements ConnectionLifeCycleListener
    {
-      public void connectionCreated(final Connection connection)
+      public void connectionCreated(final Connection connection, final ProtocolType protocol)
       {
          if (connections.putIfAbsent(connection.getID(), connection) != null)
          {
             throw new IllegalArgumentException("Connection already exists with id " + connection.getID());
          }
 
-         listener.connectionCreated(connection);
+         listener.connectionCreated(connection, protocol);
       }
 
       public void connectionDestroyed(final Object connectionID)

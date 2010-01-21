@@ -16,6 +16,7 @@ package org.hornetq.integration.transports.netty;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -54,7 +55,7 @@ public class NettyConnection implements Connection
 
       this.listener = listener;
 
-      listener.connectionCreated(this);
+      listener.connectionCreated(this, ProtocolType.CORE);
    }
 
    // Public --------------------------------------------------------

@@ -13,7 +13,7 @@
 
 package org.hornetq.tests.unit.core.remoting.impl.netty;
 
-import org.hornetq.core.remoting.RemotingConnection;
+import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.integration.transports.netty.ServerHolder;
 
@@ -31,7 +31,7 @@ public class DummyServerHolder implements ServerHolder
       return null;
    }
    
-   public RemotingConnection getRemotingConnection(int connectionID)
+   public CoreRemotingConnection getRemotingConnection(int connectionID)
    {
       return null;
    }
