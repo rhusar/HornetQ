@@ -23,7 +23,6 @@ import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
-import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.spi.core.protocol.ProtocolType;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -64,7 +63,6 @@ public class InVMAcceptor implements Acceptor
 
    public InVMAcceptor(final Map<String, Object> configuration,
                        final BufferHandler handler,
-                       final ServerHolder holder,
                        final ConnectionLifeCycleListener listener,
                        final Executor threadPool)
    {

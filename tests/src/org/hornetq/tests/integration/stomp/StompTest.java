@@ -45,11 +45,11 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.protocol.stomp.Stomp;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
-import org.hornetq.integration.protocol.stomp.Stomp;
 import org.hornetq.integration.transports.netty.NettyAcceptorFactory;
 import org.hornetq.integration.transports.netty.TransportConstants;
 import org.hornetq.jms.client.HornetQConnectionFactory;
@@ -69,12 +69,12 @@ public class StompTest extends TestCase {
     private Connection connection;
     private Session session;
     private Queue queue;
-   private JMSServerManager server;
+    private JMSServerManager server;
 
     public void testConnect() throws Exception {
 
-        String connect_frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n" + "request-id: 1\n" + "\n" + Stomp.NULL;
-        sendFrame(connect_frame);
+       String connect_frame = "CONNECT\n" + "login: brianm\n" + "passcode: wombats\n" + "request-id: 1\n" + "\n" + Stomp.NULL;
+       sendFrame(connect_frame);
 
         String f = receiveFrame(10000);
         Assert.assertTrue(f.startsWith("CONNECTED"));

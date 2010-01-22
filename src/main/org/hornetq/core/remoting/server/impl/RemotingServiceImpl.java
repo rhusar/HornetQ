@@ -22,6 +22,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
+import com.sun.corba.se.spi.activation.ServerHolder;
+
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
@@ -33,7 +35,6 @@ import org.hornetq.core.protocol.core.impl.CoreProtocolManagerFactory;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.management.ManagementService;
-import org.hornetq.integration.transports.netty.ServerHolder;
 import org.hornetq.spi.core.protocol.ConnectionEntry;
 import org.hornetq.spi.core.protocol.ProtocolManager;
 import org.hornetq.spi.core.protocol.ProtocolType;
@@ -170,27 +171,6 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
             
             Acceptor acceptor = factory.createAcceptor(info.getParams(),
                                                        new DelegatingBufferHandler(manager),
-                                                       new ServerHolder()
-            {
-               public HornetQServer getServer()
-               {
-                  return server;
-               }
-               
-               public RemotingConnection getRemotingConnection(int connectionID)
-               {
-                  ConnectionEntry conn = connections.get(connectionID);
-
-                  if (conn != null)
-                  {
-                     return conn.connection;
-                  }
-                  else
-                  {
-                     return null;
-                  }
-               }
-            },
                                                        this,
                                                        threadPool,
                                                        scheduledThreadPool);

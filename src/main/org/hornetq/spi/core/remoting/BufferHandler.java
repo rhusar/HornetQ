@@ -24,9 +24,8 @@ import org.hornetq.api.core.HornetQBuffer;
 public interface BufferHandler
 {
    /**
-    * called by the remoting connection when a buffer is received.
+    * called when a buffer is received.
     *
-    * @param connectionID the connection the buffer was received on
     * @param buffer       the buffer to decode
     */
    void bufferReceived(Object connectionID, HornetQBuffer buffer);

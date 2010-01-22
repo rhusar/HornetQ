@@ -14,7 +14,6 @@
 package org.hornetq.spi.core.protocol;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
 
 /**
@@ -24,11 +23,14 @@ import org.hornetq.spi.core.remoting.Connection;
  *
  *
  */
-public interface ProtocolManager extends BufferHandler
+public interface ProtocolManager
 {
    ConnectionEntry createConnectionEntry(Connection connection);
    
    public void removeHandler(final String name);
 
    public int isReadyToHandle(HornetQBuffer buffer);
+   
+   void handleBuffer(RemotingConnection connection, HornetQBuffer buffer);
+
 }

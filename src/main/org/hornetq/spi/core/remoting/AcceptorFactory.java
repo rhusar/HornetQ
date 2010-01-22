@@ -18,12 +18,10 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
-import org.hornetq.integration.transports.netty.ServerHolder;
-
 /**
  * A factory for creating acceptors.
  * <p/>
- * An Acceptor is an endpoin that a {@link org.hornetq.spi.core.remoting.Connector} will connect to and is used by the remoting service.
+ * An Acceptor is an endpoint that a {@link org.hornetq.spi.core.remoting.Connector} will connect to and is used by the remoting service.
  *
  * @author <a href="ataylor@redhat.com">Andy Taylor</a>
  * @author <a href="tim.fox@jboss.com">Tim Fox</a>
@@ -43,7 +41,6 @@ public interface AcceptorFactory
     */
    Acceptor createAcceptor(final Map<String, Object> configuration,
                            BufferHandler handler,
-                           ServerHolder holder,
                            ConnectionLifeCycleListener listener,
                            Executor threadPool,
                            ScheduledExecutorService scheduledThreadPool);

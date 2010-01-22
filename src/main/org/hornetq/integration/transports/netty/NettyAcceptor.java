@@ -35,9 +35,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
-import org.hornetq.integration.protocol.stomp.StompChannelHandler;
-import org.hornetq.integration.protocol.stomp.StompFrameDecoder;
-import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
 import org.hornetq.spi.core.protocol.ProtocolType;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -136,18 +133,13 @@ public class NettyAcceptor implements Acceptor
    
    private boolean paused;
 
-   private ServerHolder serverHolder;
-
    public NettyAcceptor(final Map<String, Object> configuration,
                         final BufferHandler handler,
-                        final ServerHolder serverHandler,
                         final ConnectionLifeCycleListener listener,
                         final Executor threadPool,
                         final ScheduledExecutorService scheduledThreadPool)
    {
       this.handler = handler;
-
-      this.serverHolder = serverHandler;
 
       this.listener = listener;
       
@@ -295,6 +287,7 @@ public class NettyAcceptor implements Acceptor
                pipeline.addLast("httpResponseEncoder", new HttpResponseEncoder());
                pipeline.addLast("httphandler", new HttpAcceptorHandler(httpKeepAliveRunnable, httpResponseTime));
             }
+            /*
             if (protocol == ProtocolType.STOMP)
             {
                pipeline.addLast("delimiter", new StompFrameDelimiter());
@@ -305,10 +298,10 @@ public class NettyAcceptor implements Acceptor
                                                                    new Listener()));
             }
             else
-            {
-               ChannelPipelineSupport.addCodecFilter(ProtocolType.CORE, pipeline, handler);
+            {*/
+               ChannelPipelineSupport.addCodecFilter(protocol, pipeline, handler);
                pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
-            }
+//            }
             return pipeline;
          }
       };
