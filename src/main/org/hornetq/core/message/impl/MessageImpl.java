@@ -27,7 +27,7 @@ import org.hornetq.core.buffers.impl.ResetLimitWrappedHornetQBuffer;
 import org.hornetq.core.client.impl.LargeMessageBufferInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
-import org.hornetq.core.protocol.core.PacketImpl;
+import org.hornetq.core.protocol.core.impl.PacketImpl;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.TypedProperties;
 
@@ -48,10 +48,12 @@ import org.hornetq.utils.TypedProperties;
 public abstract class MessageImpl implements MessageInternal
 {
    // Constants -----------------------------------------------------
-
+     
    private static final Logger log = Logger.getLogger(MessageImpl.class);
 
    public static final SimpleString HDR_ROUTE_TO_IDS = new SimpleString("_HQ_ROUTE_TO");
+   
+   public static final int BUFFER_HEADER_SPACE = PacketImpl.PACKET_HEADERS_SIZE;
 
    protected long messageID;
 
@@ -165,7 +167,7 @@ public abstract class MessageImpl implements MessageInternal
 
       int bodyPos = endOfBodyPosition == -1 ? buffer.writerIndex() : endOfBodyPosition;
 
-      int bodySize = bodyPos - PacketImpl.PACKET_HEADERS_SIZE - DataConstants.SIZE_INT;
+      int bodySize = bodyPos - BUFFER_HEADER_SPACE - DataConstants.SIZE_INT;
 
       return DataConstants.SIZE_INT + bodySize + DataConstants.SIZE_INT + headersPropsSize;
    }
@@ -212,7 +214,7 @@ public abstract class MessageImpl implements MessageInternal
       {
          if (buffer instanceof LargeMessageBufferInternal == false)
          {
-            bodyBuffer = new ResetLimitWrappedHornetQBuffer(PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT,
+            bodyBuffer = new ResetLimitWrappedHornetQBuffer(BUFFER_HEADER_SPACE + DataConstants.SIZE_INT,
                                                             buffer,
                                                             this);
          }
@@ -393,7 +395,7 @@ public abstract class MessageImpl implements MessageInternal
    {
       encodeToBuffer();
 
-      buff.writeBytes(buffer, PacketImpl.PACKET_HEADERS_SIZE, endOfMessagePosition - PacketImpl.PACKET_HEADERS_SIZE);
+      buff.writeBytes(buffer, BUFFER_HEADER_SPACE, endOfMessagePosition - BUFFER_HEADER_SPACE);
    }
 
    // Decode from journal or paging
@@ -403,11 +405,11 @@ public abstract class MessageImpl implements MessageInternal
 
       endOfBodyPosition = buff.readInt();
 
-      endOfMessagePosition = buff.getInt(endOfBodyPosition - PacketImpl.PACKET_HEADERS_SIZE + start);
+      endOfMessagePosition = buff.getInt(endOfBodyPosition - BUFFER_HEADER_SPACE + start);
 
-      int length = endOfMessagePosition - PacketImpl.PACKET_HEADERS_SIZE;
+      int length = endOfMessagePosition - BUFFER_HEADER_SPACE;
 
-      buffer.setIndex(0, PacketImpl.PACKET_HEADERS_SIZE);
+      buffer.setIndex(0, BUFFER_HEADER_SPACE);
 
       buffer.writeBytes(buff, start, length);
 
@@ -825,7 +827,7 @@ public abstract class MessageImpl implements MessageInternal
          }
 
          // write it
-         buffer.setInt(PacketImpl.PACKET_HEADERS_SIZE, endOfBodyPosition);
+         buffer.setInt(BUFFER_HEADER_SPACE, endOfBodyPosition);
 
          // Position at end of body and skip past the message end position int.
          // check for enough room in the buffer even tho it is dynamic
@@ -855,7 +857,7 @@ public abstract class MessageImpl implements MessageInternal
 
    private void decode()
    {
-      endOfBodyPosition = buffer.getInt(PacketImpl.PACKET_HEADERS_SIZE);
+      endOfBodyPosition = buffer.getInt(BUFFER_HEADER_SPACE);
 
       buffer.readerIndex(endOfBodyPosition + DataConstants.SIZE_INT);
 
@@ -873,7 +875,7 @@ public abstract class MessageImpl implements MessageInternal
       // There's a bug in netty which means a dynamic buffer won't resize until you write a byte
       buffer.writeByte((byte)0);
 
-      int limit = PacketImpl.PACKET_HEADERS_SIZE + DataConstants.SIZE_INT;
+      int limit = BUFFER_HEADER_SPACE + DataConstants.SIZE_INT;
 
       buffer.setIndex(limit, limit);
    }
