@@ -32,13 +32,13 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.buffers.impl.ChannelBufferWrapper;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.core.remoting.impl.ssl.SSLSupport;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.integration.protocol.stomp.StompChannelHandler;
-import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
 import org.hornetq.integration.protocol.stomp.StompFrameDecoder;
+import org.hornetq.integration.protocol.stomp.StompFrameDelimiter;
+import org.hornetq.spi.core.protocol.ProtocolType;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -104,7 +104,7 @@ public class NettyAcceptor implements Acceptor
 
    private final boolean useInvm;
 
-   private final String protocol;
+   private final ProtocolType protocol;
 
    private final String host;
 
@@ -133,6 +133,8 @@ public class NettyAcceptor implements Acceptor
    private NotificationService notificationService;
 
    private VirtualExecutorService bossExecutor;
+   
+   private boolean paused;
 
    private ServerHolder serverHolder;
 
@@ -148,7 +150,7 @@ public class NettyAcceptor implements Acceptor
       this.serverHolder = serverHandler;
 
       this.listener = listener;
-
+      
       sslEnabled = ConfigurationHelper.getBooleanProperty(TransportConstants.SSL_ENABLED_PROP_NAME,
                                                           TransportConstants.DEFAULT_SSL_ENABLED,
                                                           configuration);
@@ -185,9 +187,11 @@ public class NettyAcceptor implements Acceptor
       useInvm = ConfigurationHelper.getBooleanProperty(TransportConstants.USE_INVM_PROP_NAME,
                                                        TransportConstants.DEFAULT_USE_INVM,
                                                        configuration);
-      protocol = ConfigurationHelper.getStringProperty(TransportConstants.PROTOCOL_PROP_NAME,
+      String protocolStr = ConfigurationHelper.getStringProperty(TransportConstants.PROTOCOL_PROP_NAME,
                                                        TransportConstants.DEFAULT_PROTOCOL,
                                                        configuration);
+      protocol = ProtocolType.valueOf(protocolStr);
+      
       host = ConfigurationHelper.getStringProperty(TransportConstants.HOST_PROP_NAME,
                                                    TransportConstants.DEFAULT_HOST,
                                                    configuration);
@@ -291,7 +295,7 @@ public class NettyAcceptor implements Acceptor
                pipeline.addLast("httpResponseEncoder", new HttpResponseEncoder());
                pipeline.addLast("httphandler", new HttpAcceptorHandler(httpKeepAliveRunnable, httpResponseTime));
             }
-            if (protocol.equals(TransportConstants.STOMP_PROTOCOL))
+            if (protocol == ProtocolType.STOMP)
             {
                pipeline.addLast("delimiter", new StompFrameDelimiter());
                pipeline.addLast("codec", new StompFrameDecoder());
@@ -302,10 +306,9 @@ public class NettyAcceptor implements Acceptor
             }
             else
             {
-               ChannelPipelineSupport.addHornetQCodecFilter(pipeline, handler);
+               ChannelPipelineSupport.addCodecFilter(ProtocolType.CORE, pipeline, handler);
                pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
             }
-
             return pipeline;
          }
       };
@@ -443,8 +446,6 @@ public class NettyAcceptor implements Acceptor
       return channelFactory != null;
    }
 
-   private boolean paused;
-
    public void pause()
    {
       if (paused)
@@ -477,7 +478,6 @@ public class NettyAcceptor implements Acceptor
       bossExecutor.shutdown();
       try
       {
-
          bossExecutor.awaitTermination(30, TimeUnit.SECONDS);
       }
       catch (InterruptedException e)
@@ -532,7 +532,7 @@ public class NettyAcceptor implements Acceptor
             throw new IllegalArgumentException("Connection already exists with id " + connection.getID());
          }
 
-         listener.connectionCreated(connection, protocol);
+         listener.connectionCreated(connection, NettyAcceptor.this.protocol);
       }
 
       public void connectionDestroyed(final Object connectionID)

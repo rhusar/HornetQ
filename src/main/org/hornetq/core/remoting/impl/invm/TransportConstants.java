@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hornetq.spi.core.protocol.ProtocolType;
+
 /**
  * A TransportConstants
  * 
@@ -26,6 +28,10 @@ public class TransportConstants
 {
    public static final String SERVER_ID_PROP_NAME = "server-id";
 
+   public static final String PROTOCOL_PROP_NAME = "protocol";
+
+   public static final String DEFAULT_PROTOCOL = ProtocolType.CORE.toString();
+
    public static final Set<String> ALLOWABLE_CONNECTOR_KEYS;
 
    public static final Set<String> ALLOWABLE_ACCEPTOR_KEYS;
@@ -34,11 +40,13 @@ public class TransportConstants
    {
       Set<String> allowableAcceptorKeys = new HashSet<String>();
       allowableAcceptorKeys.add(TransportConstants.SERVER_ID_PROP_NAME);
+      allowableAcceptorKeys.add(TransportConstants.PROTOCOL_PROP_NAME);
 
       ALLOWABLE_CONNECTOR_KEYS = Collections.unmodifiableSet(allowableAcceptorKeys);
 
       Set<String> allowableConnectorKeys = new HashSet<String>();
       allowableConnectorKeys.add(TransportConstants.SERVER_ID_PROP_NAME);
+      allowableConnectorKeys.add(TransportConstants.PROTOCOL_PROP_NAME);
 
       ALLOWABLE_ACCEPTOR_KEYS = Collections.unmodifiableSet(allowableConnectorKeys);
    }

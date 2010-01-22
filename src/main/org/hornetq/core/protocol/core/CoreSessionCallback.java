@@ -1,13 +1,13 @@
 package org.hornetq.core.protocol.core;
 
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.core.protocol.core.wireformat.SessionProducerCreditsMessage;
-import org.hornetq.core.protocol.core.wireformat.SessionReceiveContinuationMessage;
-import org.hornetq.core.protocol.core.wireformat.SessionReceiveLargeMessage;
-import org.hornetq.core.protocol.core.wireformat.SessionReceiveMessage;
-import org.hornetq.core.remoting.server.ProtocolManager;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionProducerCreditsMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveContinuationMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveLargeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.core.server.ServerMessage;
-import org.hornetq.core.server.SessionCallback;
+import org.hornetq.spi.core.protocol.ProtocolManager;
+import org.hornetq.spi.core.protocol.SessionCallback;
 
 /**
  * A CoreSessionCallback

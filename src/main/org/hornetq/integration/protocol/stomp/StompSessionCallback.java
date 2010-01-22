@@ -18,10 +18,10 @@ import java.util.Map;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.server.ServerMessage;
-import org.hornetq.core.server.SessionCallback;
 import org.hornetq.jms.client.HornetQTextMessage;
+import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.spi.core.protocol.SessionCallback;
 
 /**
  * A StompSessionCallback

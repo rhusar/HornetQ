@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hornetq.spi.core.protocol.ProtocolType;
+
 /**
  * A TransportConstants
  * 
@@ -77,11 +79,7 @@ public class TransportConstants
 
    public static final boolean DEFAULT_USE_SERVLET = false;
 
-   public static final String HORNETQ_PROTOCOL = "hornetq";
-
-   public static final String STOMP_PROTOCOL = "stomp";
-
-   public static final String DEFAULT_PROTOCOL = HORNETQ_PROTOCOL;
+   public static final String DEFAULT_PROTOCOL = ProtocolType.CORE.toString();
 
    public static final String DEFAULT_HOST = "localhost";
 

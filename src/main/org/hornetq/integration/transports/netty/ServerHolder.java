@@ -13,8 +13,8 @@
 
 package org.hornetq.integration.transports.netty;
 
-import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.spi.core.protocol.RemotingConnection;
 
 /**
  * A ServerHolder

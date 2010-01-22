@@ -21,10 +21,10 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.ProtocolType;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.integration.transports.netty.ServerHolder;
+import org.hornetq.spi.core.protocol.ProtocolType;
 import org.hornetq.spi.core.remoting.Acceptor;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
@@ -60,6 +60,8 @@ public class InVMAcceptor implements Acceptor
 
    private NotificationService notificationService;
 
+   private final ProtocolType protocol;
+
    public InVMAcceptor(final Map<String, Object> configuration,
                        final BufferHandler handler,
                        final ServerHolder holder,
@@ -71,6 +73,11 @@ public class InVMAcceptor implements Acceptor
       this.listener = listener;
 
       id = ConfigurationHelper.getIntProperty(TransportConstants.SERVER_ID_PROP_NAME, 0, configuration);
+
+      String protocolStr = ConfigurationHelper.getStringProperty(TransportConstants.PROTOCOL_PROP_NAME,
+                                                                 TransportConstants.DEFAULT_PROTOCOL,
+                                                                 configuration);
+      this.protocol = ProtocolType.valueOf(protocolStr);
 
       executorFactory = new OrderedExecutorFactory(threadPool);
    }

@@ -44,7 +44,6 @@ import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.remoting.FailureListener;
-import org.hornetq.core.remoting.RemotingConnection;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.SecurityStore;
 import org.hornetq.core.server.BindingQueryResult;
@@ -57,12 +56,13 @@ import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerConsumer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
-import org.hornetq.core.server.SessionCallback;
 import org.hornetq.core.server.management.ManagementService;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.transaction.ResourceManager;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.spi.core.protocol.SessionCallback;
 import org.hornetq.utils.TypedProperties;
 
 /*
@@ -283,15 +283,15 @@ public class ServerSessionImpl implements ServerSession, FailureListener, CloseL
    }
 
    public void createConsumer(final long consumerID,
-                                    final SimpleString name,
+                                    final SimpleString queueName,
                                     final SimpleString filterString,
                                     final boolean browseOnly) throws Exception
    {
-      Binding binding = postOffice.getBinding(name);
+      Binding binding = postOffice.getBinding(queueName);
 
       if (binding == null || binding.getType() != BindingType.LOCAL_QUEUE)
       {
-         throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "Queue " + name + " does not exist");
+         throw new HornetQException(HornetQException.QUEUE_DOES_NOT_EXIST, "Queue " + queueName + " does not exist");
       }
 
       securityStore.check(binding.getAddress(), CheckType.CONSUME, this);
