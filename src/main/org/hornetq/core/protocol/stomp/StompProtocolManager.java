@@ -292,5 +292,4 @@ public class StompProtocolManager implements ProtocolManager
    {
       return -1;
    }
-
 }

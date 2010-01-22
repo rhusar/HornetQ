@@ -72,7 +72,7 @@ public class NettyConnectorTest extends UnitTestCase
       };
 
       NettyConnector connector = new NettyConnector(params,
-                                                    handler,
+                                                    handler,                                                    
                                                     listener,
                                                     Executors.newCachedThreadPool(),
                                                     Executors.newCachedThreadPool(),

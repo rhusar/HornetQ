@@ -69,6 +69,7 @@ public class NettyAcceptorFactoryTest extends UnitTestCase
       };
       Acceptor acceptor = factory.createAcceptor(params,
                                                  handler,
+                                                 null,
                                                  listener,
                                                  Executors.newCachedThreadPool(),
                                                  Executors.newScheduledThreadPool(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE));

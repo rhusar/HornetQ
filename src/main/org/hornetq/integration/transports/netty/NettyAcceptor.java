@@ -37,6 +37,7 @@ import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
 import org.hornetq.spi.core.protocol.ProtocolType;
 import org.hornetq.spi.core.remoting.Acceptor;
+import org.hornetq.spi.core.remoting.BufferDecoder;
 import org.hornetq.spi.core.remoting.BufferHandler;
 import org.hornetq.spi.core.remoting.Connection;
 import org.hornetq.spi.core.remoting.ConnectionLifeCycleListener;
@@ -86,6 +87,8 @@ public class NettyAcceptor implements Acceptor
    private ServerBootstrap bootstrap;
 
    private final BufferHandler handler;
+   
+   private final BufferDecoder decoder;
 
    private final ConnectionLifeCycleListener listener;
 
@@ -135,11 +138,14 @@ public class NettyAcceptor implements Acceptor
 
    public NettyAcceptor(final Map<String, Object> configuration,
                         final BufferHandler handler,
+                        final BufferDecoder decoder,
                         final ConnectionLifeCycleListener listener,
                         final Executor threadPool,
                         final ScheduledExecutorService scheduledThreadPool)
    {
       this.handler = handler;
+      
+      this.decoder = decoder;
 
       this.listener = listener;
       
@@ -287,21 +293,9 @@ public class NettyAcceptor implements Acceptor
                pipeline.addLast("httpResponseEncoder", new HttpResponseEncoder());
                pipeline.addLast("httphandler", new HttpAcceptorHandler(httpKeepAliveRunnable, httpResponseTime));
             }
-            /*
-            if (protocol == ProtocolType.STOMP)
-            {
-               pipeline.addLast("delimiter", new StompFrameDelimiter());
-               pipeline.addLast("codec", new StompFrameDecoder());
-               pipeline.addLast("handler", new StompChannelHandler(serverHolder,
-                                                                   channelGroup,
-                                                                   NettyAcceptor.this,
-                                                                   new Listener()));
-            }
-            else
-            {*/
-               ChannelPipelineSupport.addCodecFilter(protocol, pipeline, handler);
-               pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
-//            }
+
+            ChannelPipelineSupport.addCodecFilter(protocol, pipeline, decoder);
+            pipeline.addLast("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
             return pipeline;
          }
       };

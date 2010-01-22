@@ -84,6 +84,7 @@ public class NettyAcceptorTest extends UnitTestCase
 
       NettyAcceptor acceptor = new NettyAcceptor(params,
                                                  handler,
+                                                 null,
                                                  listener,
                                                  Executors.newCachedThreadPool(),
                                                  Executors.newScheduledThreadPool(ConfigurationImpl.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE));
