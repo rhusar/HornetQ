@@ -1,0 +1,762 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ============================================================================= -->
+<!-- Copyright © 2009 Red Hat, Inc. and others.                                    -->
+<!--                                                                               -->
+<!-- The text of and illustrations in this document are licensed by Red Hat under  -->
+<!-- a Creative Commons Attribution–Share Alike 3.0 Unported license ("CC-BY-SA"). -->
+<!--                                                                               -->
+<!-- An explanation of CC-BY-SA is available at                                    -->
+<!--                                                                               -->
+<!--            http://creativecommons.org/licenses/by-sa/3.0/.                    -->
+<!--                                                                               -->
+<!-- In accordance with CC-BY-SA, if you distribute this document or an adaptation -->
+<!-- of it, you must provide the URL for the original version.                     -->
+<!--                                                                               -->
+<!-- Red Hat, as the licensor of this document, waives the right to enforce,       -->
+<!-- and agrees not to assert, Section 4d of CC-BY-SA to the fullest extent        -->
+<!-- permitted by applicable law.                                                  -->
+<!-- ============================================================================= -->
+<chapter id="appserver-integration">
+    <title>Application Server Integration and Java EE</title>
+    <para>HornetQ can be easily installed in JBoss Application Server 4 or later. For details on
+        installing HornetQ in the JBoss Application Server please refer to quick-start guide.</para>
+    <para>Since HornetQ also provides a JCA adaptor, it should also be possible to integrate HornetQ
+        as a JMS provider in other JEE compliant app servers. For instructions on how to integrate a
+        remote JCA adaptor into another application sever, please consult the other application server's
+        instructions.</para>
+    <para>A JCA Adapter basically controls the inflow of messages to Message Driven Beans and the
+        outflow of messages sent from other JEE components, e.g. EJBs and Servlets.</para>
+    <para>This section explains the basics behind configuring the different JEE components in the
+        AS.</para>
+    <section>
+        <title>Configuring Message Driven Beans</title>
+        <para>The delivery of messages to an MDB using HornetQ is configured on the JCA Adapter via
+            a configuration file <literal>ra.xml</literal> which can be found under in the <literal
+                >jms-ra.rar</literal> archive of directory. By default this is configured to consume
+            messages using an InVM connector from the instance of HornetQ running within the
+            application server. A full list of what is configurable is found later in this chapter. </para>
+        <para>All MDB's however need to have the destination type and the destination configured.
+            The following example shows how this can be done via annotations.</para>
+        <programlisting>@MessageDriven(name = "MDBExample",
+               activationConfig =
+                     {
+                        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue")
+                     })
+@ResourceAdapter("hornetq-ra.rar")
+public class MDBExample implements MessageListener
+{
+   public void onMessage(Message message)...
+}</programlisting>
+        <para>In this example you can see that the MDB will consume messages from a queue that is
+            mapped into JNDI with the binding <literal>queue/testQueue</literal>. This queue must be
+            preconfigured in the usual way using the HornetQ configuration files.</para>
+        <para>The <literal>ResourceAdapter</literal> annotation is used to specify which adaptor
+            should be used. To use this you will need to import <literal
+                >org.jboss.ejb3.annotation.ResourceAdapter</literal> which can be found in the
+                <literal>jboss-ejb3-ext-api.jar</literal> which can be found in the jboss
+            repository. Alternatively you can add use a deployment descriptor and add something like
+            the following to <literal
+            >jboss.xml</literal><programlisting>&lt;message-driven>
+   &lt;ejb-name>ExampleMDB&lt;/ejb-name>
+   &lt;resource-adapter-name>quartz-ra.rar&lt;/resource-adapter-name>
+&lt;/message-driven>
+</programlisting>You
+            can also rename the hornetq-ra.rar directory to jms-ra.rar and neither the annotation or
+            the extra descriptor information will be needed. If you do this you will need to edit
+            the <literal>jms-ds.xml</literal> datasource file and change <literal>rar-name</literal>
+            element.</para>
+        <para>All the examples shipped with the HornetQ distribution use the annotation.</para>
+        <section>
+            <title>Using Container Managed Transactions</title>
+            <para>When an MDB is using Container Managed Transactions (CMT), the delivery of the
+                message is done within the scope of a JTA transaction. The commit or rollback of
+                this transaction is controlled by the container itself. If the transaction is rolled
+                back then the message delivery semantics will kick in (by default this is to try and
+                redeliver the message up to 10 times before sending to a DLQ). Using annotations
+                this would be configured as follows:</para>
+            <programlisting>@MessageDriven(name = "MDB_CMP_TxRequiredExample",
+               activationConfig =
+                     {
+                        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue")
+                     })
+@TransactionManagement(value= TransactionManagementType.CONTAINER)
+@TransactionAttribute(value= TransactionAttributeType.REQUIRED)
+@ResourceAdapter("hornetq-ra.rar")
+public class MDB_CMP_TxRequiredExample implements MessageListener
+{
+   public void onMessage(Message message)...
+}</programlisting>
+            <para>The <literal>TransactionManagement</literal> annotation tells the container to
+                treat this MDB to use Container Managed Persistence. The <literal
+                    >TransactionAttribute</literal> annotation tells the container that a JTA
+                transaction is required for this MDB. Note that the only other valid value for this
+                is <literal>TransactionAttributeType.NOT_SUPPORTED</literal> which tells the
+                container that this MDB does not support JTA transactions and one should not be
+                created.</para>
+            <para>It is also possible to inform the container that it must rollback the transaction
+                by calling <literal>setRollbackOnly</literal> on the <literal
+                    >MessageDrivenContext</literal>. The code for this would look something
+                like:</para>
+            <programlisting>   @Resource
+   MessageDrivenContext ctx;
+
+   public void onMessage(Message message)
+   {
+      try
+      {
+         //something here fails
+      }
+      catch (Exception e)
+      {
+         ctx.setRollbackOnly();
+      }
+   }</programlisting>
+            <para>If you don't want the over head of an xa transaction being created every time but
+                you would still like the message delivered within a transaction (i.e. you are only
+                using a JMS resource) then you can configure the MDB to use a local transaction.
+                This would be configured as such:</para>
+            <programlisting>@MessageDriven(name = "MDB_CMP_TxLocalExample",
+               activationConfig =
+                     {
+                           @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                           @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue"),
+                           @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true")
+                     })
+@TransactionManagement(value = TransactionManagementType.CONTAINER)
+@TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
+@ResourceAdapter("hornetq-ra.rar")
+public class MDB_CMP_TxLocalExample implements MessageListener
+{
+   public void onMessage(Message message)...
+}</programlisting>
+        </section>
+        <section>
+            <title>Using Bean Managed Transactions</title>
+            <para>Message driven beans can also be configured to use Bean Managed Transactions
+                (BMT). In this case a User Transaction is created. This would be configured as
+                follows:</para>
+            <programlisting>@MessageDriven(name = "MDB_BMPExample",
+               activationConfig =
+                     {
+                        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue"),
+                        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Dups-ok-acknowledge")
+                     })
+@TransactionManagement(value= TransactionManagementType.BEAN)
+@ResourceAdapter("hornetq-ra.rar")
+public class MDB_BMPExample implements MessageListener
+{
+   public void onMessage(Message message)
+}</programlisting>
+            <para>When using Bean Managed Transactions the message delivery to the MDB will occur
+                outside the scope of the user transaction and use the acknowledge mode specified by
+                the user with the <literal>acknowledgeMode</literal> property. There are only 2
+                acceptable values for this <literal>Auto-acknowledge</literal> and <literal
+                    >Dups-ok-acknowledge</literal>. Please note that because the message delivery is outside
+                the scope of the transaction a failure within the MDB will not cause the message to
+                be redelivered.</para>
+            <para>A user would control the lifecycle of the transaction something like the
+                following:</para>
+            <programlisting>   @Resource
+   MessageDrivenContext ctx;
+
+   public void onMessage(Message message)
+   {
+      UserTransaction tx;
+      try
+      {
+         TextMessage textMessage = (TextMessage)message;
+
+         String text = textMessage.getText();
+
+         UserTransaction tx = ctx.getUserTransaction();
+
+         tx.begin();
+         
+         //do some stuff within the transaction
+         tx.commit();
+
+      }
+      catch (Exception e)
+      {
+         tx.rollback();
+      }
+   }</programlisting>
+        </section>
+        <section>
+            <title>Using Message Selectors with MDB's</title>
+            <para>It is also possible to use MDB's with message selectors. To do this simple define
+                your message selector as follows:</para>
+            <programlisting>@MessageDriven(name = "MDBMessageSelectorExample",
+               activationConfig =
+                     {
+                        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue"),
+                        @ActivationConfigProperty(propertyName = "messageSelector", propertyValue = "color = 'RED'")
+                     })
+@TransactionManagement(value= TransactionManagementType.CONTAINER)
+@TransactionAttribute(value= TransactionAttributeType.REQUIRED)
+@ResourceAdapter("hornetq-ra.rar")
+public class MDBMessageSelectorExample implements MessageListener
+{
+   public void onMessage(Message message)....
+}</programlisting>
+        </section>
+    </section>
+    <section>
+        <title>Sending Messages from within JEE components</title>
+        <para>The JCA adapter can also be used for sending messages. The Connection Factory to use
+            is configured by default in the <literal>jms-ds.xml</literal> file and is mapped to
+                <literal>java:/JmsXA</literal>. Using this from within a JEE component will mean
+            that the sending of the message will be done as part of the JTA transaction being used
+            by the component.</para>
+        <para>This means that if the sending of the message fails the overall transaction would
+            rollback and the message redelivered. Heres an example of this from within an
+            MDB:</para>
+        <programlisting>@MessageDriven(name = "MDBMessageSendTxExample",
+               activationConfig =
+                     {
+                        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/testQueue")
+                     })
+@TransactionManagement(value= TransactionManagementType.CONTAINER)
+@TransactionAttribute(value= TransactionAttributeType.REQUIRED)
+@ResourceAdapter("hornetq-ra.rar")
+public class MDBMessageSendTxExample implements MessageListener
+{
+   @Resource(mappedName = "java:/JmsXA")
+   ConnectionFactory connectionFactory;
+
+   @Resource(mappedName = "queue/replyQueue")
+   Queue replyQueue;
+
+   public void onMessage(Message message)
+   {
+      Connection conn = null;
+      try
+      {
+         //Step 9. We know the client is sending a text message so we cast
+         TextMessage textMessage = (TextMessage)message;
+
+         //Step 10. get the text from the message.
+         String text = textMessage.getText();
+
+         System.out.println("message " + text);
+
+         conn = connectionFactory.createConnection();
+
+         Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         MessageProducer producer = sess.createProducer(replyQueue);
+
+         producer.send(sess.createTextMessage("this is a reply"));
+
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+      finally
+      {
+         if(conn != null)
+         {
+            try
+            {
+               conn.close();
+            }
+            catch (JMSException e)
+            { 
+            }
+         }
+      }
+   }
+   }</programlisting>
+        <para>In JBoss Application Server you can use the JMS JCA adapter for sending messages from
+            EJBs (including Session, Entity and Message Driven Beans), Servlets (including jsps) and
+            custom MBeans.</para>
+    </section>
+    <section>
+        <title>Configuring the JCA Adaptor</title>
+        <para>The Java Connector Architecture (JCA) Adapter is what allows HornetQ to be integrated
+            with JEE components such as MDB's and EJB's. It configures how components such as MDB's
+            consume messages from the HornetQ server and also how components such as EJB's or
+            Servlet's can send messages.</para>
+        <para>The HornetQ JCA adapter is deployed via the <literal>jms-ra.rar</literal> archive. The
+            configuration of the adapter is found in this archive under <literal
+                >META-INF/ra.xml</literal>.</para>
+        <para>The configuration will look something like the following:</para>
+        <programlisting>&lt;resourceadapter>
+      &lt;resourceadapter-class>org.hornetq.ra.HornetQResourceAdapter&lt;/resourceadapter-class>
+      &lt;config-property>
+         &lt;description>The transport type&lt;/description>
+         &lt;config-property-name>ConnectorClassName&lt;/config-property-name>
+         &lt;config-property-type>java.lang.String&lt;/config-property-type>
+         &lt;config-property-value>org.hornetq.core.remoting.impl.invm.InVMConnectorF
+         actory&lt;/config-property-value>
+      &lt;/config-property>
+      &lt;config-property>
+         &lt;description>The transport configuration. These values must be in the form of key=val;key=val;&lt;/description>
+         &lt;config-property-name>ConnectionParameters&lt;/config-property-name>
+         &lt;config-property-type>java.lang.String&lt;/config-property-type>
+         &lt;config-property-value>server-id=0&lt;/config-property-value>
+      &lt;/config-property>
+
+      &lt;outbound-resourceadapter>
+         &lt;connection-definition>
+            &lt;managedconnectionfactory-class>org.hornetq.ra.HornetQRAManagedConnection
+            Factory&lt;/managedconnectionfactory-class>
+
+            &lt;config-property>
+               &lt;description>The default session type&lt;/description>
+               &lt;config-property-name>SessionDefaultType&lt;/config-property-name>
+               &lt;config-property-type>java.lang.String&lt;/config-property-type>
+               &lt;config-property-value>javax.jms.Queue&lt;/config-property-value>
+            &lt;/config-property>
+            &lt;config-property>
+               &lt;description>Try to obtain a lock within specified number of seconds; less
+               than or equal to 0 disable this functionality&lt;/description>
+               &lt;config-property-name>UseTryLock&lt;/config-property-name>
+               &lt;config-property-type>java.lang.Integer&lt;/config-property-type>
+               &lt;config-property-value>0&lt;/config-property-value>
+            &lt;/config-property>
+
+            &lt;connectionfactory-interface>org.hornetq.ra.HornetQRAConnectionFactory
+            &lt;/connectionfactory-interface>
+            &lt;connectionfactororg.hornetq.ra.HornetQConnectionFactoryImplonFactoryImpl
+            &lt;/connectionfactory-impl-class>
+            &lt;connection-interface>javax.jms.Session&lt;/connection-interface>
+            &lt;connection-impl-class>org.hornetq.ra.HornetQRASession
+            &lt;/connection-impl-class>
+         &lt;/connection-definition>
+         &lt;transaction-support>XATransaction&lt;/transaction-support>
+         &lt;authentication-mechanism>
+            &lt;authentication-mechanism-type>BasicPassword
+            &lt;/authentication-mechanism-type>
+            &lt;credential-interface>javax.resource.spi.security.PasswordCredential
+            &lt;/credential-interface>
+         &lt;/authentication-mechanism>
+         &lt;reauthentication-support>false&lt;/reauthentication-support>
+      &lt;/outbound-resourceadapter>
+
+      &lt;inbound-resourceadapter>
+         &lt;messageadapter>
+            &lt;messagelistener>
+               &lt;messagelistener-type>javax.jms.MessageListener&lt;/messagelistener-type>
+               &lt;activationspec>
+                  &lt;activationspec-class>org.hornetq.ra.inflow.HornetQActivationSpec
+                  &lt;/activationspec-class>
+                  &lt;required-config-property>
+                      &lt;config-property-name>destination&lt;/config-property-name>
+                  &lt;/required-config-property>
+               &lt;/activationspec>
+            &lt;/messagelistener>
+         &lt;/messageadapter>
+      &lt;/inbound-resourceadapter>
+
+   &lt;/resourceadapter></programlisting>
+        <para>There are 3 main parts to this configuration.</para>
+        <orderedlist>
+            <listitem>
+                <para>A set of global properties for the adapter</para>
+            </listitem>
+            <listitem>
+                <para>The configuration for the outbound part of the adapter. This is used for
+                    creating JMS resources within EE components. </para>
+            </listitem>
+            <listitem>
+                <para>The configuration of the inbound part of the adapter. This is used for
+                    controlling the consumption of messages via MDB's. </para>
+            </listitem>
+        </orderedlist>
+        <section>
+            <title>Adapter Global properties</title>
+            <para>The first element you see is <literal>resourceadapter-class</literal> which should
+                be left unchanged. This is the HornetQ resource adapter class.</para>
+            <para>After that there is a list of configuration properties. This will be where most of
+                the configuration is done. The first 2 configure the transport used by the adapter
+                and the rest configure the connection factory itself.<note><para>All connection
+                        factory properties will use the defaults when not provided. This is accept
+                        for the <literal>reconnectAttempts</literal>  which will default to -1 which
+                        signifies that the connection should attempt to reconnect on connection
+                        failure indefinately. This is only used when the adapter is configured to
+                        connect to a remote server as an InVM connector can never
+                    fail.</para></note></para>
+            <para>The following table explains what each property is for.</para>
+            <table frame="topbot" border="2">
+                <title>Global Configuration Properties</title>
+                <tgroup cols="3">
+                    <colspec colname="c1" colnum="1"/>
+                    <colspec colname="c2" colnum="2"/>
+                    <colspec colname="c3" colnum="3"/>
+                    <thead>
+                        <row>
+                            <entry>Property Name</entry>
+                            <entry>Property Type</entry>
+                            <entry>Property Description</entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry>ConnectorClassName</entry>
+                            <entry>String</entry>
+                            <entry>The Connector class name see <xref
+                                    linkend="configuring-transports"/> for info on available
+                                connectors</entry>
+                        </row>
+                        <row>
+                            <entry>ConnectionParameters</entry>
+                            <entry>String</entry>
+                            <entry>The transport configuration. These values must be in the form of
+                                key=val;key=val; and will be specific to the connector used</entry>
+                        </row>
+                        <row>
+                            <entry>useLocalTx</entry>
+                            <entry>boolean</entry>
+                            <entry>True will enable local transaction optimisation.</entry>
+                        </row>
+                        <row>
+                            <entry>UseXA</entry>
+                            <entry>boolean</entry>
+                            <entry>Whether XA should be used</entry>
+                        </row>
+                        <row>
+                            <entry>UserName</entry>
+                            <entry>String</entry>
+                            <entry>The user name to use when making a connection </entry>
+                        </row>
+                        <row>
+                            <entry>Password</entry>
+                            <entry>String</entry>
+                            <entry>The password to use when making a connection</entry>
+                        </row>
+                        <row>
+                            <entry>BackUpTransportType</entry>
+                            <entry>String</entry>
+                            <entry>The back up transport to use on failure.</entry>
+                        </row>
+                        <row>
+                            <entry>TransportConfiguration</entry>
+                            <entry>String</entry>
+                            <entry>The back up transport configuration</entry>
+                        </row>
+                        <row>
+                            <entry>DiscoveryGroupAddress</entry>
+                            <entry>String</entry>
+                            <entry>The discovery group address to use to autodetect a server</entry>
+                        </row>
+                        <row>
+                            <entry>DiscoveryGroupPort</entry>
+                            <entry>integer</entry>
+                            <entry>The port to use for discovery</entry>
+                        </row>
+                        <row>
+                            <entry>DiscoveryRefreshTimeout</entry>
+                            <entry>long</entry>
+                            <entry>The timeout, in milli seconds, to refresh.</entry>
+                        </row>
+                        <row>
+                            <entry>DiscoveryInitialWaitTimeout</entry>
+                            <entry>long</entry>
+                            <entry>The initial time to wait for discovery.</entry>
+                        </row>
+                        <row>
+                            <entry>LoadBalancingPolicyClassName</entry>
+                            <entry>String</entry>
+                            <entry>The load balancing policy class to use.</entry>
+                        </row>
+                        <row>
+                            <entry>PingPeriod</entry>
+                            <entry>long</entry>
+                            <entry>The period, in milliseconds, to ping the server for
+                                failure.</entry>
+                        </row>
+                        <row>
+                            <entry>ConnectionTTL</entry>
+                            <entry>long</entry>
+                            <entry>The time to live for the connection.</entry>
+                        </row>
+                        <row>
+                            <entry>CallTimeout</entry>
+                            <entry>long</entry>
+                            <entry>the call timeout, in milli seconds, for each packet sent.</entry>
+                        </row>
+                        <row>
+                            <entry>DupsOKBatchSize</entry>
+                            <entry>integer</entry>
+                            <entry>The batch size of message acks to use if Dups ok is used.</entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </table>
+            <para>continued..</para>
+            <informaltable frame="topbot">
+                <tgroup cols="3">
+                    <colspec colname="c1" colnum="1"/>
+                    <colspec colname="c2" colnum="2"/>
+                    <colspec colname="c3" colnum="3"/>
+                    <tbody>
+                        <row>
+                            <entry>TransactionBatchSize</entry>
+                            <entry>integer</entry>
+                            <entry>The batch size to use for sending messages within a
+                                transaction</entry>
+                        </row>
+                        <row>
+                            <entry>ConsumerWindowSize</entry>
+                            <entry>integer</entry>
+                            <entry>The window size for the consumers internal buffer.</entry>
+                        </row>
+                        <row>
+                            <entry>ConsumerMaxRate</entry>
+                            <entry>integer</entry>
+                            <entry>The max rate a consumer can receive.</entry>
+                        </row>
+                        <row>
+                            <entry>ConfirmationWindowSize</entry>
+                            <entry>integer</entry>
+                            <entry>The window size for confirmations.</entry>
+                        </row>
+                        <row>
+                            <entry>ProducerMaxRate</entry>
+                            <entry>integer</entry>
+                            <entry>The max rate a producer can send messages.</entry>
+                        </row>
+                        <row>
+                            <entry>MinLargeMessageSize</entry>
+                            <entry>integer</entry>
+                            <entry>The size a message can be, in bytes, before it is sent as a multi
+                                part large message.</entry>
+                        </row>
+                        <row>
+                            <entry>BlockOnAcknowledge</entry>
+                            <entry>boolean</entry>
+                            <entry>If true then block on acknowledge of messages.</entry>
+                        </row>
+                        <row>
+                            <entry>BlockOnNonDurableSend</entry>
+                            <entry>boolean</entry>
+                            <entry>If true then block when sending non-durable messages</entry>
+                        </row>
+                        <row>
+                            <entry>BlockOnDurableSend</entry>
+                            <entry>boolean</entry>
+                            <entry>If true then block when sending durable messages</entry>
+                        </row>
+                        <row>
+                            <entry>AutoGroup</entry>
+                            <entry>boolean</entry>
+                            <entry>If true then auto group messages</entry>
+                        </row>
+                        <row>
+                            <entry>PreAcknowledge</entry>
+                            <entry>boolean</entry>
+                            <entry>Whether to pre acknowledge messages before sending to
+                                consumer</entry>
+                        </row>
+                        <row>
+                            <entry>reconnectAttempts</entry>
+                            <entry>Integer</entry>
+                            <entry>How attemts to try at reconnecting, default is -1</entry>
+                        </row>
+                        <row>
+                            <entry>RetryInterval</entry>
+                            <entry>long</entry>
+                            <entry>How long to wait , in milli seconds, before retrying a failed
+                                connection</entry>
+                        </row>
+                        <row>
+                            <entry>RetryIntervalMultiplier</entry>
+                            <entry>double</entry>
+                            <entry>Used for calculating the retry interval</entry>
+                        </row>
+                        <row>
+                            <entry>FailoverOnServerShutdown</entry>
+                            <entry>boolean</entry>
+                            <entry>If true client will reconnect to another server if
+                                available</entry>
+                        </row>
+                        <row>
+                            <entry>ClientID</entry>
+                            <entry>String</entry>
+                            <entry>The client ID of the connection</entry>
+                        </row>
+                    </tbody>
+                </tgroup>
+            </informaltable>
+        </section>
+        <section>
+            <title>Adapter Outbound configuration</title>
+            <para>The outbound configuration should remain unchanged as they define connection
+                factories that are used by Java EE components. These Connection Factories can be
+                defined inside a configuration file that matches the name <literal
+                    >*-ds.xml</literal>. You'll find a default <literal>jms-ds.xml</literal>
+                configuration under the <literal>hornetq.sar</literal> directory in the Jboss AS
+                deployment. The connection factories defined in the config file inherit their
+                properties from the main <literal>ra.xml</literal> configuration but can also be
+                overridden, the following example show how to define one.</para>
+            <para>Please note that this configuration only applies to install the HornetQ resource
+                adapter in the JBoss Application Server. If you are using another JEE application
+                server please refer to your application servers documentation for how to do
+                this.</para>
+            <programlisting>&lt;tx-connection-factory>
+      &lt;jndi-name>RemoteJmsXA&lt;/jndi-name>
+      &lt;xa-transaction/>
+      &lt;rar-name>jms-ra.rar&lt;/rar-name>
+      &lt;connection-definition>org.hornetq.ra.HornetQRAConnectionFactory
+&lt;/connection-definition>
+      &lt;config-property name="SessionDefaultType" type="String">javax.jms.Topic
+      &lt;/config-property>
+      &lt;config-property name="ConnectorClassName" type="String">
+        org.hornetq.integration.transports.netty.NettyConnectorFactory
+      &lt;/config-property>
+      &lt;config-property name="ConnectionParameters" type="String">
+          port=5445&lt;/config-property>
+      &lt;max-pool-size>20&lt;/max-pool-size>
+&lt;/tx-connection-factory></programlisting>
+            <para>In this example the connection factory will be bound to JNDI with the name
+                    <literal>RemoteJmsXA</literal> and can be looked up in the usual way using JNDI
+                or defined within the EJB or MDB as such:</para>
+            <programlisting>@Resource(mappedName="java:RemoteJmsXA")
+private ConnectionFactory connectionFactory;</programlisting>
+            <para>The <literal>config-property</literal> elements are what over rides those in the
+                    <literal>ra.xml</literal> config. Any of the elements pertaining to the
+                connection factory can be over ridden here.</para>
+        </section>
+        <section>
+            <title>Adapter Inbound configuration</title>
+            <para>The inbound configuration should again remain unchanged. This controls what
+                forwards messages onto MDB's. It is possible to override properties on the MDB by
+                adding an activation configuration to the MDB itself. This could be used to
+                configure the MDB to consume from a different server. The next section demonstrates
+                over riding the configuration.</para>
+        </section>
+    </section>
+    <section>
+        <title>High Availability JNDI (HA-JNDI)</title>
+        <para>If you are using JNDI to look-up JMS queues, topics and connection factories from a
+            cluster of servers, it is likely you will want to use HA-JNDI so that your JNDI look-ups
+            will continue to work if one or more of the servers in the cluster fail.</para>
+        <para>HA-JNDI is a JBoss Application Server service which allows you to use JNDI from
+            clients without them having to know the exact JNDI connection details of every server in
+            the cluster. This service is only available if using a cluster of JBoss Application
+            Server instances.</para>
+        <para>To use it use the following properties when connecting to JNDI.</para>
+        <programlisting>Hashtable&lt;String, String> jndiParameters = new Hashtable&lt;String, String>();
+jndiParameters.put("java.naming.factory.initial", 
+    "org.jnp.interfaces.NamingContextFactory");
+jndiParameters.put("java.naming.factory.url.pkgs=", 
+    "org.jboss.naming:org.jnp.interfaces");
+
+initialContext = new InitialContext(jndiParameters);</programlisting>
+        <para>For more information on using HA-JNDI see the <ulink
+                url="http://www.jboss.org/file-access/default/members/jbossas/freezone/docs/Clustering_Guide/5/html/clustering-jndi.html"
+                >JBoss Application Server clustering documentation</ulink></para>
+    </section>
+    <section id="xa-recovery">
+        <title>XA Recovery</title>
+        <para><emphasis>XA recovery</emphasis> deals with system or application failures to ensure
+            that of a transaction are applied consistently to all resources affected by the
+            transaction, even if any of the application processes or the machine hosting them crash
+            or lose network connectivity. For more information on XA Recovery,please refer to <ulink
+                url="http://www.jboss.org/community/wiki/JBossTransactions">JBoss
+                Transactions</ulink>.</para>
+        <para>When HornetQ is integrated with JBoss AS, it can take advantage of JBoss Transactions
+            to provide recovery of messaging resources. If messages are involved in a XA
+            transaction, in the event of a server crash, the recovery manager will ensure that the
+            transactions are recovered and the messages will either be committed or rolled back
+            (depending on the transaction outcome) when the server is restarted.</para>
+        <section>
+            <title>XA Recovery Configuration</title>
+            <para>To enable HornetQs XA Recovery, the Recovery Manager must be configured to connect
+                to HornetQ to recover its resources. The following property must be added to the
+                    <literal>jta</literal> section of <literal>conf/jbossts-properties.xml</literal>
+                of JBoss AS profiles:</para>
+            <programlisting>
+&lt;properties depends="arjuna" name="jta"&gt;
+   ...
+                     
+   &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HornetQ1"
+                value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;[connection configuration]"/&gt;
+&lt;/properties&gt;
+            </programlisting>
+            <para>The <literal>[connection configuration]</literal> contains all the information
+                required to connect to HornetQ node under the form <literal>[connector factory class
+                    name],[user name], [password], [connector parameters]</literal>. </para>
+            <itemizedlist>
+                <listitem>
+                    <para><literal>[connector factory class name]</literal> corresponds to the name
+                        of the <literal>ConnectorFactory</literal> used to connect to HornetQ.
+                        Values can be <literal
+                            >org.hornetq.core.remoting.impl.invm.InVMConnectorFactory</literal> or
+                            <literal
+                            >org.hornetq.integration.transports.netty.NettyConnectorFactory</literal></para>
+                </listitem>
+                <listitem>
+                    <para><literal>[user name]</literal> is the user name to create a client
+                        session. It is optional</para>
+                </listitem>
+                <listitem>
+                    <para><literal>[password]</literal> is the password to create a client session.
+                        It is mandatory only if the user name is specified</para>
+                </listitem>
+                <listitem>
+                    <para><literal>[connector parameters]</literal> is a list of comma-separated
+                        key=value pair which are passed to the connector factory (see <xref
+                            linkend="configuring-transports"/> for a list of the transport
+                        parameters).</para>
+                </listitem>
+            </itemizedlist>
+            <note>
+                <para>HornetQ must have a valid acceptor which corresponds to the connector
+                    specified in <literal>conf/jbossts-properties.xml</literal>.</para>
+            </note>
+            <section>
+                <title>Configuration Settings</title>
+                <para>If HornetQ is configured with a default in-vm acceptor:</para>
+                <programlisting>
+&lt;acceptor name="in-vm">
+    &lt;factory-class>org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory&lt;/factory-class>
+&lt;/acceptor>
+                </programlisting>
+                <para>the corresponding configuration in <literal
+                        >conf/jbossts-properties.xml</literal> is:</para>
+                <programlisting>
+&lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
+   value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"/>        			
+                </programlisting>
+                <para>If it is now configured with a netty acceptor on a non-default port:</para>
+                <programlisting>
+&lt;acceptor name="netty">
+    &lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
+    &lt;param key="port" value="8888"/>
+&lt;/acceptor>
+                </programlisting>
+                <para>the corresponding configuration in <literal
+                        >conf/jbossts-properties.xml</literal> is:</para>
+                <programlisting>
+&lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
+       value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, , , port=8888"/>        			                    
+                </programlisting>
+                <note>
+                    <para>Note the additional commas to skip the user and password before connector
+                        parameters</para>
+                </note>
+                <para>If the recovery must use <literal>admin, adminpass</literal>, the
+                    configuration would have been:</para>
+                <programlisting>
+                    &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
+                           value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, admin, adminpass, port=8888"/>        			                    
+                </programlisting>
+                <para>Configuring HornetQ with an invm acceptor and configuring the Recovery Manager
+                    with an invm connector is the recommended way to enable XA Recovery.</para>
+            </section>
+        </section>
+        <section>
+            <title>Example</title>
+            <para>See <xref linkend="xa-recovery-example"/> which shows how to configure XA Recovery
+                and recover messages after a server crash.</para>
+        </section>
+    </section>
+</chapter>
