@@ -17,184 +17,129 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="using-server">
-    <title>Using the Server</title>
-    <para>This chapter will familiarise you with how to use the HornetQ server.</para>
-    <para>We'll show where it is, how to start and stop it, and we'll describe the directory layout
-        and what all the files are and what they do.</para>
-    <para>For the remainder of this chapter when we talk about the HornetQ server we mean the
-        HornetQ standalone server, in its default configuration with a JMS Service and JNDI service
-        enabled.</para>
-    <para>When running embedded in JBoss Application Server the layout may be slightly different but
-        by-and-large will be the same.</para>
+    <title>使用HornetQ服务</title>
+    <para>本章将介绍如何使用HornetQ服务。</para>
+    <para>其中的内容包括服务器的位置，如何启动和停止HornetQ服务器。本章还将解释HornetQ的目录结构，其中的文件及其用途。</para>
+    <para>本章中所提到的HornetQ服务器是指HornetQ默认配置的独立服务器，包含JMS服务和JNDI服务。</para>
+    <para>对于运行于JBoss应用服务器中的HornetQ，其基本结构是一样的，只是有一些小的差别。</para>
     <section>
-        <title>Starting and Stopping the standalone server</title>
-        <para>In the distribution you will find a directory called <literal>bin</literal>.</para>
-        <para><literal>cd</literal> into that directory and you'll find a unix/linux script called
-                <literal>run.sh</literal> and a windows batch file called <literal
-            >run.bat</literal></para>
-        <para>To run on Unix/Linux type <literal>./run.sh</literal></para>
-        <para>To run on Windows type <literal>run.bat</literal></para>
-        <para>These scripts are very simple and basically just set-up the classpath and some JVM
-            parameters and start the JBoss Microcontainer. The Microcontainer is a light weight
-            container used to deploy the HornetQ POJO's</para>
-        <para>To stop the server you'll also find a unix/linux script <literal>stop.sh</literal> and
-            a windows batch file <literal>run.bat</literal></para>
-        <para>To run on Unix/Linux type <literal>./stop.sh</literal></para>
-        <para>To run on Windows type <literal>stop.bat</literal></para>
-        <para>Please note that HornetQ requires a Java 5 or later runtime to run. We recommend
-            running on Java 6.</para>
-        <para>Both the run and the stop scripts use the config under <literal
-                >config/stand-alone/non-clustered</literal> by default. The configuration can be
-            changed by running <literal>./run.sh ../config/stand-alone/clustered</literal> or
-            another config of your choosing. This is the same for the stop script and the windows
-            bat files.</para>
+        <title>服务的启动和停止</title>
+        <para>在HornetQ的安装目录下<literal>bin</literal>子目录中包含有一个unit/linux脚本run.sh和对应的Windows批处理文件run.bat。</para>
+        <para>如果你是在Unix/Linux环境，在bin目录下运行<literal>./run.sh</literal>。</para>
+        <para>如果是在Windows环境，则在bin目录下运行 <literal>run.bat</literal>。</para>
+        <para>这个脚本文件会设置classpath以及各种JVM参数，并启动JBoss Microcontainer。JBoss Microcontainer是一个轻量级的容器。
+              它被用来部署HornetQ的POJO对象。</para>
+        <para>要停止服务，运行其中的相应脚本：在Unix/Linux环境下，运行 <literal>stop.sh</literal>。
+              在Windows环境，运行 <literal>run.bat</literal>。</para>
+        <para>注意HornetQ需要在Java 5及以上版本才能正常运行。我们建议使用Java 6。</para>
+        <para>启动和停止脚本在默认条件下读取<literal>config/stand-alone/non-clustered</literal>目录下的配置文件。
+              如果要指向其他目录，可以在命令行实现，例如： <literal>./run.sh ../config/stand-alone/clustered</literal>。
+              这一方法同样适用于Windows批处理文件。</para>
     </section>
     <section>
-        <title>Server JVM settings</title>
-        <para>The run scripts <literal>run.sh</literal> and <literal>run.bat</literal> set some JVM
-            settings for tuning running on Java 6 and choosing the garbage collection policy. We
-            recommend using a parallel garbage collection algorithm to smooth out latency and
-            minimise large GC pauses.</para>
-        <para>By default HornetQ runs in a maximum of 1GiB of RAM. To increase the memory settings
-            change the <literal>-Xms</literal> and <literal>-Xmx</literal> memory settings as you
-            would for any Java program.</para>
-        <para>If you wish to add any more JVM arguments or tune the existing ones, the run scripts
-            are the place to do it.</para>
+        <title>服务器端JVM参数的设置</title>
+        <para>在启动脚本<literal>run.sh</literal>和<literal>run.bat</literal>中设置了一些JVM参数，
+              这些参数主要是调整Java 6的运行环境及拉圾回收的策略。我们建议采用并行拉圾回收的方法。
+              这种方法可以将拉圾回收所造成的延时进行平均分配，有效减少由于拉圾回收引起的长时间暂停的情况。</para>
+        <para>默认条件下HornetQ需要最大1GB的内存空间。通过<literal>-Xms</literal>和<literal>-Xmx</literal>可以调整Java程序内存的使用。</para>
+        <para>你可以向启动脚本中添加其它的参数或修改已有的参数，已满足你的需要。</para>
     </section>
     <section>
-        <title>Server classpath</title>
-        <para>HornetQ looks for its configuration files on the Java classpath.</para>
-        <para>The scripts <literal>run.sh</literal> and <literal>run.bat</literal> specify the
-            classpath when calling Java to run the server.</para>
-        <para>In the distribution, the run scripts will add the non clustered configuration
-            directory to the classpath. This is a directory which contains a set of configuration
-            files for running the HornetQ server in a basic non-clustered configuration. In the
-            distribution this directory is <literal>config/stand-alone/non-clustered/</literal> from
-            the root of the distribution.</para>
-        <para>The distribution contains several standard configuration sets for running:</para>
+        <title>服务器端的classpath</title>
+        <para>HornetQ在其classpath中寻找配置文件。</para>
+        <para>classpath被定义在<literal>run.sh</literal>和<literal>run.bat</literal>脚本中。在HornetQ的发布中，启动脚本将非集群的配置文件目录加进了classpath中。该目录包括了一组配置文件，可以让HornetQ以基本的非集群方式运行。它的具体位置是在HornetQ发布根目录下 config/stand-along/non-clustered/ 子目录。</para>
+        <para>在HornetQ的发布包中包括了一组标准的配置目录，它们是：</para>
         <itemizedlist>
             <listitem>
-                <para>Non clustered stand-alone.</para>
+                <para>非集群方式的独立服务器配置</para>
             </listitem>
             <listitem>
-                <para>Clustered stand-alone</para>
+                <para>集群方式的独立服务器配置</para>
             </listitem>
             <listitem>
-                <para>Non clustered in JBoss Application Server</para>
+                <para>非集群方式运行于JBoss应用服务器</para>
             </listitem>
             <listitem>
-                <para>Clustered in JBoss Application Server</para>
+                <para>集群方式运行于JBoss应用服务器</para>
             </listitem>
         </itemizedlist>
-        <para>You can of course create your own configuration and specify any configuration
-            directory when running the run script.</para>
-        <para>Just make sure the directory is on the classpath and HornetQ will search there when
-            starting up.</para>
+        <para>当然你可以创建自己定义的配置文件目录。要注意的是将你的目录加到classpath中以便HornetQ能正确找到并加载。</para>
     </section>
     <section id="using-server.library.path">
         <title>Library Path</title>
-        <para>If you're using the <link linkend="aio-journal">Asynchronous IO Journal</link> on
-            Linux, you need to specify <literal>java.library.path</literal> as a property on your
-            Java options. This is done automatically in the <literal>run.sh</literal> script.</para>
-        <para>If you don't specify <literal>java.library.path</literal> at your Java options then
-            the JVM will use the environment variable <literal>LD_LIBRARY_PATH</literal>.</para>
+        <para>如果要在Linux上使用异步IO的日志（<link linkend="aio-journal">Asynchronous IO Journal</link>），
+              你需要在java选项中指定<literal>java.library.path</literal>。<literal>run.sh</literal>脚本可以自动完成这一步。</para>
+        <para>如果没有指定<literal>java.library.path</literal>，JVM将使用<literal>LD_LIBRARY_PATH</literal>环境变量。</para>
     </section>
     <section>
-        <title>System properties</title>
-        <para>HornetQ can take a system property on the command line for configuring logging.</para>
-        <para>For more information on configuring logging, please see <xref linkend="logging"
-            />.</para>
+        <title>系统变量</title>
+        <para>HornetQ命令行可以接受系统变量来配置日志（logging）。有关logging配置的具体信息参见<xref linkend="logging"/>。</para>
     </section>
     <section id="using-server.configuration">
-        <title>Configuration files</title>
-        <para>The configuration directory is specified on the classpath in the run scripts <literal
-                >run.sh</literal> and <literal>run.bat</literal> This directory can contain the
-            following files.</para>
+        <title>配置文件</title>
+        <para>配置文件的路径定义在 <literal>run.sh</literal> 和 <literal>run.bat</literal> 脚本中的classpath里。该路径下可以包含以下文件：</para>
         <itemizedlist>
             <listitem>
-                <para><literal>hornetq-beans.xml</literal> (or <literal
-                        >hornetq-jboss-beans.xml</literal> if you're running inside JBoss
-                    Application Server). This is the JBoss Microcontainer beans file which defines
-                    what beans the Microcontainer should create and what dependencies to enforce
-                    between them. Remember that HornetQ is just a set of POJOs. In the stand-alone
-                    server, it's the JBoss Microcontainer which instantiates these POJOs and
-                    enforces dependencies between them and other beans. </para>
+                <para><literal>hornetq-beans.xml</literal> （如果是运行在JBoss应用服务器内，则为 <literal
+                        >hornetq-jboss-beans.xml</literal>）。这是JBoss Microcontainer的bean配置文件。其中定义了HornetQ的
+                    各种bean，以及它们之间的依赖关系。HornetQ的bean都是一些POJO。是JBoss Microcontainer保证了这些bean的正确装载和运行。</para>
             </listitem>
             <listitem>
-                <para><literal>hornetq-configuration.xml</literal>. This is the main HornetQ
-                    configuration file. All the parameters in this file are described in <xref
-                        linkend="configuration-index"/>. Please see <xref
-                        linkend="usingserver.mainconfig"/> for more information on this file.</para>
+                <para><literal>hornetq-configuration.xml</literal>。这个是HornetQ的主要的配置文件。
+                    其中的所有参数在<xref linkend="configuration-index"/>中给出了解释. 在 <xref
+                        linkend="usingserver.mainconfig"/> 也有更多的相关信息。</para>
             </listitem>
             <listitem>
-                <para><literal>hornetq-queues.xml</literal>. This file contains predefined queues,
-                    queue settings and security settings. The file is optional - all this
-                    configuration can also live in <literal>hornetq-configuration.xml</literal>. In
-                    fact, the default configuration sets do not have a <literal
-                        >hornetq-queues.xml</literal> file. The purpose of allowing queues to be
-                    configured in these files is to allow you to manage your queue configuration
-                    over many files instead of being forced to maintain it in a single file. There
-                    can be many <literal>hornetq-queues.xml</literal> files on the classpath. All
-                    will be loaded if found.</para>
+                <para><literal>hornetq-queues.xml</literal>。这个文件里包含了预定义的queue以及它们的配置，包括安全设置。
+                    这是一个可选的文件，里面所有的内容都可以放在 <literal>hornetq-configuration.xml</literal>文件中。
+                    在默认的配置文件目录下并没有这个文件。HornetQ之所以提供这个文件是为了用户便于管理他们的queue。在classpath中
+                    允许包含多个 <literal>hornetq-queues.xml</literal> 文件。所有的这些文件都会被加载。</para>
             </listitem>
             <listitem>
-                <para><literal>hornetq-users.xml</literal> HornetQ ships with a basic security
-                    manager implementation which obtains user credentials from the <literal
-                        >hornetq-users.xml</literal> file. This file contains user, password and
-                    role information. For more information on security ,please see <xref
-                        linkend="security"/>.</para>
+                <para><literal>hornetq-users.xml</literal>。用户信息文件。HornetQ本身实现了一个基本的
+                    安全管理器（security manager），它从这个文件内读取用户的安全信息，如用户名，密码和角色。
+                    想了解更多关于安全的信息，参见 <xref linkend="security"/>。</para>
             </listitem>
             <listitem>
-                <para><literal>hornetq-jms.xml</literal> The distro configuration by default
-                    includes a server side JMS service which mainly deploys JMS Queues, Topics and
-                    ConnectionFactorys from this file into JNDI. If you're not using JMS, or you
-                    don't need to deploy JMS objects on the server side, then you don't need this
-                    file. For more information on using JMS, please see <xref linkend="using-jms"
-                    />.</para>
+                <para><literal>hornetq-jms.xml</literal>。这个文件包含有JMS对象。HornetQ的默认配置中包含有JMS服务，
+                    它从这个文件中读取JMS Queue，Topic和ConnectionFactory并将它们部署到JNDI服务中。如果你不使用JMS，
+                    或者你不需要部署这些JMS对象，那么你就不需要这个文件。有关JMS的使用详见<xref linkend="using-jms"
+                    />。</para>
             </listitem>
             <listitem>
-                <para><literal>logging.properties</literal> This is used to configure the logging
-                    handlers used by the Java logger. For more information on configuring logging,
-                    please see <xref linkend="logging"/>.</para>
+                <para><literal>logging.properties</literal> 这个文件用于配置logging
+                    handlers。详见 <xref linkend="logging"/>。</para>
             </listitem>
             <listitem>
-                <para><literal>log4j.xml</literal> This is the Log4j configuration if the Log4j
-                    handler is configured.</para>
+                <para><literal>log4j.xml</literal>。 这是 Log4j handler的配置文件。</para>
             </listitem>
         </itemizedlist>
         <note>
-            <para>The property <literal>file-deployment-enabled</literal> in the <literal
-                    >hornetq-configuration.xml</literal> configuration when set to false means that
-                the other configuration files are not loaded. This is true by default.</para>
+            <para>如果在<literal>hornetq-configuration.xml</literal>文件中将<literal>file-deployment-enabled</literal> 参数
+                  定义为false，则HornetQ将不会加载其它的配置文件。这个参数的默认值是true。</para>
         </note>
-        <para>It is also possible to use system property substitution in all the configuration
-            files. by replacing a value with the name of a system property. Here is an example of
-            this with a connector configuration:</para>
+        <para>所有配置文件中的参数都可以用系统变量来定义其值。以下用一个connector的配置来说明：</para>
         <programlisting>&lt;connector name="netty">
          &lt;factory-class>org.hornetq.integration.transports.netty.NettyConnectorFactory
            &lt;/factory-class>
          &lt;param key="host"  value="${hornetq.remoting.netty.host:localhost}" type="String"/>
          &lt;param key="port"  value="${hornetq.remoting.netty.port:5445}" type="Integer"/>
 &lt;/connector></programlisting>
-        <para>Here you can see we have replaced 2 values with system properties <literal
-                >hornetq.remoting.netty.host</literal> and <literal
-                >hornetq.remoting.netty.port</literal>. These values will be replaced by the value
-            found in the system property if there is one, if not they default back to localhost or
-            5445 respectively. It is also possible to not supply a default. i.e. <literal
-                >${hornetq.remoting.netty.host}</literal>, however the system property
-                <emphasis>must</emphasis> be supplied in that case.</para>
+        <para>在上面的配置中我们定义了两个系统变量 <literal
+                >hornetq.remoting.netty.host</literal> 和 <literal
+                >hornetq.remoting.netty.port</literal>。它们的值会被相应的系统变量的值（如果定义了的话）所替代。
+                如果没有定义这些系统变量，它们的默认值将分别为 localhost 及 5445。也可以不给出默认值，但如果这样就
+                <emphasis>必须</emphasis>要定义相应的系统变量。</para>
     </section>
     <section id="server.microcontainer.configuration">
-        <title>JBoss Microcontainer Beans File</title>
-        <para>The stand-alone server is basically a set of POJOs which are instantiated by the light
-                weight<ulink url="http://www.jboss.org/jbossmc/"> JBoss Microcontainer
-            </ulink>engine.</para>
+        <title>JBoss Microcontainer Beans 文件</title>
+        <para>HornetQ的POJO对象是由<ulink url="http://www.jboss.org/jbossmc/"> JBoss Microcontainer
+            </ulink>进行加载和运行的。JBoss Microcontainer是一个轻量级的加载工具。
         <note>
-            <para>A beans file is also needed when the server is deployed in the JBoss Application
-                Server but this will deploy a slightly different set of objects since the
-                Application Server will already have things like security etc deployed.</para>
+            <para>如果是在JBoss应用服务器内运行，HornetQ同样需要一个bean的配置文件来将其部署到JBoss中。但是这与单独运行时的配置文件略有不同。
+                这是因为应用服务器内已经部署了一些服务，如安全服务等。所以在HornetQ中这些服务就不需要再部署了。</para>
         </note>
-        <para>Let's take a look at an example beans file from the stand-alone server:</para>
+        <para>让我们看一个HornetQ作为单独服务器时的一个配置文件例子：</para>
         <para>
             <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 
@@ -259,59 +204,44 @@
 
 &lt;/deployment&gt;</programlisting>
         </para>
-        <para>We can see that, as well as the core HornetQ server, the stand-alone server
-            instantiates various different POJOs, lets look at them in turn:</para>
+        <para>我们从上可以看出HornetQ的单独服务器（以及核心服务器）包括了一些POJO对象：</para>
         <itemizedlist>
             <listitem>
                 <para>JNDIServer</para>
-                <para>Many clients like to look up JMS Objects from JNDI so we provide a JNDI server
-                    for them to do that. If you don't need JNDI this can be commented out or
-                    removed.</para>
+                <para>很多客户端需要JNDI来获取JMS的对象，因此我们提供了一个JNDI服务来满足它们。如果不需要JNDI，可以在配置
+                      文件中将它们注释掉。</para>
             </listitem>
             <listitem>
                 <para>MBeanServer</para>
-                <para>In order to provide a JMX management interface a JMS MBean server is necessary
-                    in which to register the management objects. Normally this is just the default
-                    platform MBean server available in the JVM instance. If you don't want to
-                    provide a JMX management interface this can be commented out or removed.</para>
+                <para>这个对象提供了JMX管理接口。它是一个MBean服务器，可管理的对象可以注册到这个服务器上。
+                      通常这就是一个JVM内部的默认的平台MBean服务器。如果不需要些服务，可以在配置文件中将其注释或删除。</para>
             </listitem>
             <listitem>
                 <para>Configuration</para>
-                <para>The HornetQ server is configured with a Configuration object. In the default
-                    stand-alone set-up it uses a FileConfiguration object which knows to read
-                    configuration information from the file system. In different configurations such
-                    as embedded you might want to provide configuration information from somewhere
-                    else.</para>
+                <para>这是HornetQ的Configuration对象。默认时它是一个FileConfiguration对象。它可以从文件系统中读取
+                    配置信息。有些情况下（如嵌入式HornetQ）你可以将它定义为其它对象，以便用其它方法获得配置信息。</para>
             </listitem>
             <listitem>
-                <para>Security Manager. The security manager used by the messaging server is
-                    pluggable. The default one used just reads user-role information from the
-                        <literal>hornetq-users.xml</literal> file on disk. However it can be
-                    replaced by a JAAS security manager, or when running inside JBoss Application
-                    Server it can be configured to use the JBoss AS security manager for tight
-                    integration with JBoss AS security. If you've disabled security altogether you
-                    can remove this too.</para>
+                <para>Security Manager. 可配置的安全管理器。默认的安全管理器使用 <literal>hornetq-users.xml</literal> 文件中的配置信息。
+                    它也可以配置为一个JAAS的安全管理器。当HornetQ运行于JBoss应用服务器中时，它还可以配置为JBoss的安全管理器，以达到更紧密的集成。
+                    如果不需要安全管理，你也可以将它删除。</para>
             </listitem>
             <listitem>
                 <para>HornetQServer</para>
-                <para>This is the core server. It's where 99% of the magic happens</para>
+                <para>这是HornetQ的核心服务对象，几乎所有的核心功能都在这里。</para>
             </listitem>
             <listitem id="bean-jmsservermanager">
                 <para>JMSServerManager</para>
-                <para>This deploys any JMS Objects such as JMS Queues, Topics and ConnectionFactory
-                    instances from <literal>hornetq-jms.xml</literal> files on the disk. It also
-                    provides a simple management API for manipulating JMS Objects. On the whole it
-                    just translates and delegates its work to the core server. If you don't need to
-                    deploy JMS Queues, Topics and ConnectionFactorys from server side configuration
-                    and don't require the JMS management interface this can be disabled.</para>
+                <para>这个对象将<literal>hornetq-jms.xml</literal>文件中定义的JMS的对象进行部署，比如JMS Queues, Topics
+                      以及ConnectionFactory。它还提供一套简单的管理接口以方便地对这些JMS对象进行管理。通常它只是将工作代理给
+                      核心服务器。如果你不需要在服务器端进行JMS对象的部署与管理，可以将它从配置中去掉。</para>
             </listitem>
         </itemizedlist>
     </section>
     <section id="server.microkernel.configuration">
-        <title>JBoss AS4 MBean Service.</title>
+        <title>JBoss AS4 MBean 服务</title>
         <note>
-            <para>The section is only to configure HornetQ on JBoss AS4. The service funtionality is
-                similar to Microcontainer Beans</para>
+            <para>本节只讨论在JBoss AS 4上配置HornetQ。其与JBoss Microcontainer的配置很相似。</para>
         </note>
         <para>
             <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -345,43 +275,38 @@
 &lt;/server&gt;
             </programlisting>
         </para>
-        <para>This jboss-service.xml configuration file is included inside the hornetq-service.sar
-            on AS4 with embebbed HornetQ. As you can see, on this configuration file we are starting
-            various services:</para>
+        <para>这个jboss-service.xml包含在hornetq-service.sar文件中，它用来配置AS4中嵌入运行的HornetQ。
+              在这个配置文件中我们启动了以下几个服务：</para>
         <itemizedlist>
             <listitem>
                 <para>HornetQFileConfigurationService</para>
-                <para>This is an MBean Service that takes care of the life cycle of the <literal>FileConfiguration POJO</literal></para>
+                <para>这个MBean服务的任务是管理 <literal>FileConfiguration POJO</literal>的生命周期。</para>
             </listitem>
             <listitem>
                 <para>JBossASSecurityManagerService</para>
-                <para>This is an MBean Service that takes care of the lifecycle of the <literal>JBossASSecurityManager</literal> POJO</para>
+                <para>这个MBean服务管理着 <literal>JBossASSecurityManager</literal> POJO的生命周期。</para>
             </listitem>
             <listitem>
                 <para>HornetQStarterService</para>
-                <para>This is an MBean Service that controls the main <literal>HornetQServer</literal> POJO.
-                   this has a dependency on JBossASSecurityManagerService and HornetQFileConfigurationService MBeans</para>
+                <para>这个MBean服务管理着<literal>HornetQServer</literal> POJO。它依赖于 JBossASSecurityManagerService 和
+                      HornetQFileConfigurationService 这两个MBean。</para>
             </listitem>
             <listitem>
                 <para>HornetQJMSStarterService</para>
-                <para>This is an MBean Service that controls the <literal>JMSServerManagerImpl</literal> POJO.
-                   If you aren't using jms this can be removed.</para>
+                <para>这个MBean服务管理着 <literal>JMSServerManagerImpl</literal> POJO对象。如果不需要JMS，可以去掉这个服务。</para>
             </listitem>
             <listitem>
                 <para>JMSServerManager</para>
-                <para>Has the responsibility to start the JMSServerManager and the same behaviour that JMSServerManager Bean</para>
+                <para>用于启动JMSServerManager。</para>
             </listitem>
         </itemizedlist>
     </section>
     <section id="usingserver.mainconfig">
-        <title>The main configuration file.</title>
-        <para>The configuration for the HornetQ core server is contained in <literal
-                >hornetq-configuration.xml</literal>. This is what the FileConfiguration bean uses
-            to configure the messaging server.</para>
-        <para>There are many attributes which you can configure HornetQ. In most cases the defaults
-            will do fine, in fact every attribute can be defaulted which means a file with a single
-            empty <literal>configuration</literal> element is a valid configuration file. The
-            different configuration will be explained throughout the manual or you can refer to the
-            configuration reference <link linkend="configuration-index">here</link>.</para>
+        <title>主配置文件</title>
+        <para>HornetQ 核心服务的配置保存在 <literal>hornetq-configuration.xml</literal>文件中。
+　　　　　　　　 FileConfiguration bean 读取这个文件来对消息服务器进行配置。</para>
+        <para>HornetQ有很多的配置参数。采用默认的配置在绝大多数情况下可以很好的运行。事实上每一个参数都有默认的处理，因此一个只包含有一个空
+              的<literal>configuration</literal>的配置文件是一个有效的文件。对各个参数的解释贯穿于本手册。你还可参参照
+               <link linkend="configuration-index">这里</link>来查找你想看的参数。</para>
     </section>
 </chapter>
