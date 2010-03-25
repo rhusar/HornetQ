@@ -68,6 +68,14 @@ public class NullJMSStorageManagerImpl implements JMSStorageManager
    {
    }
 
+    /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#deleteDestination (org.hornetq.jms.persistence.PersistedDestination)
+    */
+   public void deleteDestination(String name) throws Exception
+   {
+
+   }
+
    /* (non-Javadoc)
     * @see org.hornetq.core.server.HornetQComponent#isStarted()
     */

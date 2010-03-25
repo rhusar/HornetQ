@@ -44,6 +44,7 @@ import org.hornetq.jms.client.HornetQDestination;
 import org.hornetq.jms.client.SelectorTranslator;
 import org.hornetq.jms.persistence.JMSStorageManager;
 import org.hornetq.jms.persistence.PersistedConnectionFactory;
+import org.hornetq.jms.persistence.PersistedDestination;
 import org.hornetq.jms.persistence.impl.journal.JournalJMSStorageManagerImpl;
 import org.hornetq.jms.persistence.impl.nullpm.NullJMSStorageManagerImpl;
 import org.hornetq.jms.server.JMSServerManager;
@@ -54,6 +55,9 @@ import org.hornetq.jms.server.config.TopicConfiguration;
 import org.hornetq.jms.server.management.JMSManagementService;
 import org.hornetq.jms.server.management.impl.JMSManagementServiceImpl;
 import org.hornetq.utils.TimeAndCounterIDGenerator;
+
+import static org.hornetq.jms.persistence.PersistedDestination.Type.QUEUE;
+import static org.hornetq.jms.persistence.PersistedDestination.Type.TOPIC;
 
 /**
  * A Deployer used to create and add to JNDI queues, topics and connection
@@ -295,50 +299,22 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                            final boolean durable) throws Exception
    {
       checkInitialised();
-      HornetQDestination jBossQueue = HornetQDestination.createQueue(queueName);
 
-      // Convert from JMS selector to core filter
-      String coreFilterString = null;
+      boolean added = internalCreateQueue(queueName, jndiBinding, selectorString, durable);
 
-      if (selectorString != null)
-      {
-         coreFilterString = SelectorTranslator.convertToHornetQFilterString(selectorString);
-      }
+      storage.storeDestination(new PersistedDestination(QUEUE, queueName, jndiBinding, selectorString, durable));
 
-      server.getHornetQServerControl().deployQueue(jBossQueue.getAddress(),
-                                                   jBossQueue.getAddress(),
-                                                   coreFilterString,
-                                                   durable);
-
-      boolean added = bindToJndi(jndiBinding, jBossQueue);
-
-      if (added)
-      {
-         addToDestinationBindings(queueName, jndiBinding);
-      }
-
-      jmsManagementService.registerQueue(jBossQueue, jndiBinding);
       return added;
    }
 
    public synchronized boolean createTopic(final String topicName, final String jndiBinding) throws Exception
    {
       checkInitialised();
-      HornetQDestination jBossTopic = HornetQDestination.createTopic(topicName);
-      // We create a dummy subscription on the topic, that never receives messages - this is so we can perform JMS
-      // checks when routing messages to a topic that
-      // does not exist - otherwise we would not be able to distinguish from a non existent topic and one with no
-      // subscriptions - core has no notion of a topic
-      server.getHornetQServerControl().deployQueue(jBossTopic.getAddress(),
-                                                   jBossTopic.getAddress(),
-                                                   JMSServerManagerImpl.REJECT_FILTER,
-                                                   true);
-      boolean added = bindToJndi(jndiBinding, jBossTopic);
-      if (added)
-      {
-         addToDestinationBindings(topicName, jndiBinding);
-      }
-      jmsManagementService.registerTopic(jBossTopic, jndiBinding);
+
+      boolean added = internalCreateTopic(topicName, jndiBinding);
+
+      storage.storeDestination(new PersistedDestination(TOPIC, topicName, jndiBinding));
+
       return added;
    }
 
@@ -371,7 +347,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       destinations.remove(name);
       jmsManagementService.unregisterQueue(name);
       server.getHornetQServerControl().destroyQueue(HornetQDestination.createQueueAddressFromName(name).toString());
-
+      storage.deleteDestination(name);
       return true;
    }
 
@@ -401,6 +377,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
             }
          }
       }
+      storage.deleteDestination(name);
       return true;
    }
 
@@ -614,6 +591,59 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
    {
       internalCreateCF(cfConfig);
       storage.storeConnectionFactory(new PersistedConnectionFactory(cfConfig));
+   }
+
+   private boolean internalCreateQueue(final String queueName,
+                                           final String jndiBinding,
+                                           final String selectorString,
+                                           final boolean durable) throws Exception
+   {
+      HornetQDestination jBossQueue = HornetQDestination.createQueue(queueName);
+
+      // Convert from JMS selector to core filter
+      String coreFilterString = null;
+
+      if (selectorString != null)
+      {
+         coreFilterString = SelectorTranslator.convertToHornetQFilterString(selectorString);
+      }
+
+      server.getHornetQServerControl().deployQueue(jBossQueue.getAddress(),
+                                                   jBossQueue.getAddress(),
+                                                   coreFilterString,
+                                                   durable);
+
+      boolean added = bindToJndi(jndiBinding, jBossQueue);
+
+      if (added)
+      {
+         addToDestinationBindings(queueName, jndiBinding);
+      }
+
+      jmsManagementService.registerQueue(jBossQueue, jndiBinding);
+
+      return added;
+   }
+
+   private boolean internalCreateTopic(final String topicName, final String jndiBinding) throws Exception
+   {
+      HornetQDestination jBossTopic = HornetQDestination.createTopic(topicName);
+      // We create a dummy subscription on the topic, that never receives messages - this is so we can perform JMS
+      // checks when routing messages to a topic that
+      // does not exist - otherwise we would not be able to distinguish from a non existent topic and one with no
+      // subscriptions - core has no notion of a topic
+      server.getHornetQServerControl().deployQueue(jBossTopic.getAddress(),
+                                                   jBossTopic.getAddress(),
+                                                   JMSServerManagerImpl.REJECT_FILTER,
+                                                   true);
+      boolean added = bindToJndi(jndiBinding, jBossTopic);
+      if (added)
+      {
+         addToDestinationBindings(topicName, jndiBinding);
+      }
+      jmsManagementService.registerTopic(jBossTopic, jndiBinding);
+
+      return added;
    }
 
    /**
@@ -994,6 +1024,20 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       for (PersistedConnectionFactory cf : cfs)
       {
          internalCreateCF(cf.getConfig());
+      }
+
+      List<PersistedDestination> destinations = storage.recoverDestinations();
+
+      for (PersistedDestination destination : destinations)
+      {
+         if(destination.getType() == QUEUE)
+         {
+            internalCreateQueue(destination.getName(), destination.getJndiBinding(), destination.getSelector(), destination.isDurable());
+         }
+         else if(destination.getType() == TOPIC)
+         {
+            internalCreateTopic(destination.getName(), destination.getJndiBinding());   
+         }
       }
    }
 

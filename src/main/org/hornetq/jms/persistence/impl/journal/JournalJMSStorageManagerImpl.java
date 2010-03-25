@@ -51,6 +51,8 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
    // Constants -----------------------------------------------------
 
    private final byte CF_RECORD = 1;
+
+   private final byte DESTINATION_RECORD = 2;
    
    // Attributes ----------------------------------------------------
 
@@ -65,6 +67,8 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
    private volatile boolean started;
    
    private Map<String, PersistedConnectionFactory> mapFactories = new ConcurrentHashMap<String, PersistedConnectionFactory>();
+
+   private Map<String, PersistedDestination> destinations = new ConcurrentHashMap<String, PersistedDestination>();
 
    // Static --------------------------------------------------------
 
@@ -125,7 +129,7 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
    /* (non-Javadoc)
     * @see org.hornetq.jms.persistence.JMSStorageManager#storeConnectionFactory(org.hornetq.jms.persistence.PersistedConnectionFactory)
     */
-   public void storeConnectionFactory(PersistedConnectionFactory connectionFactory) throws Exception
+   public void storeConnectionFactory(final PersistedConnectionFactory connectionFactory) throws Exception
    {
       deleteConnectionFactory(connectionFactory.getName());
       long id = idGenerator.generateID();
@@ -134,7 +138,7 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
       mapFactories.put(connectionFactory.getName(), connectionFactory);
    }
    
-   public void deleteConnectionFactory(String cfName) throws Exception
+   public void deleteConnectionFactory(final String cfName) throws Exception
    {
       PersistedConnectionFactory oldCF = mapFactories.remove(cfName);
       if (oldCF != null)
@@ -148,18 +152,31 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
     */
    public List<PersistedDestination> recoverDestinations()
    {
-      return null;
+      List<PersistedDestination> destinations = new ArrayList<PersistedDestination>(this.destinations.size());
+      destinations.addAll(this.destinations.values());
+      return destinations;
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.jms.persistence.JMSStorageManager#storeDestination(org.hornetq.jms.persistence.PersistedDestination)
     */
-   public void storeDestination(PersistedDestination destination)
+   public void storeDestination(final PersistedDestination destination) throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      deleteDestination(destination.getName());
+      long id = idGenerator.generateID();
+      destination.setId(id);
+      jmsJournal.appendAddRecord(id, DESTINATION_RECORD, destination, true);
+      destinations.put(destination.getName(), destination);
    }
 
+   public void deleteDestination(final String name) throws Exception
+   {
+      PersistedDestination destination = destinations.get(name);
+      if(destination != null)
+      {
+         jmsJournal.appendDeleteRecord(destination.getId(), false);
+      }
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.server.HornetQComponent#isStarted()
@@ -224,6 +241,13 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
             cf.decode(buffer);
             cf.setId(id);
             mapFactories.put(cf.getName(), cf);
+         }
+         else if(rec == DESTINATION_RECORD)
+         {
+            PersistedDestination destination = new PersistedDestination();
+            destination.decode(buffer);
+            destination.setId(id);
+            destinations.put(destination.getName(), destination);
          }
          else
          {

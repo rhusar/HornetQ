@@ -37,7 +37,9 @@ public interface JMSStorageManager extends HornetQComponent
 
    // Public --------------------------------------------------------
 
-   void storeDestination(PersistedDestination destination);
+   void storeDestination(PersistedDestination destination) throws Exception;
+
+   void deleteDestination(String name) throws Exception;
    
    List<PersistedDestination> recoverDestinations();
    
