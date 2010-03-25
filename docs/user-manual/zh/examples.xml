@@ -17,98 +17,73 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="examples">
-    <title>Examples</title>
-    <para>The HornetQ distribution comes with over 70 run out-of-the-box examples demonstrating many
-        of the features.</para>
-    <para>The examples are available in the distribution, in the <literal>examples</literal>
-        directory. Examples are split into JMS and core examples. JMS examples show how a particular
-        feature can be used by a normal JMS client. Core examples show how the equivalent feature
-        can be used by a core messaging client.</para>
-    <para>A set of Java EE examples are also provided which need the JBoss Application Server
-        installed to be able to run.</para>
+    <title>例子</title>
+    <para>在HornetQ的发布包中有超过70个不同的例子。这些例子直接可以运行。它们分别展示了HornetQ所具有的各种功能。</para>
+    <para>所有的例子都在HornetQ发布包的 <literal>examples</literal>目录下。所有的例子被分成了两大类：
+        JMS例子和内核例子。JMS例子展现的是JMS的各种功能，内核的例子则展示的是内核API的功能。
+</para>
+    <para>此外HornetQ还提供了一些Java EE的例子，这些例子需要JBoss应用服务器才能运行。</para>
     <section>
-        <title>JMS Examples</title>
-        <para>To run a JMS example, simply <literal>cd</literal> into the appropriate example
-            directory and type <literal>./build.sh</literal> (or <literal>build.bat</literal> if you
-            are on Windows).</para>
-        <para>Here's a listing of the examples with a brief description.</para>
+        <title>JMS 例子</title>
+        <para>要运行一个JMS例子，只要进入到相应例子的子目录，运行 <literal>./build.sh</literal> （或者
+            在Windows平台上运行<literal>build.bat</literal>）即可。</para>
+        <para>下面列出的这些JMS例子并配有简要的说明。</para>
         <section id="application-level-failover">
-            <title>Application-Layer Failover</title>
-            <para>HornetQ also supports Application-Layer failover, useful in the case that
-                replication is not enabled on the server side.</para>
-            <para>With Application-Layer failover, it's up to the application to register a JMS
-                    <literal>ExceptionListener</literal> with HornetQ which will be called by
-                HornetQ in the event that connection failure is detected.</para>
-            <para>The code in the <literal>ExceptionListener</literal> then recreates the JMS
-                connection, session, etc on another node and the application can continue.</para>
-            <para>Application-layer failover is an alternative approach to High Availability (HA).
-                Application-layer failover differs from automatic failover in that some client side
-                coding is required in order to implement this. Also, with Application-layer
-                failover, since the old session object dies and a new one is created, any
-                uncommitted work in the old session will be lost, and any unacknowledged messages
-                might be redelivered.</para>
+            <title>应用层的失效备援（Failover）</title>
+            <para>HornetQ支持应用层的失效备援。这在服务器端没有复制（replication）配置的情况下是很有用的。</para>
+            <para>应用程序可以注册一个JMS <literal>ExceptionListener</literal>。当HornetQ检测到连接故障时，它会
+                通知这个注册的Listener。</para>
+            <para>这个<literal>ExceptionListener</literal>在接到HornetQ的通知后可以与其它的节点创建
+                新的连接、会话等对象，以使应用程序能继续运行。</para>
+            <para>应用层的失效备援是实现高可获得性（HA）的一种方法。它与自动失效备援不同之处在于它需要编写额外的代码。
+                同时由于发生故障时旧的会话结束，这会造成那些还没来得及提交的工作丢失，还会造成任何没有通知的消息被重发。</para>
         </section>
         <section id="examples.bridge">
-            <title>Core Bridge Example</title>
-            <para>The <literal>bridge</literal> example demonstrates a core bridge deployed on one
-                server, which consumes messages from a local queue and forwards them to an address
-                on a second server.</para>
-            <para>Core bridges are used to create message flows between any two HornetQ servers
-                which are remotely separated. Core bridges are resilient and will cope with
-                temporary connection failure allowing them to be an ideal choice for forwarding over
-                unreliable connections, e.g. a WAN.</para>
+            <title>内核桥（Bridge）例子</title>
+            <para><literal>bridge</literal>例子展示的是将一个内核桥部署到一个服务器上，从本地的queue接收消息并将其转发到
+                另一服务器的地址上。</para>
+            <para>内核的bridge可用来在两个互相分开的HornetQ的服务器间建立一个消息流。它可以处理临时性的连接故障，特别适用于
+                不可靠的网络的情况。广域网就是一个例子。</para>
         </section>
         <section id="examples.browsers">
-            <title>Browser</title>
-            <para>The <literal>browser</literal> example shows you how to use a JMS <literal
-                    >QueueBrowser</literal> with HornetQ.</para>
-            <para>Queues are a standard part of JMS, please consult the JMS 1.1 specification for
-                full details.</para>
-            <para> A <literal>QueueBrowser</literal> is used to look at messages on the queue
-                without removing them. It can scan the entire content of a queue or only messages
-                matching a message selector.</para>
+            <title>浏览器（Browser）</title>
+            <para><literal>browser</literal>例子展示的是在HornetQ中如何使用JMS <literal
+                    >QueueBrowser</literal>。</para>
+            <para>有关JMS queue的概念在JMS 1.1 specification有明确的定义，这里就不再叙述。</para>
+            <para> 一个<literal>QueueBrowser</literal>可以用来观察queue中的消息而影响它们。它可以观察queue中的全部
+                  消息，也可以定义一个选择器（selector）来选择性地察看消息。</para>
         </section>
         <section>
             <title>Client Kickoff</title>
-            <para>The <literal>client-kickoff</literal> example shows how to terminate client
-                connections given an IP address using the JMX management API.</para>
+            <para><literal>client-kickoff</literal>例子展示的是如何利用JMX管理接口通过已知的IP地址来断开客户端的连接。</para>
         </section>
         <section>
-            <title>Client-Side Load-Balancing</title>
-            <para>The <literal>client-side-load-balancing</literal> example demonstrates how
-                sessions created from a single JMS <literal>Connection</literal> can
-                be created to different nodes of the cluster. In other words it demonstrates how
-                HornetQ does client-side load-balancing of sessions across the cluster.</para>
+            <title>客户端的负载均衡</title>
+            <para><literal>client-side-load-balancing</literal>例子展示的是通过一个JMS连接可以在集群的不同节点上创建
+                会话。也就是说HornetQ可以对客户端的会话创建进行集群内的负载均衡。</para>
         </section>
         <section id="examples.clustered.grouping">
-            <title>Clustered Grouping</title>
-            <para>This is similar to the message grouping example except that it demonstrates it
-                working over a cluster. Messages sent to different nodes with the same group id will
-                be sent to the same node and the same consumer.</para>
+            <title>集群分组</title>
+            <para>与分组（grouping）例子相似，只是本例所展示的是集群的情况。发向不同节点的具有相同组id的消息
+                都会传送到同一个节点上的同一个接收者（consumer）。</para>
         </section>
         <section>
-            <title>Clustered Queue</title>
-            <para>The <literal>clustered-queue</literal> example demonstrates a JMS queue deployed
-                on two different nodes. The two nodes are configured to form a cluster. We then
-                create a consumer for the queue on each node, and we create a producer on only one
-                of the nodes. We then send some messages via the producer, and we verify that both
-                consumers receive the sent messages in a round-robin fashion.</para>
+            <title>集群队列</title>
+            <para><literal>clustered-queue</literal> 例子将一个JMS queue部署到两个节点上。这两个节点组成一个集群。
+                我们在每个节点上各创建一个接收者（consumer），但只在其中一个节点上创建一个发送者（producer）。利用发送者
+                发送一些消息，然后确认两个接收者以轮换方式（round-robin）接收这些消息。</para>
         </section>
         <section>
-            <title>Clustered Standalone</title>
-            <para>The <literal>clustered-standalone</literal> example demonstrates how to configure
-                and starts 3 cluster nodes on the same machine to form a cluster. A subscriber for a
-                JMS topic is created on each node, and we create a producer on only one of the
-                nodes. We then send some messages via the producer, and we verify that the 3
-                subscribers receive all the sent messages.</para>
+            <title>单机集群</title>
+            <para><literal>clustered-standalone</literal>例子所展示的是如何在同一台机器上配置并运行
+                3个节点的集群。在每个节点上都创建了一个JMS topic的订阅者（subscriber）。只在其中一个节点上
+                创建了一相发送者来向这个topic发送一些消息。然后我们确认所有的subscriber都接收到了这些消息。</para>
         </section>
         <section>
-            <title>Clustered Topic</title>
-            <para>The <literal>clustered-topic</literal> example demonstrates a JMS topic deployed
-                on two different nodes. The two nodes are configured to form a cluster. We then
-                create a subscriber on the topic on each node, and we create a producer on only one
-                of the nodes. We then send some messages via the producer, and we verify that both
-                subscribers receive all the sent messages.</para>
+            <title>集群的Topic</title>
+            <para><literal>clustered-topic</literal>例子将一个JMS topic部署到两个节点上。这两个节点组成一个集群。
+                然后在每个节点上创建了一个订阅者（subscriber），只在一个节点上创建一个发送者（producer）。通过这个发
+                送者发送一些消息，确认两个订阅者都收到了这些消息。</para>
         </section>
         <section id="examples.consumer-rate-limit">
             <title>Message Consumer Rate Limiting</title>

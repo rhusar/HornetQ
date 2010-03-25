@@ -17,36 +17,31 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="client-classpath">
-    <title>The Client Classpath</title>
-    <para>HornetQ requires several jars on the <emphasis>Client Classpath</emphasis> depending on
-        whether the client uses HornetQ Core API, JMS, and JNDI.</para>
+    <title>客户端的Classpath</title>
+    <para>HornetQ的<emphasis>客户端Classpath</emphasis>需要有几个jar文件。具体是哪几个要根据客户端
+          是需要内核API、JMS和JNDI中的哪些服务来确定。</para>
     <warning>
-        <para>All the jars mentioned here can be found in the <literal>lib</literal> directory of
-            the HornetQ distribution. Be sure you only use the jars from the correct version of the
-            release, you <emphasis>must not</emphasis> mix and match versions of jars from different
-            HornetQ versions. Mixing and matching different jar versions may cause subtle errors and
-            failures to occur.</para>
+        <para>本章所提及的所有jar文件全部在HorneQ发布包的 <literal>lib</literal>目录下。在使用中一定
+            要确保所有的jar文件属于同一个发布版本。将不同版本的jar混在一起使用可能造成一些难以发现的错误。</para>
     </warning>
     <section>
-        <title>HornetQ Core Client</title>
-        <para>If you are using just a pure HornetQ Core client (i.e. no JMS) then you need <literal
-                >hornetq-core-client.jar</literal>, <literal>hornetq-transports.jar</literal> and
-                <literal>netty.jar</literal> on your client classpath.</para>
+        <title>使用HornetQ内核的客户端</title>
+        <para>如果客户端只使用HornetQ内核（非JMS客户端），需要将 <literal
+                >hornetq-core-client.jar</literal>、 <literal>hornetq-transports.jar</literal> 和
+                <literal>netty.jar</literal> 放到classpath中。</para>
     </section>
     <section>
-        <title>JMS Client</title>
-        <para>If you are using JMS on the client side, then you will also need to include <literal
-                >hornetq-jms-client.jar</literal> and <literal>jboss-jms-api.jar</literal>.</para>
+        <title>JMS客户端</title>
+        <para>如果客户端使用JMS，需要在classpath上增加两个jar文件： <literal
+                >hornetq-jms-client.jar</literal> 和 <literal>jboss-jms-api.jar</literal>。</para>
         <note>
-            <para><literal>jboss-jms-api.jar</literal> just contains Java EE API interface classes
-                needed for the <literal>javax.jms.*</literal> classes. If you already have a jar
-                with these interface classes on your classpath, you will not need it.</para>
+            <para><literal>jboss-jms-api.jar</literal>中包含的只是 <literal>javax.jms.*</literal> 包中的接口类。
+                如果这些类已经在你的classpath中，则你就不需要这个jar文件。</para>
         </note>
     </section>
     <section>
-        <title>JMS Client with JNDI</title>
-        <para>If you are looking up JMS resources from the JNDI server co-located with the HornetQ
-            standalone server, you wil also need the jar <literal>jnp-client.jar</literal> jar on
-            your client classpath as well as any other jars mentioned previously.</para>
+        <title>需要JNDI的JMS客户端</title>
+        <para>如果你的JMS客户端使用JNDI来查找HornetQ单独服务器上的对象，你需要将 <literal>jnp-client.jar</literal> 增加
+              到你的classpath中。</para>
     </section>
 </chapter>
