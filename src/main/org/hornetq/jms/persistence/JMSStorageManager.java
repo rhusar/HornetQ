@@ -16,6 +16,7 @@ package org.hornetq.jms.persistence;
 import java.util.List;
 
 import org.hornetq.core.server.HornetQComponent;
+import org.hornetq.jms.persistence.impl.PersistedJNDIBinding;
 
 /**
  * A JMSPersistence
@@ -57,4 +58,5 @@ public interface JMSStorageManager extends HornetQComponent
 
    // Inner classes -------------------------------------------------
 
+   void storeJndiBinding(PersistedJNDIBinding persistedJNDIBinding);
 }

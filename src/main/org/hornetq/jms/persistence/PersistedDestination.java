@@ -15,6 +15,7 @@ package org.hornetq.jms.persistence;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.jms.persistence.impl.DestinationType;
 import org.hornetq.utils.BufferHelper;
 import org.hornetq.utils.DataConstants;
 
@@ -29,26 +30,11 @@ public class PersistedDestination implements EncodingSupport
 
    // Constants -----------------------------------------------------
 
-   public enum Type
-   {
-      QUEUE,
-      TOPIC;
-
-      public int getType()
-      {
-         return this == QUEUE ? 1 : 2;
-      }
-
-      static Type getType(int type)
-      {
-         return type == 1 ? QUEUE : TOPIC;
-      }
-   }
    // Attributes ----------------------------------------------------
 
    private long id;
 
-   private Type type;
+   private DestinationType type;
 
    private String name;
 
@@ -65,12 +51,12 @@ public class PersistedDestination implements EncodingSupport
    {
    }
 
-   public PersistedDestination(final Type type, final String name, final String jndiBinding)
+   public PersistedDestination(final DestinationType type, final String name, final String jndiBinding)
    {
       this(type, name, jndiBinding, null, false);
    }
 
-   public PersistedDestination(final Type type, final String name, final String jndiBinding, final String selector, final boolean durable)
+   public PersistedDestination(final DestinationType type, final String name, final String jndiBinding, final String selector, final boolean durable)
    {
       this.type = type;
       this.name = name;
@@ -109,7 +95,7 @@ public class PersistedDestination implements EncodingSupport
       return jndiBinding;
    }
 
-   public Type getType()
+   public DestinationType getType()
    {
       return type;
    }
@@ -144,7 +130,7 @@ public class PersistedDestination implements EncodingSupport
 
    public void decode(final HornetQBuffer buffer)
    {
-      type = Type.getType(buffer.readInt());
+      type = DestinationType.getType(buffer.readInt());
       name = buffer.readString();
       jndiBinding = buffer.readString();
       selector = buffer.readNullableString();
