@@ -37,6 +37,8 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.messagecounter.MessageCounterManager;
 import org.hornetq.core.messagecounter.impl.MessageCounterManagerImpl;
+import org.hornetq.core.persistconfig.PersistedAddressSetting;
+import org.hornetq.core.persistconfig.PersistedRoles;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.remoting.server.RemotingService;
@@ -83,9 +85,10 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
 
    private final NotificationBroadcasterSupport broadcaster;
 
+   // private final Map
+
    // Static --------------------------------------------------------
 
-   
    // Constructors --------------------------------------------------
 
    public HornetQServerControlImpl(final PostOffice postOffice,
@@ -483,6 +486,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
          blockOnIO();
       }
    }
+
    public void deployQueue(final String address, final String name, final String filterString) throws Exception
    {
       clearIO();
@@ -1052,7 +1056,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
          blockOnIO();
       }
    }
-   
+
    public void addSecuritySettings(String addressMatch,
                                    String sendRoles,
                                    String consumeRoles,
@@ -1060,14 +1064,31 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                                    String deleteDurableQueueRoles,
                                    String createTempQueueRoles,
                                    String deleteTempQueueRoles,
-                                   String manageRoles)
+                                   String manageRoles) throws Exception
    {
       clearIO();
       try
       {
-         Set<Role> roles = SecurityFormatter.createSecurity(sendRoles, consumeRoles, createDurableQueueRoles, deleteDurableQueueRoles, createTempQueueRoles, deleteTempQueueRoles, manageRoles);
+         Set<Role> roles = SecurityFormatter.createSecurity(sendRoles,
+                                                            consumeRoles,
+                                                            createDurableQueueRoles,
+                                                            deleteDurableQueueRoles,
+                                                            createTempQueueRoles,
+                                                            deleteTempQueueRoles,
+                                                            manageRoles);
 
-         server.getSecurityRepository().addMatch(addressMatch, roles );
+         server.getSecurityRepository().addMatch(addressMatch, roles);
+
+         PersistedRoles persistedRoles = new PersistedRoles(addressMatch,
+                                                            sendRoles,
+                                                            consumeRoles,
+                                                            createDurableQueueRoles,
+                                                            deleteDurableQueueRoles,
+                                                            createTempQueueRoles,
+                                                            deleteTempQueueRoles,
+                                                            manageRoles);
+         
+         storageManager.storeSecurityRoles(persistedRoles);
       }
       finally
       {
@@ -1075,13 +1096,13 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       }
    }
 
-
-   public void removeSecuritySettings(String addressMatch)
+   public void removeSecuritySettings(String addressMatch) throws Exception
    {
       clearIO();
       try
       {
          server.getSecurityRepository().removeMatch(addressMatch);
+         storageManager.deleteSecurityRoles(new SimpleString(addressMatch));
       }
       finally
       {
@@ -1098,9 +1119,10 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       }
       finally
       {
-         blockOnIO();   
+         blockOnIO();
       }
    }
+
    public Object[] getRoles(String addressMatch) throws Exception
    {
       clearIO();
@@ -1154,11 +1176,11 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
    {
       AddressSettings addressSettings = server.getAddressSettingsRepository().getMatch(address);
       Map<String, Object> settings = new HashMap<String, Object>();
-      if(addressSettings.getDeadLetterAddress() != null)
+      if (addressSettings.getDeadLetterAddress() != null)
       {
          settings.put("DLA", addressSettings.getDeadLetterAddress());
       }
-      if(addressSettings.getExpiryAddress() != null)
+      if (addressSettings.getExpiryAddress() != null)
       {
          settings.put("expiryAddress", addressSettings.getExpiryAddress());
       }
@@ -1169,14 +1191,16 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       settings.put("redistributionDelay", addressSettings.getRedistributionDelay());
       settings.put("lastValueQueue", addressSettings.isLastValueQueue());
       settings.put("sendToDLAOnNoRoute", addressSettings.isSendToDLAOnNoRoute());
-      String policy = addressSettings.getAddressFullMessagePolicy() == AddressFullMessagePolicy.PAGE?"PAGE":addressSettings.getAddressFullMessagePolicy() == AddressFullMessagePolicy.BLOCK?"BLOCK":"DROP";
+      String policy = addressSettings.getAddressFullMessagePolicy() == AddressFullMessagePolicy.PAGE ? "PAGE"
+                                                                                                    : addressSettings.getAddressFullMessagePolicy() == AddressFullMessagePolicy.BLOCK ? "BLOCK"
+                                                                                                                                                                                     : "DROP";
       settings.put("addressFullMessagePolicy", policy);
 
       JSONObject jsonObject = new JSONObject(settings);
       return jsonObject.toString();
    }
 
-     public void addAddressSettings(final String address,
+   public void addAddressSettings(final String address,
                                   final String DLA,
                                   final String expiryAddress,
                                   final boolean lastValueQueue,
@@ -1189,8 +1213,8 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                                   final String addressFullMessagePolicy) throws Exception
    {
       AddressSettings addressSettings = new AddressSettings();
-      addressSettings.setDeadLetterAddress(DLA == null?null:new SimpleString(DLA));
-      addressSettings.setExpiryAddress(expiryAddress == null?null:new SimpleString(expiryAddress));
+      addressSettings.setDeadLetterAddress(DLA == null ? null : new SimpleString(DLA));
+      addressSettings.setExpiryAddress(expiryAddress == null ? null : new SimpleString(expiryAddress));
       addressSettings.setLastValueQueue(lastValueQueue);
       addressSettings.setMaxDeliveryAttempts(deliveryAttempts);
       addressSettings.setMaxSizeBytes(maxSizeBytes);
@@ -1198,23 +1222,25 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       addressSettings.setRedeliveryDelay(redeliveryDelay);
       addressSettings.setRedistributionDelay(redistributionDelay);
       addressSettings.setSendToDLAOnNoRoute(sendToDLAOnNoRoute);
-      if(addressFullMessagePolicy == null)
+      if (addressFullMessagePolicy == null)
       {
          addressSettings.setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE);
       }
-      else if(addressFullMessagePolicy.equalsIgnoreCase("PAGE"))
+      else if (addressFullMessagePolicy.equalsIgnoreCase("PAGE"))
       {
          addressSettings.setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE);
       }
-      else if(addressFullMessagePolicy.equalsIgnoreCase("DROP"))
+      else if (addressFullMessagePolicy.equalsIgnoreCase("DROP"))
       {
          addressSettings.setAddressFullMessagePolicy(AddressFullMessagePolicy.DROP);
       }
-      else if(addressFullMessagePolicy.equalsIgnoreCase("BLOCK"))
+      else if (addressFullMessagePolicy.equalsIgnoreCase("BLOCK"))
       {
          addressSettings.setAddressFullMessagePolicy(AddressFullMessagePolicy.BLOCK);
       }
       server.getAddressSettingsRepository().addMatch(address, addressSettings);
+
+      storageManager.storeAddressSetting(new PersistedAddressSetting(new SimpleString(address), addressSettings));
    }
 
    public AddressSettings getAddressSettings(final String address)
@@ -1222,9 +1248,10 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       return server.getAddressSettingsRepository().getMatch(address);
    }
 
-   public void removeAddressSettings(String addressMatch)
+   public void removeAddressSettings(String addressMatch) throws Exception
    {
       server.getAddressSettingsRepository().removeMatch(addressMatch);
+      storageManager.deleteAddressSetting(new SimpleString(addressMatch));
    }
 
    public void sendQueueInfoToQueue(final String queueName, final String address) throws Exception

@@ -42,6 +42,10 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.client.HornetQDestination;
 import org.hornetq.jms.client.SelectorTranslator;
+import org.hornetq.jms.persistence.JMSStorageManager;
+import org.hornetq.jms.persistence.PersistedConnectionFactory;
+import org.hornetq.jms.persistence.impl.journal.JournalJMSStorageManagerImpl;
+import org.hornetq.jms.persistence.impl.nullpm.NullJMSStorageManagerImpl;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.config.ConnectionFactoryConfiguration;
 import org.hornetq.jms.server.config.JMSConfiguration;
@@ -49,6 +53,7 @@ import org.hornetq.jms.server.config.JMSQueueConfiguration;
 import org.hornetq.jms.server.config.TopicConfiguration;
 import org.hornetq.jms.server.management.JMSManagementService;
 import org.hornetq.jms.server.management.impl.JMSManagementServiceImpl;
+import org.hornetq.utils.TimeAndCounterIDGenerator;
 
 /**
  * A Deployer used to create and add to JNDI queues, topics and connection
@@ -100,11 +105,15 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
    private boolean contextSet;
 
    private JMSConfiguration config;
+   
+   private Configuration coreConfig;
+   
+   private JMSStorageManager storage;
 
    public JMSServerManagerImpl(final HornetQServer server) throws Exception
    {
       this.server = server;
-
+      
       configFileName = null;
    }
 
@@ -157,6 +166,8 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          {
             deploy();
          }
+         
+         initJournal();
       }
       catch (Exception e)
       {
@@ -601,7 +612,17 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
 
    public synchronized void createConnectionFactory(final ConnectionFactoryConfiguration cfConfig) throws Exception
    {
+      internalCreateCF(cfConfig);
+      storage.storeConnectionFactory(new PersistedConnectionFactory(cfConfig));
+   }
 
+   /**
+    * @param cfConfig
+    * @throws HornetQException
+    * @throws Exception
+    */
+   private void internalCreateCF(final ConnectionFactoryConfiguration cfConfig) throws HornetQException, Exception
+   {
       ArrayList<String> listBindings = new ArrayList<String>();
       for (String str : cfConfig.getBindings())
       {
@@ -683,7 +704,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                  cfConfig.getGroupID(),
                                  listBindings);
       }
-
    }
 
    public synchronized void createConnectionFactory(final String name,
@@ -948,6 +968,35 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          }
       }
    }
+
+   /**
+    * @param server
+    */
+   private void initJournal() throws Exception
+   {
+      this.coreConfig = server.getConfiguration();
+      
+      if (coreConfig.isPersistenceEnabled())
+      {
+         // TODO: replication
+         storage = new JournalJMSStorageManagerImpl(new TimeAndCounterIDGenerator(), coreConfig, null);
+      }
+      else
+      {
+         storage = new NullJMSStorageManagerImpl();
+      }
+      
+      storage.start();
+      
+      
+      List<PersistedConnectionFactory> cfs = storage.recoverConnectionFactories();
+      
+      for (PersistedConnectionFactory cf : cfs)
+      {
+         internalCreateCF(cf.getConfig());
+      }
+   }
+
 
    /**
     * @param cfConfig
