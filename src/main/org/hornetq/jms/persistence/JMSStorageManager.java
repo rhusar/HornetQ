@@ -16,7 +16,6 @@ package org.hornetq.jms.persistence;
 import java.util.List;
 
 import org.hornetq.core.server.HornetQComponent;
-import org.hornetq.jms.persistence.impl.PersistedJNDIBinding;
 
 /**
  * A JMSPersistence
@@ -40,7 +39,7 @@ public interface JMSStorageManager extends HornetQComponent
 
    void storeDestination(PersistedDestination destination) throws Exception;
 
-   void deleteDestination(String name) throws Exception;
+   void deleteDestination(PersistedType type, String name) throws Exception;
    
    List<PersistedDestination> recoverDestinations();
    
@@ -58,5 +57,11 @@ public interface JMSStorageManager extends HornetQComponent
 
    // Inner classes -------------------------------------------------
 
-   void storeJndiBinding(PersistedJNDIBinding persistedJNDIBinding);
+   void addJNDI(PersistedType type, String name, String address) throws Exception;
+   
+   List<PersistedJNDI> recoverPersistedJNDI() throws Exception;
+   
+   void deleteJNDI(PersistedType type, String name, String address) throws Exception;
+   
+   void deleteJNDI(PersistedType type, String name) throws Exception;
 }

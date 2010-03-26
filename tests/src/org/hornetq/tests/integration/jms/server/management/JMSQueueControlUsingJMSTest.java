@@ -270,6 +270,12 @@ public class JMSQueueControlUsingJMSTest extends JMSQueueControlTest
          {
             return (String)proxy.retrieveAttributeValue("selector");
          }
+
+         public void addJNDI(String jndi) throws Exception
+         {
+            // TODO Auto-generated method stub
+            
+         }
       };
    }
 

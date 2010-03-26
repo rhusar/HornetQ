@@ -53,8 +53,6 @@ public class JMSTopicControlImpl extends StandardMBean implements TopicControl
 
    private final HornetQDestination managedTopic;
 
-   private final String binding;
-
    private final AddressControl addressControl;
 
    private final ManagementService managementService;
@@ -71,13 +69,11 @@ public class JMSTopicControlImpl extends StandardMBean implements TopicControl
 
    public JMSTopicControlImpl(final HornetQDestination topic,
                               final AddressControl addressControl,
-                              final String jndiBinding,
                               final ManagementService managementService) throws Exception
    {
       super(TopicControl.class);
       managedTopic = topic;
       this.addressControl = addressControl;
-      binding = jndiBinding;
       this.managementService = managementService;
    }
 
@@ -96,11 +92,6 @@ public class JMSTopicControlImpl extends StandardMBean implements TopicControl
    public String getAddress()
    {
       return managedTopic.getAddress();
-   }
-
-   public String getJNDIBinding()
-   {
-      return binding;
    }
 
    public int getMessageCount()

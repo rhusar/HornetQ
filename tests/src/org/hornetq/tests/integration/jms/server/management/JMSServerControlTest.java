@@ -115,7 +115,7 @@ public class JMSServerControlTest extends ManagementTestBase
       checkNoResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
       JMSServerControl control = createManagementControl();
-      control.createQueue(queueName, queueJNDIBinding);
+      control.createQueue(queueName);
 
       Object o = UnitTestCase.checkBinding(context, queueJNDIBinding);
       Assert.assertTrue(o instanceof Queue);
@@ -134,7 +134,7 @@ public class JMSServerControlTest extends ManagementTestBase
       checkNoResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
 
       JMSServerControl control = createManagementControl();
-      control.createQueue(queueName, queueJNDIBinding);
+      control.createQueue(queueName);
 
       UnitTestCase.checkBinding(context, queueJNDIBinding);
       checkResource(ObjectNameBuilder.DEFAULT.getJMSQueueObjectName(queueName));
@@ -153,7 +153,7 @@ public class JMSServerControlTest extends ManagementTestBase
       JMSServerControl control = createManagementControl();
       Assert.assertEquals(0, control.getQueueNames().length);
 
-      control.createQueue(queueName, queueJNDIBinding);
+      control.createQueue(queueName);
 
       String[] names = control.getQueueNames();
       Assert.assertEquals(1, names.length);
@@ -173,7 +173,7 @@ public class JMSServerControlTest extends ManagementTestBase
       checkNoResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
 
       JMSServerControl control = createManagementControl();
-      control.createTopic(topicName, topicJNDIBinding);
+      control.createTopic(topicName);
 
       Object o = UnitTestCase.checkBinding(context, topicJNDIBinding);
       Assert.assertTrue(o instanceof Topic);
@@ -191,7 +191,7 @@ public class JMSServerControlTest extends ManagementTestBase
       checkNoResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
       
       JMSServerControl control = createManagementControl();
-      control.createTopic(topicName, topicJNDIBinding);
+      control.createTopic(topicName);
 
       checkResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
       Topic topic = (Topic)context.lookup(topicJNDIBinding);
@@ -224,7 +224,7 @@ public class JMSServerControlTest extends ManagementTestBase
       JMSServerControl control = createManagementControl();
       Assert.assertEquals(0, control.getTopicNames().length);
 
-      control.createTopic(topicName, topicJNDIBinding);
+      control.createTopic(topicName);
 
       String[] names = control.getTopicNames();
       Assert.assertEquals(1, names.length);

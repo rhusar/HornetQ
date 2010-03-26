@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.journal.Journal;
@@ -35,6 +36,8 @@ import org.hornetq.core.server.JournalType;
 import org.hornetq.jms.persistence.JMSStorageManager;
 import org.hornetq.jms.persistence.PersistedConnectionFactory;
 import org.hornetq.jms.persistence.PersistedDestination;
+import org.hornetq.jms.persistence.PersistedJNDI;
+import org.hornetq.jms.persistence.PersistedType;
 import org.hornetq.jms.server.config.ConnectionFactoryConfiguration;
 import org.hornetq.utils.IDGenerator;
 
@@ -54,6 +57,8 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
 
    private final byte DESTINATION_RECORD = 2;
    
+   private final byte JNDI_RECORD = 3;
+   
    // Attributes ----------------------------------------------------
 
    private final IDGenerator idGenerator;
@@ -68,7 +73,9 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
    
    private Map<String, PersistedConnectionFactory> mapFactories = new ConcurrentHashMap<String, PersistedConnectionFactory>();
 
-   private Map<String, PersistedDestination> destinations = new ConcurrentHashMap<String, PersistedDestination>();
+   private Map<Pair<PersistedType, String>, PersistedDestination> destinations = new ConcurrentHashMap<Pair<PersistedType, String>, PersistedDestination>();
+   
+   private Map<Pair<PersistedType, String>, PersistedJNDI> mapJNDI = new ConcurrentHashMap<Pair<PersistedType, String>, PersistedJNDI>();
 
    // Static --------------------------------------------------------
 
@@ -162,20 +169,106 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
     */
    public void storeDestination(final PersistedDestination destination) throws Exception
    {
-      deleteDestination(destination.getName());
+      deleteDestination(destination.getType(), destination.getName());
       long id = idGenerator.generateID();
       destination.setId(id);
       jmsJournal.appendAddRecord(id, DESTINATION_RECORD, destination, true);
-      destinations.put(destination.getName(), destination);
+      destinations.put(new Pair<PersistedType, String>(destination.getType(), destination.getName()), destination);
+   }
+   
+   public List<PersistedJNDI> recoverPersistedJNDI() throws Exception
+   {
+      ArrayList<PersistedJNDI> list = new ArrayList<PersistedJNDI>();
+      
+      list.addAll(mapJNDI.values());
+      
+      return list;
+   }
+   
+   public void addJNDI(PersistedType type, String name, String address) throws Exception
+   {
+      Pair<PersistedType, String> key = new Pair<PersistedType, String>(type, name);
+
+      long tx = idGenerator.generateID();
+      
+      PersistedJNDI currentJNDI = mapJNDI.get(key);
+      if (currentJNDI != null)
+      {
+         jmsJournal.appendDeleteRecordTransactional(tx, currentJNDI.getId());
+      }
+      else
+      {
+         currentJNDI = new PersistedJNDI(type, name);
+      }
+      
+      currentJNDI.addJNDI(address);
+
+      long newId = idGenerator.generateID();
+      
+      currentJNDI.setId(newId);
+      
+      jmsJournal.appendAddRecordTransactional(tx, newId, JNDI_RECORD, currentJNDI);
+      
+      jmsJournal.appendCommitRecord(tx, true);
+   }
+   
+   public void deleteJNDI(PersistedType type, String name, String address) throws Exception
+   {
+      Pair<PersistedType, String> key = new Pair<PersistedType, String>(type, name);
+
+      long tx = idGenerator.generateID();
+      
+      PersistedJNDI currentJNDI = mapJNDI.get(key);
+      if (currentJNDI == null)
+      {
+         return;
+      }
+      else
+      {
+         jmsJournal.appendDeleteRecordTransactional(tx, currentJNDI.getId());
+      }
+      
+      currentJNDI.deleteJNDI(address);
+      
+      if (currentJNDI.getJndi().size() == 0)
+      {
+         mapJNDI.remove(key);
+      }
+      else
+      {
+         long newId = idGenerator.generateID();
+         currentJNDI.setId(newId);
+         jmsJournal.appendAddRecordTransactional(tx, newId, JNDI_RECORD, currentJNDI);
+      }
+      
+      jmsJournal.appendCommitRecord(tx, true);
    }
 
-   public void deleteDestination(final String name) throws Exception
+   
+   public void deleteJNDI(PersistedType type, String name) throws Exception
    {
-      PersistedDestination destination = destinations.get(name);
+      Pair<PersistedType, String> key = new Pair<PersistedType, String>(type, name);
+      
+      PersistedJNDI currentJNDI = mapJNDI.remove(key);
+
+      if (currentJNDI == null)
+      {
+         return;
+      }
+      else
+      {
+         jmsJournal.appendDeleteRecord(currentJNDI.getId(), true);
+      }
+   }
+
+   public void deleteDestination(final PersistedType type, final String name) throws Exception
+   {
+      PersistedDestination destination = destinations.get(new Pair<PersistedType, String>(type, name));
       if(destination != null)
       {
          jmsJournal.appendDeleteRecord(destination.getId(), false);
       }
+      deleteJNDI(type, name);
    }
 
    /* (non-Javadoc)
@@ -247,7 +340,15 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
             PersistedDestination destination = new PersistedDestination();
             destination.decode(buffer);
             destination.setId(id);
-            destinations.put(destination.getName(), destination);
+            destinations.put(new Pair<PersistedType, String>(destination.getType(), destination.getName()), destination);
+         }
+         else if (rec == JNDI_RECORD)
+         {
+            PersistedJNDI jndi = new PersistedJNDI();
+            jndi.decode(buffer);
+            jndi.setId(id);
+            Pair<PersistedType, String> key = new Pair<PersistedType, String>(jndi.getType(), jndi.getName());
+            mapJNDI.put(key, jndi);
          }
          else
          {
@@ -277,6 +378,7 @@ public class JournalJMSStorageManagerImpl implements JMSStorageManager
          }
       }
    }
+
 
    // Inner classes -------------------------------------------------
 

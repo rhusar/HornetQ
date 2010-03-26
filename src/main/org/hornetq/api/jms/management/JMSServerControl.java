@@ -69,8 +69,7 @@ public interface JMSServerControl
     * @return {@code true} if the queue was created, {@code false} else
     */
    @Operation(desc = "Create a JMS Queue", impact = MBeanOperationInfo.ACTION)
-   boolean createQueue(@Parameter(name = "name", desc = "Name of the queue to create") String name,
-                       @Parameter(name = "jndiBinding", desc = "the name of the binding for JNDI") String jndiBinding) throws Exception;
+   boolean createQueue(@Parameter(name = "name", desc = "Name of the queue to create") String name) throws Exception;
 
    /**
     * Destroys a JMS Queue with the specified name.
@@ -86,8 +85,7 @@ public interface JMSServerControl
     * @return {@code true} if the topic was created, {@code false} else
     */
    @Operation(desc = "Create a JMS Topic", impact = MBeanOperationInfo.ACTION)
-   boolean createTopic(@Parameter(name = "name", desc = "Name of the topic to create") String name,
-                       @Parameter(name = "jndiBinding", desc = "the name of the binding for JNDI") String jndiBinding) throws Exception;
+   boolean createTopic(@Parameter(name = "name", desc = "Name of the topic to create") String name) throws Exception;
 
    /**
     * Destroys a JMS Topic with the specified name.

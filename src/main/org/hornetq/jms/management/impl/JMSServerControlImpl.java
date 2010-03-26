@@ -227,9 +227,9 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    }
 
 
-   public boolean createQueue(final String name, final String jndiBinding) throws Exception
+   public boolean createQueue(final String name) throws Exception
    {
-      boolean created = server.createQueue(name, jndiBinding, null, true);
+      boolean created = server.createQueue(name, null, true);
       if (created)
       {
          sendNotification(NotificationType.QUEUE_CREATED, name);
@@ -247,9 +247,9 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       return destroyed;
    }
 
-   public boolean createTopic(final String topicName, final String jndiBinding) throws Exception
+   public boolean createTopic(final String topicName) throws Exception
    {
-      boolean created = server.createTopic(topicName, jndiBinding);
+      boolean created = server.createTopic(topicName);
       if (created)
       {
          sendNotification(NotificationType.TOPIC_CREATED, topicName);

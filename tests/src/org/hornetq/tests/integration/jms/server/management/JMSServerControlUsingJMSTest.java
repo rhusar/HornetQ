@@ -168,14 +168,14 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
             return (Boolean)proxy.invokeOperation("closeConnectionsForAddress", ipAddress);
          }
 
-         public boolean createQueue(final String name, final String jndiBinding) throws Exception
+         public boolean createQueue(final String name) throws Exception
          {
-            return (Boolean)proxy.invokeOperation("createQueue", name, jndiBinding);
+            return (Boolean)proxy.invokeOperation("createQueue", name);
          }
 
-         public boolean createTopic(final String name, final String jndiBinding) throws Exception
+         public boolean createTopic(final String name) throws Exception
          {
-            return (Boolean)proxy.invokeOperation("createTopic", name, jndiBinding);
+            return (Boolean)proxy.invokeOperation("createTopic", name);
          }
 
          public void destroyConnectionFactory(final String name) throws Exception

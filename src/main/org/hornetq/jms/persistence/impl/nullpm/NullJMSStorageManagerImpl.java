@@ -19,6 +19,8 @@ import java.util.List;
 import org.hornetq.jms.persistence.JMSStorageManager;
 import org.hornetq.jms.persistence.PersistedConnectionFactory;
 import org.hornetq.jms.persistence.PersistedDestination;
+import org.hornetq.jms.persistence.PersistedJNDI;
+import org.hornetq.jms.persistence.PersistedType;
 
 /**
  * A NullJMSStorageManagerImpl
@@ -96,6 +98,47 @@ public class NullJMSStorageManagerImpl implements JMSStorageManager
     */
    public void stop() throws Exception
    {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#addJNDI(org.hornetq.jms.persistence.PersistedType, java.lang.String, java.lang.String)
+    */
+   public void addJNDI(PersistedType type, String name, String address) throws Exception
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#deleteJNDI(org.hornetq.jms.persistence.PersistedType, java.lang.String, java.lang.String)
+    */
+   public void deleteJNDI(PersistedType type, String name, String address) throws Exception
+   {
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#deleteDestination(org.hornetq.jms.persistence.PersistedType, java.lang.String)
+    */
+   public void deleteDestination(PersistedType type, String name) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#deleteJNDI(org.hornetq.jms.persistence.PersistedType, java.lang.String)
+    */
+   public void deleteJNDI(PersistedType type, String name) throws Exception
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.jms.persistence.JMSStorageManager#recoverPersistedJNDI()
+    */
+   public List<PersistedJNDI> recoverPersistedJNDI() throws Exception
+   {
+      // TODO Auto-generated method stub
+      return null;
    }
 
    // Constants -----------------------------------------------------

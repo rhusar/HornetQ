@@ -15,7 +15,6 @@ package org.hornetq.jms.persistence;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.journal.EncodingSupport;
-import org.hornetq.jms.persistence.impl.DestinationType;
 import org.hornetq.utils.BufferHelper;
 import org.hornetq.utils.DataConstants;
 
@@ -34,11 +33,9 @@ public class PersistedDestination implements EncodingSupport
 
    private long id;
 
-   private DestinationType type;
+   private PersistedType type;
 
    private String name;
-
-   private String jndiBinding;
 
    private String selector;
 
@@ -50,17 +47,16 @@ public class PersistedDestination implements EncodingSupport
    public PersistedDestination()
    {
    }
-
-   public PersistedDestination(final DestinationType type, final String name, final String jndiBinding)
+   
+   public PersistedDestination(final PersistedType type, final String name)
    {
-      this(type, name, jndiBinding, null, false);
+      this(type, name, null, true);
    }
 
-   public PersistedDestination(final DestinationType type, final String name, final String jndiBinding, final String selector, final boolean durable)
+   public PersistedDestination(final PersistedType type, final String name, final String selector, final boolean durable)
    {
       this.type = type;
       this.name = name;
-      this.jndiBinding = jndiBinding;
       this.selector = selector;
       this.durable = durable;
    }
@@ -90,12 +86,7 @@ public class PersistedDestination implements EncodingSupport
       return name;
    }
 
-   public String getJndiBinding()
-   {
-      return jndiBinding;
-   }
-
-   public DestinationType getType()
+   public PersistedType getType()
    {
       return type;
    }
@@ -112,27 +103,24 @@ public class PersistedDestination implements EncodingSupport
 
    public int getEncodeSize()
    {
-      return DataConstants.SIZE_INT +
+      return DataConstants.SIZE_BYTE +
             BufferHelper.sizeOfSimpleString(name) +
-            BufferHelper.sizeOfSimpleString(jndiBinding) +
             BufferHelper.sizeOfNullableSimpleString(selector) +
             DataConstants.SIZE_BOOLEAN;
    }
 
    public void encode(final HornetQBuffer buffer)
    {
-      buffer.writeInt(type.getType());
+      buffer.writeByte(type.getType());
       buffer.writeString(name);
-      buffer.writeString(jndiBinding);
       buffer.writeNullableString(selector);
       buffer.writeBoolean(durable);
    }
 
    public void decode(final HornetQBuffer buffer)
    {
-      type = DestinationType.getType(buffer.readInt());
+      type = PersistedType.getType(buffer.readByte());
       name = buffer.readString();
-      jndiBinding = buffer.readString();
       selector = buffer.readNullableString();
       durable = buffer.readBoolean();
    }

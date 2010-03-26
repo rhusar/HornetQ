@@ -38,11 +38,6 @@ public interface ConnectionFactoryControl
    String getName();
 
    /**
-    * Returns the JNDI bindings associated  to this connection factory.
-    */
-   List<String> getBindings();
-
-   /**
     * Returns the Client ID of this connection factory (or {@code null} if it is not set.
     */
    String getClientID();
