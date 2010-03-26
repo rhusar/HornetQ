@@ -119,8 +119,6 @@ public class NullJMSStorageManagerImpl implements JMSStorageManager
     */
    public void deleteDestination(PersistedType type, String name) throws Exception
    {
-      // TODO Auto-generated method stub
-      
    }
 
    /* (non-Javadoc)
@@ -128,8 +126,6 @@ public class NullJMSStorageManagerImpl implements JMSStorageManager
     */
    public void deleteJNDI(PersistedType type, String name) throws Exception
    {
-      // TODO Auto-generated method stub
-      
    }
 
    /* (non-Javadoc)
@@ -137,8 +133,7 @@ public class NullJMSStorageManagerImpl implements JMSStorageManager
     */
    public List<PersistedJNDI> recoverPersistedJNDI() throws Exception
    {
-      // TODO Auto-generated method stub
-      return null;
+      return Collections.emptyList();
    }
 
    // Constants -----------------------------------------------------
