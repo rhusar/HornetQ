@@ -154,6 +154,8 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       {
          jmsManagementService.registerJMSServer(this);
 
+         initJournal();
+
          // start the JMS deployer only if the configuration is not done using the JMSConfiguration object
          if (config == null)
          {
@@ -176,7 +178,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
             deploy();
          }
 
-         initJournal();
       }
       catch (Exception e)
       {
@@ -324,7 +325,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       
       for (String jndiItem : jndi)
       {
-         addQueueToJndi(topicName, jndiItem);
+         addTopicToJndi(topicName, jndiItem);
       }
 
       return added;
