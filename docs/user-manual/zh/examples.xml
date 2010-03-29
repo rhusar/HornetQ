@@ -86,439 +86,333 @@
                 送者发送一些消息，确认两个订阅者都收到了这些消息。</para>
         </section>
         <section id="examples.consumer-rate-limit">
-            <title>Message Consumer Rate Limiting</title>
-            <para>With HornetQ you can specify a maximum consume rate at which a JMS MessageConsumer
-                will consume messages. This can be specified when creating or deploying the
-                connection factory.</para>
-            <para>If this value is specified then HornetQ will ensure that messages are never
-                consumed at a rate higher than the specified rate. This is a form of consumer
-                throttling.</para>
+            <title>限制接收速率</title>
+            <para>HornetQ可以控制一个JMS消息接收者接收消息的速度。这是在创建或部署连接工厂时通过其配置参数来完成的。</para>
+            <para>如果设置了这个速度的限制，HornetQ会保证其向接收者传递消息的速度永远不会超过这个限制。</para>
         </section>
         <section id="examples.dead-letter">
-            <title>Dead Letter</title>
-            <para>The <literal>dead-letter</literal> example shows you how to define and deal with
-                dead letter messages. Messages can be delivered unsuccessfully (e.g. if the
-                transacted session used to consume them is rolled back). </para>
-            <para>Such a message goes back to the JMS destination ready to be redelivered. However,
-                this means it is possible for a message to be delivered again and again without any
-                success and remain in the destination, clogging the system.</para>
-            <para>To prevent this, messaging systems define dead letter messages: after a specified
-                unsuccessful delivery attempts, the message is removed from the destination and put
-                instead in a dead letter destination where they can be consumed for further
-                investigation.</para>
+            <title>死消息（Dead Letter）</title>
+            <para><literal>dead-letter</literal>例子让你了解如何定义和处理死消息。有时候消息由于某种原因不能成功
+                地传递出去，比如接收者在接收消息的交易中发生回滚。</para>
+            <para>发生回滚后，消息被”退回“到JMS目标（destination）准备进行重发。这一过程可能会被不停地重复下去造成
+                消息永远发不出去，而且浪费系统的时间。</para>
+            <para>为了避免上述情况的发生，消息系统引入了死消息的概念：即当一个消息被反复重发不成功达到一定的次数时，该消息
+                便成为了死消息，它将从所属目标（destination）中删除并发送到一个称为死消息目标的目标。用户可以从死消息目标
+　　　　　　　　　　上接收这些死消息以便进行分析。</para>
         </section>
         <section id="examples.delayed-redelivery">
-            <title>Delayed Redelivery</title>
-            <para>The <literal>delayed-redelivery</literal> example demonstrates how HornetQ can be
-                configured to provide a delayed redelivery in the case a message needs to be
-                redelivered.</para>
-            <para>Delaying redelivery can often be useful in the case that clients regularly fail or
-                roll-back. Without a delayed redelivery, the system can get into a "thrashing"
-                state, with delivery being attempted, the client rolling back, and delivery being
-                re-attempted in quick succession, using up valuable CPU and network
-                resources.</para>
+            <title>延迟再发送</title>
+            <para><literal>delayed-redelivery</literal>是一个展示如何配置HornetQ延迟再发送消息的例子。</para>
+            <para>当客户端经常发生故障或发生事务回滚时，消息会不停地重复发送，这样会造成CPU和网络资源被不间断的
+                重复发送所占用，影响其它工作的进行。延迟再发送可以有效地减轻这种情况。</para>
         </section>
         <section id="divert-example">
-            <title>Divert</title>
-            <para>HornetQ diverts allow messages to be transparently "diverted" or copied from one
-                address to another with just some simple configuration defined on the server
-                side.</para>
+            <title>转移（Divert）</title>
+            <para>HornetQ通过配置可以将消息从一个地址自动地转移到另一地址。这个例子就是向用户展示转移的配置和使用。</para>
         </section>
         <section>
-            <title>Durable Subscription</title>
-            <para>The <literal>durable-subscription</literal> example shows you how to use a durable
-                subscription with HornetQ. Durable subscriptions are a standard part of JMS, please
-                consult the JMS 1.1 specification for full details.</para>
-            <para>Unlike non-durable subscriptions, the key function of durable subscriptions is
-                that the messages contained in them persist longer than the lifetime of the
-                subscriber - i.e. they will accumulate messages sent to the topic even if there is
-                no active subscriber on them. They will also survive server restarts or crashes.
-                Note that for the messages to be persisted, the messages sent to them must be marked
-                as durable messages. </para>
+            <title>持久订阅（Durable Subscription）</title>
+            <para><literal>durable-subscription</literal>是一个在HornetQ中如何使用持久订阅（durable
+                subscription）的例子。持久订阅是标准JMS的一部分，在JMS 1.1规范中有它的详细定义。</para>
+            <para>对于一个持久订阅来说，它的消息可以在订阅没有处于接收状态时被保留。另外，如果发到它的消息是持久
+                消息的话，这些消息可以在服务器故障或重启时不丢失。 </para>
         </section>
         <section>
-            <title>Embedded</title>
-            <para>The <literal>embedded</literal> example shows how to embed the HornetQ server
-                within your own code.</para>
+            <title>嵌入方式（Embedded）</title>
+            <para><literal>embedded</literal>是一个如何将HornetQ服务嵌入到你的应用中的例子。</para>
         </section>
         <section>
-            <title>HTTP Transport</title>
-            <para>The <literal>http-transport</literal> example shows you how to configure HornetQ
-                to use the HTTP protocol as its transport layer.</para>
+            <title>HTTP 传输协议的支持</title>
+            <para><literal>http-transport</literal>展示了HornetQ如何支持在传输层使用HTTP协议来发送和接收消息。</para>
         </section>
         <section>
-            <title>Instantiate JMS Objects Directly</title>
-            <para>Usually, JMS Objects such as <literal>ConnectionFactory</literal>, <literal
-                    >Queue</literal> and <literal>Topic</literal> instances are looked up from JNDI
-                before being used by the client code. This objects are called "administered objects"
-                in JMS terminology.</para>
-            <para>However, in some cases a JNDI server may not be available or desired. To come to
-                the rescue HornetQ also supports the direct instantiation of these administered
-                objects on the client side so you don't have to use JNDI for JMS.</para>
+            <title>直接实例化JMS对象</title>
+            <para>JMS 对象是指 <literal>连接工厂（ConnectionFactory）</literal>、<literal
+                    >队列（Queue）</literal>和<literal>话题（Topic）</literal> 的实例。通常情况下它们通过JNDI服务
+                来获取。它们在JMS术语中被称为“被管理的对象（administered objects）”。</para>
+            <para>有的时候客户端没有JNDI服务可用，或者不适合使用JNDI。那么在没有JNDI的情况下HornetQ允许直接在客户端
+                将这些JMS对象实例化。</para>
         </section>
         <section id="examples.interceptor">
-            <title>Interceptor</title>
-            <para>HornetQ allows an application to use an interceptor to hook into the messaging
-                system. Interceptors allow you to handle various message events in HornetQ.</para>
+            <title>拦截器（Interceptor）</title>
+            <para>HornetQ可以配置拦截器以便用户可以自己处理各种各样的消息事件。这个例子就是给用户展示如何使用
+                  拦截器。</para>
         </section>
         <section id="examples.jaas">
             <title>JAAS</title>
-            <para>The <literal>jaas</literal> example shows you how to configure HornetQ to use JAAS
-                for security. HornetQ can leverage JAAS to delegate user authentication and
-                authorization to existing security infrastructure.</para>
+            <para><literal>jaas</literal>是一个如何配置JAAS安全模式的例子。HornetQ可以使用JAAS来进行用户的验证与权限控制。</para>
         </section>
         <section id="examples.jms.jms-bridge">
-            <title>JMS Bridge</title>
-            <para>The <literal>jms-brige</literal> example shows how to setup a bridge
-            between two standalone HornetQ servers.</para>
+            <title>JMS桥（Bridge）</title>
+            <para><literal>jms-brige</literal>是一个在两个单独HornetQ服务器之间设置桥的例子。</para>
         </section>
         <section id="examples.jmx">
-            <title>JMX Management</title>
-            <para>The <literal>jmx</literal> example shows how to manage HornetQ using JMX.</para>
+            <title>JMX管理</title>
+            <para><literal>jmx</literal>例子展示了如何使用JMX来管理HornetQ。</para>
         </section>
         <section id="examples.large-message">
-            <title>Large Message</title>
-            <para>The <literal>large-message</literal> example shows you how to send and receive
-                very large messages with HornetQ. HornetQ supports the sending and receiving of huge
-                messages, much larger than can fit in available RAM on the client or server.
-                Effectively the only limit to message size is the amount of disk space you have on
-                the server.</para>
-            <para>Large messages are persisted on the server so they can survive a server restart.
-                In other words HornetQ doesn't just do a simple socket stream from the sender to the
-                consumer.</para>
+            <title>大消息</title>
+            <para><literal>large-message</literal>例子给用户展示了使用HornetQ来发送和接收大消息的功能。HornetQ
+                支持超大消息的发送与接收。这些消息可以大到内存无法装下。它的大小只受服务器的硬盘空间的限制。</para>
+            <para>在服务器端大消息是被持久化的，所以它可以承受服务器的崩溃或重启而不丢失或损坏。</para>
         </section>
         <section id="examples.last-value-queue">
-            <title>Last-Value Queue</title>
-            <para>The <literal>last-value-queue</literal> example shows you how to define and deal
-                with last-value queues. Last-value queues are special queues which discard any
-                messages when a newer message with the same value for a well-defined last-value
-                property is put in the queue. In other words, a last-value queue only retains the
-                last value.</para>
-            <para>A typical example for last-value queue is for stock prices, where you are only
-                interested by the latest price for a particular stock.</para>
+            <title>最新值队列</title>
+            <para><literal>last-value-queue</literal>向用户展示了如何定义与使用最新值队列。当在配置文件定义好
+                最新值的参数后，这些最新值队列就会自动地用新的消息取代旧的消息，也就是说旧的消息被抛弃掉。这样一个最新
+                值的队列总是保留最新的消息在队列中。</para>
+            <para>股票价格消息就是一个典型的最新值队列的用例。对用户来说他所关心的是一支股票的最新价格，对于过去的价格
+                是没有多大兴趣的。</para>
         </section>
         <section>
-            <title>Load Balanced Clustered Queue</title>
-            <para>The <literal>clustered-queue</literal> example demonstrates a JMS queue deployed
-                on two different nodes. The two nodes are configured to form a cluster.</para>
-            <para>We then create a consumer on the queue on each node, and we create a producer on
-                only one of the nodes. We then send some messages via the producer, and we verify
-                that both consumers receive the sent messages in a round-robin fashion.</para>
-            <para>In other words, HornetQ load balances the sent messages across all consumers on
-                the cluster</para>
+            <title>分布式队列的负载均衡</title>
+            <para>在<literal>clustered-queue</literal>例子中配置了一个2节点的HornetQ服务集群。在集群上部署了
+                一个分布式JMS队列。</para>
+            <para>然后在一个节点上创建了一个发送者（producer），在两个节点上分别创建一个接收者（consumer）。通过
+                发送者向队列发送一些消息然后被两的接收者以轮流（round-robin）的方式接收。</para>
+            <para>本例说明了HornetQ可以将消息向集群中的每个接收者分布式地传递消息。</para>
         </section>
         <section id="examples.management">
-            <title>Management</title>
-            <para>The <literal>management</literal> example shows how to manage HornetQ using JMS
-                Messages to invoke management operations on the server.</para>
+            <title>管理</title>
+            <para><literal>management</literal>例子展示的是如何使用JMS消息来实现对HornetQ的管理。</para>
         </section>
         <section id="examples.management-notifications">
-            <title>Management Notification</title>
-            <para>The <literal>management-notification</literal> example shows how to receive
-                management notifications from HornetQ using JMS messages. HornetQ servers emit
-                management notifications when events of interest occur (consumers are created or
-                closed, addresses are created or deleted, security authentication fails,
-                etc.).</para>
+            <title>管理通知</title>
+            <para><literal>management-notification</literal>展示了HornetQ如何以JMS消息的形式向用户发送
+                管理通知。当某些事件发生时（如接收都创建，关闭；地址创建与删除；安全验证失败等等），HornetQ会向客户
+                发出JMS消息以通知客户这些事件的相关信息。客户接收到这些信息后可以作出相应的处理。</para>
         </section>
         <section id="examples.message-counters">
-            <title>Message Counter</title>
-            <para>The <literal>message-counters</literal> example shows you how to use message
-                counters to obtain message information for a JMS queue.</para>
+            <title>消息计数器</title>
+            <para><literal>message-counters</literal>是一个展示如何使用消息计数器获取JMS队列中的消息信息。</para>
         </section>
         <section id="examples.expiry">
-            <title>Message Expiration</title>
-            <para>The <literal>expiry</literal> example shows you how to define and deal with
-                message expiration. Messages can be retained in the messaging system for a limited
-                period of time before being removed. JMS specification states that clients should
-                not receive messages that have been expired (but it does not guarantee this will not
-                happen).</para>
-            <para>HornetQ can assign an expiry address to a given queue so that when messages
-                are expired, they are removed from the queue and sent to the expiry address.
-                These "expired" messages can later be consumed from the expiry address for
-                further inspection.</para>
+            <title>消息失效</title>
+            <para><literal>expiry</literal>例子中包括了如何定义和使用消息失效期。消息如果在消息服务器中存留超过一定
+                的时间，就可以被删除。根据JMS规范，接收者就不应该接收到已经过了失效期的消息。（但是并不保证一定接收不到）。</para>
+            <para>HornetQ可以给一个队列配上一个失效地址，当队列中的消息失效时，它们就会从队列中删除并转移到该失效地址。
+                这些“失效"的消息可以从失效地址中接收并进行分析。</para>
         </section>
         <section id="examples.message-group">
-            <title>Message Group</title>
-            <para>The <literal>message-group</literal> example shows you how to configure and use
-                message groups with HornetQ. Message groups allow you to pin messages so they are
-                only consumed by a single consumer. Message groups are sets of messages that has the
-                following characteristics:</para>
+            <title>消息组</title>
+            <para><literal>message-group</literal>展示的是如何在HornetQ中配置消息组。消息组可以让你的消息
+                只被一个接收者接收。属于一个消息组中的消息有如下特性：</para>
             <para>
                 <itemizedlist>
                     <listitem>
-                        <para>Messages in a message group share the same group id, i.e. they have
-                            same JMSXGroupID string property values</para>
+                        <para>同一个消息组中的消息都有相同的组ID。即它们的JMSXGroupID属性值相同。</para>
                     </listitem>
                     <listitem>
-                        <para>The consumer that receives the first message of a group will receive
-                            all the messages that belongs to the group</para>
+                        <para>第一个接收到消息组中的消息的接收者将会接收到所有该组中的消息。</para>
                     </listitem>
                 </itemizedlist>
             </para>
         </section>
        <section id="examples.message-group2">
-            <title>Message Group</title>
-            <para>The <literal>message-group2</literal> example shows you how to configure and use
-                message groups with HornetQ via a connection factory.</para>
+            <title>消息组（例2）</title>
+            <para><literal>message-group2</literal>是另外一个消息组的例子。它展示的是通过配置连接工厂来实现
+                消息组的功能。</para>
         </section>
         <section id="examples.message-priority">
-            <title>Message Priority</title>
-            <para>Message Priority can be used to influence the delivery order for messages.</para>
-            <para>It can be retrieved by the message's standard header field 'JMSPriority' as
-                defined in JMS specification version 1.1. </para>
-            <para>The value is of type integer, ranging from 0 (the lowest) to 9 (the highest). When
-                messages are being delivered, their priorities will effect their order of delivery.
-                Messages of higher priorities will likely be delivered before those of lower
-                priorities. </para>
-            <para>Messages of equal priorities are delivered in the natural order of their arrival
-                at their destinations. Please consult the JMS 1.1 specification for full
-                details.</para>
+            <title>消息优先级</title>
+            <para>消息优先级会影响消息的传递顺序。</para>
+            <para>消息优先级由标准的JMS消息头属性JMSPriority的值确定。参见JMS 1.1规范。</para>
+            <para>优先级是一个0到9之间的整数值。当消息被传递时，根据优先级的不同消息的传递顺序会收到影响。优先级
+                高的消息往往会比优先级低的先传递给接收者。 </para>
+            <para>优先级相同的消息会按照它们到达目标的顺序来传递。在JMS 1.1规范中有详细的规定。</para>
         </section>
         <section id="examples.no-consumer-buffering">
-            <title>No Consumer Buffering</title>
-            <para>By default, HornetQ consumers buffer messages from the server in a client side
-                buffer before you actually receive them on the client side. This improves
-                performance since otherwise every time you called receive() or had processed the
-                last message in a <literal>MessageListener onMessage()</literal> method, the HornetQ
-                client would have to go the server to request the next message, which would then get
-                sent to the client side, if one was available.</para>
-            <para>This would involve a network round trip for every message and reduce performance.
-                Therefore, by default, HornetQ pre-fetches messages into a buffer on each
-                consumer.</para>
-            <para>In some case buffering is not desirable, and HornetQ allows it to be switched off.
-                This example demonstrates that.</para>
+            <title>零接收缓冲</title>
+            <para>默认时HornetQ的接收者客户端有一个消息缓冲，它用来保存从服务器上预先接收的消息。这样做是为了提高
+                性能。因为如果没有这个缓冲，每次调用receive()或onMessage()后，HornetQ就会访问一次服务器请求下
+                一个消息。</para>
+            <para>这样每接收一个消息就会增加一次网络往返的传输。因此，HornetQ在默认情况下使用客户端的接收缓冲来
+                预先接收消息，以提高效率。</para>
+            <para>然而在某些情况下这样的缓冲不符合应用需要。那么可以将缓冲关闭。本例就是展示如何关闭接收缓冲。</para>
         </section>
         <section id="examples.non-transaction-failover">
-            <title>Non-Transaction Failover With Server Data Replication</title>
-            <para>The <literal>non-transaction-failover</literal> example demonstrates two servers coupled
-                as a live-backup pair for high availability (HA), and a client using a <emphasis>non-transacted
-                </emphasis> JMS session failing over from live to backup when the live server is
-                crashed.</para>
-            <para>HornetQ implements failover of client connections between
-                live and backup servers. This is implemented by the replication of state between
-                live and backup nodes. When replication is configured and a live node crashes, the
-                client connections can carry and continue to send and consume messages. When non-transacted
-                 sessions are used, once and only once message delivery is not guaranteed and it is possible
-                 that some messages will be lost or delivered twice.</para>
+            <title>带有服务器数据复制的非事务失效备援</title>
+            <para><literal>non-transaction-failover</literal>例子展示了由两个服务器组成的高可获得性主／从关系。
+                客户端使用一个非交易的JMS会话（session）可以在主节点崩溃的情况下从主节点失效备援到备份节点。</para>
+            <para>HornetQ的这一功能是通过主、备节点间的状态复制来实现的。当主节点发生故障崩溃时，客户端的连接可以自动
+                转向备份节点以继续的发送或接收消息。当使用非事务性的会话时，有可能发生消息丢失或重复传递的情况。</para>
         </section>
         <section id="examples.paging">
-            <title>Paging</title>
-            <para>The <literal>paging</literal> example shows how HornetQ can support huge queues
-                even when the server is running in limited RAM. It does this by transparently
-                    <emphasis>paging</emphasis> messages to disk, and <emphasis>depaging</emphasis>
-                them when they are required.</para>
+            <title>分页（paging）</title>
+            <para><literal>paging</literal>例子展示了HornetQ在内存有限时如何支持超大容量的队列。当内存不够时，
+                HornetQ会将消息保存到磁盘上；需要时再将它们从磁盘读入内存。这一过程对用户是透明的。</para>
         </section>
         <section id="examples.pre-acknowledge">
-            <title>Pre-Acknowledge</title>
-            <para>Standard JMS supports three acknowledgement modes:<literal>
-                    AUTO_ACKNOWLEDGE</literal>, <literal>CLIENT_ACKNOWLEDGE</literal>, and <literal
-                    >DUPS_OK_ACKNOWLEDGE</literal>. For a full description on these modes please
-                consult the JMS specification, or any JMS tutorial.</para>
-            <para>All of these standard modes involve sending acknowledgements from the client to
-                the server. However in some cases, you really don't mind losing messages in event of
-                failure, so it would make sense to acknowledge the message on the server before
-                delivering it to the client. This example demonstrates how HornetQ allows this with
-                an extra acknowledgement mode.</para>
+            <title>预先通知</title>
+            <para>标准的JMS支持3种通知模式：<literal>
+                    AUTO_ACKNOWLEDGE</literal>（自动通知）、<literal>CLIENT_ACKNOWLEDGE</literal>客户通知以及 <literal
+                    >DUPS_OK_ACKNOWLEDGE</literal>可重复通知。请参阅JMS规范和教程来进一步了解这几种通知方式。</para>
+            <para>所有方式都需要从客户端发通知到服务器端。有时当发生故障时你并不在乎丢失一些消息，这样可以采用在服务器端在消息
+                传递前进行通知就显得比较合理。本例就是展示如何使用这一HornetQ独有的通知方式。</para>
         </section>
         <section id="producer-rate-limiting-example">
-            <title>Message Producer Rate Limiting</title>
-            <para>The <literal>producer-rte-limit</literal> example demonstrates how, with HornetQ,
-                you can specify a maximum send rate at which a JMS message producer will send
-                messages.</para>
+            <title>消息发送速度限制</title>
+            <para><literal>producer-rte-limit</literal>例子展示了如何设置HornetQ的最大消息发送速率。它控制消息的
+                发送者（JMS producer）发送消息的最大速度。</para>
         </section>
         <section>
-            <title>Queue</title>
-            <para>A simple example demonstrating a JMS queue.</para>
+            <title>队列</title>
+            <para>这一个简单的JMS队列的例子。</para>
         </section>
         <section>
-            <title>Message Redistribution</title>
-            <para>The <literal>queue-message-redistribution</literal> example demonstrates message
-                redistribution between queues with the same name deployed in different nodes of a
-                cluster.</para>
+            <title>Message再分配</title>
+            <para><literal>queue-message-redistribution</literal>例子展示了如何将消息在集群的各节点同名的队列
+                间进行再分配。</para>
         </section>
         <section>
-            <title>Queue Requestor</title>
-            <para>A simple example demonstrating a JMS queue requestor.</para>
+            <title>队列请求</title>
+            <para>这是一个简单的实现队列请求的例子。</para>
         </section>
         <section>
-            <title>Queue with Message Selector</title>
-            <para>The <literal>queue-selector</literal> example shows you how to selectively consume
-                messages using message selectors with queue consumers.</para>
+            <title>带消息选择器（selector）的队列</title>
+            <para><literal>queue-selector</literal>例子展示了如何使用选择器来有条件地选择消息进行接收。</para>
         </section>
         <section>
-            <title>Reattach Node example</title>
-            <para>The <literal>Reattach Node</literal> example shows how a client can try to reconnect to
-               the same server instead of failing the connection immediately and
-               notifying any user ExceptionListener objects. HornetQ can be configured to automatically
-               retry the connection, and reattach to the server when it becomes available again across
-               the network.</para>
+            <title>节点连接重试</title>
+            <para><literal>reattach-node</literal>例子展示了如何使客户端在发生故障时重试连接到原有服务器，而不是
+               直接放弃并通知用户的ExceptionListener。通过配置，客户端可以自动的不断重试连接直到服务器连接上为止。</para>
         </section>
         <section>
-            <title>Request-Reply example</title>
-            <para>A simple example showing the JMS request-response pattern.</para>
+            <title>请求／应答</title>
+            <para>一个简单的展示JMS 请求／应答消息方式的例子。</para>
         </section>
         <section id="examples.scheduled-message">
-            <title>Scheduled Message</title>
-            <para>The <literal>scheduled-message</literal> example shows you how to send a scheduled
-                message to a JMS Queue with HornetQ. Scheduled messages won't get delivered until a
-                specified time in the future.</para>
+            <title>定时消息</title>
+            <para><literal>scheduled-message</literal>例子展示了如何向HornetQ发送定时消息（scheduled message）。
+                所谓定时消息就是在规定的将来的某一时间传递的消息。</para>
         </section>
         <section>
-            <title>Security</title>
-            <para>The <literal>security</literal> example shows you how configure and use role based
-                queue security with HornetQ.</para>
+            <title>安全</title>
+            <para><literal>security</literal>例子展示了如何配置HornetQ的安全参数。</para>
         </section>
         <section id="asynchronous-send-acknowledgements-example">
-            <title>Send Acknowledgements</title>
-            <para>The <literal>send-acknowledgements</literal> example shows you how to use
-                HornetQ's advanced <emphasis>asynchronous send acknowledgements</emphasis> feature
-                to obtain acknowledgement from the server that sends have been received and
-                processed in a separate stream to the sent messages. </para>
+            <title>发送通知</title>
+            <para><literal>send-acknowledgements</literal>例子展示了如何使用HornetQ提供的高级异步发送通知功能
+                （<emphasis>asynchronous send acknowledgements</emphasis>）。这是服务器向客户端通知消息已经
+                被接收。</para>
         </section>
         <section>
-            <title>SSL Transport</title>
-            <para>The <literal>ssl-enabled</literal> shows you how to configure SSL with HornetQ to
-                send and receive message.</para>
+            <title>SSL传输支持</title>
+            <para><literal>ssl-enabled</literal>例子展示了如何配置使用SSL来发送与接收消息。</para>
         </section>
         <section>
-            <title>Static Message Selector</title>
-            <para>The <literal>static-selector</literal> example shows you how to configure a
-                HornetQ core queue with static message selectors (filters).</para>
+            <title>静态消息选择器</title>
+            <para><literal>static-selector</literal>例子展示了如何配置HornetQ核心队列的静态消息选择器（又称过滤器）。</para>
         </section>
         <section>
-            <title>Static Message Selector Using JMS</title>
-            <para>The <literal>static-selector-jms</literal> example shows you how to configure a
-                HornetQ queue with static message selectors (filters) using JMS.</para>
+            <title>使用JMS方法来配置静态消息选择器</title>
+            <para><literal>static-selector-jms</literal>例子采用JMS方法来配置HornetQ的队列的静态选择器（过滤器）。</para>
         </section>
         <section>
             <title>Stomp</title>
-            <para>The <literal>stomp</literal> example shows you how to configure a
-                HornetQ server to send and receive Stomp messages.</para>
+            <para><literal>stomp</literal>例子展示了如何配置HornetQ来发送与接收Stomp消息。</para>
         </section>
         <section>
-            <title>Symmetric Cluster</title>
-            <para>The <literal>symmetric-cluster</literal> example demonstrates a symmetric cluster
-                set-up with HornetQ.</para>
-            <para>HornetQ has extremely flexible clustering which allows you to set-up servers in
-                many different topologies. The most common topology that you'll perhaps be familiar
-                with if you are used to application server clustering is a symmetric cluster.</para>
-            <para>With a symmetric cluster, the cluster is homogeneous, i.e. each node is configured
-                the same as every other node, and every node is connected to every other node in the
-                cluster.</para>
+            <title>对称型集群</title>
+            <para><literal>symmetric-cluster</literal>例子展示如何设置一个HornetQ的对称型集群。</para>
+            <para>HornetQ的集群配置是非常灵活的。你可以根据需要设置不同的集群结构。最常用的就是对称型的集群了。这是在应用
+                  服务器中常见的集群类型。</para>
+            <para>对称型的集群具有同一性，即每个节点与其他节点处于同等地位，并且每一个节点都与其他任一节点相连接。</para>
         </section>
         <section>
-            <title>Temporary Queue</title>
-            <para>A simple example demonstrating how to use a JMS temporary queue.</para>
+            <title>临时队列</title>
+            <para>本例展示的是如何使用一个JMS临时队列（temporary queue）。</para>
         </section>
         <section>
-            <title>Topic</title>
-            <para>A simple example demonstrating a JMS topic.</para>
+            <title>话题（Topic）</title>
+            <para>一个简单的JMS topic的例子。</para>
         </section>
         <section id="topic-hierarchy-example">
-            <title>Topic Hierarchy</title>
-            <para>HornetQ supports topic hierarchies. With a topic hierarchy you can register a
-                subscriber with a wild-card and that subscriber will receive any messages sent to an
-                address that matches the wild card.</para>
+            <title>话题体系（Topic Hierarchy）</title>
+            <para>HornetQ支持话题体系。所谓话题体系就是允许你使用通配符来注册一个订阅（subscriber)，这样所有发送到
+                与该通配符相匹配的地址的消息都可以被该订阅收到。</para>
         </section>
         <section>
-            <title>Topic Selector 1</title>
-            <para>The <literal>topic-selector-example1</literal> example shows you how to send
-                message to a JMS Topic, and subscribe them using selectors with HornetQ.</para>
+            <title>话题选择器例1</title>
+            <para><literal>topic-selector-example1</literal>例子展示的是如何创建带有选择器的JMS话题（Topic）订阅。</para>
         </section>
         <section>
-            <title>Topic Selector 2</title>
-            <para>The <literal>topic-selector-example1</literal> example shows you how to
-                selectively consume messages using message selectors with topic consumers.</para>
+            <title>话题选择器例2</title>
+            <para><literal>topic-selector-example2</literal> 是另一个使用带有选择器的JMS话题（Topic）订阅的例子。</para>
         </section>
         <section id="examples.transaction-failover">
-            <title>Transaction Failover With Data Replication</title>
-            <para>The <literal>transaction-failover</literal> example demonstrates two servers coupled
-                as a live-backup pair for high availability (HA), and a client using a transacted JMS
-                session failing over from live to backup when the live server is
-                crashed.</para>
-            <para>HornetQ implements failover of client connections between
-                live and backup servers. This is implemented by the replication of data between
-                live and backup nodes. When replication is configured and a live node crashes, the
-                client connections can carry and continue to send and consume messages. When transacted
-                sessions are used, once and only once message delivery is guaranteed.</para>
+            <title>带有数据复制的事务性失效备援</title>
+            <para><literal>transaction-failover</literal>例子展示了由两个服务器组成的高可获得性主／备关系。
+                客户端使用一个交易的JMS会话（session）可以在主节点崩溃的情况下从主节点失效备援到备份节点。</para>
+            <para>HornetQ的这一功能是通过主、备节点间的状态复制来实现的。当主节点发生故障崩溃时，客户端的连接可以自动
+                转向备份节点以继续的发送或接收消息。当使用事务性的会话时，能够保证消息被传递并且只被传递一次。</para>
         </section>
         <section>
-            <title>Transactional Session</title>
-            <para>The <literal>transactional</literal> example shows you how to use a transactional
-                Session with HornetQ.</para>
+            <title>事务性会话</title>
+            <para><literal>transactional</literal>例子展示了如何在HornetQ中使用事务性会话。</para>
         </section>
         <section>
             <title>XA Heuristic</title>
-            <para>The <literal>xa-heuristic</literal> example shows you how to make an XA heuristic
-                decision through HornetQ Management Interface. A heuristic decision is a unilateral
-                decision to commit or rollback an XA transaction branch after it has been
-                prepared.</para>
+            <para><literal>xa-heuristic</literal>例子给出了如何通过HornetQ的管理接口来做出一个XA的heuristic决定。
+                一个XA的heuristic决定是一个单方面的对一个已经准备的（prepared）XA事务分支提交或回滚的决定。</para>
         </section>
         <section>
-            <title>XA Receive</title>
-            <para>The <literal>xa-receive</literal> example shows you how message receiving behaves
-                in an XA transaction in HornetQ.</para>
+            <title>XA 接收</title>
+            <para><literal>xa-receive</literal>例子展示的是如何使用HornetQ在一个XA事务内接收消息。</para>
         </section>
         <section>
-            <title>XA Send</title>
-            <para>The <literal>xa-send</literal> example shows you how message sending behaves in an
-                XA transaction in HornetQ.</para>
+            <title>XA 发送</title>
+            <para><literal>xa-send</literal>例子展示的是如何使用HornetQ在一个XA事务内发送消息。</para>
         </section>
         <section>
-            <title>XA with Transaction Manager</title>
-            <para>The <literal>xa-with-jta</literal> example shows you how to use JTA interfaces to
-                control transactions with HornetQ.</para>
+            <title>XA与事务管理器（transaction manager）</title>
+            <para><literal>xa-with-jta</literal>展示了如何在HornetQ中使用JTA接口来控制事务。</para>
         </section>
     </section>
     <section>
-        <title>Core API Examples</title>
-        <para>To run a core example, simply <literal>cd</literal> into the appropriate example
-            directory and type <literal>ant</literal></para>
+        <title>核心API的例子</title>
+        <para>运行核心API的例子很简单，只要进到相应的例子目录下运行“<literal>ant</literal>"即可。 </para>
         <section id="examples.embedded">
-            <title>Embedded</title>
-            <para>This example shows how to embed the HornetQ server within your own code.</para>
+            <title>嵌入式</title>
+            <para>本例展示了如何将HornetQ服务器嵌入到你的代码中。</para>
         </section>
     </section>
     <section>
-        <title>Java EE Examples</title>
-        <para>Most of the Java EE examples can be run the following way. simply cd into the
-            appropriate example directory an type <literal>ant deploy</literal>. This will create a
-            new JBoss AS profile and start the server. When the server is started from a different
-            window type <literal>ant run</literal> to run the example. Some examples require further
-            steps, please refer to the examples documentation for further instructions.</para>
+        <title>Java EE 例子</title>
+        <para>绝大多数的Java EE例子都可以按如下步骤运行：进入到相应的目录中，先运行<literal>ant deploy</literal>。
+            这一步创建了一个新的JBoss的服务器配置方案并启动它。当JBoss服务器启动后，再运行<literal>ant run</literal>
+            启动例子程序。有些例子需要额外的步骤，请参见相关的例子的文档。</para>
         <section>
-            <title>EJB/JMS Transaction</title>
-            <para>An example that shows using an EJB and JMS together within a transaction.</para>
+            <title>EJB/JMS 事务</title>
+            <para>这个例子展示了在一个事务内使用EJB和JMS的方法。</para>
         </section>
         <section>
             <title>HAJNDI (High Availability)</title>
-            <para>A simple example demonstrating using JNDI within a cluster.</para>
+            <para>这个例子展示了如何使用集群中的JNDI服务。</para>
         </section>
         <section>
-            <title>Resource Adapter Configuration</title>
-            <para>This example demonstrates how to configure several properties on the HornetQ JCA
-                resource adaptor.</para>
+            <title>资源适配器的配置（JCA）</title>
+            <para>本例展示了如何配置HornetQ的JCA适配器的各种参数。</para>
         </section>
         <section id="examples.javaee.jms-bridge">
-            <title>JMS Bridge</title>
-            <para>An example demonstrating the use of the HornetQ JMS bridge.</para>
+            <title>JMS 桥（Bridge）</title>
+            <para>本例展示了如何使用HornetQ的JMS bridge。</para>
         </section>
         <section>
-            <title>MDB (Message Driven Bean)</title>
-            <para>A simple example of a message driven bean.</para>
+            <title>MDB (消息驱动Bean)</title>
+            <para>一个消息驱动bean的例子。</para>
         </section>
         <section>
-            <title>Servlet Transport</title>
-            <para>An example of how to use the HornetQ servlet transport.</para>
+            <title>Servlet传输</title>
+            <para>一个展示在HornetQ中使用servlet作为传输层的例子。</para>
         </section>
         <section>
-            <title>Servlet SSL Transport</title>
-            <para>An example of how to use the HornetQ servlet transport over SSL.</para>
+            <title>Servlet SSL 传输</title>
+            <para>一个展示在HornetQ中使用基于SSL之上的servlet传输的例子。</para>
         </section>
         <section id="xa-recovery-example">
-            <title>XA Recovery</title>
-            <para>An example of how XA recovery works within the JBoss Application server using
-                HornetQ.</para>
+            <title>XA 恢复（recovery）</title>
+            <para>这是一个展示HornetQ在JBoss应用服务器中的XA recovery是如何工作的例子。</para>
         </section>
     </section>
 </chapter>
