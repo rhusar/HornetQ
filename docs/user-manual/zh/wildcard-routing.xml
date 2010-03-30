@@ -19,21 +19,19 @@
 <!-- ============================================================================= -->
 
 <chapter id="wildcard-routing">
-    <title>Routing Messages With Wild Cards</title>
-    <para>HornetQ allows the routing of messages via wildcard addresses.</para>
-    <para>If a consumer is created with an address of say <literal>queue.news.#</literal> then it
-        will receive any messages sent to addresses that match this, for instance <literal
-            >queue.news.europe</literal> or <literal>queue.news.usa</literal> or <literal
-            >queue.news.usa.sport</literal>. This allows a consumer to consume messages which are
-        sent to a <emphasis>hierarchy</emphasis> of addresses, rather than the consumer having to
-        specify a specific address.</para>
+    <title>使用通配符实现消息路由</title>
+    <para>HornetQ支持使用带通配符的地址对消息路由。</para>
+    <para>例如，当创建一个接收者（consumer）时使用了地址<literal>queue.news.#</literal>，那么它就能接收
+          所有和这个地址通配符相配的每一个地址的消息。这样的地址如 <literal
+            >queue.news.europe</literal> 或 <literal>queue.news.usa</literal> 或 <literal
+            >queue.news.usa.sport</literal>等。这样一个消息接收者可以接收<literal>一组</literal>相关
+          的地址的消息，而不是只能指定一个具体的地址。</para>
     <note>
-        <para>In JMS terminology this allows "topic hierarchies" to be created.</para>
+        <para>用JMS的术语来说，这个功能就是允许创建“话题组”（topic hierarchy）。</para>
     </note>
-    <para>To enable this functionality set the property <literal>wild-card-routing-enabled</literal>
-        in the <literal>hornetq-configuration.xml</literal> file to <literal>true</literal>. This is
-            <literal>true</literal> by default.</para>
-    <para>For more information on the wild card syntax take a look at <xref
-            linkend="wildcard-syntax" /> chapter, also see <xref
-            linkend="topic-hierarchy-example" />.</para>
+    <para>要使用本功能需要将<literal>wild-card-routing-enabled</literal>属性设置为<literal>true</literal>。
+        这个属性在 <literal>hornetq-configuration.xml</literal> 文件中。默认值是<literal>true</literal>。</para>
+    <para>关于通配符的语法参见<xref
+            linkend="wildcard-syntax" /> 章及 <xref
+            linkend="topic-hierarchy-example" />。</para>
 </chapter>

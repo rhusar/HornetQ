@@ -19,21 +19,19 @@
 <!-- ============================================================================= -->
 
 <chapter id="wildcard-syntax">
-    <title>Understanding the HornetQ Wildcard Syntax</title>
-    <para>HornetQ uses a specific syntax for representing wildcards in security settings,
-        address settings and when creating consumers.</para>
-    <para>The syntax is similar to that used by <ulink url="www.amqp.org">AMQP</ulink>.</para>
-    <para>A HornetQ wildcard expression contains words delimited by the character '<literal
-            >.</literal>' (full stop).</para>
-    <para>The special characters '<literal>#</literal>' and '<literal>*</literal>' also have special
-        meaning and can take the place of a word.</para>
-    <para>The character '<literal>#</literal>' means 'match any sequence of zero or more
-        words'.</para>
-    <para>The character '<literal>*</literal>' means 'match a single word'.</para>
-    <para>So the wildcard 'news.europe.#' would match 'news.europe', 'news.europe.sport',
-        'news.europe.politics', and 'news.europe.politics.regional' but would not match 'news.usa',
-        'news.usa.sport' nor 'entertainment'.</para>
-    <para>The wildcard 'news.*' would match 'news.europe', but not 'news.europe.sport'.</para>
-    <para>The wildcard 'news.*.sport' would match 'news.europe.sport' and also 'news.usa.sport', but
-        not 'news.europe.politics'.</para>
+    <title>了解 HornetQ 通配符的语法</title>
+    <para>HornetQ使用了一种专门的通配符语法来配置安全、地址及接收者（consumer）的创建。</para>
+    <para>这种语法与 <ulink url="www.amqp.org">AMQP</ulink>所用的语法相似。</para>
+    <para>一个HornetQ的通配符表达式是由一些由“<literal
+            >.</literal>”分隔的单词组成。</para>
+    <para>特殊字符“<literal>#</literal>”和“<literal>*</literal>”在表达式中可作为一个单词，它们代表
+        特殊的意义。</para>
+    <para>字符“<literal>#</literal>”表示“零或多个单词的任意排列”。</para>
+    <para>字符“<literal>*</literal>”表示“一个单词”。</para>
+    <para>因此，通配符表达式“news.europe.#”可以匹配“news.europe”、“news.europe.sport”、
+        “news.europe.politics”以及“news.europe.politics.regional”，但是与“news.usa”、
+        “news.usa.sport” 及 “entertainment”不相匹配。</para>
+    <para>通配符“news.*”与“news.europe”匹配，但不与“news.europe.sport”匹配。</para>
+    <para>通配符“news.*.sport”与“news.europe.sport”及“news.usa.sport”匹配，但与
+        “news.europe.politics”不匹配。</para>
 </chapter>
