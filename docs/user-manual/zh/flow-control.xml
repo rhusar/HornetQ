@@ -17,98 +17,73 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="flow-control">
-   <title>Flow Control</title>
-   <para>Flow control is used to limit the flow of data between a client and server, or a server and
-      another server in order to prevent the client or server being overwhelmed with data.</para>
+   <title>流控制</title>
+   <para>流控制是指对客户端与服务器之间，或者服务器之间的数据流量进行限制，目的是防止通迅双方由于大量数据而过载。</para>
    <section>
-      <title>Consumer Flow Control</title>
-      <para>This controls the flow of data between the server and the client as the client consumes
-         messages. For performance reasons clients normally buffer messages before delivering to the
-         consumer via the <literal>receive()</literal> method or asynchronously via a message
-         listener. If the consumer cannot process messages as fast as they are being delivered and
-         stored in the internal buffer, then you could end up with a situation where messages would
-         keep building up possibly causing out of memory on the client if they cannot be processed
-         in time.</para>
+      <title>接收者（consumer）流控制</title>
+      <para>这是指对客户端的接收者接收消息流的控制。通常为了提高效率，在客户端通常将消息放入缓存，然后再将缓存中
+         的消息传递给接收者（consumer）。当接收者处理消息的速度小于服务器向其发送消息的速度时，就可能造成消息在
+         客户端不断积累，最終引起内存溢出的错误。</para>
       <section id="flow-control.consumer.window">
-         <title>Window-Based Flow Control</title>
-         <para>By default, HornetQ consumers buffer messages from the server in a client side buffer
-            before the client consumes them. This improves performance: otherwise every time the
-            client consumes a message, HornetQ would have to go the server to request the next
-            message. In turn, this message would then get sent to the client side, if one was
-            available.</para>
-         <para>A network round trip would be involved for <emphasis>every</emphasis> message and
-            considerably reduce performance.</para>
-         <para>To prevent this, HornetQ pre-fetches messages into a buffer on each consumer. The
-            total maximum size of messages (in bytes) that will be buffered on each consumer is
-            determined by the <literal>consumer-window-size</literal> parameter.</para>
-         <para>By default, the <literal>consumer-window-size</literal> is set to 1 MiB (1024 * 1024
-            bytes).</para>
-         <para>The value can be:</para>
+         <title>基于窗口的流控制</title>
+         <para>默认情况下HornetQ的接收者一端会将消息进行缓存以提高性能。如果不这样做，那每次接收者收到一个消息，
+            都得通知服务器传递下一个消息，然后服务器再将下一个消息传递过来。这就增加了通信的次数。</para>
+         <para>对于每一次消息传递都有一个网络的往返通信，这样降低了性能。</para>
+         <para>为了避免这样，HornetQ将每个接收者的消息提前接收到一处缓存中。每个缓存的最大值由
+            <literal>consumer-window-size</literal>参数决定（单位字节）。</para>
+         <para><literal>consumer-window-size</literal>的默认值是 1 MiB （1024 * 1024
+            字节）。</para>
+         <para>它的值可以是：</para>
          <itemizedlist>
             <listitem>
-               <para><literal>-1</literal> for an <emphasis>unbounded</emphasis> buffer</para>
+               <para><literal>-1</literal> 代表<emphasis>大小无限制</emphasis>的缓存。</para>
             </listitem>
             <listitem>
-               <para><literal>0</literal> to not buffer any messages. See <xref
-                     linkend="examples.no-consumer-buffering"/> for working example of a consumer
-                  with no buffering.</para>
+               <para><literal>0</literal> 代表不缓存消息。参见相关的例子 <xref
+                     linkend="examples.no-consumer-buffering"/>。</para>
             </listitem>
             <listitem>
-               <para><literal>&gt;0</literal> for a buffer with the given maximum size in
-                  bytes.</para>
+               <para><literal>&gt;0</literal> 代表缓存的最大字节数。</para>
             </listitem>
          </itemizedlist>
-         <para>Setting the consumer window size can considerably improve performance depending on
-            the messaging use case. As an example, let's consider the two extremes: </para>
+         <para>合理设置接收者的窗口大小可以显著提高性能。下面是两个极端的例子：</para>
          <variablelist>
             <varlistentry>
-               <term>Fast consumers</term>
+               <term>快速接收者</term>
                <listitem>
-                  <para>Fast consumers can process messages as fast as they consume them (or even
-                     faster)</para>
-                  <para>To allow fast consumers, set the <literal>consumer-window-size</literal> to
-                     -1. This will allow <emphasis>unbounded</emphasis> message buffering on the
-                     client side.</para>
-                  <para>Use this setting with caution: it can overflow the client memory if the
-                     consumer is not able to process messages as fast as it receives them.</para>
+                  <para>所谓快速接收者是指消息的接收者处理消息的速度大于等于它的接收速度。</para>
+                  <para>对于快速接收者或以将<literal>consumer-window-size</literal>设为
+                     -1，使得客户端的消息缓存的大小 <emphasis>无限制</emphasis>。</para>
+                  <para>请谨慎使用这一设置值： 如果接收者的消息处理速度比接收速度小，可造成客户端内存溢出。</para>
                </listitem>
             </varlistentry>
             <varlistentry>
-               <term>Slow consumers</term>
+               <term>慢接收者</term>
                <listitem>
-                  <para>Slow consumers takes significant time to process each message and it is
-                     desirable to prevent buffering messages on the client side so that they can be
-                     delivered to another consumer instead.</para>
-                  <para>Consider a situation where a queue has 2 consumers; 1 of which is very slow.
-                     Messages are delivered in a round robin fashion to both consumers, the fast
-                     consumer processes all of its messages very quickly until its buffer is empty.
-                     At this point there are still messages awaiting to be processed in the buffer
-                     of the slow consumer thus preventing them being processed by the fast consumer.
-                     The fast consumer is therefore sitting idle when it could be processing the
-                     other messages. </para>
-                  <para>To allow slow consumers, set the <literal>consumer-window-size</literal> to
-                     0 (for no buffer at all). This will prevent the slow consumer from buffering
-                     any messages on the client side. Messages will remain on the server side ready
-                     to be consumed by other consumers.</para>
-                  <para>Setting this to 0 can give deterministic distribution between multiple
-                     consumers on a queue.</para>
+                  <para>所谓慢接收者是指接收者每处理一个消息就要花很多时间。这样将缓存关闭就比较合理。服务器可以将多余的
+                     消息传递给其它的接收者。</para>
+                  <para>假设一个队列有2个接收者。其中一个接收者非常慢。消息被轮流传递到两个接收者。其中的快速接收者
+                     很快将其缓存中的消息处理完毕。同时慢接收者的缓存中还有一些消息等待处理。这样快速接收者在一段时间
+                     内就处于空闲状态。</para>
+                  <para>这时，将<literal>consumer-window-size</literal> 设为0 （没有缓存），就可以将它变成
+                     慢接收者。这样在慢接收者一方不会缓存消息，这使得快的接收者可以处理更多的消息，而不至于处于空闲
+                     状态。</para>
+                  <para>这说明将它设置为0可以控制一个队列的消息在多个接收者之间的消息分配。</para>
                </listitem>
             </varlistentry>
          </variablelist>
-         <para>Most of the consumers cannot be clearly identified as fast or slow consumers but are
-            in-between. In that case, setting the value of <literal>consumer-window-size</literal>
-            to optimize performance depends on the messaging use case and requires benchmarks to
-            find the optimal value, but a value of 1MiB is fine in most cases.</para>
+         <para>大多数情况下很难判断哪些接收者是快速的，哪些是慢速的。往往很多接收者是处于两者之间。这样对于
+            <literal>consumer-window-size</literal>的值就要视具体情况而定。有时需要进行一定的测试
+            来决定它的最佳值。通常情况下将其设为1MiB可以满足大多数的应用情况。</para>
          <section id="flow-control.core.api">
-            <title>Using Core API</title>
-            <para>If HornetQ Core API is used, the consumer window size is specified by <literal
-                  >ClientSessionFactory.setConsumerWindowSize()</literal> method and some of the
-                  <literal>ClientSession.createConsumer()</literal> methods.</para>
+            <title>使用核心接口（Core API）进行流控制</title>
+            <para>Hornet的核心接口中，<literal
+                  >ClientSessionFactory.setConsumerWindowSize()</literal>方法和一些
+                  <literal>ClientSession.createConsumer()</literal>方法可以控制流的窗口大小。</para>
          </section>
          <section>
-            <title>Using JMS</title>
-            <para>if JNDI is used to look up the connection factory, the consumer window size is
-               configured in <literal>hornetq-jms.xml</literal>:</para>
+            <title>使用JMS的流控制</title>
+            <para>若使用JNDI来获得连接工厂，则需要通过配置<literal>hornetq-jms.xml</literal>文件来设定窗口大小：</para>
             <programlisting>
 &lt;connection-factory name="ConnectionFactory"&gt;
    &lt;connectors>
@@ -122,36 +97,28 @@
    &lt;consumer-window-size&gt;0&lt;/consumer-window-size&gt;
 &lt;/connection-factory&gt;
             </programlisting>
-            <para>If the connection factory is directly instantiated, the consumer window size is
-               specified by <literal>HornetQConnectionFactory.setConsumerWindowSize()</literal>
-               method.</para>
-            <para>Please see <xref linkend="examples.no-consumer-buffering"/> for an example which
-               shows how to configure HornetQ to prevent consumer buffering when dealing with slow
-               consumers.</para>
+            <para>如果直接实例化连接工厂，则使用<literal>HornetQConnectionFactory.setConsumerWindowSize()</literal>
+               方法来设定窗口大小。</para>
+            <para>参见例子<xref linkend="examples.no-consumer-buffering"/>来了解如何配置HornetQ来
+               关闭接收者的缓存。</para>
          </section>
       </section>
       <section>
-         <title>Rate limited flow control</title>
-         <para>It is also possible to control the <emphasis>rate</emphasis> at which a consumer can
-            consume messages. This is a form of throttling and can be used to make sure that a
-            consumer never consumes messages at a rate faster than the rate specified. </para>
-         <para>The rate must be a positive integer to enable this functionality and is the maximum
-            desired message consumption rate specified in units of messages per second. Setting this
-            to <literal>-1</literal> disables rate limited flow control. The default value is
-               <literal>-1</literal>.</para>
-         <para>Please see <xref linkend="examples.consumer-rate-limit"/> for a working example of
-            limiting consumer rate.</para>
+         <title>速率流控制</title>
+         <para>我们还可以通过控制 <emphasis>速率</emphasis>的方法来控制流。这是一种像调节节流阀的形式。
+            这种方法保证一个接收者接收消息的速率不会超过设定的值。 </para>
+         <para>速率必须是一个正整数。它代表最大接收速度，单位是消息每秒。将它设为<literal>-1</literal>就会关闭速率流控制。
+               默认值是<literal>-1</literal>。</para>
+         <para>参见有关速率流控制的例子<xref linkend="examples.consumer-rate-limit"/>以进一步了解它的工作原理。</para>
          <section id="flow-control.rate.core.api">
-            <title>Using Core API</title>
-            <para>If the HornetQ core API is being used the rate can be set via the <literal
-                  >ClientSessionFactory.setConsumerMaxRate(int consumerMaxRate)</literal> method or
-               alternatively via some of the <literal>ClientSession.createConsumer()</literal>
-               methods. </para>
+            <title>使用核心接口（Core API）</title>
+            <para>HornetQ的核心接口的<literal
+                  >ClientSessionFactory.setConsumerMaxRate(int consumerMaxRate)</literal>方法或
+               某些<literal>ClientSession.createConsumer()</literal>方法可以实现对流的速率控制。</para>
          </section>
          <section>
-            <title>Using JMS</title>
-            <para>If JNDI is used to look up the connection factory, the max rate can be configured
-               in <literal>hornetq-jms.xml</literal>:</para>
+            <title>使用JMS</title>
+            <para>如果从JNDI中获取连接工厂，需要通过配置<literal>hornetq-jms.xml</literal>来进行速率流控制：</para>
             <programlisting>&lt;connection-factory name="ConnectionFactory">
       &lt;connectors>
          &lt;connector-ref connector-name="netty-connector"/>
@@ -164,49 +131,37 @@
       of 10 messages per sec -->
       &lt;consumer-max-rate>10&lt;/consumer-max-rate>
  &lt;/connection-factory></programlisting>
-            <para>If the connection factory is directly instantiated, the max rate size can be set
-               via the <literal>HornetQConnectionFactory.setConsumerMaxRate(int
-                  consumerMaxRate)</literal> method.</para>
+            <para>如果是直接实例化连接工厂，则通过<literal>HornetQConnectionFactory.setConsumerMaxRate(int
+                  consumerMaxRate)</literal>方法来设定最大流速率。</para>
             <note>
-               <para>Rate limited flow control can be used in conjunction with window based flow
-                  control. Rate limited flow control only effects how many messages a client can
-                  consume in a second and not how many messages are in its buffer. So if you had a
-                  slow rate limit and a high window based limit the clients internal buffer would
-                  soon fill up with messages.</para>
+               <para>速率流控制可以与窗口流控制结合使用。速率控制只规定了客户端每秒接收多少消息。因此如果你设定
+                  了一个较低的速率，同时又设定了一个大的缓存窗口，那么客户端的缓存将会很快饱和。</para>
             </note>
-            <para>Please see <xref linkend="examples.consumer-rate-limit"/> for an example which
-               shows how to configure HornetQ to prevent consumer buffering when dealing with slow
-               consumers.</para>
+            <para>参见接收速率流控制的例子<xref linkend="examples.consumer-rate-limit"/>进一步了解速率流控制的配置和使用。</para>
          </section>
       </section>
    </section>
    <section>
-      <title>Producer flow control</title>
-      <para>HornetQ also can limit the amount of data sent from a client to a server to prevent the
-         server being overwhelmed.</para>
+      <title>发送者（producer）的流控制</title>
+      <para>HornetQ还可以控制客户端向服务器发送消息的速度，以避免服务器因大量数据过载。</para>
       <section>
-         <title>Window based flow control</title>
-         <para>In a similar way to consumer window based flow control, HornetQ producers, by
-            default, can only send messages to an address as long as they have sufficient credits to
-            do so. The amount of credits required to send a message is given by the size of the
-            message.</para>
-         <para>As producers run low on credits they request more from the server, when the server
-            sends them more credits they can send more messages.</para>
-         <para>The amount of credits a producer requests in one go is known as the <emphasis
-               role="italic">window size</emphasis>.</para>
-         <para>The window size therefore determines the amount of bytes that can be in-flight at any
-            one time before more need to be requested - this prevents the remoting connection from
-            getting overloaded.</para>
+         <title>基于窗口的流控制</title>
+         <para>与接收者的相应的控制相似。在默认条件下，发送者要有足够的份额（credits）才可以向服务器的地址发送消息。
+               这个份额就是消息的大小。</para>
+         <para>当发送者的份额不足时，它要向服务器请求更多的份额以便发送更多的消息。</para>
+         <para>发送者一次向服务器请求的份额值被称为<emphasis
+               role="italic">窗口大小</emphasis>。</para>
+         <para>于是窗口大小就是指发送者向服务器不间断发送消息的总最大字节数。当发送完毕时需再向服务器请求份额。这样就避免了
+            服务器消息过载的情况。</para>
          <section>
-            <title>Using Core API</title>
-            <para>If the HornetQ core API is being used, window size can be set via the <literal
+            <title>使用核心接口（Core API）</title>
+            <para>若使用核心接口，<literal
                   >ClientSessionFactory.setProducerWindowSize(int producerWindowSize)</literal>
-               method.</para>
+               方法可以对窗口大小进行设定。</para>
          </section>
          <section>
-            <title>Using JMS</title>
-            <para>If JNDI is used to look up the connection factory, the producer window size can be
-               configured in <literal>hornetq-jms.xml</literal>:</para>
+            <title>使用JMS</title>
+            <para>如果使用JNDI来获得连接工厂，则需要配置<literal>hornetq-jms.xml</literal>文件以设定窗口大小：</para>
             <programlisting>
                &lt;connection-factory name="ConnectionFactory">
                   &lt;connectors>
@@ -217,39 +172,27 @@
                   &lt;/entries>
                   &lt;producer-window-size>10&lt;/producer-window-size>
                &lt;/connection-factory></programlisting>
-            <para>If the connection factory is directly instantiated, the producer window size can
-               be set via the <literal>HornetQConnectionFactory.setProducerWindowSize(int
-                  producerWindowSize)</literal> method.</para>
+            <para>如果是直接实例化连接工厂，则使用<literal>HornetQConnectionFactory.setProducerWindowSize(int
+                  producerWindowSize)</literal>方法来设定窗口大小。</para>
          </section>
          <section>
-            <title>Blocking producer window based flow control</title>
-            <para>Normally the server will always give the same number of credits as have been
-               requested. However, it is also possible to set a maximum size on any address, and the
-               server will never send more credits than could cause the address's upper memory limit
-               to be exceeded.</para>
-            <para>For example, if I have a JMS queue called "myqueue", I could set the maximum
-               memory size to 10MiB, and the the server will control the number of credits sent to
-               any producers which are sending any messages to myqueue such that the total messages
-               in the queue never exceeds 10MiB.</para>
-            <para>When the address gets full, producers will block on the client side until more
-               space frees up on the address, i.e. until messages are consumed from the queue thus
-               freeing up space for more messages to be sent.</para>
-            <para>We call this blocking producer flow control, and it's an efficient way to prevent
-               the server running out of memory due to producers sending more messages than can be
-               handled at any time.</para>
-            <para>It is an alternative approach to paging, which does not block producers but
-               instead pages messages to storage.</para>
-            <para>To configure an address with a maximum size and tell the server that you want to
-               block producers for this address if it becomes full, you need to define an
-               AddressSettings (<xref linkend="queue-attributes.address-settings"/>) block for the
-               address and specify <literal>max-size-bytes</literal> and <literal
-                  >address-full-policy</literal></para>
-            <para>The address block applies to all queues registered to that address. I.e. the total
-               memory for all queues bound to that address will not exceed <literal
-                  >max-size-bytes</literal>. In the case of JMS topics this means the <emphasis
-                  role="italic">total</emphasis> memory of all subscriptions in the topic won't
-               exceed max-size-bytes.</para>
-            <para>Here's an example:</para>
+            <title>限定发送者窗口流控制</title>
+            <para>通常情况下客户端请求多少份额，HornetQ服务器就给予多少份额。然而我们还可以针对每个地址来设定一个最大
+               的份额值，以使服务器给出的份额都不大于该值。这样可以防止一个地址的内存溢出。</para>
+            <para>例如，如果有一个队列称为“myqueue”。将它的最大内存值设为10MiB，则服务器就会控制给出的份额以保证向该队列的地
+               址发送消息时不会占大于10MiB的内存空间。</para>
+            <para>当一相地址已经满了的时候，发送者将会阻塞直到该地址有了多余的空间为止，即地址中的消息被接收了一部分后使得
+               地址腾出了一些空间。</para>
+            <para>我们将这种控制方法称为限定发送者窗口流控制。这是一种有效的防止服务器内存溢出的手段。</para>
+            <para>它可以看成是分页转存（paging）的另一种方法。分页转存不阻塞发送者，它将消息转存到存贮介质上以节省内存的空间。</para>
+            <para>要配置一个地址的最大容量并告诉服务器在地址满了的情况下阻塞发送者，你需要为该地址定义一个
+               AddressSettings (<xref linkend="queue-attributes.address-settings"/>) 并设定
+               <literal>max-size-bytes</literal> 和 <literal
+                  >address-full-policy</literal>。</para>
+            <para>这个配置对所有注册到该地址的队列有效。即所有注册队列的总内存将不超过 <literal
+                  >max-size-bytes</literal>。对于JMS topic情况则意谓着该topic的所有订阅的内存不能超过
+                  max-size-bytes的设定值。</para>
+            <para>下面是一个例子：</para>
             <programlisting>
                &lt;address-settings>
                   &lt;address-setting match="jms.queue.exampleQueue">            
@@ -257,38 +200,27 @@
                      &lt;address-full-policy>DROP&lt;/address-full-policy>   
                   &lt;/address-setting>
                &lt;/address-settings></programlisting>
-            <para>The above example would set the max size of the JMS queue "exampleQueue" to be
-               100000 bytes and would block any producers sending to that address to prevent that
-               max size being exceeded.</para>
-            <para>Note the policy must be set to <literal>DROP</literal> to enable blocking producer
-               flow control.</para>
-            <para>Please note the default value for <literal>address-full-policy</literal> is to
-                  <literal>PAGE</literal>. Please see the chapter on paging for more information on
-               paging.</para>
+            <para>上面的例子将JMS队列"exampleQueue"的最大内存值设为
+               100000 字节并且阻塞发送者以防止消息量超过这个值。</para>
+            <para>注意必须设置 <literal>DROP</literal>的策略才能打开限定发送者窗口控制。</para>
+            <para>请注意默认的<literal>address-full-policy</literal> 是
+                  <literal>PAGE</literal>。请参阅分页转存（paging）的相关章节作进一步的了解。</para>
          </section>
       </section>
       <section>
-         <title>Rate limited flow control</title>
-         <para>HornetQ also allows the rate a producer can emit message to be limited, in units of
-            messages per second. By specifying such a rate, HornetQ will ensure that producer never
-            produces messages at a rate higher than that specified.</para>
-         <para>The rate must be a positive integer to enable this functionality and is the maximum
-            desired message consumption rate specified in units of messages per second. Setting this
-            to <literal>-1</literal> disables rate limited flow control. The default value is
-               <literal>-1</literal>.</para>
-         <para>Please see the <xref linkend="producer-rate-limiting-example"/> for a working example
-            of limiting producer rate.</para>
+         <title>速率流控制</title>
+         <para>HornetQ也可以控制发送者发送消息的速率。单位是每秒消息数。通过设定速率可保证发送者的发送速率不超过某个值。</para>
+         <para>速率必须是一个正整数。如果设为 <literal>-1</literal> 则关闭速率流控制。默认值是<literal>-1</literal>。</para>
+         <para>请参见例子<xref linkend="producer-rate-limiting-example"/>进一步了解速率流控制的使用方法。</para>
          <section id="flow-control.producer.rate.core.api">
-            <title>Using Core API</title>
-            <para>If the HornetQ core API is being used the rate can be set via the <literal
-                  >ClientSessionFactory.setProducerMaxRate(int consumerMaxRate)</literal> method or
-               alternatively via some of the <literal>ClientSession.createProducer()</literal>
-               methods. </para>
+            <title>使用核心接口（Core API）</title>
+            <para>如果使用核心接口，<literal
+                  >ClientSessionFactory.setProducerMaxRate(int consumerMaxRate)</literal>方法或
+                  某些 <literal>ClientSession.createProducer()</literal>方法可以设置最大速率值。</para>
          </section>
          <section>
-            <title>Using JMS</title>
-            <para>If JNDI is used to look up the connection factory, the max rate can be configured
-               in <literal>hornetq-jms.xml</literal>:</para>
+            <title>使用 JMS</title>
+            <para>如果使用JNDI，需要配置<literal>hornetq-jms.xml</literal>文件：</para>
             <programlisting>&lt;connection-factory name="ConnectionFactory">
       &lt;connectors>
          &lt;connector-ref connector-name="netty-connector"/>
@@ -301,9 +233,8 @@
       of 10 messages per sec -->
       &lt;producer-max-rate>10&lt;/producer-max-rate>
  &lt;/connection-factory></programlisting>
-            <para>If the connection factory is directly instantiated, the max rate size can be set
-               via the <literal>HornetQConnectionFactory.setProducerMaxRate(int
-                  consumerMaxRate)</literal> method.</para>
+            <para>如果直接实例化连接工厂，则使用<literal>HornetQConnectionFactory.setProducerMaxRate(int
+                  consumerMaxRate)</literal>方法来设置。</para>
          </section>
       </section>
    </section>
