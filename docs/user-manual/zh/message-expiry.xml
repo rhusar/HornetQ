@@ -17,78 +17,65 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="message-expiry">
-   <title>Message Expiry</title>
-   <para>Messages can be set with an optional <emphasis>time to live</emphasis> when sending
-      them.</para>
-   <para>HornetQ will not deliver a message to a consumer after it's time to live has been exceeded.
-      If the message hasn't been delivered by the time that time to live is reached the server can
-      discard it.</para>
-   <para>HornetQ's addresses can be assigned a expiry address so that, when messages are expired,
-      they are removed from the queue and sent to the expiry address. Many different queues can be
-      bound to an expiry address. These <emphasis>expired</emphasis> messages can later be consumed
-      for further inspection.</para>
+   <title>过期的消息</title>
+   <para>消息在发送时有一个可选的<emphasis>生存时间</emphasis>属性。</para>
+   <para>如果一个消息已经超过了它的生存时间，HornetQ不再将它传递给任何接收者。
+      服务器会将过期的消息抛弃。</para>
+   <para>HornetQ的地址可以配置一个过期地址，当消息过期时，它们被从队列中删除并被转移到过期地址中。
+      多个不同的队列可以绑定到一个过期地址上。这些过期的消息过后可以接收下来以供分析用。</para>
    <section>
-      <title>Message Expiry</title>
-      <para>Using HornetQ Core API, you can set an expiration time directly on the message:</para>
+      <title>过期消息的配置</title>
+      <para>如果使用HornetQ核心API，可以直接在消息上设置过期时间：</para>
       <programlisting>
 // message will expire in 5000ms from now
 message.setExpiration(System.currentTimeMillis() + 5000);         
               </programlisting>
-      <para>JMS MessageProducer allows to set a TimeToLive for the messages it sent:</para>
+      <para>JMS的MessageProducer可以设置一个TimeToLive来控制其发送的消息：</para>
       <programlisting>
 // messages sent by this producer will be retained for 5s (5000ms) before expiration           
 producer.setTimeToLive(5000);
         </programlisting>
-      <para>Expired messages which are consumed from an expiry address have the following
-         properties:</para>
+      <para>从过期地址中接收下来的消息有以下属性：</para>
       <itemizedlist>
          <listitem>
             <para><literal>_HQ_ORIG_ADDRESS</literal></para>
-            <para>a String property containing the <emphasis>original address</emphasis> of the
-               expired message </para>
+            <para>这是一个字符串，它是该消息的<emphasis>原始地址</emphasis>。</para>
          </listitem>
          <listitem>
             <para><literal>_HQ_ACTUAL_EXPIRY</literal></para>
-            <para>a Long property containing the <emphasis>actual expiration time</emphasis> of the
-               expired message</para>
+            <para>一个长整型量，代表此消息<emphasis>实际过期时间</emphasis>。</para>
          </listitem>
       </itemizedlist>
    </section>
    <section id="message-expiry.configuring">
-      <title>Configuring Expiry Addresses</title>
-      <para>Expiry address are defined in the address-setting configuration:</para>
+      <title>配置过期地址</title>
+      <para>过期地址配置在地址设置（address-setting）中：</para>
       <programlisting>
 &lt;!-- expired messages in exampleQueue will be sent to the expiry address expiryQueue --&gt;
 &lt;address-setting match="jms.queue.exampleQueue"&gt;
    &lt;expiry-address&gt;jms.queue.expiryQueue&lt;/expiry-address&gt;
 &lt;/address-setting&gt;
         </programlisting>
-      <para>If messages are expired and no expiry address is specified, messages are simply removed
-         from the queue and dropped. Address wildcards can be used to configure expiry address for a
-         set of addresses (see <xref linkend="wildcard-syntax"/>).</para>
+      <para>如果没有定义过期地址，当一个消息过期时，它将被删除。配置过期地址时可以使用通配符
+         来给一组地址配置过期地址。（参见<xref linkend="wildcard-syntax"/>）。</para>
    </section>
    <section id="configuring.expiry.reaper">
-      <title>Configuring The Expiry Reaper Thread</title>
-      <para>A reaper thread will periodically inspect the queues to check if messages have
-         expired.</para>
-      <para>The reaper thread can be configured with the following properties in <literal
-            >hornetq-configuration.xml</literal></para>
+      <title>配置过期回收线程</title>
+      <para>HornetQ有一个回收线程定期地检查队列中的消息，目的是发现是否有消息过期。</para>
+      <para>在<literal>hornetq-configuration.xml</literal>文件中可以对回收线程进行配置，参数如下：</para>
       <itemizedlist>
          <listitem>
             <para><literal>message-expiry-scan-period</literal></para>
-            <para>How often the queues will be scanned to detect expired messages (in milliseconds,
-               default is 30000ms)</para>
+            <para>过期消息的扫描间隔（单位毫秒，默认为30000ms）。</para>
          </listitem>
          <listitem>
             <para><literal>message-expiry-thread-priority</literal></para>
-            <para>The reaper thread priority (it must be between 0 and 9, 9 being the highest
-               priority, default is 3)</para>
+            <para>回收线程的优先级（为0到9的整数，9优先级最高。默认是3）。</para>
          </listitem>
       </itemizedlist>
    </section>
    <section>
-      <title>Example</title>
-      <para>See <xref linkend="examples.expiry"/> for an example which shows how message expiry is
-         configured and used with JMS.</para>
+      <title>例子</title>
+      <para>参见<xref linkend="examples.expiry"/>。这个例子展示了在JMS中如何配置使用消息过期功能。</para>
    </section>
 </chapter>

@@ -17,70 +17,56 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="undelivered-messages">
-   <title>Message Redelivery and Undelivered Messages</title>
-   <para>Messages can be delivered unsuccessfully (e.g. if the transacted session used to consume
-      them is rolled back). Such a message goes back to its queue ready to be redelivered. However,
-      this means it is possible for a message to be delivered again and again without any success
-      and remain in the queue, clogging the system.</para>
-   <para>There are 2 ways to deal with these undelivered messages:</para>
+   <title>消息再传递及未传递的消息</title>
+   <para>消息有可能传递失败（比如相关的事务发生回滚）。失败的消息将退回到队列中准备重新传递。这样就会出现
+      一种情况，就是同一个消息会被反复的传递而总不成功，以至于使系统处于忙的状态。</para>
+   <para>对于这样的消息我们有两种处理方法：</para>
    <itemizedlist>
       <listitem>
-         <para>Delayed redelivery.</para>
-         <para>It is possible to delay messages redelivery to let the client some time to recover
-            from transient failures and not overload its network or CPU resources</para>
+         <para>延迟再传递</para>
+         <para>这种方法是让消息再次传递时有一定的时间延迟，这样客户端就有机会从故障中恢复，同时网络连接和CPU资源
+            也不致于被过度占用。</para>
       </listitem>
       <listitem>
-         <para>Dead Letter Address.</para>
-         <para>It is also possible to configure a dead letter address so that after a specified
-            number of unsuccessful deliveries, messages are removed from the queue and will not be
-            delivered again</para>
+         <para>死信（Dead Letter）地址</para>
+         <para>这种方法是规定一个死信地址，如果消息再被反复传递达到一定次数时，就会从原有队列中删除，转到这个
+            死信地址中。这样消息就不会永远地重复传递了。</para>
       </listitem>
    </itemizedlist>
-   <para>Both options can be combined for maximum flexibility.</para>
+   <para>以上两种方法可以合理搭配使用，使解决方案更加灵活。</para>
    <section>
-      <title>Delayed Redelivery</title>
-      <para>Delaying redelivery can often be useful in the case that clients regularly fail or
-         rollback. Without a delayed redelivery, the system can get into a "thrashing" state, with
-         delivery being attempted, the client rolling back, and delivery being re-attempted ad
-         infinitum in quick succession, consuming valuable CPU and network resources.</para>
+      <title>延迟再传递</title>
+      <para>延迟再传递对于时常出现故障或回滚的客户端十分有用。如果没有延迟，整个系统可能会处于一种”疯狂“的状态。
+         就是消息被传递、回滚、再传递，这样反复不间断地进行着，将宝贵的CPU和网络资源占用。</para>
       <section id="undelivered-messages.delay">
-         <title>Configuring Delayed Redelivery</title>
-         <para>Delayed redelivery is defined in the address-setting configuration:</para>
+         <title>延迟再传递的配置</title>
+         <para>延迟再传递的配置在地址设定内（address-setting）：</para>
          <programlisting>
      &lt;!-- delay redelivery of messages for 5s --&gt;
      &lt;address-setting match="jms.queue.exampleQueue"&gt;
         &lt;redelivery-delay&gt;5000&lt;/redelivery-delay&gt;
      &lt;/address-setting&gt;
              </programlisting>
-         <para>If a <literal>redelivery-delay</literal> is specified, HornetQ will wait this delay
-            before redelivering the messages</para>
-         <para>By default, there is no redelivery delay (<literal>redelivery-delay</literal>is set
-            to 0).</para>
-         <para>Address wildcards can be used to configure redelivery delay for a set of addresses
-            (see <xref linkend="wildcard-syntax"/>), so you don't have to specify redelivery delay
-            individually for each address.</para>
+         <para>如果定义了<literal>redelivery-delay</literal>，HornetQ在再传递之前等待所定义的时间。</para>
+         <para>默认是没有延时的（即<literal>redelivery-delay</literal>的值是0）。</para>
+         <para>可以使用通配符为一组地址定义再传递的延迟（参见<xref linkend="wildcard-syntax"/>）。
+               </para>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.delayed-redelivery"/> for an example which shows how
-            delayed redelivery is configured and used with JMS.</para>
+         <title>例子</title>
+         <para>参见 <xref linkend="examples.delayed-redelivery"/>。这是一个JMS应用中配置延迟再传递的例子。</para>
       </section>
    </section>
    <section>
-      <title>Dead Letter Addresses</title>
-      <para>To prevent a client infinitely receiving the same undelivered message (regardless of
-         what is causing the unsuccessful deliveries), messaging systems define <emphasis
-            role="italic">dead letter addresses</emphasis>: after a specified unsuccessful delivery
-         attempts, the message is removed from the queue and send instead to a dead letter address. </para>
-      <para>Any such messages can then be diverted to queue(s) where they can later be perused by
-         the system administrator for action to be taken.</para>
-      <para>HornetQ's addresses can be assigned a dead letter address. Once the messages have be
-         unsuccessfully delivered for a given number of attempts, they are removed from the queue
-         and sent to the dead letter address. These <emphasis>dead letter</emphasis> messages can
-         later be consumed for further inspection.</para>
+      <title>死信地址</title>
+      <para>通过定义一个<emphasis role="italic">死信地址</emphasis>也可以防止同一个消息被无休止地传递：
+         当一个消息被重复传递一定次数后，就会从队列中删除并传递到定义好的死信地址中。</para>
+      <para>这些死信中的消息之后可以转发到某个队列中，以供系统管理员分析处理。</para>
+      <para>每个HornetQ的地址可以有一个死信地址。当一个消息被反复传递达一定次数时，它就会被从队列中删除并送到
+         死信地址。这些<emphasis>死信</emphasis>消息可以被接收进行分析处理。</para>
       <section id="undelivered-messages.configuring">
-         <title>Configuring Dead Letter Addresses</title>
-         <para>Dead letter address is defined in the address-setting configuration:</para>
+         <title>配置死信地址</title>
+         <para>死信地址定义在地址设定中（address-setting）：</para>
          <programlisting>
      &lt;!-- undelivered messages in exampleQueue will be sent to the dead letter address 
         deadLetterQueue after 3 unsuccessful delivery attempts
@@ -90,52 +76,41 @@
         &lt;max-delivery-attempts&gt;3&lt;/max-delivery-attempts&gt;
      &lt;/address-setting&gt;
              </programlisting>
-         <para>If a <literal>dead-letter-address</literal> is not specified, messages will removed
-            after <literal>max-delivery-attempts</literal> unsuccessful attempts.</para>
-         <para>By default, messages are redelivered 10 times at the maximum. Set <literal
-               >max-delivery-attempts</literal> to -1 for infinite redeliveries.</para>
-         <para>For example, a dead letter can be set globally for a set of matching addresses and
-            you can set <literal>max-delivery-attempts</literal> to -1 for a specific address
-            setting to allow infinite redeliveries only for this address.</para>
-         <para>Address wildcards can be used to configure dead letter settings for a set of
-            addresses (see <xref linkend="wildcard-syntax"/>).</para>
+         <para>如果没有定义<literal>dead-letter-address</literal>，消息在经过
+               <literal>max-delivery-attempts</literal>次重复传递后被删除。</para>
+         <para>默认的重复传递次数为10。将<literal>max-delivery-attempts</literal>设定为-1
+               表示无限次重复传递。</para>
+         <para>例如，对一组地址设置了一个通用的死信地址后，再将其中某个地址的<literal>max-delivery-attempts</literal>
+            设定为-1时，那么只有这个地址的再传递次数是无限的。</para>
+         <para>可以使用通配符对一组地址设定死信地址（参见<xref linkend="wildcard-syntax"/>）。</para>
       </section>
       <section>
-         <title>Dead Letter Properties</title>
-         <para>Dead letter messages which are consumed from a dead letter address have the following
-            property:</para>
+         <title>死信的属性</title>
+         <para>从死信地址接收到的消息有以下属性：</para>
          <itemizedlist>
             <listitem>
                <para><literal>_HQ_ORIG_ADDRESS</literal></para>
-               <para>a String property containing the <emphasis>original address</emphasis> of
-                  the dead letter message </para>
+               <para>这是一个字符串属性，它是该死信消息的<emphasis>原始地址</emphasis>。</para>
             </listitem>
          </itemizedlist>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.dead-letter"/> for an example which shows how dead letter
-            is configured and used with JMS.</para>
+         <title>例子</title>
+         <para>参见<xref linkend="examples.dead-letter"/>。这个例子给出了在JMS应用中死信的配置与使用。</para>
       </section>
    </section>
    <section id="configuring.delivery.count.persistence">
-      <title>Delivery Count Persistence</title>
-      <para>In normal use, HornetQ does not update delivery count <emphasis>persistently</emphasis>
-         until a message is rolled back (i.e. the delivery count is not updated
-            <emphasis>before</emphasis> the message is delivered to the consumer). In most messaging
-         use cases, the messages are consumed, acknowledged and forgotten as soon as they are
-         consumed. In these cases, updating the delivery count persistently before delivering the
-         message would add an extra persistent step <emphasis>for each message delivered</emphasis>,
-         implying a significant performance penalty.</para>
-      <para>However, if the delivery count is not updated persistently before the message delivery
-         happens, in the event of a server crash, messages might have been delivered but that will
-         not have been reflected in the delivery count. During the recovery phase, the server will
-         not have knowledge of that and will deliver the message with <literal>redelivered</literal>
-         set to <literal>false</literal> while it should be <literal>true</literal>. </para>
-      <para>As this behavior breaks strict JMS semantics, HornetQ allows to persist delivery count
-         before message delivery but disabled it by default for performance implications.</para>
-      <para>To enable it, set <literal>persist-delivery-count-before-delivery</literal> to <literal
-            >true</literal> in <literal>hornetq-configuration.xml</literal>:</para>
+      <title>传递计数的持久化</title>
+      <para>通常情况下HornetQ在一个消息被回滚之前并不更新持久的传递计数（即在消息传递到接收者之前不会更新传递计数）。
+         大多数情况下消息被接收、通知、然后被忘掉。这样对<emphasis>每一个消息</emphasis>的传递都要更新一次持久的
+         传递计数，会显著降低系统的性能。</para>
+      <para>介是如果在消息传递之前不进行持久传递计数的更新，服务器一旦发生故障而崩溃，就会造成消息可能被传递出去而传递
+         计数却没有正确反映出传递的結果。在恢复阶段，服务器将错误地将该消息的<literal>redelivered</literal>设为
+         <literal>false</literal>而不是<literal>true</literal>。 </para>
+      <para>这样是不符合严格的JMS要求的。因此HornetQ允许在消息传递前更新传递计数。但是默认不这样做，目的是优先考虑
+         了它对性能的影响。</para>
+      <para>要想打开传递计数更新功能，将<literal>hornetq-configuration.xml</literal>文件中的
+            <literal>persist-delivery-count-before-delivery</literal>设为<literal>true</literal>即可：</para>
       <programlisting>
 &lt;persist-delivery-count-before-delivery&gt;true&lt;/persist-delivery-count-before-delivery&gt;
       </programlisting>
