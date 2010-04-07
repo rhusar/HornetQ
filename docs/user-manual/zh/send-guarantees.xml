@@ -17,132 +17,86 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="send-guarantees">
-    <title>Guarantees of sends and commits</title>
+    <title>发送与提交的保证</title>
     <section>
-        <title>Guarantees of Transaction Completion</title>
-        <para>When committing or rolling back a transaction with HornetQ, the request to commit or
-            rollback is sent to the server, and the call will block on the client side until a
-            response has been received from the server that the commit or rollback was
-            executed.</para>
-        <para>When the commit or rollback is received on the server, it will be committed to the
-            journal, and depending on the value of the parameter <literal
-                >journal-sync-transactional</literal> the server will ensure that the commit or
-            rollback is durably persisted to storage before sending the response back to the client.
-            If this parameter has the value <literal>false</literal> then commit or rollback may not
-            actually get persisted to storage until some time after the response has been sent to
-            the client. In event of server failure this may mean the commit or rollback never gets
-            persisted to storage. The default value of this parameter is <literal>true</literal> so
-            the client can be sure all transaction commits or rollbacks have been persisted to
-            storage by the time the call to commit or rollback returns.</para>
-        <para>Setting this parameter to <literal>false</literal> can improve performance at the
-            expense of some loss of transaction durability.</para>
-        <para>This parameter is set in <literal>hornetq-configuration.xml</literal></para>
+        <title>事务保证</title>
+        <para>在提交或回滚事务时，HornetQ将提交或回滚的请求发送到服务器，客户端阻塞等待服务器的响应。</para>
+        <para>当服务器端收到提交或回滚的请求时，它将事务信息记录到日志（journal）中。然后向客户端发回
+              响应。参数<literal>journal-sync-transactional</literal>控制着如何向客户端发回响应。
+            如果它的值是<literal>false</literal>，服务器向客户端发回响应时事务的处理結果不一定已经被
+            保存到磁盘中。可能会在之后的某个时间保存。如果期间服务器发生故障那么事务的处理信息可能丢失。
+            当它的值是<literal>true</literal>时，服务器将保证在向客户端发回响应时，事务的处理信息
+            已经被保存到了磁盘中。默认值是<literal>true</literal>。</para>
+        <para>显然将这个参数设为<literal>false</literal>可以提高性能，但是要以牺牲事务的持久性为代价。</para>
+        <para>这个参数在 <literal>hornetq-configuration.xml</literal>文件中。</para>
     </section>
     <section id="non-transactional-sends">
-        <title>Guarantees of Non Transactional Message Sends</title>
-        <para>If you are sending messages to a server using a non transacted session, HornetQ can be
-            configured to block the call to send until the message has definitely reached the
-            server, and a response has been sent back to the client. This can be configured
-            individually for durable and non-durable messages, and is determined by the
-            following two parameters:</para>
+        <title>非事务性消息发送的保证</title>
+        <para>使用非事务性会话发送消息时，经过适当配置HornetQ，客户端在发送后以阻塞的方式等待，直到确认发出
+            的消息已经到达服务器后再返回。可以对持久化或非持久化的消息分别配置，具体参数如下：</para>
         <itemizedlist>
             <listitem>
-                <para><literal>BlockOnDurableSend</literal>. If this is set to <literal
-                        >true</literal> then all calls to send for durable messages on non
-                    transacted sessions will block until the message has reached the server, and a
-                    response has been sent back. The default value is <literal>true</literal>.
+                <para><literal>BlockOnDurableSend</literal>。如果设为<literal>true</literal>则通过
+                    非事务性会话发送持久消息时，每次发送都将阻塞直到消息到达服务器并返回通知为止。默认值是
+                     <literal>true</literal>。
                 </para>
             </listitem>
             <listitem>
-                <para><literal>BlockOnNonDurableSend</literal>. If this is set to <literal
-                        >true</literal> then all calls to send for non-durable messages on non
-                    transacted sessions will block until the message has reached the server, and a
-                    response has been sent back. The default value is <literal
-                    >false</literal>.</para>
+                <para><literal>BlockOnNonDurableSend</literal>。如果设为<literal>true</literal>，
+                    则通过非事务性会话发送非持久消息时，每次发送都将阻塞直到消息到达服务器并返回通知为止。默认值是
+                    <literal>false</literal>。</para>
             </listitem>
         </itemizedlist>
-        <para>Setting block on sends to <literal>true</literal> can reduce performance since each
-            send requires a network round trip before the next send can be performed. This means the
-            performance of sending messages will be limited by the network round trip time (RTT) of
-            your network, rather than the bandwidth of your network. For better performance we
-            recommend either batching many messages sends together in a transaction since with a
-            transactional session, only the commit / rollback blocks not every send, or, using
-            HornetQ's advanced <emphasis>asynchronous send acknowledgements feature</emphasis>
-            described in <xref linkend="asynchronous-send-acknowledgements"/>.</para>
-        <para>If you are using JMS and you're using the JMS service on the server to load your JMS
-            connection factory instances into JNDI then these parameters can be configured in
-                <literal>hornetq-jms.xml</literal> using the elements <literal
-                >block-on-durable-send</literal> and <literal
-                >block-on-non-durable-send</literal>. If you're using JMS but not using JNDI then
-            you can set these values directly on the <literal>HornetQConnectionFactory</literal>
-            instance using the appropriate setter methods.</para>
-        <para>If you're using core you can set these values directly on the <literal
-                >ClientSessionFactory</literal> instance using the appropriate setter
-            methods.</para>
-        <para>When the server receives a message sent from a non transactional session, and that
-            message is durable and the message is routed to at least one durable queue, then the
-            server will persist the message in permanent storage. If the journal parameter <literal
-                >journal-sync-non-transactional</literal> is set to <literal>true</literal> the
-            server will not send a response back to the client until the message has been persisted
-            and the server has a guarantee that the data has been persisted to disk. The default
-            value for this parameter is <literal>true</literal>.</para>
+        <para>将发送设置为阻塞方式会降低程序的效率。因为每次发送都需要一次网络往返的过程，然后才可以进行下次发送。
+            这样发送消息的速度将受网络往返时间（RTT）的限制。这样你的网络带宽就可能没有被充分利用。为了提高效率，我们
+            建议采用事务来批量发送消息。因为在事务中，只有在提交或回滚时阻塞。另外你还可以利用HornetQ高级的
+            <emphasis>异步发送通知功能</emphasis>。这一功能在<xref linkend="asynchronous-send-acknowledgements"/>
+            进行了描述。</para>
+        <para>使用JMS时，如果JMS的连接工厂是在服务器端被注册到JNDI服务，你需要配置
+                <literal>hornetq-jms.xml</literal>文件中的<literal>block-on-durable-send</literal>
+                和<literal>block-on-non-durable-send</literal>。如果不使用JNDI，可以调用
+                <literal>HornetQConnectionFactory</literal>相应的设置方法进行配置。</para>
+        <para>如果你使用的是内核服务，你可以直接在<literal
+                >ClientSessionFactory</literal>上用相关的方法设置相应的参数。</para>
+        <para>当服务器从一个非事务性的会话收到一个消息时，如果这个消息是持久的并且此消息被路由到至少一个持久的队列中，
+            则该消息会被持久化到永久存贮介质中。如果日志（journal）的参数<literal
+                >journal-sync-non-transactional</literal>设为<literal>true</literal>，服务器在向客户
+            发送响应时，它能保证消息已经被持久化到磁盘中。默认值是<literal>true</literal>。</para>
     </section>
     <section id="send-guarantees.nontrans.acks">
-        <title>Guarantees of Non Transactional Acknowledgements</title>
-        <para>If you are acknowledging the delivery of a message at the client side using a non
-            transacted session, HornetQ can be configured to block the call to acknowledge until the
-            acknowledge has definitely reached the server, and a response has been sent back to the
-            client. This is configured with the parameter <literal>BlockOnAcknowledge</literal>. If
-            this is set to <literal>true</literal> then all calls to acknowledge on non transacted
-            sessions will block until the acknowledge has reached the server, and a response has
-            been sent back. You might want to set this to <literal>true</literal> if you want to
-            implement a strict <emphasis>at most once</emphasis> delivery policy. The default value
-            is <literal>false</literal></para>
+        <title>非事务性通知的保证</title>
+        <para>当客户端使用非事务性会话向服务器通知消息收到时，可以配置HornetQ使得客户端的通知阻塞直到服务器收到
+            了通知并返回为止。其相应的配置参数是<literal>BlockOnAcknowledge</literal>。如果该参数设为
+            <literal>true</literal>则所有的通过非事务会话的消息通知都是阻塞式的。如果你想要的消息传递策略是
+            <emphasis>最多一次</emphasis>的话，那么你需要将此参数设为。默认值是<literal>false</literal>。</para>
     </section>
     <section id="asynchronous-send-acknowledgements">
-        <title>Asynchronous Send Acknowledgements</title>
-        <para>If you are using a non transacted session but want a guarantee that every message sent
-            to the server has reached it, then, as discussed in <xref
-                linkend="non-transactional-sends"/>, you can configure HornetQ to block the call to
-            send until the server has received the message, persisted it and sent back a response.
-            This works well but has a severe performance penalty - each call to send needs to block
-            for at least the time of a network round trip (RTT) - the performance of sending is thus
-            limited by the latency of the network, <emphasis>not</emphasis> limited by the network
-            bandwidth.</para>
-        <para>Let's do a little bit of maths to see how severe that is. We'll consider a standard
-            1Gib ethernet network with a network round trip between the server and the client of
-            0.25 ms.</para>
-        <para>With a RTT of 0.25 ms, the client can send <emphasis>at most</emphasis> 1000/ 0.25 =
-            4000 messages per second if it blocks on each message send.</para>
-        <para>If each message is &lt; 1500 bytes and a standard 1500 bytes MTU size is used on the
-            network, then a 1GiB network has a <emphasis>theoretical</emphasis> upper limit of (1024
-            * 1024 * 1024 / 8) / 1500 = 89478 messages per second if messages are sent without
-            blocking! These figures aren't an exact science but you can clearly see that being
-            limited by network RTT can have serious effect on performance.</para>
-        <para>To remedy this, HornetQ provides an advanced new feature called <emphasis>asynchronous
-                send acknowledgements</emphasis>. With this feature, HornetQ can be configured to
-            send messages without blocking in one direction and asynchronously getting
-            acknowledgement from the server that the messages were received in a separate stream. By
-            de-coupling the send from the acknowledgement of the send, the system is not limited by
-            the network RTT, but is limited by the network bandwidth. Consequently better throughput
-            can be achieved than is possible using a blocking approach, while at the same time
-            having absolute guarantees that messages have successfully reached the server.</para>
-        <para>The window size for send acknowledgements is determined by the confirmation-window-size parameter on
-        the connection factory or client session factory. Please see <xref linkend="client-reconnection"/> for more info on this.</para>
+        <title>异步发送通知</title>
+        <para>如果你使用的是非事务会话来发送消息，并且希望保证每个发送出去的消息都到达服务器的话，你可以将HornetQ配置
+            成阻塞的方式，如<xref linkend="non-transactional-sends"/>讨论的那样。这样做的一个缺点是性能的降低。
+            因为这样每发送一个消息就需要一次网络的往返通信。如果网络时延越长，消息发送的效率就越低。同时网络的带宽对消息
+            的发送没有影响。</para>
+        <para>我们来做一个简单的计算。假设有一个1Gib的网络，客户端与服务器间往返时间为0.25ms。</para>
+        <para>这样，在阻塞方式的情况下，客户端<emphasis>最大</emphasis>的消息发送速度为 1000/ 0.25 =
+            4000 消息每秒。</para>
+        <para>如果每个消息的大小&lt; 1500字节，而且网络的最大传输单元（MTU）是1500字节。那么理论上1GiB的网络
+            最大的传输速率是 (1024 * 1024 * 1024 / 8) / 1500 = 89478 消息每秒！尽管这不是一个精确的工程计算但
+            你可以看出阻塞式的发送对性能的影响会有多大。</para>
+        <para>为了解决这个问题，HornetQ提供了一种新的功能，称为<emphasis>异步发送通知</emphasis>。
+            它允许消息以非阻塞的方式发送，同时从另一个连接流中异步地接收服务器的通知。这样就使得消息的发送与通知分开来，
+            避免了阻塞方式带来的缺点。在保证消息可行发送到服务器的同时提高了呑吐量。</para>
+        <para>参数用来定义消息发送通知的窗口大小。它属于连接工厂或客户会话工厂。参见<xref linkend="client-reconnection"/>
+            以获取更多的相关信息。</para>
         <section>
-            <title>Asynchronous Send Acknowledgements</title>
-            <para>To use the feature using the core API, you implement the interface <literal
-                    >org.hornetq.api.core.client.SendAcknowledgementHandler</literal> and set a handler
-                instance on your <literal>ClientSession</literal>.</para>
-            <para>Then, you just send messages as normal using your <literal
-                >ClientSession</literal>, and as messages reach the server, the server will send
-                back an acknowledgement of the send asynchronously, and some time later you are
-                informed at the client side by HornetQ calling your handler's <literal
-                    >sendAcknowledged(ClientMessage message)</literal> method, passing in a
-                    reference to the message that was sent.</para>
-            <para>To enable asynchronous send acknowledgements you must make sure <literal>confirmation-window-size</literal> is set to a positive integer value, e.g. 10MiB</para>
-            <para>Please see <xref linkend="asynchronous-send-acknowledgements-example"/> for a full
-                working example.</para>
+            <title>异步发送通知</title>
+            <para>如果使用核心API，你需要实现<literal
+                    >org.hornetq.api.core.client.SendAcknowledgementHandler</literal>接口并将一个实例设置到
+                    <literal>ClientSession</literal>中。</para>
+            <para>然后使用这个<literal>ClientSession</literal>发送消息。当消息到达服务器后，服务器向客户端异步地发送通知，
+                并在客户端调用你的SendAcknowledgementHandler实例的<literal
+                    >sendAcknowledged(ClientMessage message)</literal>方法。其中传入的参数就是发送的消息的引用。</para>
+            <para>为了使异步发送通知正常工作你必须确保<literal>confirmation-window-size</literal>的值为一个正整数，例如 10MiB</para>
+            <para>相关的例子请参见 <xref linkend="asynchronous-send-acknowledgements-example"/>。</para>
         </section>
     </section>
 </chapter>
