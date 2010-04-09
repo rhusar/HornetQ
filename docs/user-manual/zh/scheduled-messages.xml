@@ -17,18 +17,15 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="scheduled-messages">
-   <title>Scheduled Messages</title>
-   <para>Scheduled messages differ from normal messages in that they won't be delivered until a
-      specified time in the future, at the earliest.</para>
-   <para>To do this, a special property is set on the message before sending it.</para>
+   <title>定期消息</title>
+   <para>与普通消息不同，定期消息是在未来某个指定时间发送的消息。</para>
+   <para>为了创建定期消息，需要设定一个特殊的参数.</para>
    <section>
-      <title>Scheduled Delivery Property</title>
-      <para>The property name used to identify a scheduled message is <literal
-            >"_HQ_SCHED_DELIVERY"</literal> (or the constant <literal
-            >Message.HDR_SCHEDULED_DELIVERY_TIME</literal>).</para>
-      <para>The specified value must be a <literal>long</literal> corresponding to the time the
-         message must be delivered (in milliseconds). An example of sending a scheduled message
-         using the JMS API is as follows.</para>
+      <title>定期传递参数</title>
+      <para>用来标识一个定期消息的参数是<literal
+            >"_HQ_SCHED_DELIVERY"</literal> （相当于常量<literal
+            >Message.HDR_SCHEDULED_DELIVERY_TIME</literal>）。</para>
+      <para>这个参数的值必须是一个长整型，单位是毫秒。下面例子给出了使用JMS接口创建定期消息的方法：</para>
       <programlisting>
   TextMessage message = 
    session.createTextMessage("This is a scheduled message message which will be delivered
@@ -41,12 +38,10 @@
   // message will not be received immediately but 5 seconds later
   TextMessage messageReceived = (TextMessage) consumer.receive();
       </programlisting>
-      <para>Scheduled messages can also be sent using the core API, by setting the same property on
-         the core message before sending.</para>
+      <para>也可以使用核心接口来发送定期消息。它只需要将同样的参数设定到核心消息上即可。</para>
    </section>
    <section>
-      <title>Example</title>
-      <para>See <xref linkend="examples.scheduled-message"/> for an example which shows how
-         scheduled messages can be used with JMS.</para>
+      <title>例子</title>
+      <para>参见<xref linkend="examples.scheduled-message"/>，它是一个JMS使用定期消息的例子。</para>
    </section>
 </chapter>
