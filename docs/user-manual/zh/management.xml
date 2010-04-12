@@ -17,290 +17,245 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="management">
-   <title>Management</title>
-   <para>HornetQ has an extensive management API that allows a user to modify a server
-      configuration, create new resources (e.g. JMS queues and topics), inspect these resources
-      (e.g. how many messages are currently held in a queue) and interact with it (e.g. to remove
-      messages from a queue). All the operations allows a client to <emphasis>manage</emphasis>
-      HornetQ. It also allows clients to subscribe to management notifications.</para>
-   <para>There are 3 ways to manage HornetQ:</para>
+   <title>管理</title>
+   <para>HornetQ拥有套丰富的管理接口。用户使用这些接口可以修改服务器配置、创建新的资源（如队列和
+      话题）、检查这些资源（如队列中有多少消息）并进行管理（从队列中删除消息）。这样用户可以
+      <emphasis>管理</emphasis>HornetQ。另外，客户还可以订阅管理通知。</para>
+   <para>有三种方式管理HornetQ：</para>
    <itemizedlist>
       <listitem>
-         <para>Using JMX -- JMX is the standard way to manage Java applications</para>
+         <para>使用JMX -- JMX是标准的Java应用程序管理方式。</para>
       </listitem>
       <listitem>
-         <para>Using the core API -- management operations are sent to HornetQ server using
-               <emphasis>core messages</emphasis></para>
+         <para>使用核心接口 -- 管理操作通过<emphasis>核心消息</emphasis>的方法发向HornetQ服
+         务。</para>
       </listitem>
       <listitem>
-         <para>Using the JMS API -- management operations are sent to HornetQ server using
-               <emphasis>JMS messages</emphasis></para>
+         <para>使用JMS接口 -- 管理操作通过<emphasis>JMS消息</emphasis>的方式发向HornetQ服务器。</para>
       </listitem>
    </itemizedlist>
-   <para>Although there are 3 different ways to manage HornetQ each API supports the same
-      functionality. If it is possible to manage a resource using JMX it is also possible to achieve
-      the same result using Core messages or JMS messages.</para>
-   <para>This choice depends on your requirements, your application settings and your environment to
-      decide which way suits you best.</para>
+   <para>虽然有三种方式，但它们提供相同的功能。使用JMX方法能完成的功能使用核心接口或JMS接口都可以完成。</para>
+   <para>根据不同的应用环境来选择最适当的方式。</para>
    <section>
-      <title>The Management API</title>
-      <para>Regardless of the way you <emphasis>invoke</emphasis> management operations, the
-         management API is the same.</para>
-      <para>For each <emphasis>managed resource</emphasis>, there exists a Java interface describing
-         what can be invoked for this type of resource.</para>
-      <para>HornetQ exposes its managed resources in 2 packages:</para>
+      <title>管理接口API</title>
+      <para>不管使用哪种方式，管理接口都是一样的。</para>
+      <para>对于每个<emphasis>被管理的资源</emphasis>都有一个Java的接口提供可使用的操作。</para>
+      <para>HornetQ的管理接口分布在2个包中：</para>
       <itemizedlist>
          <listitem>
-            <para><emphasis>Core</emphasis> resources are located in the <literal
-                  >org.hornetq.api.core.management</literal> package</para>
+            <para><emphasis>核心</emphasis>资源的管理接口在 <literal
+                  >org.hornetq.api.core.management</literal>包中。</para>
          </listitem>
          <listitem>
-            <para><emphasis>JMS</emphasis> resources are located in the <literal
-                  >org.hornetq.api.jms.management</literal> package</para>
+            <para><emphasis>JMS</emphasis>资源的管理接口在 <literal
+                  >org.hornetq.api.jms.management</literal>包中。</para>
          </listitem>
       </itemizedlist>
-      <para>The way to invoke a <emphasis>management operations</emphasis> depends whether JMX, core
-         messages, or JMS messages are used.</para>
+      <para>调用<emphasis>管理操作</emphasis>的方法由所使用是方式是JMX、核心消息还是JMS
+         消息来决定。</para>
       <note>
-         <para>A few management operations requires a <literal>filter</literal> parameter to chose
-            which messages are involved by the operation. Passing <literal>null</literal> or an
-            empty string means that the management operation will be performed on <emphasis>all
-               messages</emphasis>.</para>
+         <para>一小部分的管理接口需要一个<literal>过滤器</literal>参数来选择需要的消息。
+            如果要求<emphasis>所有的消息</emphasis>，传递该参数时使用<literal>
+            null</literal>或者一个空的字符串即可。</para>
       </note>
       <section>
-         <title>Core Management API</title>
-         <para>HornetQ defines a core management API to manage core resources. For full details of
-            the API please consult the javadoc. In summary:</para>
+         <title>核心管理接口</title>
+         <para>HornetQ定义了一套对核心资源的管理接口。关于它们的详细说明请参见相应的javadoc。
+            下面是对它们的概述：</para>
          <section>
-            <title>Core Server Management</title>
+            <title>核心服务器管理</title>
             <itemizedlist>
                <listitem>
-                  <para>Listing, creating, deploying and destroying queues</para>
-                  <para>A list of deployed core queues can be retrieved using the <literal
-                        >getQueueNames()</literal> method.</para>
-                  <para>Core queues can be created or destroyed using the management operations
-                        <literal>createQueue()</literal> or <literal>deployQueue()</literal> or
-                        <literal>destroyQueue()</literal>)on the <literal
-                        >HornetQServerControl</literal> (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=Server</literal> or the resource name <literal
-                        >core.server</literal>)</para>
-                  <para><literal>createQueue</literal> will fail if the queue already exists while
-                        <literal>deployQueue</literal> will do nothing.</para>
+                  <para>队列的列表、创建、部署与删除</para>
+                  <para><literal>getQueueNames()</literal> method方法用来列出所有已经部署的队列。</para>
+                  <para>在<literal>HornetQServerControl</literal> （ObjectName <literal
+                        >org.hornetq:module=Core,type=Server</literal>或资源名<literal
+                        >core.server</literal>）上有队列创建或删除的方法，它们是
+                        <literal>createQueue()</literal>、<literal>deployQueue()</literal>和
+                        <literal>destroyQueue()</literal>。</para>
+                  <para>如果队列已经存在，那么<literal>createQueue</literal>方法调用会出错，而
+                        <literal>deployQueue</literal>方法调用没有任何作用。</para>
                </listitem>
                <listitem>
-                  <para>Pausing and resuming Queues</para>
-                  <para>The <literal>QueueControl</literal> can pause and resume the underlying
-                     queue. When a queue is paused, it will receive messages but will not deliver
-                     them. When it's resumed, it'll begin delivering the queued messages, if any.
+                  <para>暂停与恢复队列</para>
+                  <para><literal>QueueControl</literal>可用来暂停与恢复队列。如果一个队列被暂停，它
+                     虽然可以继续接收消息但是不传递消息；当被恢复时，队列又会开始传递消息。
                   </para>
                </listitem>
                <listitem>
-                  <para>Listing and closing remote connections</para>
-                  <para>Client's remote addresses can be retrieved using <literal
-                        >listRemoteAddresses()</literal>. It is also possible to close the
-                     connections associated with a remote address using the <literal
-                        >closeConnectionsForAddress()</literal> method.</para>
-                  <para>Alternatively, connection IDs can be listed using <literal
-                        >listConnectionIDs()</literal> and all the sessions for a given connection
-                     ID can be listed using <literal>listSessions()</literal>.</para>
+                  <para>远程连接的列表与关闭</para>
+                  <para><literal>listRemoteAddresses()</literal>方法可以用来列出客户端的远程地址。
+                     还可以使用<literal>closeConnectionsForAddress()</literal>方法来关闭
+                     与该地址相关的远程连接。</para>
+                  <para>另外，使用<literal>listConnectionIDs()</literal>方法可以列出连接ID，
+                     使用<literal>listSessions()</literal>方法可以列出与一个连接ID相关的所有
+                     会话（session）。</para>
                </listitem>
                <listitem>
-                  <para>Transaction heuristic operations</para>
-                  <para>In case of a server crash, when the server restarts, it it possible that
-                     some transaction requires manual intervention. The <literal
-                        >listPreparedTransactions()</literal> method lists the transactions which
-                     are in the prepared states (the transactions are represented as opaque Base64
-                     Strings.) To commit or rollback a given prepared transaction, the <literal
-                        >commitPreparedTransaction</literal>() or <literal
-                        >rollbackPreparedTransaction()</literal> method can be used to resolve
-                     heuristic transactions. Heuristically completed transactions can be listed
-                     using the <literal>listHeuristicCommittedTransactions()</literal> and <literal
-                        >listHeuristicRolledBackTransactions</literal> methods.</para>
+                  <para>事务的手动操作（heuristic operations）</para>
+                  <para>当服务器由于故障而重新启动时，可能造成一些事务没有完成而需要人工干预。
+                        <literal>listPreparedTransactions()</literal>方法可以列出所有处于
+                     准备（prepared）状态的事务（事务是用Base64字符串的形式列出）。如果要提交或回滚，
+                     可以使用<literal>commitPreparedTransaction()</literal>方法或
+                     <literal>rollbackPreparedTransaction()</literal>方法。采用启发式
+                    （heuristic）完成的事务可以用<literal>listHeuristicCommittedTransactions()</literal>
+                     方法和<literal>listHeuristicRolledBackTransactions</literal>方法列出。</para>
                </listitem>
                <listitem>
-                  <para>Enabling and resetting Message counters</para>
-                  <para>Message counters can be enabled or disabled using the <literal
-                        >enableMessageCounters()</literal> or <literal
-                        >disableMessageCounters()</literal> method. To reset message counters, it is
-                     possible to invoke <literal>resetAllMessageCounters()</literal> and <literal
-                        >resetAllMessageCounterHistories()</literal> methods.</para>
+                  <para>打开和重置消息计数器</para>
+                  <para>消息计数器可以用<literal>enableMessageCounters()</literal>方法打开，用
+                        <literal>disableMessageCounters()</literal>方法关闭。如果要重置消息计数器，
+                        可以使用<literal>resetAllMessageCounters()</literal>方法和
+                        <literal>resetAllMessageCounterHistories()</literal>方法。</para>
                </listitem>
                <listitem>
-                  <para>Retrieving the server configuration and attributes</para>
-                  <para>The <literal>HornetQServerControl</literal> exposes HornetQ server
-                     configuration through all its attributes (e.g. <literal>getVersion()</literal>
-                     method to retrieve the server's version, etc.)</para>
+                  <para>获得服务器的配置和属性</para>
+                  <para><literal>HornetQServerControl</literal>提供了访问HornetQ服务器所有属性
+                     的方法（例如<literal>getVersion()</literal>方法可以得到服务器的版本，等等）。 </para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>Core Address Management</title>
-            <para>Core addresses can be managed using the <literal>AddressControl</literal> class
-               (with the ObjectName <literal>org.hornetq:module=Core,type=Address,name="&lt;the
-                  address name&gt;"</literal> or the resource name <literal>core.address.&lt;the
-                  address name&gt;</literal>). </para>
+            <title>核心地址的管理</title>
+            <para>核心地址可以通过<literal>AddressControl</literal>类进行访问（ObjectName
+                  是 <literal>org.hornetq:module=Core,type=Address,name="&lt;the
+                  address name&gt;"</literal>或者资源名 <literal>core.address.&lt;the
+                  address name&gt;</literal>）。</para>
             <itemizedlist>
                <listitem>
-                  <para>Modifying roles and permissions for an address</para>
-                  <para>You can add or remove roles associated to a queue using the <literal
-                        >addRole()</literal> or. <literal>removeRole()</literal> methods. You can
-                     list all the roles associated to the queue with the <literal
-                        >getRoles()</literal> method</para>
+                  <para>修改地址的角色和权限。</para>
+                  <para>你可以使用<literal>addRole()</literal>方法或<literal>removeRole()</literal>
+                  方法添加或删除地址的角色。用<literal>getRoles()</literal>方法可以列出一个地址的所有角色。</para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>Core Queue Management</title>
-            <para>The bulk of the core management API deals with core queues. The <literal
-                  >QueueControl</literal> class defines the Core queue management operations (with
-               the ObjectName <literal>org.hornetq:module=Core,type=Queue,address="&lt;the bound
-                  address&gt;",name="&lt;the queue name&gt;"</literal> or the resource name <literal
-                  >core.queue.&lt;the queue name&gt;</literal>).</para>
-            <para>Most of the management operations on queues take either a single message ID (e.g.
-               to remove a single message) or a filter (e.g. to expire all messages with a given
-               property.)</para>
+            <title>核心队列的管理</title>
+            <para>管理接口中的一大部分是管理核心队列的。<literal>QueueControl</literal>类定义了核心队列的管理
+               接口（ObjectName <literal>org.hornetq:module=Core,type=Queue,address="&lt;绑定地址
+                  address&gt;",name="&lt;队列名&gt;"</literal> 或资源名 <literal
+                  >core.queue.&lt;队列名&gt;</literal>）。</para>
+            <para>绝大部分的队列管理方法需要一个消息ID参数（如删除一个消息）或一个过滤器参数（如将具有某个
+               属性值的所有消息设置为过期）。</para>
             <itemizedlist>
                <listitem>
-                  <para>Expiring, sending to a dead letter address and moving messages</para>
-                  <para>Messages can be expired from a queue by using the <literal
-                        >expireMessages()</literal> method. If an expiry address is defined,
-                     messages will be be sent to it, otherwise they are discarded. The queue's
-                     expiry address can be set with the <literal>setExpiryAddress()</literal>
-                     method.</para>
-                  <para>Messages can also be sent to a dead letter address with the <literal
-                        >sendMessagesToDeadLetterAddress()</literal> method. It returns the number
-                     of messages which are sent to the dead letter address. If a dead letter address
-                     is not defined, message are removed from the queue and discarded. The queue's
-                     dead letter address can be set with the <literal
-                        >setDeadLetterAddress()</literal> method.</para>
-                  <para>Messages can also be moved from a queue to another queue by using the
-                        <literal>moveMessages()</literal> method.</para>
+                  <para>消息的过期，发向死信地址及删除</para>
+                  <para><literal>expireMessages()</literal>方法可以使消息过期。如果设置了一个过期地址，
+                     这些消息会被发到过期地址。否则这些消息会被丢弃。<literal>setExpiryAddress()</literal>
+                     方法可以用来设置队列的过期地址。</para>
+                  <para>消息可以用<literal>sendMessagesToDeadLetterAddress()</literal>方法发送到
+                     一个死信地址。它返回发到这个死信地址的消息的数量。如果没有设置死信地址，那么消息就会从队列中
+                     删除。用<literal>setDeadLetterAddress()</literal>方法可以设置队列的死信地址。</para>
+                  <para>消息还可以从一个队列转移到另一个队列。其方法是
+                        <literal>moveMessages()</literal>。</para>
                </listitem>
                <listitem>
-                  <para>Listing and removing messages</para>
-                  <para>Messages can be listed from a queue by using the <literal
-                        >listMessages()</literal> method which returns an array of <literal
-                        >Map</literal>, one <literal>Map</literal> for each message.</para>
-                  <para>Messages can also be removed from the queue by using the <literal
-                        >removeMessages()</literal> method which returns a <literal
-                        >boolean</literal> for the single message ID variant or the number of
-                     removed messages for the filter variant. The <literal
-                        >removeMessages()</literal> method takes a <literal>filter</literal>
-                     argument to remove only filtered messages. Setting the filter to an empty
-                     string will in effect remove all messages.</para>
+                  <para>消息的列表与删除</para>
+                  <para>用<literal>listMessages()</literal>方法可以列出一个队列中的所有消息。这个方法
+                        返回的是一个<literal>Map</literal>的数组。每一个Map对应一个消息。</para>
+                  <para>消息可以用<literal>removeMessages()</literal>方法删除。如果是使用消息ID，
+                        返回的是一个布尔常量；如果是用过滤器，则返回的
+                        是删除的消息数量。在使用过滤器来删除过滤的消息时，如果传入一个空字符串则表示要删除
+                        所有的消息。</para>
                </listitem>
                <listitem>
-                  <para>Counting messages</para>
-                  <para>The number of messages in a queue is returned by the <literal
-                        >getMessageCount()</literal> method. Alternatively, the <literal
-                        >countMessages()</literal> will return the number of messages in the queue
-                     which <emphasis>match a given filter</emphasis></para>
+                  <para>消息计数</para>
+                  <para>一个队列中的消息数可以用<literal>getMessageCount()</literal>方法获得。
+                        此外，<literal>countMessages()</literal>方法可以返回队列中与一
+                        个<emphasis>过滤器</emphasis>匹配的消息数量。</para>
                </listitem>
                <listitem>
-                  <para>Changing message priority</para>
-                  <para>The message priority can be changed by using the <literal
-                        >changeMessagesPriority()</literal> method which returns a <literal
-                        >boolean</literal> for the single message ID variant or the number of
-                     updated messages for the filter variant.</para>
+                  <para>修改消息的优先级</para>
+                  <para>用<literal>changeMessagesPriority()</literal>方法可以改变消息的优先级。
+                        该方法如果带一个消息ID参数，返回一个布尔常量；如果带一个过滤器参数，返回优先级
+                        被更新的消息的数量。</para>
                </listitem>
                <listitem>
-                  <para>Message counters</para>
-                  <para>Message counters can be listed for a queue with the <literal
-                        >listMessageCounter()</literal> and <literal
-                        >listMessageCounterHistory()</literal> methods (see <xref
-                        linkend="management.message-counters"/>). The message counters can also be
-                     reset for a single queue using the <literal>resetMessageCounter()</literal>
-                     method.</para>
+                  <para>消息计数器</para>
+                  <para>用<literal>listMessageCounter()方法和<literal>
+                        listMessageCounterHistory()</literal>方法可以列出一个队列的消息计数器。
+                        （参见 <xref linkend="management.message-counters"/>）。消息计数器还可以
+                       用<literal>resetMessageCounter()</literal>方法重置。</para>
                </listitem>
                <listitem>
-                  <para>Retrieving the queue attributes</para>
-                  <para>The <literal>QueueControl</literal> exposes Core queue settings through its
-                     attributes (e.g. <literal>getFilter()</literal> to retrieve the queue's filter
-                     if it was created with one, <literal>isDurable()</literal> to know whether the
-                     queue is durable or not, etc.)</para>
+                  <para>获得队列的属性</para>
+                  <para>通过<literal>QueueControl</literal>可以获得核心队列的属性（例如用
+                     <literal>getFilter()</literal>方法可以得到队列的
+                     过滤器，<literal>isDurable()</literal>方法可以知道队列是否是持久的队列等等）。</para>
                </listitem>
                <listitem>
-                  <para>Pausing and resuming Queues</para>
-                  <para>The <literal>QueueControl</literal> can pause and resume the underlying
-                     queue. When a queue is paused, it will receive messages but will not deliver
-                     them. When it's resume, it'll begin delivering the queued messages, if any.
-                  </para>
+                  <para>暂停和恢复队列</para>
+                     <literal>QueueControl</literal>可用来暂停与恢复队列。如果一个队列被暂停，它
+                     虽然可以继续接收消息但是不传递消息；当被恢复时，队列又会开始传递消息。<para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>Other Core Resources Management</title>
-            <para>HornetQ allows to start and stop its remote resources (acceptors, diverts,
-               bridges, etc.) so that a server can be taken off line for a given period of time
-               without stopping it completely (e.g. if other management operations must be performed
-               such as resolving heuristic transactions). These resources are:</para>
+            <title>其它核心资源的管理</title>
+            <para>HornetQ允许用户启动或停止其远程资源（接收器，转发器，桥，等等）。这样可以使服务器暂停工作
+               而不需要完全停止服务器（比如可以临时对服务器进行一些离线操作，像对一些事务的处理）。这些资源有：</para>
             <itemizedlist>
                <listitem>
-                  <para>Acceptors</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> or.
-                        <literal>stop()</literal> method on the <literal>AcceptorControl</literal>
-                     class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=Acceptor,name="&lt;the acceptor
-                        name&gt;"</literal> or the resource name <literal>core.acceptor.&lt;the
-                        address name&gt;</literal>). The acceptors parameters can be retrieved using
-                     the <literal>AcceptorControl</literal> attributes (see <xref
-                        linkend="configuring-transports.acceptors"/>)</para>
+                  <para>接收器</para>
+                  <para>用<literal>AcceptorControl</literal>类（ObjectName <literal
+                        >org.hornetq:module=Core,type=Acceptor,name="&lt;接收器名
+                        &gt;"</literal> 或资源名 <literal>core.acceptor.&lt;地址名
+                        &gt;</literal>）的<literal>start()</literal>方法启动，用<literal>
+                        stop()</literal>方法停止。接收器的参数可以通过<literal>AcceptorControl</literal>
+                        的属性获得。（参见 <xref
+                        linkend="configuring-transports.acceptors"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Diverts</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> or
-                        <literal>stop()</literal> method on the <literal>DivertControl</literal>
-                     class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=Divert,name=&lt;the divert name&gt;</literal>
-                     or the resource name <literal>core.divert.&lt;the divert name&gt;</literal>).
-                     Diverts parameters can be retrieved using the <literal>DivertControl</literal>
-                     attributes (see <xref linkend="diverts"/>)</para>
+                  <para>转发器</para>
+                  <para>用<literal>DivertControl</literal>（ObjectName是 <literal
+                        >org.hornetq:module=Core,type=Divert,name=&lt;转发器名&gt;</literal>
+                        或资源名<literal>core.divert.&lt;转发器&gt;</literal>）类的
+                        <literal>start()</literal>方法可以启动，用<literal>stop()</literal>方法可以停止。
+                        通过<literal>DivertControl</literal>还可以获得转发器的各种属性。（参见 <xref
+                        linkend="diverts"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Bridges</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> (resp.
-                        <literal>stop()</literal>) method on the <literal>BridgeControl</literal>
-                     class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=Bridge,name="&lt;the bridge
-                        name&gt;"</literal> or the resource name <literal>core.bridge.&lt;the bridge
-                        name&gt;</literal>). Bridges parameters can be retrieved using the <literal
-                        >BridgeControl</literal> attributes (see <xref linkend="core-bridges"
-                     />)</para>
+                  <para>桥</para>
+                  <para>桥可以通过<literal>BridgeControl</literal>类（ObjectName <literal
+                        >org.hornetq:module=Core,type=Bridge,name="&lt;桥的名字
+                        &gt;"</literal> 或资源名 <literal>core.bridge.&lt;桥的名字
+                        &gt;</literal>）的<literal>start()</literal>
+                        方法启动，用<literal>stop()</literal>方法停止。它的属性可以通过
+                        <literal>BridgeControl</literal>的属性获得（参见
+                        <xref linkend="core-bridges"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Broadcast groups</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> or
-                        <literal>stop()</literal> method on the <literal
-                        >BroadcastGroupControl</literal> class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=BroadcastGroup,name="&lt;the broadcast group
-                        name&gt;"</literal> or the resource name <literal
-                        >core.broadcastgroup.&lt;the broadcast group name&gt;</literal>). Broadcast
-                     groups parameters can be retrieved using the <literal
-                        >BroadcastGroupControl</literal> attributes (see <xref
-                        linkend="clusters.broadcast-groups"/>)</para>
+                  <para>广播组</para>
+                  <para>广播组可以通过<literal>BroadcastGroupControl</literal>类（ObjectName <literal
+                        >org.hornetq:module=Core,type=BroadcastGroup,name="&lt;广播组名
+                        &gt;"</literal> 或者资源名 <literal
+                        >core.broadcastgroup.&lt;广播组名&gt;</literal>)的<literal>
+                        start()</literal>方法启动，用<literal>stop()</literal>方法停止。
+                        它的属性也可以通过<literal
+                        >BroadcastGroupControl</literal>的属性获得（参见<xref
+                        linkend="clusters.broadcast-groups"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Discovery groups</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> or
-                        <literal>stop()</literal> method on the <literal
-                        >DiscoveryGroupControl</literal> class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=DiscoveryGroup,name="&lt;the discovery group
-                        name&gt;"</literal> or the resource name <literal>core.discovery.&lt;the
-                        discovery group name&gt;</literal>). Discovery groups parameters can be
-                     retrieved using the <literal>DiscoveryGroupControl</literal> attributes (see
-                        <xref linkend="clusters.discovery-groups"/>)</para>
+                  <para>发现组</para>
+                  <para>发现组可以通过<literal>DiscoveryGroupControl</literal>类
+                        （ObjectName <literal>org.hornetq:module=Core,type=DiscoveryGroup,
+                        name="&lt;发现组名&gt;"</literal> 或资源名<literal>core.discovery.&lt;
+                        发现组名&gt;</literal>）的
+                        <literal>start()</literal>方法启动，用<literal>stop()</literal>方法停止。
+                        它的参数可以通过<literal>DiscoveryGroupControl</literal>的属性获得（参见
+                        <xref linkend="clusters.discovery-groups"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Cluster connections</para>
-                  <para>They can be started or stopped using the <literal>start()</literal> or
-                        <literal>stop()</literal> method on the <literal
-                        >ClusterConnectionControl</literal> class (with the ObjectName <literal
-                        >org.hornetq:module=Core,type=ClusterConnection,name="&lt;the cluster
-                        connection name&gt;"</literal> or the resource name <literal
-                        >core.clusterconnection.&lt;the cluster connection name&gt;</literal>).
-                     Cluster connections parameters can be retrieved using the <literal
-                        >ClusterConnectionControl</literal> attributes (see <xref
-                        linkend="clusters.cluster-connections"/>)</para>
+                  <para>集群连接</para>
+                  <para>集群连接可以通过<literal>ClusterConnectionControl</literal>类（
+                        ObjectName <literal
+                        >org.hornetq:module=Core,type=ClusterConnection,name="&lt;集群连接名
+                        &gt;"</literal> 或资源名 <literal
+                        >core.clusterconnection.&lt;集群连接名&gt;</literal>）的<literal>
+                        start()</literal>方法启动，用<literal>stop()</literal>方法停止。
+                        它的参数可以通过<literal
+                        >ClusterConnectionControl</literal>的属性来获得（参见
+                        <xref linkend="clusters.cluster-connections"/>）。</para>
                </listitem>
             </itemizedlist>
          </section>
