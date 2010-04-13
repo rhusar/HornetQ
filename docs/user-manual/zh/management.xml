@@ -261,185 +261,141 @@
          </section>
       </section>
       <section>
-         <title>JMS Management API</title>
-         <para>HornetQ defines a JMS Management API to manage JMS <emphasis>administrated
-               objects</emphasis> (i.e. JMS queues, topics and connection factories).</para>
+         <title>JMS管理接口</title>
+         <para>HornetQ定义了一套JMS管理接口来管理JMS的<emphasis>可管理的对象</emphasis> 
+              （例如JMS队列，话题及连接工厂）。</para>
          <section>
-            <title>JMS Server Management</title>
-            <para>JMS Resources (connection factories and destinations) can be created using the
-                  <literal>JMSServerControl</literal> class (with the ObjectName <literal
-                  >org.hornetq:module=JMS,type=Server</literal> or the resource name <literal
-                  >jms.server</literal>).</para>
+            <title>JMS服务器管理</title>
+            <para><literal>JMSServerControl</literal>类（ObjectName <literal
+                  >org.hornetq:module=JMS,type=Server</literal> 或资源名<literal
+                  >jms.server</literal>）用来创建JMS资源（连接工厂和目标）。</para>
             <itemizedlist>
                <listitem>
-                  <para>Listing, creating, destroying connection factories</para>
-                  <para>Names of the deployed connection factories can be retrieved by the <literal
-                        >getConnectionFactoryNames()</literal> method.</para>
-                  <para>JMS connection factories can be created or destroyed using the <literal
-                        >createConnectionFactory()</literal> methods or <literal
-                        >destroyConnectionFactory()</literal> methods. These connection factories
-                     are bound to JNDI so that JMS clients can look them up. If a graphical console
-                     is used to create the connection factories, the transport parameters are
-                     specified in the text fied input as a comma-separated list of key=value (e.g.
-                        <literal>key1=10, key2="value", key3=false</literal>). If there are multiple
-                     transports defined, you need to enclose the key/value pairs between curly
-                     braces. For example <literal>{key=10}, {key=20}</literal>. In that case, the
-                     first <literal>key</literal> will be associated to the first transport
-                     configuration and the second <literal>key</literal> will be associated to the
-                     second transport configuration (see <xref linkend="configuring-transports"/>
-                     for a list of the transport parameters)</para>
+                  <para>列表、创建、删除连接工厂</para>
+                  <para>使用<literal>getConnectionFactoryNames()</literal> 方法可以列出部署的连接工厂的
+                        名字。</para>
+                  <para>用<literal>createConnectionFactory()</literal>方法和<literal
+                        >destroyConnectionFactory()</literal>方法能创建和删除JMS连接工厂。
+                     这些连接工厂都与JNDI绑定以便于客户端来查找。如果是在图形介面下创建连接工厂，在广本框内输入
+                     有关的传输参数时可使用一组用逗号隔开的键－值对（例如<literal>key1=10, key2="value", key3=false</literal>）。
+                     如果需要定义多个传输，你需要将每个传输的参数对用大括号括起来，例如<literal>{key=10}, {key=20}</literal>。
+                     第一个<literal>key</literal>属于第一个传输配置，第二个<literal>key</literal>属于第二个传输配置。
+                     （有关传输的各种参数参见<xref linkend="configuring-transports"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Listing, creating, destroying queues</para>
-                  <para>Names of the deployed JMS queues can be retrieved by the <literal
-                        >getQueueNames()</literal> method.</para>
-                  <para>JMS queues can be created or destroyed using the <literal
-                        >createQueue()</literal> methods or <literal>destroyQueue()</literal>
-                     methods. These queues are bound to JNDI so that JMS clients can look them
-                     up</para>
+                  <para>列表、创建与删除队列</para>
+                  <para><literal>getQueueNames()</literal>方法可以获得部署的JMS队列的名字列表。</para>
+                  <para>JMS队列可以用<literal>createQueue()</literal>方法创建，用<literal>destroyQueue()</literal>方法删除。
+                     创建的队列都绑定到JNDI以便JMS客户端可以查找。</para>
                </listitem>
                <listitem>
-                  <para>Listing, creating/destroying topics</para>
-                  <para>Names of the deployed topics can be retrieved by the <literal
-                        >getTopicNames()</literal> method.</para>
-                  <para>JMS topics can be created or destroyed using the <literal
-                        >createTopic()</literal> or <literal>destroyTopic()</literal> methods. These
-                     topics are bound to JNDI so that JMS clients can look them up</para>
+                  <para>列表、创建与删除话题（topic）</para>
+                  <para><literal>getTopicNames()</literal>方法可以获得部署的JMS话题名字。</para>
+                  <para>JMS话题可以用<literal>createTopic()</literal>方法来创建，用<literal>destroyTopic()</literal>方法来删除。
+                     创建的话题都绑定到JNDI以便客户端查找。</para>
                </listitem>
                <listitem>
-                  <para>Listing and closing remote connections</para>
-                  <para>JMS Clients remote addresses can be retrieved using <literal
-                        >listRemoteAddresses()</literal>. It is also possible to close the
-                     connections associated with a remote address using the <literal
-                        >closeConnectionsForAddress()</literal> method.</para>
-                  <para>Alternatively, connection IDs can be listed using <literal
-                        >listConnectionIDs()</literal> and all the sessions for a given connection
-                     ID can be listed using <literal>listSessions()</literal>.</para>
+                  <para>远程连接的列表与关闭</para>
+                  <para>用<literal>listRemoteAddresses()</literal>方法可以获得JMS客户端的远程地址。
+                     还可以用<literal>closeConnectionsForAddress()</literal>方法关闭与某个远程地址相关联的连接。</para>
+                  <para>另外，<literal>listConnectionIDs()</literal>方法可以列出连接的ID，
+                     而<literal>listSessions()</literal>方法可以列出一个给定的连接ID的所有会话（session）。</para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>JMS ConnectionFactory Management</title>
-            <para>JMS Connection Factories can be managed using the <literal
-                  >ConnectionFactoryControl</literal> class (with the ObjectName <literal
-                  >org.hornetq:module=JMS,type=ConnectionFactory,name="&lt;the connection factory
-                  name&gt;"</literal> or the resource name <literal>jms.connectionfactory.&lt;the
-                  connection factory name&gt;</literal>).</para>
+            <title>JMS连接工厂的管理</title>
+            <para>使用类（ObjectName <literal>org.hornetq:module=JMS,type=ConnectionFactory,
+                  name="&lt;连接工厂名&gt;"</literal>或者资源名<literal>jms.connectionfactory.&lt;
+                  连接工厂名&gt;</literal>）可以管理JMS的连接工厂。</para>
             <itemizedlist>
                <listitem>
-                  <para>Retrieving connection factory attributes</para>
-                  <para>The <literal>ConnectionFactoryControl</literal> exposes JMS
-                     ConnectionFactory configuration through its attributes (e.g. <literal
-                        >getConsumerWindowSize()</literal> to retrieve the consumer window size for
-                     flow control, <literal>isBlockOnNonDurableSend()</literal> to know wether the
-                     producers created from the connection factory will block or not when sending
-                     non-durable messages, etc.)</para>
+                  <para>获得连接工厂的属性</para>
+                  <para><literal>ConnectionFactoryControl</literal>类可以用来获得连接工厂的属性（
+                     例如<literal>getConsumerWindowSize()</literal>方法可以获得接收者流控制的窗口大小，
+                     <literal>isBlockOnNonDurableSend()</literal>方法可以知道从这个连接工厂创建的发送
+                     者是否采用阻塞方式发送非持久的消息，等等）。</para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>JMS Queue Management</title>
-            <para>JMS queues can be managed using the <literal>JMSQueueControl</literal> class (with
-               the ObjectName <literal>org.hornetq:module=JMS,type=Queue,name="&lt;the queue
-                  name&gt;"</literal> or the resource name <literal>jms.queue.&lt;the queue
-                  name&gt;</literal>). </para>
-            <para><emphasis>The management operations on a JMS queue are very similar to the
-                  operations on a core queue. </emphasis></para>
+            <title>JMS队列管理</title>
+            <para>使用<literal>JMSQueueControl</literal>类（ObjectName <literal>org.hornetq:module=JMS,
+                  type=Queue,name="&lt;队列名&gt;"</literal>或资源名 <literal>jms.queue.&lt;队列名
+                  &gt;</literal>可以管理JMS队列。</para>
+            <para><emphasis>JMS队列的管理操作与核心队列的管理十分相似。</emphasis></para>
             <itemizedlist>
                <listitem>
-                  <para>Expiring, sending to a dead letter address and moving messages</para>
-                  <para>Messages can be expired from a queue by using the <literal
-                        >expireMessages()</literal> method. If an expiry address is defined,
-                     messages will be be sent to it, otherwise they are discarded. The queue's
-                     expiry address can be set with the <literal>setExpiryAddress()</literal>
-                     method.</para>
-                  <para>Messages can also be sent to a dead letter address with the <literal
-                        >sendMessagesToDeadLetterAddress()</literal> method. It returns the number
-                     of messages which are sent to the dead letter address. If a dead letter address
-                     is not defined, message are removed from the queue and discarded. The queue's
-                     dead letter address can be set with the <literal
-                        >setDeadLetterAddress()</literal> method.</para>
-                  <para>Messages can also be moved from a queue to another queue by using the
-                        <literal>moveMessages()</literal> method.</para>
+                  <para>过期，发送到死信地址和移动消息</para>
+                  <para>可以使用<literal>expireMessages()</literal>方法将队列中的消息设成过期消息。
+                        如果配置有过期地址，消息就会被发到过期地址。过期地址可以用
+                     <literal>setExpiryAddress()</literal>方法来设定。</para>
+                  <para>使用<literal>sendMessagesToDeadLetterAddress()</literal>方法可以将消息发送到死信地址。
+                     它返回发送到死信地址消息的数量。如果没有设定死信地址，那么消息会被丢弃。使用
+                     <literal>setDeadLetterAddress()</literal>方法可以设定队列的死信地址。</para>
+                  <para><literal>moveMessages()</literal>方法将消息从一个队列移动到另一个队列。</para>
                </listitem>
                <listitem>
-                  <para>Listing and removing messages</para>
-                  <para>Messages can be listed from a queue by using the <literal
-                        >listMessages()</literal> method which returns an array of <literal
-                        >Map</literal>, one <literal>Map</literal> for each message.</para>
-                  <para>Messages can also be removed from the queue by using the <literal
-                        >removeMessages()</literal> method which returns a <literal
-                        >boolean</literal> for the single message ID variant or the number of
-                     removed messages for the filter variant. The <literal
-                        >removeMessages()</literal> method takes a <literal>filter</literal>
-                     argument to remove only filtered messages. Setting the filter to an empty
-                     string will in effect remove all messages.</para>
+                  <para>列表与删除消息</para>
+                  <para>使用<literal>listMessages()</literal>方法可以列出一个队列中的所有消息。它返回的是一个
+                        Map的数组。每一个Map对应一个消息。</para>
+                  <para>使用<literal>removeMessages()</literal>方法可以从队列中删除消息。如果带的参数是消息ID，
+                        返回的是一个布尔常是；如果带的参数是一个过滤器，则返回删除的消息数。带有过滤器参数的<literal
+                        >removeMessages()</literal>方法只删除过滤器选择的消息。如果些参数是一个空字符串，那么将
+                        删除所有的消息。</para>
                </listitem>
                <listitem>
-                  <para>Counting messages</para>
-                  <para>The number of messages in a queue is returned by the <literal
-                        >getMessageCount()</literal> method. Alternatively, the <literal
-                        >countMessages()</literal> will return the number of messages in the queue
-                     which <emphasis>match a given filter</emphasis></para>
+                  <para>消息计数</para>
+                  <para>使用<literal>getMessageCount()</literal>方法可以得到队列中的消息数。另外，方法
+                        <literal>countMessages()</literal>可以得到队列中所有与<emphasis>过滤器</emphasis>相匹配的消息数。</para>
                </listitem>
                <listitem>
-                  <para>Changing message priority</para>
-                  <para>The message priority can be changed by using the <literal
-                        >changeMessagesPriority()</literal> method which returns a <literal
-                        >boolean</literal> for the single message ID variant or the number of
-                     updated messages for the filter variant.</para>
+                  <para>修改消息的优先级</para>
+                  <para>消息的优先级可以用<literal>changeMessagesPriority()</literal>方法修改。如果是带一个消
+                        息ID参数，它返回的是一个布尔常量；如果是带一个过滤器参数，则它返回的是优先级更新了的消息数。</para>
                </listitem>
                <listitem>
-                  <para>Message counters</para>
-                  <para>Message counters can be listed for a queue with the <literal
-                        >listMessageCounter()</literal> and <literal
-                        >listMessageCounterHistory()</literal> methods (see <xref
-                        linkend="management.message-counters"/>)</para>
+                  <para>消息计数器</para>
+                  <para><literal>listMessageCounter()</literal>方法和<literal >listMessageCounterHistory()</literal>
+                        方法可以用来列出队列中的所有消息计数器。（参见 <xref
+                        linkend="management.message-counters"/>）。</para>
                </listitem>
                <listitem>
-                  <para>Retrieving the queue attributes</para>
-                  <para>The <literal>JMSQueueControl</literal> exposes JMS queue settings through
-                     its attributes (e.g. <literal>isTemporary()</literal> to know wether the queue
-                     is temporary or not, <literal>isDurable()</literal> to know wether the queue is
-                     durable or not, etc.)</para>
+                  <para>获取队列的属性</para>
+                  <para><literal>JMSQueueControl</literal>类可以用来获取JMS队列的设置参数（例如方法<literal>isTemporary()</literal>
+                     可以判断队列是否为临时的，方法<literal>isDurable()</literal>可以判断队列是否为持久的等等）。</para>
                </listitem>
                <listitem>
-                  <para>Pausing and resuming queues</para>
-                  <para>The <literal>JMSQueueControl</literal> can pause and resume the underlying
-                     queue. When the queue is paused it will continue to receive messages but will
-                     not deliver them. When resumed again it will deliver the enqueued messages, if
-                     any. </para>
+                  <para>队列的暂停与恢复</para>
+                  <para><literal>JMSQueueControl</literal>可以暂停一个队列或恢复一个队列。
+                     如果一个队列被暂停，它虽然可以继续接收消息但是不传递消息；
+                     当被恢复时，队列又会开始传递消息。</para>
                </listitem>
             </itemizedlist>
          </section>
          <section>
-            <title>JMS Topic Management</title>
-            <para>JMS Topics can be managed using the <literal>TopicControl</literal> class (with
-               the ObjectName <literal>org.hornetq:module=JMS,type=Topic,name="&lt;the topic
-                  name&gt;"</literal> or the resource name <literal>jms.topic.&lt;the topic
-                  name&gt;</literal>).</para>
+            <title>JMS话题（Topic）的管理</title>
+            <para>JMS话题的管理是通过<literal>TopicControl</literal>类（
+               the ObjectName <literal>org.hornetq:module=JMS,type=Topic,name="&lt;话题名&gt;"</literal>
+               或资源名 <literal>jms.topic.&lt;话题名&gt;</literal>）。</para>
             <itemizedlist>
                <listitem>
-                  <para>Listing subscriptions and messages</para>
-                  <para>JMS topics subscriptions can be listed using the <literal
-                        >listAllSubscriptions()</literal>, <literal
-                        >listDurableSubscriptions()</literal>, <literal
-                        >listNonDurableSubscriptions()</literal> methods. These methods return
-                     arrays of <literal>Object</literal> representing the subscriptions information
-                     (subscription name, client ID, durability, message count, etc.). It is also
-                     possible to list the JMS messages for a given subscription with the <literal
-                        >listMessagesForSubscription()</literal> method.</para>
+                  <para>订阅和消息的列表</para>
+                  <para><literal>listAllSubscriptions()</literal>、<literal
+                        >listDurableSubscriptions()</literal>、 <literal
+                        >listNonDurableSubscriptions()</literal>方法可以列出话题的不同订阅。
+                     这些方法都返回<literal>Object</literal>数组，表示订阅的细节（如订阅名，
+                     客户ID，持久性，消息计数等）。用<literal
+                        >listMessagesForSubscription()</literal>方法可以列出一个订阅上的JMS消息。</para>
                </listitem>
                <listitem>
-                  <para>Dropping subscriptions</para>
-                  <para>Durable subscriptions can be dropped from the topic using the <literal
-                        >dropDurableSubscription()</literal> method.</para>
+                  <para>删除订阅</para>
+                  <para>持久性订阅可以使用<literal>dropDurableSubscription()</literal>方法来删除。</para>
                </listitem>
                <listitem>
-                  <para>Counting subscriptions messages</para>
-                  <para>The <literal>countMessagesForSubscription()</literal> method can be used to
-                     know the number of messages held for a given subscription (with an optional
-                     message selector to know the number of messages matching the selector)</para>
+                  <para>订阅消息计数</para>
+                  <para><literal>countMessagesForSubscription()</literal>方法可以得到一个订阅上面所持有
+                     的消息数（还可带一个消息选择器来得出有多少消息与之匹配）。</para>
                </listitem>
             </itemizedlist>
          </section>
