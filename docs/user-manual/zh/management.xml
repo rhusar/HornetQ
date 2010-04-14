@@ -402,64 +402,53 @@
       </section>
    </section>
    <section id="management.jmx">
-      <title>Using Management Via JMX</title>
-      <para>HornetQ can be managed using <ulink
+      <title>使用JMX</title>
+      <para>HornetQ提供了<ulink
             url="http://java.sun.com/javase/technologies/core/mntr-mgmt/javamanagement/"
-         >JMX</ulink>. </para>
-      <para>The management API is exposed by HornetQ using MBeans interfaces. HornetQ registers its
-         resources with the domain <literal>org.hornetq</literal>.</para>
-      <para>For example, the <literal>ObjectName</literal> to manage a JMS Queue <literal
-            >exampleQueue</literal> is:</para>
+         >JMX</ulink>。</para>
+      <para>HornetQ通过MBean的接口暴露其JMX管理操作。它将自己的资源注册到<literal>org.hornetq</literal>域。</para>
+      <para>比如，用来管理一个名为<literal>exampleQueue</literal>JMS队列的<literal>ObjectName</literal>是：</para>
       <programlisting>
    org.hornetq:module=JMS,type=Queue,name="exampleQueue"   
       </programlisting>
-      <para>and the MBean is:</para>
+      <para>MBean为：</para>
       <programlisting>
    org.hornetq.api.jms.management.JMSQueueControl   
       </programlisting>
-      <para>The MBean's <literal>ObjectName</literal> are built using the helper class <literal
-            >org.hornetq.api.core.management.ObjectNameBuilder</literal>. You can also use <literal
-            >jconsole</literal> to find the <literal>ObjectName</literal> of the MBeans you want to
-         manage. </para>
-      <para>Managing HornetQ using JMX is identical to management of any Java Applications using
-         JMX. It can be done by reflection or by creating proxies of the MBeans.</para>
+      <para>MBean的<literal>ObjectName</literal>用 <literal
+            >org.hornetq.api.core.management.ObjectNameBuilder</literal>来产生出来的。你也可以使用<literal
+            >jconsole</literal>来查找你想要的MBean的<literal>ObjectName</literal>。</para>
+      <para>使用JMX来管理HornetQ与用JMX管理其它Java应用程序没有什么不同。你可以使用反射或者创建MBean代理的方法。</para>
       <section id="management.jmx.configuration">
-         <title>Configuring JMX</title>
-         <para>By default, JMX is enabled to manage HornetQ. It can be disabled by setting <literal
-               >jmx-management-enabled</literal> to <literal>false</literal> in <literal
-               >hornetq-configuration.xml</literal>:</para>
+         <title>配置JMX</title>
+         <para>默认情况下HornetQ的JMX是打开的。将<literal
+               >hornetq-configuration.xml</literal>文件中的<literal
+               >jmx-management-enabled</literal>设置为<literal>false</literal>就可以关闭JMX：</para>
          <programlisting>
 &lt;!-- false to disable JMX management for HornetQ --&gt;
 &lt;jmx-management-enabled&gt;false&lt;/jmx-management-enabled&gt;            
          </programlisting>
-         <para>If JMX is enabled, HornetQ can be managed locally using <literal>jconsole</literal>.
-            Remote connections to JMX are not enabled by default for security reasons. Please refer
-            to <ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html#remote"
-               >Java Management guide</ulink> to configure the server for remote management (system
-            properties must be set in <literal>run.sh</literal> or <literal>run.bat</literal>
-            scripts).</para>
-         <para>By default, HornetQ server uses the JMX domain "org.hornetq". To manage several
-            HornetQ servers from the <emphasis>same</emphasis> MBeanServer, the JMX domain can be
-            configured for each individual HornetQ server by setting <literal>jmx-domain</literal>
-            in <literal>hornetq-configuration.xml</literal>: </para>
+         <para>如果JMX功能是打开的，则使用<literal>jconsole</literal>可以管理本地的HornetQ。
+            出于安全考虑，默认情况下JMX远程连接是关闭的。参见<ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html#remote"
+               >Java管理指南</ulink>来配置服务器的远程管理（系统变量必须在<literal>run.sh</literal>或<literal>run.bat</literal>中定义）。</para>
+         <para>HornetQ默认使用JMX域名"org.hornetq"。如果要用一个MBeanServer管理多个HornetQ服务器，可以将每个HornetQ
+            服务器配置成不同的JMX域。方法就是在<literal>hornetq-configuration.xml</literal>文件中设置<literal>jmx-domain</literal>：</para>
          <programlisting>
 &lt;!-- use a specific JMX domain for HornetQ MBeans -->
 &lt;jmx-domain>my.org.hornetq&lt;/jmx-domain>            
          </programlisting>
          <section>
-            <title>MBeanServer configuration</title>
-            <para>When HornetQ is run in standalone, it uses the Java Virtual Machine's <literal
-                  >Platform MBeanServer</literal> to register its MBeans. This is configured in
-               JBoss Microcontainer Beans file (see <xref
-                  linkend="server.microcontainer.configuration"/>):</para>
+            <title>MBeanServer的配置</title>
+            <para>HornetQ在独立运行时使用Java虚拟机的<literal
+                  >Platform MBeanServer</literal>来注册其MBean。这在JBoss Microcontainer（微容器）的bean
+               文件中进行配置（参见<xref linkend="server.microcontainer.configuration"/>）：</para>
             <programlisting>&lt;!-- MBeanServer --&gt;
 &lt;bean name="MBeanServer" class="javax.management.MBeanServer"&gt;
    &lt;constructor factoryClass="java.lang.management.ManagementFactory"
                          factoryMethod="getPlatformMBeanServer" /&gt;
 &lt;/bean&gt;            
             </programlisting>
-            <para>When it is integrated in JBoss AS 5+, it uses the Application Server's own MBean
-               Server so that it can be managed using AS 5's jmx-console:</para>
+            <para>当与AS 5＋集成运行时，它使用应用服务器自己的MBean服务，这样就可以使用它的jmx-console：</para>
             <programlisting>&lt;!-- MBeanServer --&gt;
 &lt;bean name="MBeanServer" class="javax.management.MBeanServer"&gt;
    &lt;constructor factoryClass="org.jboss.mx.util.MBeanServerLocator"
@@ -469,63 +458,53 @@
          </section>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.jmx"/> for an example which shows how to use a remote
-            connection to JMX and MBean proxies to manage HornetQ.</para>
+         <title>例子</title>
+         <para>参见<xref linkend="examples.jmx"/>，这个例子展示了如何使用远程JMX连接或MBean代理来管理HornetQ。</para>
       </section>
    </section>
    <section>
-      <title>Using Management Via Core API</title>
-      <para>The core management API in HornetQ is called by sending Core messages to a special
-         address, the <emphasis>management address</emphasis>.</para>
-      <para><emphasis>Management messages</emphasis> are regular Core messages with well-known
-         properties that the server needs to understand to interact with the management API:</para>
+      <title>使用核心接口</title>
+      <para>核心管理接口的调用实际上是向一个特殊的地址发送核心消息。这个特殊地址称为<emphasis>管理地址</emphasis>。</para>
+      <para><emphasis>管理消息</emphasis>是一些定义了一些固定属性的普通核心消息。服务器通过这些属性来解释管理操作：</para>
       <itemizedlist>
          <listitem>
-            <para>The name of the managed resource</para>
+            <para>管理资源的名称</para>
          </listitem>
          <listitem>
-            <para>The name of the management operation</para>
+            <para>管理操作的名称</para>
          </listitem>
          <listitem>
-            <para>The parameters of the management operation</para>
+            <para>管理操作的参数</para>
          </listitem>
       </itemizedlist>
-      <para>When such a management message is sent to the management address, HornetQ server will
-         handle it, extract the information, invoke the operation on the managed resources and send
-         a <emphasis>management reply</emphasis> to the management message's reply-to address
-         (specified by <literal>ClientMessageImpl.REPLYTO_HEADER_NAME</literal>). </para>
-      <para>A <literal>ClientConsumer</literal> can be used to consume the management reply and
-         retrieve the result of the operation (if any) stored in the reply's body. For portability,
-         results are returned as a <ulink url="http://json.org">JSON</ulink> String rather than Java
-         Serialization (the <literal>org.hornetq.api.core.management.ManagementHelper</literal> can
-         be used to convert the JSON string to Java objects).</para>
-      <para>These steps can be simplified to make it easier to invoke management operations using
-         Core messages:</para>
+      <para>当一个管理消息发送到管理地址时，HornetQ服务器将从中提取出相应的信息，再调用相应的管理资源的方法，之后向
+         该管理消息的回答地址（reply-to address，由<literal>ClientMessageImpl.REPLYTO_HEADER_NAME
+         </literal>定义）发送一个<emphasis>管理回答</emphasis>。</para>
+      <para>一个<literal>ClientConsumer</literal>用来接收管理回答并提取出其中的操作的結果（如果有的话）。
+         考虑到可移植性，返回的結果采用的是格式的字符串，而没有采用Java的序列化技术
+         （<literal>org.hornetq.api.core.management.ManagementHelper</literal>可以用来将JSON字符串
+         转换成Java对象）。</para>
+      <para>使用以下步骤可以简化使用核心消息调用管理操作：</para>
       <orderedlist>
          <listitem>
-            <para>Create a <literal>ClientRequestor</literal> to send messages to the management
-               address and receive replies</para>
+            <para>创建一个<literal>ClientRequestor</literal>对象，用来发送管理消息并接收回答。</para>
          </listitem>
          <listitem>
-            <para>Create a <literal>ClientMessage</literal></para>
+            <para>创建一个<literal>ClientMessage</literal>。</para>
          </listitem>
          <listitem>
-            <para>Use the helper class <literal
-                  >org.hornetq.api.core.management.ManagementHelper</literal> to fill the message
-               with the management properties</para>
+            <para>使用<literal
+                  >org.hornetq.api.core.management.ManagementHelper</literal>类来帮助设置消息的管理参数。</para>
          </listitem>
          <listitem>
-            <para>Send the message using the <literal>ClientRequestor</literal></para>
+            <para>通过<literal>ClientRequestor</literal>将消息发送</para>
          </listitem>
          <listitem>
-            <para>Use the helper class <literal
-                  >org.hornetq.api.core.management.ManagementHelper</literal> to retrieve the
-               operation result from the management reply</para>
+            <para>使用 <literal
+                  >org.hornetq.api.core.management.ManagementHelper</literal>类从管理操作結果中提取返回值。</para>
          </listitem>
       </orderedlist>
-      <para>For example, to find out the number of messages in the core queue <literal
-            >exampleQueue</literal>:</para>
+      <para>例如，要得到核心队列<literal>exampleQueue</literal>中消息的数量：</para>
       <programlisting>
    ClientSession session = ...
    ClientRequestor requestor = new ClientRequestor(session, "jms.queue.hornetq.management");
@@ -535,25 +514,22 @@
    int count = (Integer) ManagementHelper.getResult(reply);
    System.out.println("There are " + count + " messages in exampleQueue");
       </programlisting>
-      <para>Management operation name and parameters must conform to the Java interfaces defined in
-         the <literal>management</literal> packages.</para>
-      <para>Names of the resources are built using the helper class <literal
-            >org.hornetq.api.core.management.ResourceNames</literal> and are straightforward
-            (<literal>core.queue.exampleQueue</literal> for the Core Queue <literal
-            >exampleQueue</literal>, <literal>jms.topic.exampleTopic</literal> for the JMS Topic
-            <literal>exampleTopic</literal>, etc.).</para>
+      <para>管理操作名及其参数必须和<literal>management</literal>包中定义的Java接口一致。</para>
+      <para>资源的名称是用<literal>org.hornetq.api.core.management.ResourceNames</literal>类来生成的，
+            命名都非常直观（如核心队列<literal>exampleQueue</literal>的名称为<literal>core.queue.exampleQueue</literal>，
+            JMS Topic <literal>exampleTopic</literal>的名称为<literal>jms.topic.exampleTopic</literal>，等等）。
+</para>
       <section id="management.core.configuration">
-         <title>Configuring Core Management</title>
-         <para>The management address to send management messages is configured in <literal
-               >hornetq-configuration.xml</literal>:</para>
+         <title>配置核心管理</title>
+         <para>管理地址的配置在文件<literal
+               >hornetq-configuration.xml</literal>中：</para>
          <programlisting>
    &lt;management-address&gt;jms.queue.hornetq.management&lt;/management-address&gt;
          </programlisting>
-         <para>By default, the address is <literal>jms.queue.hornetq.management</literal> (it is
-            prepended by "jms.queue" so that JMS clients can also send management messages).</para>
-         <para>The management address requires a <emphasis>special</emphasis> user permission
-               <literal>manage</literal> to be able to receive and handle management messages. This
-            is also configured in hornetq-configuration.xml:</para>
+         <para>它的默认地址是<literal>jms.queue.hornetq.management</literal> （地址前缀加上
+            “jms.queue”是为了方便JMS客户端也可以向它发送管理消息。</para>
+         <para>管理地址需要一个<emphasis>特殊</emphasis>的用户权限
+               <literal>manage</literal>来接收并处理管理消息。这个权限也在hornetq-configuration.xml文件中配置：</para>
          <programlisting>
    &lt;!-- users with the admin role will be allowed to manage --&gt; 
    &lt;!-- HornetQ using management messages        --&gt;
@@ -564,41 +540,32 @@
       </section>
    </section>
    <section id="management.jms">
-      <title>Using Management Via JMS</title>
-      <para>Using JMS messages to manage HornetQ is very similar to using core API.</para>
-      <para>An important difference is that JMS requires a JMS queue to send the messages to
-         (instead of an address for the core API).</para>
-      <para>The <emphasis>management queue</emphasis> is a special queue and needs to be
-         instantiated directly by the client:</para>
+      <title>使用JMS进行管理</title>
+      <para>使用JMS管理HornetQ与使用核心API管理HornetQ十分相似。</para>
+      <para>其中一个重要的不同是JMS需要一个JMS队列来发送消息（而核心接口使用的是一个地址）。</para>
+      <para><emphasis>管理队列</emphasis>是一个特殊的队列，它需要客户端直接实例化：</para>
       <programlisting>
    Queue managementQueue = HornetQJMSClient.createQueue("hornetq.management");
       </programlisting>
-      <para>All the other steps are the same than for the Core API but they use JMS API
-         instead:</para>
+      <para>其余步骤完全和使用核心接口一样，只是相应的对象不同：</para>
       <orderedlist>
          <listitem>
-            <para>create a <literal>QueueRequestor</literal> to send messages to the management
-               address and receive replies</para>
+            <para>创建一个<literal>QueueRequestor</literal>来向管理地址发送管理消息并接收回答。</para>
          </listitem>
          <listitem>
-            <para>create a <literal>Message</literal></para>
+            <para>创建一个<literal>消息</literal></para>
          </listitem>
          <listitem>
-            <para>use the helper class <literal
-                  >org.hornetq.api.jms.management.JMSManagementHelper</literal> to fill the message
-               with the management properties</para>
+            <para>使用 <literal>org.hornetq.api.jms.management.JMSManagementHelper</literal>类向消息中设置管理参数。</para>
          </listitem>
          <listitem>
-            <para>send the message using the <literal>QueueRequestor</literal></para>
+            <para>再使用<literal>QueueRequestor</literal>发送消息。</para>
          </listitem>
          <listitem>
-            <para>use the helper class <literal
-                  >org.hornetq.api.jms.management.JMSManagementHelper</literal> to retrieve the
-               operation result from the management reply</para>
+            <para>使用<literal>org.hornetq.api.jms.management.JMSManagementHelper</literal>来从回答中提取返回結果。</para>
          </listitem>
       </orderedlist>
-      <para>For example, to know the number of messages in the JMS queue <literal
-            >exampleQueue</literal>:</para>
+      <para>例如，要得到一个JMS队列<literal>exampleQueue</literal>中有多少消息：</para>
       <programlisting>
    Queue managementQueue = HornetQJMSClient.createQueue("hornetq.management");   
    
@@ -612,14 +579,12 @@
    System.out.println("There are " + count + " messages in exampleQueue");
       </programlisting>
       <section>
-         <title>Configuring JMS Management</title>
-         <para>Whether JMS or the core API is used for management, the configuration steps are the
-            same (see <xref linkend="management.core.configuration"/>).</para>
+         <title>配置JMS管理</title>
+         <para>JMS管理的配置与核心接口管理的配置步骤是一样的（参见<xref linkend="management.core.configuration"/>）。</para>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.management"/> for an example which shows how to use JMS
-            messages to manage HornetQ server.</para>
+         <title>例子</title>
+         <para>参见<xref linkend="examples.management"/>，它展示了如何使用JMS消息来管理HornetQ。</para>
       </section>
    </section>
  
