@@ -589,71 +589,60 @@
    </section>
  
    <section id="management.notifications">
-      <title>Management Notifications</title>
-      <para>HornetQ emits <emphasis>notifications</emphasis> to inform listeners of potentially
-         interesting events (creation of new resources, security violation, etc.).</para>
-      <para>These notifications can be received by 3 different ways:</para>
+      <title>管理通知</title>
+      <para>HornetQ可以向listener发送各种事件的<emphasis>通知</emphasis>（如资源的创建，安全破坏等）。</para>
+      <para>有三种方式接收管理通知</para>
       <itemizedlist>
          <listitem>
-            <para>JMX notifications</para>
+            <para>JMX通知</para>
          </listitem>
          <listitem>
-            <para>Core messages</para>
+            <para>核心消息</para>
          </listitem>
          <listitem>
-            <para>JMS messages</para>
+            <para>JMS消息</para>
          </listitem>
       </itemizedlist>
       <section>
-         <title>JMX Notifications</title>
-         <para>If JMX is enabled (see <xref linkend="management.jmx.configuration"/>), JMX
-            notifications can be received by subscribing to 2 MBeans:</para>
+         <title>JMX通知</title>
+         <para>如果设置了JMX（参见<xref linkend="management.jmx.configuration"/>），就可以通过订阅以下
+               两个MBean来获得通知：</para>
          <itemizedlist>
             <listitem>
-               <para><literal>org.hornetq:module=Core,type=Server</literal> for notifications on
-                     <emphasis>Core</emphasis> resources</para>
+               <para><literal>org.hornetq:module=Core,type=Server</literal> 可以获得有关
+                     <emphasis>核心</emphasis>资源的通知</para>
             </listitem>
             <listitem>
-               <para><literal>org.hornetq:module=JMS,type=Server</literal> for notifications on
-                     <emphasis>JMS</emphasis> resources</para>
+               <para><literal>org.hornetq:module=JMS,type=Server</literal>可以获得有关
+                     <emphasis>JMS</emphasis>资源的通知</para>
             </listitem>
          </itemizedlist>
       </section>
       <section>
-         <title>Core Messages Notifications</title>
-         <para>HornetQ defines a special <emphasis>management notification address</emphasis>. Core
-            queues can be bound to this address so that clients will receive management
-            notifications as Core messages</para>
-         <para>A Core client which wants to receive management notifications must create a core
-            queue bound to the management notification address. It can then receive the
-            notifications from its queue.</para>
-         <para>Notifications messages are regular core messages with additional properties
-            corresponding to the notification (its type, when it occurred, the resources which were
-            concerned, etc.).</para>
-         <para>Since notifications are regular core messages, it is possible to use message
-            selectors to filter out notifications and receives only a subset of all the
-            notifications emitted by the server.</para>
+         <title>核心消息通知</title>
+         <para>HornetQ定义了一个特殊的<emphasis>管理通知地址</emphasis>。核心队列绑定到该地址后，客户
+            端就可以接收以核心消息形式发送的管理信通知了。</para>
+         <para>一个核心客户端要想接收到管理通知，它必须要创建一个队列并绑定到这个管理通知地址上，然后从这个
+            队列接收通知。</para>
+         <para>通知消息就是普通的核心消息加上相关的属性（如通知类型，事件发生时间，资源等）。</para>
+         <para>由于是标准的核心消息，使用选择器还能够过滤掉一部分通知而只接收感兴趣的通知。</para>
          <section id="management.notifications.core.configuration">
-            <title>Configuring The Core Management Notification Address</title>
-            <para>the management notification address to receive management notifications is
-               configured in <literal>hornetq-configuration.xml</literal>:</para>
+            <title>配置核心管理通知地址</title>
+            <para>用来发送管理通知的地址在文件中<literal>hornetq-configuration.xml</literal>配置：</para>
             <programlisting>
                &lt;management-notification-address&gt;hornetq.notifications&lt;/management-notification-address&gt;
             </programlisting>
-            <para>By default, the address is <literal>hornetq.notifications</literal>.</para>
+            <para>默认的地址是<literal>hornetq.notifications</literal>。</para>
          </section>
       </section>
       <section>
-         <title>JMS Messages Notifications</title>
-         <para>HornetQ's notifications can also be received using JMS messages.</para>
-         <para>It is similar to receiving notifications using Core API but an important difference
-            is that JMS requires a JMS Destination to receive the messages (preferably a
-            Topic):</para>
+         <title>JMS消息通知</title>
+         <para>HornetQ还可以通过JMS消息的方式发送通知。</para>
+         <para>这种方式与核心消息通知相似，但是有一个重要的不同：JMS消息需要一个JMS的目标（通常是一个Topic）：</para>
          <programlisting>
    Topic notificationsTopic = HornetQJMSClient.createHornetQTopic("hornetq.notifications", "hornetq.notifications");
          </programlisting>
-         <para>Once the notification topic is created, you can receive messages from it or set a
-               <literal>MessageListener</literal>:</para>
+         <para>这个通知话题一旦被创建，就可以接收消息了（或者使用<literal>MessageListener</literal>）：</para>
          <programlisting>
    Topic notificationsTopic = HornetQJMSClient.createHornetQTopic("hornetq.notifications", "hornetq.notifications");
 
@@ -683,77 +672,64 @@
          </programlisting>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.management-notifications"/> for an example which shows
-            how to use a JMS <literal>MessageListener</literal> to receive management notifications
-            from HornetQ server.</para>
+         <title>例子</title>
+         <para>参见<xref linkend="examples.management-notifications"/>。本例采用了JMS的<literal>
+            MessageListener</literal>方法从HornetQ
+            服务器接收管理通知。</para>
       </section>
    </section>
    <section id="management.message-counters">
-      <title>Message Counters</title>
-      <para>Message counters can be used to obtain information on queues <emphasis>over
-            time</emphasis> as HornetQ keeps a history on queue metrics.</para>
-      <para>They can be used to show <emphasis>trends</emphasis> on queues. For example, using the
-         management API, it would be possible to query the number of messages in a queue at regular
-         interval. However, this would not be enough to know if the queue is used: the number of
-         messages can remain constant because nobody is sending or receiving messages from the queue
-         or because there are as many messages sent to the queue than messages consumed from it. The
-         number of messages in the queue remains the same in both cases but its use is widely
-         different.</para>
-      <para>Message counters gives additional information about the queues:</para>
+      <title>消息计数器</title>
+      <para>HornetQ保存着队列的历史数据，而消息计数器可以从服务器上获取这些信息。</para>
+      <para>这些信息可以显示队列的一些<emphasis>趋势</emphasis>。例如，使用管理接口你可以定期来查询一个队列
+         的消息数量。但这个数量不足以说明这个队列是否在工作－－也许这个队列既没有发送者也没有接收者；也许这个队列
+         在不停地发送与接收，但是发送消息的速度与接收的速度相等。两咱情况下都会造成消息数在队列中不变，但实际队列
+         的状态确完全不一样。</para>
+      <para>消息计数器可以提供队列的更多的信息：</para>
       <itemizedlist>
          <listitem>
             <para><literal>count</literal></para>
-            <para>The <emphasis>total</emphasis> number of messages added to the queue since the
-               server was started</para>
+            <para>从服务器启动时加到队列中的<emphasis>总</emphasis>消息数。</para>
          </listitem>
          <listitem>
             <para><literal>countDelta</literal></para>
-            <para>the number of messages added to the queue <emphasis>since the last message counter
-                  update</emphasis></para>
+            <para>自<emphasis>上次消息计数器更新</emphasis>后加入到队列的消息数。</para>
          </listitem>
          <listitem>
             <para><literal>depth</literal></para>
-            <para>The <emphasis>current</emphasis> number of messages in the queue</para>
+            <para>队列<emphasis>当前</emphasis>的消息数。</para>
          </listitem>
          <listitem>
             <para><literal>depthDelta</literal></para>
-            <para>The <emphasis>overall</emphasis> number of messages added/removed from the queue
-                  <emphasis>since the last message counter update</emphasis>. For example, if
-                  <literal>depthDelta</literal> is equal to <literal>-10</literal> this means that
-               overall 10 messages have been removed from the queue (e.g. 2 messages were added and
-               12 were removed)</para>
+            <para>自<emphasis>上次消息计数器更新</emphasis>后被加入／删除的消息<emphasis>总数</emphasis>。
+                  例如，如果<literal>depthDelta</literal>是<literal>-10</literal>，就意谓着有10个消息从
+                  队列中删除了（有可能是2个消息加入了但有12个消息删除了）。</para>
          </listitem>
          <listitem>
             <para><literal>lastAddTimestamp</literal></para>
-            <para>The timestamp of the last time a message was added to the queue</para>
+            <para>最后一个消息加入到队列的时间戳。</para>
          </listitem>
          <listitem>
             <para><literal>udpateTimestamp</literal></para>
-            <para>The timestamp of the last message counter update</para>
+            <para>最后一次消息计数器更新的时间戳。</para>
          </listitem>
       </itemizedlist>
       <section id="configuring.message.counters">
-         <title>Configuring Message Counters</title>
-         <para>By default, message counters are disabled as it might have a small negative effect on
-            memory.</para>
-         <para>To enable message counters, you can set it to <literal>true</literal> in <literal
-               >hornetq-configuration.xml</literal>:</para>
+         <title>配置消息计数器</title>
+         <para>默认的消息计数器是关闭的，因为它需要占用一些内存。</para>
+         <para>要打开消息计数器，编辑<literal>hornetq-configuration.xml</literal>文件将其设为<literal>true</literal>：</para>
          <programlisting>
 &lt;message-counter-enabled&gt;true&lt;/message-counter-enabled&gt;
          </programlisting>
-         <para>Message counters keeps a history of the queue metrics (10 days by default) and
-            samples all the queues at regular interval (10 seconds by default). If message counters
-            are enabled, these values should be configured to suit your messaging use case in
-               <literal>hornetq-configuration.xml</literal>:</para>
+         <para>消息计数器会保存队列的历史数据（默认是10天）。它以一定间隔（默认10秒一次）对每个队列进行扫描。
+            如果消息计数器打开，这些参数可以在<literal>hornetq-configuration.xml</literal>文件中进行调整：</para>
          <programlisting>
 &lt;!-- keep history for a week --&gt;
 &lt;message-counter-max-day-history&gt;7&lt;/message-counter-max-day-history&gt;            
 &lt;!-- sample the queues every minute (60000ms) --&gt;
 &lt;message-counter-sample-period&gt;60000&lt;/message-counter-sample-period&gt;
          </programlisting>
-         <para>Message counters can be retrieved using the Management API. For example, to retrieve
-            message counters on a JMS Queue using JMX:</para>
+         <para>使用管理接口可以获得消息计数器。例如要使用JMX得到一个JMS队列的消息计数器：</para>
          <programlisting>
 // retrieve a connection to HornetQ's MBeanServer
 MBeanServerConnection mbsc = ...
@@ -771,9 +747,8 @@ System.out.format("%s message(s) in the queue (since last sample: %s)\n",
          </programlisting>
       </section>
       <section>
-         <title>Example</title>
-         <para>See <xref linkend="examples.message-counters"/> for an example which shows how to use
-            message counters to retrieve information on a JMS <literal>Queue</literal>.</para>
+         <title>例子</title>
+         <para>参见<xref linkend="examples.message-counters"/>。这个例子使用消息计数器来获得一个JMS队列的相关数据。</para>
       </section>
    </section>
 </chapter>
