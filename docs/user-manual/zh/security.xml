@@ -17,63 +17,46 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="security">
-    <title>Security</title>
-    <para>This chapter describes how security works with HornetQ and how you can configure it. To
-        disable security completely simply set the <literal>security-enabled</literal> property to
-        false in the <literal>hornetq-configuration.xml</literal> file.</para>
-    <para>For performance reasons security is cached and invalidated every so long. To change this
-        period set the property <literal>security-invalidation-interval</literal>, which is in
-        milliseconds. The default is <literal>10000</literal> ms.</para>
+    <title>安全</title>
+    <para>本章讲述HornetQ的安全机制以及如何配置它。要完全关闭安全，只要将<literal>hornetq-configuration.xml</literal>
+        文件中的<literal>security-enabled</literal>参数设为false即可。</para>
+    <para>出于性能的考虑，安全在HornetQ中被缓存一定的时间。要改变这个时间，需要设置参数
+        <literal>security-invalidation-interval</literal>，单位是毫秒。默认值是
+        <literal>10000</literal>毫秒。</para>
     <section id="security.settings.roles">
-        <title>Role based security for addresses</title>
-        <para>HornetQ contains a flexible role-based security model for applying security to queues,
-            based on their addresses.</para>
-        <para>As explained in <xref linkend="using-core"/>, HornetQ core consists mainly of sets of
-            queues bound to addresses. A message is sent to an address and the server looks up the
-            set of queues that are bound to that address, the server then routes the message to
-            those set of queues.</para>
-        <para>HornetQ allows sets of permissions to be defined against the queues based on their
-            address. An exact match on the address can be used or a wildcard match can be used using
-            the wildcard characters '<literal>#</literal>' and '<literal>*</literal>'.</para>
-        <para>Seven different permissions can be given to the set of queues which match the address.
-            Those permissions are:</para>
+        <title>基于角色的地址安全</title>
+        <para>HornetQ采用了基于角色的安全模型来配置地址的安全以及其队列的安全。</para>
+        <para>正如在<xref linkend="using-core"/>解释的那样，HornetQ核心主要由绑定到地址上的队列组成。
+            消息被发送到地址后，服务器查找与之绑定的队列，并将消息路由到这些队列中。</para>
+        <para>HornetQ可以基于地址来给队列定义权限。在定义权限时可以使用通配符'<literal>#</literal>'和
+            '<literal>*</literal>'。</para>
+        <para>队列的权限有7种，它们是：</para>
         <itemizedlist>
             <listitem>
-                <para><literal>createDurableQueue</literal>. This permission allows the user to
-                    create a durable queue under matching addresses.</para>
+                <para><literal>createDurableQueue</literal>。允许用户在相应的地址上创建持久的队列。</para>
             </listitem>
             <listitem>
-                <para><literal>deleteDurableQueue</literal>. This permission allows the user to
-                    delete a durable queue under matching addresses.</para>
+                <para><literal>deleteDurableQueue</literal>。允许用户在相应的地址上删除相应的持久的队列。</para>
             </listitem>
             <listitem>
-                <para><literal>createTempQueue</literal>. This permission allows the user to create
-                    a temporary queue under matching addresses.</para>
+                <para><literal>createTempQueue</literal>。允许用户在相应地址上创建临时队列。</para>
             </listitem>
             <listitem>
-                <para><literal>deleteTempQueue</literal>. This permission allows the user to delete
-                    a temporarry queue under matching addresses.</para>
+                <para><literal>deleteTempQueue</literal>。允许用户在相应地址上删除临时队列。</para>
             </listitem>
             <listitem>
-                <para><literal>send</literal>. This permission allows the user to send a message to
-                    matching addresses.</para>
+                <para><literal>send</literal>。允许用户向相应地址发送消息。</para>
             </listitem>
             <listitem>
-                <para><literal>consume</literal>. This permission allows the user to consume a
-                    message from a queue bound to matching addresses.</para>
+                <para><literal>consume</literal>。允许用户从相应地址上的队列接收消息。</para>
             </listitem>
             <listitem>
-                <para><literal>manage</literal>. This permission allows the user to invoke
-                    management operations by sending management messages to the management
-                    address.</para>
+                <para><literal>manage</literal>。允许用户调用管理操作，即向管理地址发关管理消息。</para>
             </listitem>
         </itemizedlist>
-        <para>For each permission, a list of roles who are granted that permission is specified. If
-            the user has any of those roles, he/she will be granted that permission for that set of
-            addresses.</para>
-        <para>Let's take a simple example, here's a security block from <literal
-                >hornetq-configuration.xml</literal> or <literal>hornetq-queues.xml</literal>
-            file:</para>
+        <para>每个权限有一个角色表。如果用户的角色在这个表中，那么它将拥有这个权限。</para>
+        <para>让我们看个简单的例子。下面是从<literal>hornetq-configuration.xml</literal>文件或
+              <literal>hornetq-queues.xml</literal>文件中提取的安全设置：</para>
         <programlisting>
 &lt;security-setting match="globalqueues.europe.#"&gt;
     &lt;permission type="createDurableQueue" roles="admin"/&gt;
@@ -84,69 +67,50 @@
     &lt;permission type="consume" roles="admin, europe-users"/&gt;
 &lt;/security-setting&gt;            
         </programlisting>
-        <para>The '<literal>#</literal>' character signifies "any sequence of words". Words are
-            delimited by the '<literal>.</literal>' character. For a full description of the
-            wildcard syntax please see <xref linkend="wildcard-syntax"/>. The above security block
-            applies to any address that starts with the string "globalqueues.europe.":</para>
-        <para>Only users who have the <literal>admin</literal> role can create or delete durable
-            queues bound to an address that starts with the string "globalqueues.europe."</para>
-        <para>Only users who have the <literal>admin</literal> role can create or delete durable
-            queues bound to an address that starts with the string "globalqueues.europe."</para>
-        <para>Any users with the roles <literal>admin</literal>, <literal>guest</literal>, or
-                <literal>europe-users</literal> can create or delete temporary queues bound to an
-            address that starts with the string "globalqueues.europe."</para>
-        <para>Any users with the roles <literal>admin</literal> or <literal>europe-users</literal>
-            can send messages to these addresses or consume messages from queues bound to an address
-            that starts with the string "globalqueues.europe."</para>
-        <para>The mapping between a user and what roles they have is handled by the security
-            manager. HornetQ ships with a user manager that reads user credentials from a file on
-            disk, and can also plug into JAAS or JBoss Application Server security.</para>
-        <para>For more information on configuring the security manager, please see <xref
-                linkend="change-security-manager"/>.</para>
-        <para>There can be zero or more <literal>security-setting</literal> elements in each xml
-            file. Where more than one match applies to a set of addresses the <emphasis>more
-                specific</emphasis> match takes precedence.</para>
-        <para>Let's look at an example of that, here's another <literal>security-setting</literal>
-            block:</para>
+        <para>在配置中字符'<literal>#</literal>'代表"任何单词序列“。单词由'<literal>.</literal>'字符分隔。
+            有关通配符的语法的完整说明请参见<xref linkend="wildcard-syntax"/>。上面的安全配置对以
+            "globalqueues.europe."开始的地址有效：</para>
+        <para>只有具有<literal>admin</literal>角色的用户才可以创建和删除绑定到以"globalqueues.europe."开始的地址的持久化队列。</para>
+        <para>具有<literal>admin</literal>、<literal>guest</literal>或<literal>europe-users</literal>
+              角色的用户可以在以开头的地址上创建临时的队列。</para>
+        <para>任何具有<literal>admin</literal>或<literal>europe-users</literal>角色的用户可以向以"globalqueues.europe."开头的地址
+            发送消息，并从绑定到相同地址上的队列接收消息。</para>
+        <para>安全管理器处理一个用户和它的角色的对应关系。HornetQ本身自带一个用户管理器，能从文件中读取用户的身份信息。
+            另外HornetQ还可以使用JAAS或JBoss应用服务器的安全管理机制。</para>
+        <para>有关安全管理器的配置信息，请参见<xref linkend="change-security-manager"/>。</para>
+        <para>在每个xml文件中可以有零个或多个 <literal>security-setting</literal>。当一组地址有多个这样的设置时，
+              HornetQ总是选取<emphasis>更具体的</emphasis>匹配。</para>
+        <para>让我们来看一个实例，下面是另一个<literal>security-setting</literal>：</para>
         <programlisting>
 &lt;security-setting match="globalqueues.europe.orders.#"&gt;
     &lt;permission type="send" roles="europe-users"/&gt;
     &lt;permission type="consume" roles="europe-users"/&gt;
 &lt;/security-setting&gt;            
         </programlisting>
-        <para>In this <literal>security-setting</literal> block the match
-            'globalqueues.europe.orders.#' is more specific than the previous match
-            'globalqueues.europe.#'. So any addresses which match 'globalqueues.europe.orders.#'
-            will take their security settings <emphasis>only</emphasis> from the latter
-            security-setting block.</para>
-        <para>Note that settings are not inherited from the former block. All the settings will be
-            taken from the more specific matching block, so for the address
-            'globalqueues.europe.orders.plastics' the only permissions that exist are <literal
-                >send</literal> and <literal>consume</literal> for the role europe-users. The
-            permissions <literal>createDurableQueue</literal>, <literal
-            >deleteDurableQueue</literal>, <literal>createTempQueue</literal>, <literal
-                >deleteTempQueue</literal> are not inherited from the other security-setting
-            block.</para>
-        <para>By not inheriting permissions, it allows you to effectively deny permissions in more
-            specific security-setting blocks by simply not specifying them. Otherwise it would not
-            be possible to deny permissions in sub-groups of addresses.</para>
+        <para>在这个<literal>security-setting</literal>块中，字符串
+            'globalqueues.europe.orders.#' 要比它之前的字符串'globalqueues.europe.#'更具体。
+            因此当一个地址与'globalqueues.europe.orders.#'匹配时，它<emphasis>只</emphasis>选择这个安全配置。</para>
+        <para>注意安全设置没有继承性。对于像'globalqueues.europe.orders.plastics'的地址，只要上面的设置
+            能被采用。即角色europe-users有<literal
+                >send</literal>和<literal>consume</literal>权限。权限
+            <literal>createDurableQueue</literal>、 <literal
+            >deleteDurableQueue</literal>、<literal>createTempQueue</literal>、<literal
+                >deleteTempQueue</literal>不会从先前的设置中继承。</para>
+        <para>由于权限的不可继承，如果我们不在更具体的security-setting设置中给出一个权限，这个权限就是没有的，不会因为继承而带来
+            麻烦。否则就不可能对一组地址中的部分地址进行如此的设置。</para>
     </section>
     <section>
-        <title>Secure Sockets Layer (SSL) Transport</title>
-        <para>When messaging clients are connected to servers, or servers are connected to other
-            servers (e.g. via bridges) over an untrusted network then HornetQ allows that traffic to
-            be encrypted using the Secure Sockets Layer (SSL) transport.</para>
-        <para>For more information on configuring the SSL transport, please see <xref
-                linkend="configuring-transports"/>.</para>
+        <title>安全套接字层(SSL)传输</title>
+        <para>当消息客户端与服务器端，或服务器之间（比如使用桥的情况）通过一个不信任的网络相互通信时，HornetQ
+            支持使用加密的安全套接字（SSL）传输数据。</para>
+        <para>关于SSL的详细配置信息，请参见<xref linkend="configuring-transports"/>。</para>
     </section>
     <section>
-        <title>Basic user credentials</title>
-        <para>HornetQ ships with a security manager implementation that reads user credentials, i.e.
-            user names, passwords and role information from an xml file on the classpath called
-                <literal>hornetq-users.xml</literal>. This is the default security manager.</para>
-        <para>If you wish to use this security manager, then users, passwords and roles can easily
-            be added into this file.</para>
-        <para>Let's take a look at an example file:</para>
+        <title>基本用户身份信息（Credentials）</title>
+        <para>HornetQ自带一个安全管理器（security manager）可以从xml文件中读取用户身份信息，即用户名、
+            密码、角色信息。该xml文件名为<literal>hornetq-users.xml</literal>，它必须要在classpath中。</para>
+        <para>如果你要使用这个安全管理器，就将用户名，密码，角色等信息加入到这个文件中。</para>
+        <para>让我们看一个例子：</para>
         <programlisting>
 &lt;configuration xmlns="urn:hornetq" 
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -172,23 +136,21 @@
     
 &lt;/configuration&gt;
         </programlisting>
-        <para>The first thing to note is the element <literal>defaultuser</literal>. This defines
-            what user will be assumed when the client does not specify a username/password when
-            creating a session. In this case they will be the user <literal>guest</literal> and have
-            the role also called <literal>guest</literal>. Multiple roles can be specified for a
-            default user.</para>
-        <para>We then have three more users, the user <literal>tim</literal> has the role <literal
-                >admin</literal>. The user <literal>andy</literal> has the roles <literal
-                >admin</literal> and <literal>guest</literal>, and the user <literal>jeff</literal>
-            has the roles <literal>europe-users</literal> and <literal>guest</literal>.</para>
+        <para>首先要注意的是<literal>defaultuser</literal>，它定义的是默认的用户。当客户端创建会话时
+            没有提供用户名／密码时，就会使用这个用户。根据上述配置，这个默认用户是<literal>guest</literal>
+            并且他的角色是<literal>guest</literal>。一个默认用户可以有多个角色。</para>
+        <para>另外三个用户中，用户<literal>tim</literal>具有角色<literal
+                >admin</literal>。用户<literal>andy</literal>具有角色<literal
+                >admin</literal>和<literal>guest</literal>，用户<literal>jeff</literal>
+             具有角色<literal>europe-users</literal>和<literal>guest</literal>。</para>
     </section>
     <section id="change-security-manager">
-        <title>Changing the security manager</title>
-        <para>If you do not want to use the default security manager then you can specify a
-            different one by editing the file <literal>hornetq-beans.xml</literal> (or <literal
-                >hornetq-jboss-beans.xml</literal> if you're running JBoss Application Server) and
-            changing the class for the <literal>HornetQSecurityManager</literal> bean.</para>
-        <para>Let's take a look at a snippet from the default beans file:</para>
+        <title>更换安全管理器</title>
+        <para>如果你不想用默认的安全管理器，可以通过修改配置文件<literal>hornetq-beans.xml</literal>
+            （或者在运行JBoss应用服务器情况下<literal
+                >hornetq-jboss-beans.xml</literal>文件）来更换。同时要更换
+            <literal>HornetQSecurityManager</literal> bean 的类。</para>
+        <para>让我们看一段默认bean文件的内容：</para>
         <programlisting>           
 &lt;bean name="HornetQSecurityManager" 
       class="org.hornetq.spi.core.security.HornetQSecurityManagerImpl"&gt;
@@ -196,25 +158,21 @@
     &lt;stop ignored="true"/&gt;
 &lt;/bean&gt;            
         </programlisting>
-        <para>The class <literal>org.hornetq.spi.core.security.HornetQSecurityManagerImpl</literal>
-            is the default security manager that is used by the standalone server.</para>
-        <para>HornetQ ships with two other security manager implementations you can use
-            off-the-shelf; one a JAAS security manager and another for integrating with JBoss
-            Application Sever security, alternatively you could write your own implementation by
-            implementing the <literal>org.hornetq.core.security.SecurityManager</literal> interface,
-            and specifying the classname of your implementation in the file <literal
-                >hornetq-beans.xml</literal> (or <literal>hornetq-jboss-beans.xml</literal> if
-            you're running JBoss Application Server).</para>
-        <para>These two implementations are discussed in the next two sections.</para>
+        <para><literal>org.hornetq.spi.core.security.HornetQSecurityManagerImpl</literal>
+            类就是HornetQ服务器的在独立运行时的默认的安全管理器。</para>
+        <para>HornetQ自带有另外两个安全管理器可供使用。一个是JAAS安全管理器，另一个是用来与JBoss应用服务
+            器集成的安全管理器。此外，你还可以编写实现你自己的安全管理器。首先要实现
+            <literal>org.hornetq.core.security.SecurityManager</literal>接口，再将你的实现
+            类定义到<literal>hornetq-beans.xml</literal>文件中即可（或者在JBoss应用服务器中
+            使用<literal>hornetq-jboss-beans.xml</literal>文件）。</para>
+        <para>以下分别介绍这两咱安全管理器</para>
     </section>
     <section>
-        <title>JAAS Security Manager</title>
-        <para>JAAS stands for 'Java Authentication and Authorization Service' and is a standard part
-            of the Java platform. It provides a common API for security authentication and
-            authorization, allowing you to plugin your pre-built implementations.</para>
-        <para>To configure the JAAS security manager to work with your pre-built JAAS infrastructure
-            you need to specify the security manager as a <literal>JAASSecurityManager</literal> in
-            the beans file. Here's an example:</para>
+        <title>JAAS安全管理器</title>
+        <para>JAAS表示“Java认证与授权服务“。它是Java平台标准的一部分。它提供了进行安全认证与授权的通用接口。
+            它允许你插入自己的安全管理模块。</para>
+        <para>要配置使用你自己的JAAS安全实现，需要在bean文件中定义<literal>JAASSecurityManager</literal>。
+            下面是一个例子：</para>
         <programlisting><![CDATA[
 &lt;bean name="HornetQSecurityManager"
       class="org.hornetq.integration.jboss.security.JAASSecurityManager"&gt;
@@ -230,43 +188,36 @@
     &lt;/property&gt;
 &lt;/bean&gt;
         ]]></programlisting>
-        <para>Note that you need to feed the JAAS security manager with three properties:</para>
+        <para>注意你需要为JAAS安全管理器提供三个参数：</para>
         <itemizedlist>
             <listitem>
-                <para>ConfigurationName: the name of the <literal>LoginModule</literal>
-                    implementation that JAAS must use</para>
+                <para>ConfigurationName: <literal>LoginModule</literal>的名字。
             </listitem>
             <listitem>
-                <para>Configuration: the <literal>Configuration</literal> implementation used by
-                    JAAS</para>
+                <para>Configuration: <literal>Configuration</literal>的实现。</para>
             </listitem>
             <listitem>
-                <para>CallbackHandler: the <literal>CallbackHandler</literal> implementation to use
-                    if user interaction are required</para>
+                <para>CallbackHandler: <literal>CallbackHandler</literal>实现，用于用户交互。</para>
             </listitem>
         </itemizedlist>
         <section>
-            <title>Example</title>
-            <para>See <xref linkend="examples.jaas"/> for an example which shows how HornetQ can be
-                configured to use JAAS.</para>
+            <title>例子</title>
+            <para>参见<xref linkend="examples.jaas"/>。这个例子展示了怎样在HornetQ中配置使用JAAS。</para>
         </section>
     </section>
     <section>
-        <title>JBoss AS Security Manager</title>
-        <para>The JBoss AS security manager is used when running HornetQ inside the JBoss
-            Application server. This allows tight integration with the JBoss Application Server's
-            security model.</para>
-        <para>The class name of this security manager is <literal
-                >org.hornetq.integration.jboss.security.JBossASSecurityManager</literal></para>
-        <para>Take a look at one of the default <literal>hornetq-jboss-beans.xml</literal> files for
-            JBoss Application Server that are bundled in the distribution for an example of how this
-            is configured.</para>
+        <title>JBoss 应用服务器安全管理器</title>
+        <para>JBoss 应用服务器安全管理器适用于当HornetQ运行于JBoss应用服务器内时。它可以与JBoss应用服务器
+            的安全模型紧密集成。</para>
+        <para>此安全管理器的类是 <literal
+                >org.hornetq.integration.jboss.security.JBossASSecurityManager</literal>。</para>
+        <para>要了解如何配置JBoss安全管理器，可以看一眼HornetQ发布包中相关例子中的
+            <literal>hornetq-jboss-beans.xml</literal>文件。</para>
     </section>
     <section>
-        <title>Changing the username/password for clustering</title>
-        <para>In order for cluster connections to work correctly, each node in the cluster must make
-            connections to the other nodes. The username/password they use for this should always be
-            changed from the installation default to prevent a security risk.</para>
-        <para>Please see <xref linkend="management"/> for instructions on how to do this.</para>
+        <title>集群用户名／密码的配置</title>
+        <para>为了使集群连接正常工作，每个节点都必须与其它节点相连接。它们连接所使用的默认用户名和密码在正式使用时
+            一定要做相应的更改，以防止安全隐患。</para>
+        <para>请参见<xref linkend="management"/>了解怎样去做。</para>
     </section>
 </chapter>
