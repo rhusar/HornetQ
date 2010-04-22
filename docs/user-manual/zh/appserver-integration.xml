@@ -17,26 +17,18 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="appserver-integration">
-    <title>Application Server Integration and Java EE</title>
-    <para>HornetQ can be easily installed in JBoss Application Server 4 or later. For details on
-        installing HornetQ in the JBoss Application Server please refer to quick-start guide.</para>
-    <para>Since HornetQ also provides a JCA adaptor, it should also be possible to integrate HornetQ
-        as a JMS provider in other JEE compliant app servers. For instructions on how to integrate a
-        remote JCA adaptor into another application sever, please consult the other application server's
-        instructions.</para>
-    <para>A JCA Adapter basically controls the inflow of messages to Message Driven Beans and the
-        outflow of messages sent from other JEE components, e.g. EJBs and Servlets.</para>
-    <para>This section explains the basics behind configuring the different JEE components in the
-        AS.</para>
+    <title>Java EE和应用服务器的集成</title>
+    <para>HornetQ可以容易地安装到JBoss 4应用服务器及其以上版本。有关安装的详细说明请参阅快速指南。</para>
+    <para>HornetQ提供了一个JCA适配器，使得它还可以与其它JEE兼容的应用服务器集成。请参阅其它应用服务器的
+          有关JCA适配器集成的说明来操作。</para>
+    <para>JCA适配器的作用是控制消息流入到消息Bean（MDB），并控制消息从各种JEE模块中发出（如EJB和Servlet）。</para>
+    <para>本章讲述这些JEE模块配置HornetQ的基本信息。</para>
     <section>
-        <title>Configuring Message Driven Beans</title>
-        <para>The delivery of messages to an MDB using HornetQ is configured on the JCA Adapter via
-            a configuration file <literal>ra.xml</literal> which can be found under in the <literal
-                >jms-ra.rar</literal> archive of directory. By default this is configured to consume
-            messages using an InVM connector from the instance of HornetQ running within the
-            application server. A full list of what is configurable is found later in this chapter. </para>
-        <para>All MDB's however need to have the destination type and the destination configured.
-            The following example shows how this can be done via annotations.</para>
+        <title>配置消息Bean</title>
+        <para>使用HornetQ向MDB传递消息，需要在文件<literal>ra.xml</literal>中配置JCA适配器。该文件在
+            <literal>jms-ra.rar</literal>文件中。默认配置下HornetQ服务使用InVm连接器接收消息。在本章
+            后面列出了可配置的选项。</para>
+        <para>所有MDB都需要有目标类型和目标的相关配置。下面就是一个使用annotation配置MDB的例子：</para>
         <programlisting>@MessageDriven(name = "MDBExample",
                activationConfig =
                      {
@@ -48,33 +40,25 @@ public class MDBExample implements MessageListener
 {
    public void onMessage(Message message)...
 }</programlisting>
-        <para>In this example you can see that the MDB will consume messages from a queue that is
-            mapped into JNDI with the binding <literal>queue/testQueue</literal>. This queue must be
-            preconfigured in the usual way using the HornetQ configuration files.</para>
-        <para>The <literal>ResourceAdapter</literal> annotation is used to specify which adaptor
-            should be used. To use this you will need to import <literal
-                >org.jboss.ejb3.annotation.ResourceAdapter</literal> which can be found in the
-                <literal>jboss-ejb3-ext-api.jar</literal> which can be found in the jboss
-            repository. Alternatively you can add use a deployment descriptor and add something like
-            the following to <literal
-            >jboss.xml</literal><programlisting>&lt;message-driven>
+        <para>上例中配置了MDB从一个队列中接收消息，它的JNDI绑定名为<literal>queue/testQueue</literal>。
+            这个队列必须事先在HornetQ服务器配置文件中配置并部署好的。</para>
+        <para><literal>ResourceAdapter</literal> annotation用来指出使用哪个适配器。要使用它必须要引入
+            <literal>org.jboss.ejb3.annotation.ResourceAdapter</literal>。这个类在
+            <literal>jboss-ejb3-ext-api.jar</literal>文件中。该文件可以在JBoss的repository中找到。
+            另外一个方法是使用部署描述文件（deployment descriptor），即在文件<literal
+            >jboss.xml</literal>中加入类似以下的内容：
+<programlisting>&lt;message-driven>
    &lt;ejb-name>ExampleMDB&lt;/ejb-name>
    &lt;resource-adapter-name>quartz-ra.rar&lt;/resource-adapter-name>
 &lt;/message-driven>
-</programlisting>You
-            can also rename the hornetq-ra.rar directory to jms-ra.rar and neither the annotation or
-            the extra descriptor information will be needed. If you do this you will need to edit
-            the <literal>jms-ds.xml</literal> datasource file and change <literal>rar-name</literal>
-            element.</para>
-        <para>All the examples shipped with the HornetQ distribution use the annotation.</para>
+</programlisting>你还可以将hornetq-ra.rar改名为jms-ra.rar而不需要任何annotation或额外的部署描述信息。但是你需要
+            编辑<literal>jms-ds.xml</literal>文件，将其中的<literal>rar-name</literal>项改成相应的值。</para>
+        <para>HornetQ发布包中的所有例子都使用annotation方法。</para>
         <section>
-            <title>Using Container Managed Transactions</title>
-            <para>When an MDB is using Container Managed Transactions (CMT), the delivery of the
-                message is done within the scope of a JTA transaction. The commit or rollback of
-                this transaction is controlled by the container itself. If the transaction is rolled
-                back then the message delivery semantics will kick in (by default this is to try and
-                redeliver the message up to 10 times before sending to a DLQ). Using annotations
-                this would be configured as follows:</para>
+            <title>使用容器管理事务（CMT）</title>
+            <para>当MDB使用容器管理事务时，消息的传递被包含在一个JTA事务中。事务的提交与回滚是由容器来控制的。如果事务
+                被回滚，消息传递会进行相应的处理（默认是重新传递消息，如果重新传递次数超过10次，消息就被发往DLQ）。使用
+                annotation配置如下：</para>
             <programlisting>@MessageDriven(name = "MDB_CMP_TxRequiredExample",
                activationConfig =
                      {
@@ -88,17 +72,12 @@ public class MDB_CMP_TxRequiredExample implements MessageListener
 {
    public void onMessage(Message message)...
 }</programlisting>
-            <para>The <literal>TransactionManagement</literal> annotation tells the container to
-                treat this MDB to use Container Managed Persistence. The <literal
-                    >TransactionAttribute</literal> annotation tells the container that a JTA
-                transaction is required for this MDB. Note that the only other valid value for this
-                is <literal>TransactionAttributeType.NOT_SUPPORTED</literal> which tells the
-                container that this MDB does not support JTA transactions and one should not be
-                created.</para>
-            <para>It is also possible to inform the container that it must rollback the transaction
-                by calling <literal>setRollbackOnly</literal> on the <literal
-                    >MessageDrivenContext</literal>. The code for this would look something
-                like:</para>
+            <para><literal>TransactionManagement</literal> 表示这个MDB使用容器管理持久性。
+                <literal>TransactionAttribute</literal> 表示这个MDB要求JTA事务。注意这个annotation的
+                另外唯一的合法值是<literal>TransactionAttributeType.NOT_SUPPORTED</literal>，它表示
+                MDB不需要JTA事务支持。</para>
+            <para>如果要回滚事务，可以调用<literal>MessageDrivenContext</literal>的
+                <literal>setRollbackOnly</literal>方法。如下面的代码所示：</para>
             <programlisting>   @Resource
    MessageDrivenContext ctx;
 
@@ -113,10 +92,8 @@ public class MDB_CMP_TxRequiredExample implements MessageListener
          ctx.setRollbackOnly();
       }
    }</programlisting>
-            <para>If you don't want the over head of an xa transaction being created every time but
-                you would still like the message delivered within a transaction (i.e. you are only
-                using a JMS resource) then you can configure the MDB to use a local transaction.
-                This would be configured as such:</para>
+            <para>如果你不需要使用XA事务，你可以用一相本地的事务来代替（比如你只有一个JMS资源）。
+                如下所示：</para>
             <programlisting>@MessageDriven(name = "MDB_CMP_TxLocalExample",
                activationConfig =
                      {
@@ -133,10 +110,9 @@ public class MDB_CMP_TxLocalExample implements MessageListener
 }</programlisting>
         </section>
         <section>
-            <title>Using Bean Managed Transactions</title>
-            <para>Message driven beans can also be configured to use Bean Managed Transactions
-                (BMT). In this case a User Transaction is created. This would be configured as
-                follows:</para>
+            <title>使用Bean管理事务（BMT）</title>
+            <para>消息Bean可以通过配置使用Bean管理的事务（BMT）。在种情况下会创建一个用户事务
+                （User Transaction）。如下所示：</para>
             <programlisting>@MessageDriven(name = "MDB_BMPExample",
                activationConfig =
                      {
@@ -150,15 +126,11 @@ public class MDB_BMPExample implements MessageListener
 {
    public void onMessage(Message message)
 }</programlisting>
-            <para>When using Bean Managed Transactions the message delivery to the MDB will occur
-                outside the scope of the user transaction and use the acknowledge mode specified by
-                the user with the <literal>acknowledgeMode</literal> property. There are only 2
-                acceptable values for this <literal>Auto-acknowledge</literal> and <literal
-                    >Dups-ok-acknowledge</literal>. Please note that because the message delivery is outside
-                the scope of the transaction a failure within the MDB will not cause the message to
-                be redelivered.</para>
-            <para>A user would control the lifecycle of the transaction something like the
-                following:</para>
+            <para>使用BMT时，消息的传递在用户事务的范围之外，它的通知模式由<literal>acknowledgeMode</literal>参数决定。
+                该参数有两个合法的值，即<literal>Auto-acknowledge</literal>和<literal
+                    >Dups-ok-acknowledge</literal>。请注意，由于消息的传递在事务之外，在MDB中如果发生错误消息
+                是不会重新传递的。</para>
+            <para>用户可以像如下所示控制事务的生命周期：</para>
             <programlisting>   @Resource
    MessageDrivenContext ctx;
 
@@ -186,9 +158,8 @@ public class MDB_BMPExample implements MessageListener
    }</programlisting>
         </section>
         <section>
-            <title>Using Message Selectors with MDB's</title>
-            <para>It is also possible to use MDB's with message selectors. To do this simple define
-                your message selector as follows:</para>
+            <title>在MDB中使用选择器</title>
+            <para>MDB可以配置消息选择器。如下所示：</para>
             <programlisting>@MessageDriven(name = "MDBMessageSelectorExample",
                activationConfig =
                      {
@@ -206,15 +177,10 @@ public class MDBMessageSelectorExample implements MessageListener
         </section>
     </section>
     <section>
-        <title>Sending Messages from within JEE components</title>
-        <para>The JCA adapter can also be used for sending messages. The Connection Factory to use
-            is configured by default in the <literal>jms-ds.xml</literal> file and is mapped to
-                <literal>java:/JmsXA</literal>. Using this from within a JEE component will mean
-            that the sending of the message will be done as part of the JTA transaction being used
-            by the component.</para>
-        <para>This means that if the sending of the message fails the overall transaction would
-            rollback and the message redelivered. Heres an example of this from within an
-            MDB:</para>
+        <title>在JEE模块内发送消息</title>
+        <para>JCA适配器支持发送消息。连接工厂的默认配置在<literal>jms-ds.xml</literal>文件中，对应的JNDI名字是
+            <literal>java:/JmsXA</literal>。在JEE中使用它发送消息将作为JTA事务的一部分来对待。</para>
+        <para>如果消息发送失败，整个事务将回滚，消息会被重新发送。下面是一个MDB发送消息的例子：</para>
         <programlisting>@MessageDriven(name = "MDBMessageSendTxExample",
                activationConfig =
                      {
@@ -273,20 +239,15 @@ public class MDBMessageSendTxExample implements MessageListener
       }
    }
    }</programlisting>
-        <para>In JBoss Application Server you can use the JMS JCA adapter for sending messages from
-            EJBs (including Session, Entity and Message Driven Beans), Servlets (including jsps) and
-            custom MBeans.</para>
+        <para>在JBoss应用服务器的EJB（包括会话Bean, 实体Bean和消息Bean）、Servlet（包括jsp）我定制的MBean中
+            都可以使用JMS的JCA适配器来发送消息。</para>
     </section>
     <section>
-        <title>Configuring the JCA Adaptor</title>
-        <para>The Java Connector Architecture (JCA) Adapter is what allows HornetQ to be integrated
-            with JEE components such as MDB's and EJB's. It configures how components such as MDB's
-            consume messages from the HornetQ server and also how components such as EJB's or
-            Servlet's can send messages.</para>
-        <para>The HornetQ JCA adapter is deployed via the <literal>jms-ra.rar</literal> archive. The
-            configuration of the adapter is found in this archive under <literal
-                >META-INF/ra.xml</literal>.</para>
-        <para>The configuration will look something like the following:</para>
+        <title>配置JCA适配器</title>
+        <para>通过JCA适配器可以将HornetQ集成到JEE兼容的模块中，如MDB和EJB。它的配置决定了这些模块如何接收和发送消息。</para>
+        <para>HornetQ的JCA适配器是通过<literal>jms-ra.rar</literal>部署的。它的配置文件中其中的
+              <literal>META-INF/ra.xml</literal>。</para>
+        <para>下面是它的具体配置内容：</para>
         <programlisting>&lt;resourceadapter>
       &lt;resourceadapter-class>org.hornetq.ra.HornetQResourceAdapter&lt;/resourceadapter-class>
       &lt;config-property>
@@ -356,141 +317,132 @@ public class MDBMessageSendTxExample implements MessageListener
       &lt;/inbound-resourceadapter>
 
    &lt;/resourceadapter></programlisting>
-        <para>There are 3 main parts to this configuration.</para>
+        <para>整个配置可以分为三个主要部分</para>
         <orderedlist>
             <listitem>
-                <para>A set of global properties for the adapter</para>
+                <para>适配器的全局参数</para>
             </listitem>
             <listitem>
-                <para>The configuration for the outbound part of the adapter. This is used for
-                    creating JMS resources within EE components. </para>
+                <para>适配器外部（outbound）配置。用于在JEE环境中创建JMS资源。</para>
             </listitem>
             <listitem>
-                <para>The configuration of the inbound part of the adapter. This is used for
-                    controlling the consumption of messages via MDB's. </para>
+                <para>适配器内部（inbound）配置。用于控制MDB的消息接收。 </para>
             </listitem>
         </orderedlist>
         <section>
-            <title>Adapter Global properties</title>
-            <para>The first element you see is <literal>resourceadapter-class</literal> which should
-                be left unchanged. This is the HornetQ resource adapter class.</para>
-            <para>After that there is a list of configuration properties. This will be where most of
-                the configuration is done. The first 2 configure the transport used by the adapter
-                and the rest configure the connection factory itself.<note><para>All connection
-                        factory properties will use the defaults when not provided. This is accept
-                        for the <literal>reconnectAttempts</literal>  which will default to -1 which
-                        signifies that the connection should attempt to reconnect on connection
-                        failure indefinately. This is only used when the adapter is configured to
-                        connect to a remote server as an InVM connector can never
-                    fail.</para></note></para>
-            <para>The following table explains what each property is for.</para>
+            <title>适配器的全局参数</title>
+            <para>首先看到的第一个参数是<literal>resourceadapter-class</literal>。这是HornetQ
+                的适配器类。此参数不可更改。</para>
+            <para>在此之后是可配置的参数。前两个配置适配器所使用的传输。其余的用来配置连接工厂。
+            <note><para>所有连接工厂的参数在没有定义时使用默认值。参数<literal>reconnectAttempts</literal>
+                        的默认值取-1，表示如果连接失败，HornetQ会不停地尝试重新连接。这个参数只适用于创建远程
+                        连接的情况。如果是InVm连接器，则永远不可能发生连接故障。</para></note></para>
+            <para>下面给出了每个参数的说明：</para>
             <table frame="topbot" border="2">
-                <title>Global Configuration Properties</title>
+                <title>全局配置参数</title>
                 <tgroup cols="3">
                     <colspec colname="c1" colnum="1"/>
                     <colspec colname="c2" colnum="2"/>
                     <colspec colname="c3" colnum="3"/>
                     <thead>
                         <row>
-                            <entry>Property Name</entry>
-                            <entry>Property Type</entry>
-                            <entry>Property Description</entry>
+                            <entry>参数名</entry>
+                            <entry>参数类型</entry>
+                            <entry>参数说明</entry>
                         </row>
                     </thead>
                     <tbody>
                         <row>
                             <entry>ConnectorClassName</entry>
                             <entry>String</entry>
-                            <entry>The Connector class name see <xref
-                                    linkend="configuring-transports"/> for info on available
-                                connectors</entry>
+                            <entry>连接器的类名，参见 <xref
+                                    linkend="configuring-transports"/></entry>
                         </row>
                         <row>
                             <entry>ConnectionParameters</entry>
                             <entry>String</entry>
-                            <entry>The transport configuration. These values must be in the form of
-                                key=val;key=val; and will be specific to the connector used</entry>
+                            <entry>传输配置参数。它的值必须是采用
+                                key=val;key=val;的形式。不同连接器有不同的参数。</entry>
                         </row>
                         <row>
                             <entry>useLocalTx</entry>
                             <entry>boolean</entry>
-                            <entry>True will enable local transaction optimisation.</entry>
+                            <entry>设为True，则进行本地事务优化。</entry>
                         </row>
                         <row>
                             <entry>UseXA</entry>
                             <entry>boolean</entry>
-                            <entry>Whether XA should be used</entry>
+                            <entry>是否使用XA</entry>
                         </row>
                         <row>
                             <entry>UserName</entry>
                             <entry>String</entry>
-                            <entry>The user name to use when making a connection </entry>
+                            <entry>用于创建连接时使用的用户名</entry>
                         </row>
                         <row>
                             <entry>Password</entry>
                             <entry>String</entry>
-                            <entry>The password to use when making a connection</entry>
+                            <entry>用于创建连接时使用的用户密码</entry>
                         </row>
                         <row>
                             <entry>BackUpTransportType</entry>
                             <entry>String</entry>
-                            <entry>The back up transport to use on failure.</entry>
+                            <entry>发生故障是使用的备份传输</entry>
                         </row>
                         <row>
                             <entry>TransportConfiguration</entry>
                             <entry>String</entry>
-                            <entry>The back up transport configuration</entry>
+                            <entry>备份传输的配置</entry>
                         </row>
                         <row>
                             <entry>DiscoveryGroupAddress</entry>
                             <entry>String</entry>
-                            <entry>The discovery group address to use to autodetect a server</entry>
+                            <entry>服务器自动检测所使用的发现组（discovery group）地址</entry>
                         </row>
                         <row>
                             <entry>DiscoveryGroupPort</entry>
                             <entry>integer</entry>
-                            <entry>The port to use for discovery</entry>
+                            <entry>检测所使用的端口号</entry>
                         </row>
                         <row>
                             <entry>DiscoveryRefreshTimeout</entry>
                             <entry>long</entry>
-                            <entry>The timeout, in milli seconds, to refresh.</entry>
+                            <entry>刷新的时间（timeout）。单位为毫秒</entry>
                         </row>
                         <row>
                             <entry>DiscoveryInitialWaitTimeout</entry>
                             <entry>long</entry>
-                            <entry>The initial time to wait for discovery.</entry>
+                            <entry>检测之前所需等待的时间</entry>
                         </row>
                         <row>
                             <entry>LoadBalancingPolicyClassName</entry>
                             <entry>String</entry>
-                            <entry>The load balancing policy class to use.</entry>
+                            <entry>负载均衡策略使用的类</entry>
                         </row>
                         <row>
                             <entry>PingPeriod</entry>
                             <entry>long</entry>
-                            <entry>The period, in milliseconds, to ping the server for
-                                failure.</entry>
+                            <entry>向服务器发送ping的周期，单位毫秒</entry>
                         </row>
                         <row>
                             <entry>ConnectionTTL</entry>
                             <entry>long</entry>
-                            <entry>The time to live for the connection.</entry>
+                            <entry>连接的存活时间（TTL）</entry>
                         </row>
                         <row>
                             <entry>CallTimeout</entry>
                             <entry>long</entry>
-                            <entry>the call timeout, in milli seconds, for each packet sent.</entry>
+                            <entry>每个数据包的调用超时。单位毫秒</entry>
                         </row>
                         <row>
                             <entry>DupsOKBatchSize</entry>
                             <entry>integer</entry>
-                            <entry>The batch size of message acks to use if Dups ok is used.</entry>
+                            <entry>Dups OK的情况下消息批量的大小。</entry>
                         </row>
                     </tbody>
                 </tgroup>
             </table>
-            <para>continued..</para>
+            <para>继续..</para>
             <informaltable frame="topbot">
                 <tgroup cols="3">
                     <colspec colname="c1" colnum="1"/>
@@ -500,106 +452,96 @@ public class MDBMessageSendTxExample implements MessageListener
                         <row>
                             <entry>TransactionBatchSize</entry>
                             <entry>integer</entry>
-                            <entry>The batch size to use for sending messages within a
-                                transaction</entry>
+                            <entry>在事务中发送消息的批量大小</entry>
                         </row>
                         <row>
                             <entry>ConsumerWindowSize</entry>
                             <entry>integer</entry>
-                            <entry>The window size for the consumers internal buffer.</entry>
+                            <entry>接收者内部缓存的窗口大小</entry>
                         </row>
                         <row>
                             <entry>ConsumerMaxRate</entry>
                             <entry>integer</entry>
-                            <entry>The max rate a consumer can receive.</entry>
+                            <entry>接收者接收消息的最大速度</entry>
                         </row>
                         <row>
                             <entry>ConfirmationWindowSize</entry>
                             <entry>integer</entry>
-                            <entry>The window size for confirmations.</entry>
+                            <entry>用于确认的窗口大小</entry>
                         </row>
                         <row>
                             <entry>ProducerMaxRate</entry>
                             <entry>integer</entry>
-                            <entry>The max rate a producer can send messages.</entry>
+                            <entry>发送者发送消息的最大速度</entry>
                         </row>
                         <row>
                             <entry>MinLargeMessageSize</entry>
                             <entry>integer</entry>
-                            <entry>The size a message can be, in bytes, before it is sent as a multi
-                                part large message.</entry>
+                            <entry>大消息的最小数值，单位字节。</entry>
                         </row>
                         <row>
                             <entry>BlockOnAcknowledge</entry>
                             <entry>boolean</entry>
-                            <entry>If true then block on acknowledge of messages.</entry>
+                            <entry>如果为true，表示以阻塞方法发送消息通知。</entry>
                         </row>
                         <row>
                             <entry>BlockOnNonDurableSend</entry>
                             <entry>boolean</entry>
-                            <entry>If true then block when sending non-durable messages</entry>
+                            <entry>如果为true，表示以阻塞方式发送非持久消息</entry>
                         </row>
                         <row>
                             <entry>BlockOnDurableSend</entry>
                             <entry>boolean</entry>
-                            <entry>If true then block when sending durable messages</entry>
+                            <entry>如果为true，表示以阻塞方式发送持久消息</entry>
                         </row>
                         <row>
                             <entry>AutoGroup</entry>
                             <entry>boolean</entry>
-                            <entry>If true then auto group messages</entry>
+                            <entry>如果为true，表示自动消息分组</entry>
                         </row>
                         <row>
                             <entry>PreAcknowledge</entry>
                             <entry>boolean</entry>
-                            <entry>Whether to pre acknowledge messages before sending to
-                                consumer</entry>
+                            <entry>决定是否进行消息的预先通知（pre-acknowledge）。</entry>
                         </row>
                         <row>
                             <entry>reconnectAttempts</entry>
                             <entry>Integer</entry>
-                            <entry>How attemts to try at reconnecting, default is -1</entry>
+                            <entry>连接重试的次数，默认为 -1</entry>
                         </row>
                         <row>
                             <entry>RetryInterval</entry>
                             <entry>long</entry>
-                            <entry>How long to wait , in milli seconds, before retrying a failed
-                                connection</entry>
+                            <entry>每次连接重试前等待的时间，单位毫秒。</entry>
                         </row>
                         <row>
                             <entry>RetryIntervalMultiplier</entry>
                             <entry>double</entry>
-                            <entry>Used for calculating the retry interval</entry>
+                            <entry>用于计算重试间隔</entry>
                         </row>
                         <row>
                             <entry>FailoverOnServerShutdown</entry>
                             <entry>boolean</entry>
-                            <entry>If true client will reconnect to another server if
-                                available</entry>
+                            <entry>如果设为true表示尝试连接其它的服务器</entry>
                         </row>
                         <row>
                             <entry>ClientID</entry>
                             <entry>String</entry>
-                            <entry>The client ID of the connection</entry>
+                            <entry>连接的客户端ID</entry>
                         </row>
                     </tbody>
                 </tgroup>
             </informaltable>
         </section>
         <section>
-            <title>Adapter Outbound configuration</title>
-            <para>The outbound configuration should remain unchanged as they define connection
-                factories that are used by Java EE components. These Connection Factories can be
-                defined inside a configuration file that matches the name <literal
-                    >*-ds.xml</literal>. You'll find a default <literal>jms-ds.xml</literal>
-                configuration under the <literal>hornetq.sar</literal> directory in the Jboss AS
-                deployment. The connection factories defined in the config file inherit their
-                properties from the main <literal>ra.xml</literal> configuration but can also be
-                overridden, the following example show how to define one.</para>
-            <para>Please note that this configuration only applies to install the HornetQ resource
-                adapter in the JBoss Application Server. If you are using another JEE application
-                server please refer to your application servers documentation for how to do
-                this.</para>
+            <title>适配器外部（outbound）配置</title>
+            <para>外部配置参数应该保持不变。这是因为它所定义的连接工厂要被Java EE的模块所使用。这些连接工厂
+                可以定义在名字样式为<literal>*-ds.xml</literal>的配置文件中。在JBoss的部署目录
+                <literal>hornetq.sar</literal>下有一个默认的配置文件<literal>jms-ds.xml</literal>。
+                在这个文件中的连接工厂的配置从主要的配置文件<literal>ra.xml</literal>中继承，
+                但是可以在这里重新定义。下面的例子中给出了重新定义的方法。</para>
+            <para>请注意这里的配置只适用于在JBoss应用服务器中安装的HornetQ。如果要在其它JEE应用服务器中
+                使用并配置HornetQ，请参照相应的应用服务器手册。</para>
             <programlisting>&lt;tx-connection-factory>
       &lt;jndi-name>RemoteJmsXA&lt;/jndi-name>
       &lt;xa-transaction/>
@@ -615,34 +557,27 @@ public class MDBMessageSendTxExample implements MessageListener
           port=5445&lt;/config-property>
       &lt;max-pool-size>20&lt;/max-pool-size>
 &lt;/tx-connection-factory></programlisting>
-            <para>In this example the connection factory will be bound to JNDI with the name
-                    <literal>RemoteJmsXA</literal> and can be looked up in the usual way using JNDI
-                or defined within the EJB or MDB as such:</para>
+            <para>上面的例子中的连接工厂绑定到JNDI名字<literal>RemoteJmsXA</literal>。EJB和MDB可以用
+                下面的方法来得到它：</para>
             <programlisting>@Resource(mappedName="java:RemoteJmsXA")
 private ConnectionFactory connectionFactory;</programlisting>
-            <para>The <literal>config-property</literal> elements are what over rides those in the
-                    <literal>ra.xml</literal> config. Any of the elements pertaining to the
-                connection factory can be over ridden here.</para>
+            <para><literal>config-property</literal>覆盖了<literal>ra.xml</literal>文件中的配置。
+                以此类推，其它有关连接工厂的参数也可以在此覆盖。</para>
         </section>
         <section>
-            <title>Adapter Inbound configuration</title>
-            <para>The inbound configuration should again remain unchanged. This controls what
-                forwards messages onto MDB's. It is possible to override properties on the MDB by
-                adding an activation configuration to the MDB itself. This could be used to
-                configure the MDB to consume from a different server. The next section demonstrates
-                over riding the configuration.</para>
+            <title>适配器内部（inbound）配置</title>
+            <para>内部配置参数也应该保持不变。它们控制向MDB转发消息的各种属性。通过在MDB上添加相应的激活配置
+                （activation configuration）可以覆盖这些参数的值。它可以用来配置一个MDB从另外一个服务器
+                接收消息。下一节将讲述如何覆盖这些配置。</para>
         </section>
     </section>
     <section>
-        <title>High Availability JNDI (HA-JNDI)</title>
-        <para>If you are using JNDI to look-up JMS queues, topics and connection factories from a
-            cluster of servers, it is likely you will want to use HA-JNDI so that your JNDI look-ups
-            will continue to work if one or more of the servers in the cluster fail.</para>
-        <para>HA-JNDI is a JBoss Application Server service which allows you to use JNDI from
-            clients without them having to know the exact JNDI connection details of every server in
-            the cluster. This service is only available if using a cluster of JBoss Application
-            Server instances.</para>
-        <para>To use it use the following properties when connecting to JNDI.</para>
+        <title>高可获得性JNDI (HA-JNDI)</title>
+        <para>采用JNDI来查找JMS对象时（队列，话题及连接工厂），使用HA－JNDI可以增加容错的能力。即当你正在使用
+            的JNDI服务器发生故障时，客户端可以使用集群中的其它JNDI服务器继续工作。</para>
+        <para>HA-JNDI是JBoss应用服务器的一项服务，它为客户端提供JNDI服务，客户端无需知道JNDI具体服务器的连接
+            细节。这个服务只有在集群的JBoss应用服务器上才可使用。</para>
+        <para>要使用HA－JNDI，需要使用下面的JNDI参数。</para>
         <programlisting>Hashtable&lt;String, String> jndiParameters = new Hashtable&lt;String, String>();
 jndiParameters.put("java.naming.factory.initial", 
     "org.jnp.interfaces.NamingContextFactory");
@@ -650,113 +585,97 @@ jndiParameters.put("java.naming.factory.url.pkgs=",
     "org.jboss.naming:org.jnp.interfaces");
 
 initialContext = new InitialContext(jndiParameters);</programlisting>
-        <para>For more information on using HA-JNDI see the <ulink
+        <para>有关HA-JNDI更多的信息请参见<ulink
                 url="http://www.jboss.org/file-access/default/members/jbossas/freezone/docs/Clustering_Guide/5/html/clustering-jndi.html"
-                >JBoss Application Server clustering documentation</ulink></para>
+                >JBoss应用服务器集群文档</ulink>。</para>
     </section>
     <section id="xa-recovery">
-        <title>XA Recovery</title>
-        <para><emphasis>XA recovery</emphasis> deals with system or application failures to ensure
-            that of a transaction are applied consistently to all resources affected by the
-            transaction, even if any of the application processes or the machine hosting them crash
-            or lose network connectivity. For more information on XA Recovery,please refer to <ulink
+        <title>XA恢复</title>
+        <para><emphasis>XA恢复</emphasis>解决的是事务在系统或应用出现故障时的处理。它可以保证在应用进程或主机出现故障
+            或网络崩溃等情况下，事务内所有资源的状态的一致性。有关XA恢复的更多信息请见 <ulink
                 url="http://www.jboss.org/community/wiki/JBossTransactions">JBoss
-                Transactions</ulink>.</para>
-        <para>When HornetQ is integrated with JBoss AS, it can take advantage of JBoss Transactions
-            to provide recovery of messaging resources. If messages are involved in a XA
-            transaction, in the event of a server crash, the recovery manager will ensure that the
-            transactions are recovered and the messages will either be committed or rolled back
-            (depending on the transaction outcome) when the server is restarted.</para>
+                事务</ulink>。</para>
+        <para>当HornetQ与JBoss应用服务器集成时，它可以利用JBoss的事务处理来对消息资源进行恢复。如果消息处理包括
+            在一个XA事务中，如果服务器出现故障并重启时，恢复管理器将负责恢复事务，这样其中的消息要么被提交，要么被回滚（取
+            决于事务的处理决定）。</para>
         <section>
-            <title>XA Recovery Configuration</title>
-            <para>To enable HornetQs XA Recovery, the Recovery Manager must be configured to connect
-                to HornetQ to recover its resources. The following property must be added to the
-                    <literal>jta</literal> section of <literal>conf/jbossts-properties.xml</literal>
-                of JBoss AS profiles:</para>
+            <title>XA恢复的配置</title>
+            <para>要想HornetQ具有XA恢复功能，则必须配置恢复管理器连接到HornetQ并恢复其资源。下面的参数必须要加到
+                <literal>conf/jbossts-properties.xml</literal>文件中的<literal>jta</literal>部分:</para>
             <programlisting>
 &lt;properties depends="arjuna" name="jta"&gt;
    ...
                      
    &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HornetQ1"
-                value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;[connection configuration]"/&gt;
+                value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;[连接配置]"/&gt;
 &lt;/properties&gt;
             </programlisting>
-            <para>The <literal>[connection configuration]</literal> contains all the information
-                required to connect to HornetQ node under the form <literal>[connector factory class
-                    name],[user name], [password], [connector parameters]</literal>. </para>
+            <para>其中<literal>[连接配置]</literal>包括连接HornetQ节点所必需的信息。
+                它的格式是<literal>[连接工厂类名],[用户名], [密码], [连接参数]</literal>。 </para>
             <itemizedlist>
                 <listitem>
-                    <para><literal>[connector factory class name]</literal> corresponds to the name
-                        of the <literal>ConnectorFactory</literal> used to connect to HornetQ.
-                        Values can be <literal
-                            >org.hornetq.core.remoting.impl.invm.InVMConnectorFactory</literal> or
+                    <para><literal>[连接工厂类名]</literal>指的是<literal>ConnectorFactory</literal>
+                        的类名，用来连接HornetQ服务器。其值可以是<literal
+                            >org.hornetq.core.remoting.impl.invm.InVMConnectorFactory</literal> 或
                             <literal
                             >org.hornetq.integration.transports.netty.NettyConnectorFactory</literal></para>
                 </listitem>
                 <listitem>
-                    <para><literal>[user name]</literal> is the user name to create a client
-                        session. It is optional</para>
+                    <para><literal>[用户名]</literal>是用于创建客户会话的用户名。是可选项。</para>
                 </listitem>
                 <listitem>
-                    <para><literal>[password]</literal> is the password to create a client session.
-                        It is mandatory only if the user name is specified</para>
+                    <para><literal>[密码]</literal>是创建客户会话时所用的密码。只有在用户名存在时需要。</para>
                 </listitem>
                 <listitem>
-                    <para><literal>[connector parameters]</literal> is a list of comma-separated
-                        key=value pair which are passed to the connector factory (see <xref
-                            linkend="configuring-transports"/> for a list of the transport
-                        parameters).</para>
+                    <para><literal>[连接参数]</literal> 是用逗号分隔的一串键－值对。它们会传递给连接器工厂
+                        （参见 <xref linkend="configuring-transports"/>）。</para>
                 </listitem>
             </itemizedlist>
             <note>
-                <para>HornetQ must have a valid acceptor which corresponds to the connector
-                    specified in <literal>conf/jbossts-properties.xml</literal>.</para>
+                <para>HornetQ必须有一个与<literal>conf/jbossts-properties.xml</literal>中定义的连接器相对应的接受器（acceptor）。</para>
             </note>
             <section>
-                <title>Configuration Settings</title>
-                <para>If HornetQ is configured with a default in-vm acceptor:</para>
+                <title>配置参数</title>
+                <para>如果HornetQ配置了一个默认的in-vm接受器：</para>
                 <programlisting>
 &lt;acceptor name="in-vm">
     &lt;factory-class>org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory&lt;/factory-class>
 &lt;/acceptor>
                 </programlisting>
-                <para>the corresponding configuration in <literal
-                        >conf/jbossts-properties.xml</literal> is:</para>
+                <para>相应地在 <literal
+                        >conf/jbossts-properties.xml</literal>文件中：</para>
                 <programlisting>
 &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
    value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"/>        			
                 </programlisting>
-                <para>If it is now configured with a netty acceptor on a non-default port:</para>
+                <para>如果配置了一个netty接受器，并且端口不是默认的：</para>
                 <programlisting>
 &lt;acceptor name="netty">
     &lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
     &lt;param key="port" value="8888"/>
 &lt;/acceptor>
                 </programlisting>
-                <para>the corresponding configuration in <literal
-                        >conf/jbossts-properties.xml</literal> is:</para>
+                <para>相应的在 <literal
+                        >conf/jbossts-properties.xml</literal>文件中：</para>
                 <programlisting>
 &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
        value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, , , port=8888"/>        			                    
                 </programlisting>
                 <note>
-                    <para>Note the additional commas to skip the user and password before connector
-                        parameters</para>
+                    <para>注意在没有用户名和密码时，逗号是不能省略的。</para>
                 </note>
-                <para>If the recovery must use <literal>admin, adminpass</literal>, the
-                    configuration would have been:</para>
+                <para>如果恢复必须要求是<literal>admin, adminpass</literal>，则其配置
+                    应为如下所示：</para>
                 <programlisting>
                     &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
                            value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, admin, adminpass, port=8888"/>        			                    
                 </programlisting>
-                <para>Configuring HornetQ with an invm acceptor and configuring the Recovery Manager
-                    with an invm connector is the recommended way to enable XA Recovery.</para>
+                <para>推荐在XA恢复中，将HornetQ配置一个invm接受器，并配置恢复管理器使用invm连接器。</para>
             </section>
         </section>
         <section>
-            <title>Example</title>
-            <para>See <xref linkend="xa-recovery-example"/> which shows how to configure XA Recovery
-                and recover messages after a server crash.</para>
+            <title>例子</title>
+            <para>参见<xref linkend="xa-recovery-example"/>。这个例子展示了如何来配置XA恢复以便在服务器崩溃后恢复消息。</para>
         </section>
     </section>
 </chapter>
