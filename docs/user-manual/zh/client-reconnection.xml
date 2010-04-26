@@ -17,104 +17,73 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="client-reconnection">
-    <title>Client Reconnection and Session Reattachment</title>
-    <para>HornetQ clients can be configured to automatically reconnect or re-attach to the server in
-        the event that a failure is detected in the connection between the client and the server. </para>
+    <title>客户端重新连接与会话恢复</title>
+    <para>通过配置，HornetQ的客户端在与服务器的连接出现故障时，可以自动地重新建立连接并恢复与服务器的通迅。</para>
     <section>
-        <title>100% Transparent session re-attachment</title>
-        <para>If the failure was due to some transient failure such as a temporary network failure,
-            and the target server was not restarted, then the sessions will still be existent on the
-            server, asssuming the client hasn't been disconnected for more than connection-ttl <xref
-                linkend="connection-ttl"/>.</para>
-        <para>In this scenario, HornetQ will automatically re-attach the client sessions to the
-            server sessions when the connection reconnects. This is done 100% transparently and the
-            client can continue exactly as if nothing had happened.</para>
-        <para>The way this works is as follows:</para>
-        <para>As HornetQ clients send commands to their servers they store each sent command in an
-            in-memory buffer. In the case that connection failure occurs and the client subsequently
-            reattaches to the same server, as part of the reattachment protocol the server informs
-            the client during reattachment with the id of the last command it successfully received
-            from that client.</para>
-        <para>If the client has sent more commands than were received before failover it can replay
-            any sent commands from its buffer so that the client and server can reconcile their
-            states.</para>
-        <para>The size of this buffer is configured by the <literal>ConfirmationWindowSize</literal>
-            parameter, when the server has received <literal>ConfirmationWindowSize</literal> bytes
-            of commands and processed them it will send back a command confirmation to the client,
-            and the client can then free up space in the buffer.</para>
-        <para>If you are using JMS and you're using the JMS service on the server to load your JMS
-            connection factory instances into JNDI then this parameter can be configured in <literal
-                >hornetq-jms.xml</literal> using the element <literal
-                >confirmation-window-size</literal> a. If you're using JMS but not using JNDI then
-            you can set these values directly on the <literal>HornetQConnectionFactory</literal>
-            instance using the appropriate setter method.</para>
-        <para>If you're using core you can set these values directly on the <literal
-                >ClientSessionFactory</literal> instance using the appropriate setter method.</para>
-        <para>The window is specified in bytes, and has a default value of <literal
-            >1MiB</literal>.</para>
-        <para>Setting this parameter to <literal>-1</literal> disables any buffering and prevents
-            any re-attachment from occurring, forcing reconnect instead. The default value for this
-            parameter is <literal>-1</literal>.</para>
+        <title>100%透明的会话恢复（re-attachment）</title>
+        <para>如果网络出现暂时性连接故障，并且服务器没有重启的情况下，当前的会话还会存在服务器中，其状态如同客户端
+            没有断开超过连接TTL<xref linkend="connection-ttl"/>时间。</para>
+        <para>在这种情况下，当客户端重新连接上服务器后，HornetQ自动将客户端和会话与服务器端的会话重新连接起来。整个过程
+            对于客户端是完全透明的，在客户端就好像什么都没有发生一样。</para>
+        <para>具体工作原理如下：</para>
+        <para>客户端再向服务器发送命令时，它将每个命令保存到内存的一块缓存中。当连接出现故障时客户端会尝试与该服务
+            器恢复会话。做为恢复协议的一部分，服务器在会话恢复时通知客户端最后一个成功接收的命令id。</para>
+        <para>根据这个命令id，客户端可以判断它的缓存中是否有命令还未被服务器成功接收。如果有，客户端可以重新发送
+            这些命令。</para>
+        <para>缓存的大小由<literal>ConfirmationWindowSize</literal>参数决定。当服务器成功接收了
+            <literal>ConfirmationWindowSize</literal>字节的命令时，会向客户端发送一个命令确认，以使客户端
+            及时清除缓存。</para>
+        <para>如果使用JMS服务，并且JMS的连接工厂是注册到JNDI的话，相应的参数是<literal
+                >hornetq-jms.xml</literal>文件中的<literal
+                >confirmation-window-size</literal>项。如果你并不将JMS连接工厂注册到JNDI，则你需要在
+            <literal>HornetQConnectionFactory</literal>上使用相应的方法直接设置该参数。</para>
+        <para>如果使用核心服务，你可以直接在<literal>ClientSessionFactory</literal>实例上直接设置该参数。</para>
+        <para>参数的单位是字节，默认值是<literal>1MiB</literal>。</para>
+        <para>如果该参数是值设为<literal>-1</literal>，则关闭缓存，即关闭了重新恢复功能，迫使进行重新连接。默认
+              值是<literal>-1</literal>。</para>
     </section>
     <section>
-        <title>Session reconnection</title>
-        <para>Alternatively, the server might have actually been restarted after crashing or being
-            stopped. In this case any sessions will no longer be existent on the server and it won't
-            be possible to 100% transparently re-attach to them.</para>
-        <para>In this case, HornetQ will automatically reconnect the connection and <emphasis
-                role="italic">recreate</emphasis> any sessions and consumers on the server
-            corresponding to the sessions and consumers on the client. This process is exactly the
-            same as what happens during failover onto a backup server.</para>
-        <para>Client reconnection is also used internally by components such as core bridges to
-            allow them to reconnect to their target servers.</para>
-        <para>Please see the section on failover <xref linkend="ha.automatic.failover"/> to get a
-            full understanding of how transacted and non-transacted sessions are reconnected during
-            failover/reconnect and what you need to do to maintain <emphasis role="italic">once and
-                only once </emphasis>delivery guarantees.</para>
+        <title>会话重新连接</title>
+        <para>有时服务器发生故障后进行了重启。这时服务器将丢失所有当前的会话，上面所述的会话恢复就不能做到完全透明了。</para>
+        <para>在这种情况下，HornetQ自动地重新建立连接并<emphasis role="italic">重新创建</emphasis>会话
+            和接收者。这一过程与向备份服务器进行失效备援（failover）完全一样。</para>
+        <para>客户重新连接的功能还用在其它一些模块上，如核心桥，以使它们能够重新连接到目标服务器上。</para>
+        <para>要全面理解事务性会话和非事务性会话在失效备援／重连接情况下的细节，以及如何保证<emphasis role="italic">
+            一次并且只有一次</emphasis>的消息传递，请参见<xref linkend="ha.automatic.failover"/>的有关内容。</para>
     </section>
     <section>
-        <title>Configuring reconnection/reattachment attributes</title>
-        <para>Client reconnection is configured using the following parameters:</para>
+        <title>重新连接／会话恢复的配置参数</title>
+        <para>下面是客户端用于重新连接的参数：</para>
         <itemizedlist>
             <listitem>
-                <para><literal>retry-interval</literal>. This optional parameter determines the
-                    period in milliseconds between subsequent reconnection attempts, if the
-                    connection to the target server has failed. The default value is <literal
-                        >2000</literal> milliseconds.</para>
+                <para><literal>retry-interval</literal>。可选参数。它决定了两次重新连接尝试间隔的时间。单位
+                    是毫秒。默认值是<literal>2000</literal>毫秒。</para>
             </listitem>
             <listitem>
-                <para><literal>retry-interval-multiplier</literal>. This optional parameter
-                    determines determines a multiplier to apply to the time since the last retry to
-                    compute the time to the next retry.</para>
-                <para>This allows you to implement an <emphasis>exponential backoff</emphasis>
-                    between retry attempts.</para>
-                <para>Let's take an example:</para>
-                <para>If we set <literal>retry-interval</literal> to <literal>1000</literal> ms and
-                    we set <literal>retry-interval-multiplier</literal> to <literal>2.0</literal>,
-                    then, if the first reconnect attempt fails, we will wait <literal>1000</literal>
-                    ms then <literal>2000</literal> ms then <literal>4000</literal> ms between
-                    subsequent reconnection attempts.</para>
-                <para>The default value is <literal>1.0</literal> meaning each reconnect attempt is
-                    spaced at equal intervals.</para>
+                <para><literal>retry-interval-multiplier</literal>。可选参数。它表示下一次重试时间间隔的
+                    系数。即下一次重试的时间间隔是本次时间间隔乘以该参数。</para>
+                <para>这样可以实现重试间隔的<emphasis>指数延迟（exponential backoff）</emphasis>。</para>
+                <para>让我们看一个例子：</para>
+                <para>假设<literal>retry-interval</literal>为<literal>1000</literal> ms，并且我们
+                    将<literal>retry-interval-multiplier</literal>设为<literal>2.0</literal>，如果
+                    第一次尝试失败，则等待<literal>1000</literal>毫秒后进行第二次重试，如果再失败，则每三次重
+                    试要在<literal>2000</literal>毫秒后进行，第四次要等待<literal>4000</literal>毫秒，
+                    以此类推。</para>
+                <para>默认值是<literal>1.0</literal>，表示每次重试间隔相同的时间。</para>
             </listitem>
             <listitem>
-                <para><literal>max-retry-interval</literal>. This optional parameter determines the
-                    maximum retry interval that will be used. When setting <literal
-                        >retry-interval-multiplier</literal> it would otherwise be possible that
-                    subsequent retries exponentially increase to ridiculously large values. By
-                    setting this parameter you can set an upper limit on that value. The default
-                    value is <literal>2000</literal> milliseconds.</para>
+                <para><literal>max-retry-interval</literal>。可选参数。它决定了重试间的最大时间间隔。
+                    使用<literal>retry-interval-multiplier</literal>可以使重试的时间间隔以指数级增加。
+                    有可能造成时间间隔增加到一个非常大的数值。通过设置一个最大值可对其增长进行限制。默认
+                    值是<literal>2000</literal>毫秒。</para>
             </listitem>
             <listitem>
-                <para><literal>reconnect-attempts</literal>. This optional parameter determines the
-                    total number of reconnect attempts to make before giving up and shutting down. A
-                    value of <literal>-1</literal> signifies an unlimited number of attempts. The
-                    default value is <literal>0</literal>.</para>
+                <para><literal>reconnect-attempts</literal>。可先参数。它表示要进行多少重试后才放弃
+                    并退出。<literal>-1</literal>表示进行无限次重试。默认值是<literal>0</literal>。</para>
             </listitem>
         </itemizedlist>
-        <para>If you're using JMS, and you're using the JMS Service on the server to load your JMS
-            connection factory instances directly into JNDI, then you can specify these parameters
-            in the xml configuration in <literal>hornetq-jms.xml</literal>, for example:</para>
+        <para>如果使用JMS并且将JMS的连接工厂绑定到JNDI服务中，则需要在<literal>hornetq-jms.xml</literal>
+            文件中对这些参数进行配置，如下例所示：</para>
         <programlisting>
 &lt;connection-factory name="ConnectionFactory"&gt;
 &lt;connectors>
@@ -130,23 +99,18 @@
 &lt;reconnect-attempts&gt;1000&lt;/reconnect-attempts&gt;
 &lt;/connection-factory&gt;          
     </programlisting>
-        <para>If you're using JMS, but instantiating your JMS connection factory directly, you can
-            specify the parameters using the appropriate setter methods on the <literal
-                >HornetQConnectionFactory</literal> immediately after creating it.</para>
-        <para>If you're using the core API and instantiating the <literal
-                >ClientSessionFactory</literal> instance directly you can also specify the
-            parameters using the appropriate setter methods on the <literal
-                >ClientSessionFactory</literal> immediately after creating it.</para>
-        <para>If your client does manage to reconnect but the session is no longer available on the
-            server, for instance if the server has been restarted or it has timed out, then the
-            client won't be able to re-attach, and any <literal>ExceptionListener</literal> or
-                <literal>FailureListener</literal> instances registered on the connection or session
-            will be called.</para>
+        <para>如果使用JMS但是直接实例化JMS连接工厂，你可以使用适当的方法在 <literal
+                >HornetQConnectionFactory</literal> 对象上直接设置这些参数。</para>
+        <para>如果使用核心接口直接创建 <literal
+                >ClientSessionFactory</literal>实例，则用它的适当的方法可以设置这些参数。</para>
+        <para>如果客户端重新连接后发现会话已经丢失（如服务器重启或超时），则无法完成恢复。如果在连接上或会话上注册了
+              <literal>ExceptionListener</literal>或<literal>FailureListener</literal>，
+              它们将会被通知。</para>
     </section>
     <section id="client-reconnection.exceptionlistener">
         <title>ExceptionListeners and SessionFailureListeners</title>
-        <para>Please note, that when a client reconnects or re-attaches, any registered JMS <literal
-                >ExceptionListener</literal> or core API <literal>SessionFailureListener</literal>
-            will be called.</para>
+        <para>请注意当客户端进行重新连接或恢复会话时，注册的JMS <literal
+                >ExceptionListener</literal> 或核心接口的 <literal>SessionFailureListener</literal>
+             将会被调用。</para>
     </section>
 </chapter>
