@@ -17,35 +17,26 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="core-bridges">
-    <title>Core Bridges</title>
-    <para>The function of a bridge is to consume messages from a source queue, and forward them to a
-        target address, typically on a different HornetQ server.</para>
-    <para>The source and target servers do not have to be in the same cluster which makes bridging
-        suitable for reliably sending messages from one cluster to another, for instance across a
-        WAN, or internet and where the connection may be unreliable.</para>
-    <para>The bridge has built in resilience to failure so if the target server connection is lost,
-        e.g. due to network failure, the bridge will retry connecting to the target until it comes
-        back online. When it comes back online it will resume operation as normal.</para>
-    <para>In summary, bridges are a way to reliably connect two separate HornetQ servers together.
-        With a core bridge both source and target servers must be HornetQ servers.</para>
-    <para>Bridges can be configured to provide <emphasis>once and only once</emphasis> delivery
-        guarantees even in the event of the failure of the source or the target server. They do this
-        by using duplicate detection (described in <xref linkend="duplicate-detection"/>).</para>
+    <title>核心桥</title>
+    <para>桥的功能是从一个源队列中接收消息，再将消息转发到目的地址。通常这个目的地址在另外一个HornetQ服务器中。</para>
+    <para>源与目的不需要在同一个集群中。所以桥很适合将消息从一个集群中可靠地转发到另一个集群。比如通过一个WAN，或
+        internet，等连接不稳定的网络。</para>
+    <para>桥有处理故障的能力。如果目的服务器的连接失败（像网络故障），桥会重试与目的服务器的连接，直接连接成功
+        为止。当连接成功后，桥则继续进行工作。</para>
+    <para>总之，桥是可靠连接两个HornetQ服务器的一种手段。使用核心桥时源和目的服务器必须都是HornetQ服务器。</para>
+    <para>桥可以通过配置提供<emphasis>一次且只有一次</emphasis>的传递保证。其采用的方法是重复检测（详细
+        描述在<xref linkend="duplicate-detection"/>）。</para>
     <note>
-        <para>Although they have similar function, don't confuse core bridges with JMS
-            bridges!</para>
-        <para>Core bridges are for linking a HornetQ node with another HornetQ node and do not use
-            the JMS API. A JMS Bridge is used for linking any two JMS 1.1 compliant JMS providers.
-            So, a JMS Bridge could be used for bridging to or from different JMS compliant messaging
-            system. It's always preferable to use a core bridge if you can. Core bridges use
-            duplicate detection to provide <emphasis>once and only once</emphasis> guarantees. To
-            provide the same guarantee using a JMS bridge you would have to use XA which has a
-            higher overhead and is more complex to configure.</para>
+        <para>核心桥的功能与JMS桥的功能相似，但是不能将它们混淆！</para>
+        <para>核心桥用来连接两个HornetQ节点，它不使用JMS接口。JMS桥使用的是JMS接口，它连接的是任何两个符合
+            JMS 1.1规范的服务器。因此，JMS桥可以将两个不同的JMS服务器连接起来。从性能角度考虑，核心桥由于采用
+            重复检测来实现<emphasis>一次且只一次</emphasis>的传递保证，可以提供更高的性能。
+            JMS桥则需要使用XA这种复杂的机制来提供同样的传递保证，因些性能要比核心桥低。</para>
     </note>
     <section>
-        <title>Configuring Bridges</title>
-        <para>Bridges are configured in <literal>hornetq-configuration.xml</literal>. Let's kick off
-            with an example (this is actually from the bridge example):</para>
+        <title>桥的配置</title>
+        <para>桥的配置在<literal>hornetq-configuration.xml</literal>文件中。让我们先看一个配置的例子
+            （它实际上出自bridge例子）：</para>
         <programlisting>
 &lt;bridge name="my-bridge"&gt;
     &lt;queue-name&gt;jms.queue.sausage-factory&lt;/queue-name&gt;
@@ -66,163 +57,122 @@
     &lt;password&gt;foopassword&lt;/password&gt;
 &lt;/bridge&gt;                        
         </programlisting>
-        <para>In the above example we have shown all the parameters its possible to configure for a
-            bridge. In practice you might use many of the defaults so it won't be necessary to
-            specify them all explicitly.</para>
-        <para>Let's take a look at all the parameters in turn:</para>
+        <para>在上面的配置中包括了桥的所有参数。在实际应用中可能其中很多的参数可以使用默认值，不需要在配置中
+            指定。</para>
+        <para>下面我们对每个参数分别说明：</para>
         <itemizedlist>
             <listitem>
-                <para><literal>name</literal> attribute. All bridges must have a unique name in the
-                    server.</para>
+                <para><literal>name</literal>参数。所有桥都必须有一个唯一的名字。</para>
             </listitem>
             <listitem>
-                <para><literal>queue-name</literal>. This is the unique name of the local queue that
-                    the bridge consumes from, it's a mandatory parameter.</para>
-                <para>The queue must already exist by the time the bridge is instantiated at
-                    start-up.</para>
+                <para><literal>queue-name</literal>。本地队列的名字。桥从本地队列中接收消息。
+                    这是一个必要的参数。</para>
+                <para>这个队列在桥的启动之前必须已经存在。</para>
                 <note>
-                    <para>If you're using JMS then normally the JMS configuration <literal
-                            >hornetq-jms.xml</literal> is loaded after the core configuration file
-                            <literal>hornetq-configuration.xml</literal> is loaded. If your bridge
-                        is consuming from a JMS queue then you'll need to make sure the JMS queue is
-                        also deployed as a core queue in the core configuration. Take a look at the
-                        bridge example for an example of how this is done.</para>
+                    <para>如果使用JMS，JMS的配置文件<literal
+                            >hornetq-jms.xml</literal>在核心配置文件<literal>
+                         hornetq-configuration.xml</literal>之后装载。所以如果你的桥要从JMS
+                         队列接收消息，就需要保证JMS队列同时要作为核心队列部署。具体方法可以参见
+                         bridge例子。</para>
                 </note>
             </listitem>
             <listitem>
-                <para><literal>forwarding-address</literal>. This is the address on the target
-                    server that the message will be forwarded to. If a forwarding address is not
-                    specified, then the original address of the message will be retained.</para>
+                <para><literal>forwarding-address</literal>。目的服务器中的地址。消息将被转发到这个地址。
+                    如果没有指定这个转发地址，消息的原始地址将会保留。</para>
             </listitem>
             <listitem>
-                <para><literal>filter-string</literal>. An optional filter string can be supplied.
-                    If specified then only messages which match the filter expression specified in
-                    the filter string will be forwarded. The filter string follows the HornetQ
-                    filter expression syntax described in <xref linkend="filter-expressions"
-                    />.</para>
+                <para><literal>filter-string</literal>。一个可选的过滤器表达式。它表示只有过滤器表达式选择
+                    的消息才被转发。过滤器表达式的语法参见 <xref linkend="filter-expressions"
+                    />。</para>
             </listitem>
             <listitem>
-                <para><literal>transformer-class-name</literal>. An optional transformer-class-name
-                    can be specified. This is the name of a user-defined class which implements the
-                        <literal>org.hornetq.core.server.cluster.Transformer</literal>
-                    interface.</para>
-                <para>If this is specified then the transformer's <literal>transform()</literal>
-                    method will be invoked with the message before it is forwarded. This gives you
-                    the opportunity to transform the message's header or body before forwarding
-                    it.</para>
+                <para><literal>transformer-class-name</literal>。可选的转换器类名。这是一个用户定义的
+                    类，它需要实现接口<literal>org.hornetq.core.server.cluster.Transformer</literal>
+                    。</para>
+                <para>如果指定了这个类，每当一个消息被转发之前，它的<literal>transform()</literal>方法
+                    就会被调用。用户利用这个机会可以对消息本身或消息头信息进行修改。</para>
             </listitem>
             <listitem>
-                <para><literal>retry-interval</literal>. This optional parameter determines the
-                    period in milliseconds between subsequent reconnection attempts, if the
-                    connection to the target server has failed. The default value is <literal
-                        >2000</literal>milliseconds.</para>
+                <para><literal>retry-interval</literal>。这个可选参数决定了在进行连接重试时，两次重试
+                    之间的时间间隔。默认值是<literal>2000</literal>毫秒。</para>
             </listitem>
             <listitem>
-                <para><literal>retry-interval-multiplier</literal>. This optional parameter
-                    determines determines a multiplier to apply to the time since the last retry to
-                    compute the time to the next retry.</para>
-                <para>This allows you to implement an <emphasis>exponential backoff</emphasis>
-                    between retry attempts.</para>
-                <para>Let's take an example:</para>
-                <para>If we set <literal>retry-interval</literal>to <literal>1000</literal> ms and
-                    we set <literal>retry-interval-multiplier</literal> to <literal>2.0</literal>,
-                    then, if the first reconnect attempt fails, we will wait <literal>1000</literal>
-                    ms then <literal>2000</literal> ms then <literal>4000</literal> ms between
-                    subsequent reconnection attempts.</para>
-                <para>The default value is <literal>1.0</literal> meaning each reconnect attempt is
-                    spaced at equal intervals.</para>
+                <para><literal>retry-interval-multiplier</literal>。这个可选参数基于前一次重试连接
+                    的时间间隔来计算下一次重试的间隔，即前一次的间隔乘以该参数。</para>
+                <para>这样可以实现重试间隔的<emphasis>指数延迟（exponential backoff）</emphasis>。</para>
+                <para>让我们看一个例子：</para>
+                <para>假设<literal>retry-interval</literal>为<literal>1000</literal> ms，并且我们
+                    将<literal>retry-interval-multiplier</literal>设为<literal>2.0</literal>，如果
+                    第一次尝试失败，则等待<literal>1000</literal>毫秒后进行第二次重试，如果再失败，则每三次重
+                    试要在<literal>2000</literal>毫秒后进行，第四次要等待<literal>4000</literal>毫秒，
+                    以此类推。</para>
+                <para>默认值是<literal>1.0</literal>，表示每次重试间隔相同的时间。</para>
             </listitem>
             <listitem>
-                <para><literal>reconnect-attempts</literal>. This optional parameter determines the
-                    total number of reconnect attempts the bridge will make before giving up and
-                    shutting down. A value of <literal>-1</literal> signifies an unlimited number of
-                    attempts. The default value is <literal>-1</literal>.</para>
+                <para><literal>reconnect-attempts</literal>。可选参数。它表示要进行多少重试后才放弃
+                    并退出。<literal>-1</literal>表示进行无限次重试。默认值是<literal>－1</literal>。</para>
             </listitem>
             <listitem>
-                <para><literal>failover-on-server-shutdown</literal>. This optional parameter
-                    determines whether the bridge will attempt to failover onto a backup server (if
-                    specified) when the target server is cleanly shutdown rather than
-                    crashed.</para>
-                <para>The bridge connector can specify both a live and a backup server, if it
-                    specifies a backup server and this parameter is set to <literal>true</literal>
-                    then if the target server is <emphasis>cleanly</emphasis> shutdown the bridge
-                    connection will attempt to failover onto its backup. If the bridge connector has
-                    no backup server configured then this parameter has no effect. </para>
-                <para>Sometimes you want a bridge configured with a live and a backup target server,
-                    but you don't want to failover to the backup if the live server is simply taken
-                    down temporarily for maintenance, this is when this parameter comes in
-                    handy.</para>
-                <para>The default value for this parameter is <literal>false</literal>.</para>
+                <para><literal>failover-on-server-shutdown</literal>。可选参数。它指定了当目的服务器正常
+                    退出时桥是否尝试失效备援（failover）到备份服务器（如果配置了的话）上。</para>
+                <para>桥的连接器可以配置一个主服务器和一个备份服务器。如果配置了备份服务器，并且这个参数是
+                    <literal>true</literal>时，在主服务器正常退出时，桥会自动地连接到备份服务器上继续工作。
+                    如果桥的连接器没有配置备份服务器，则这个参数不起作用。</para>
+                <para>你的桥配置了备份服务器后，有时你需要临时将主服务器关闭进行一些维护，此时并不希望桥连接到备份服务
+                    器中。使用该参数就可以达到这个目的。</para>
+                <para>这个参数的默认值是<literal>false</literal>。</para>
             </listitem>
             <listitem>
-                <para><literal>use-duplicate-detection</literal>. This optional parameter determines
-                    whether the bridge will automatically insert a duplicate id property into each
-                    message that it forwards.</para>
-                <para>Doing so, allows the target server to perform duplicate detection on messages
-                    it receives from the source server. If the connection fails or server crashes,
-                    then, when the bridge resumes it will resend unacknowledged messages. This might
-                    result in duplicate messages being sent to the target server. By enabling
-                    duplicate detection allows these duplicates to be screened out and
-                    ignored.</para>
-                <para>This allows the bridge to provide a <emphasis>once and only once</emphasis>
-                    delivery guarantee without using heavyweight methods such as XA (see <xref
-                        linkend="duplicate-detection"/> for more information).</para>
-                <para>The default value for this parameter is <literal>true</literal>.</para>
+                <para><literal>use-duplicate-detection</literal>。可选参数。它控制桥是否在转发的消息中自动
+                    添加一个重复ID的属性。</para>
+                <para>添加这样一个属性可以使目的服务器对来自源服务器的消息进行重复检测。当出现连接故障或服务器崩溃时，
+                    桥在恢复时将重新转发那些没有被通知的消息。这在目的服务器端有可能造成重复发送。使用重复检测功能，可
+                    以将重复发送的消息过滤掉。</para>
+                <para>使用这个功能，服务器就可以保证 <emphasis>一次并且只有一次</emphasis>的传递，而不需要使用
+                    重量级的方法，如XA（参见 <xref
+                        linkend="duplicate-detection"/>）。</para>
+                <para>默认的值是<literal>true</literal>.</para>
             </listitem>
             <listitem>
-                <para><literal>confirmation-window-size</literal>. This optional parameter
-                    determines the <literal>confirmation-window-size</literal> to use for the
-                    connection used to forward messages to the target node. This attribute is
-                    described in section <xref linkend="client-reconnection"/></para>
+                <para><literal>confirmation-window-size</literal>。这个可选参数决定了向目的服务器转发消息时
+                    所使用的确认窗口的大小。详细的描述在<xref linkend="client-reconnection"/>。</para>
                 <para>
-                    <warning>When using the bridge to forward messages from a queue which has a
-                        max-size-bytes set it's important that confirmation-window-size is less than
-                        or equal to <literal>max-size-bytes</literal> to prevent the flow of
-                        messages from ceasing. </warning>
+                    <warning>当桥从一个设置了max-size-bytes参数的队列接收并转发消息时，一个重要的事情就是要将
+                        confirmation-window-size的值设置为小于等于
+                        <literal>max-size-bytes</literal>的值，以避免造成消息流的停止。</warning>
                 </para>
             </listitem>
             <listitem>
-                <para><literal>connector-ref</literal>. This mandatory parameter determines which
-                        <emphasis>connector</emphasis> pair the bridge will use to actually make the
-                    connection to the target server.</para>
-                <para>A <emphasis>connector</emphasis> encapsulates knowledge of what transport to
-                    use (TCP, SSL, HTTP etc) as well as the server connection parameters (host, port
-                    etc). For more information about what connectors are and how to configure them,
-                    please see <xref linkend="configuring-transports"/>.</para>
-                <para>The <literal>connector-ref</literal> element can be configured with two
-                    attributes:</para>
+                <para><literal>connector-ref</literal>。这是一个必需的参数。它指定了桥用来连接目的服务器的
+                        <emphasis>连接器</emphasis>。</para>
+                <para><emphasis>connector</emphasis>包含了所用的传输（TCP, SSL, HTTP等），以及服务器连接参数
+                    （如主机名，端口等）。关于连接器的详细信息请参见（<xref linkend="configuring-transports"/>）。</para>
+                <para><literal>connector-ref</literal>有两个参数：</para>
                 <itemizedlist>
                     <listitem>
-                        <para><literal>connector-name</literal>. This references the name of a
-                            connector defined in the core configuration file <literal
-                                >hornetq-configuration.xml</literal>. The bridge will use this
-                            connector to make its connection to the target server. This attribute is
-                            mandatory.</para>
+                        <para><literal>connector-name</literal>。这个指的是核心配置文件<literal
+                                >hornetq-configuration.xml</literal>中定义的连接器的名字。桥使用
+                            这个连接器创建与目的服务器的连接。这个参数是必需指定的。</para>
                     </listitem>
                     <listitem>
-                        <para><literal>backup-connector-name</literal>. This optional parameter also
-                            references the name of a connector defined in the core configuration
-                            file <literal>hornetq-configuration.xml</literal>. It represents the
-                            connector that the bridge will fail-over onto if it detects the live
-                            server connection has failed. If this is specified and <literal
-                                >failover-on-server-shutdown</literal> is set to <literal
-                                >true</literal> then it will also attempt failover onto this
-                            connector if the live target server is cleanly shut-down.</para>
+                        <para><literal>backup-connector-name</literal>。这个可选参数同样指定一个在核心
+                            配置文件<literal>hornetq-configuration.xml</literal>中定义的连接器名字。
+                            当目的服务器出现故障时，或者正常退出但是参数<literal
+                                >failover-on-server-shutdown</literal>的值设为<literal
+                                >true</literal>时，桥使用这个参数指定的连接器通过失效备援（failover）连接
+                            到备用的服务器。</para>
                     </listitem>
                 </itemizedlist>
             </listitem>
             <listitem>
-                <para><literal>user</literal>. This optional parameter determines the user name to
-                    use when creating the bridge connection to the remote server. If it is not
-                    specified the default cluster user specified by <literal>cluster-user</literal>
-                    in <literal>hornetq-configuration.xml</literal> will be used. </para>
+                <para><literal>user</literal>。这个可选参数指定了桥在创建与远程服务器连接时所用的用户名。如果
+                    没有指定用户名，在配置文件<literal>hornetq-configuration.xml</literal>中
+                    <literal>cluster-user</literal>所定义的默认集群用户名将被使用。 </para>
             </listitem>
             <listitem>
-                <para><literal>password</literal>. This optional parameter determines the password
-                    to use when creating the bridge connection to the remote server. If it is not
-                    specified the default cluster password specified by <literal
-                        >cluster-password</literal> in <literal>hornetq-configuration.xml</literal>
-                    will be used. </para>
+                <para><literal>password</literal>。这个可选的参数给出的是桥创建与远程服务器连接所使用的密码。
+                    如果没有指定密码，在配置文件<literal>hornetq-configuration.xml</literal>中
+                    <literal>cluster-password</literal>所定义的默认集群密码将被使用。</para>
             </listitem>
         </itemizedlist>
     </section>

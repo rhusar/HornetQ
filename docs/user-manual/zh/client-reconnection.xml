@@ -78,7 +78,7 @@
                     值是<literal>2000</literal>毫秒。</para>
             </listitem>
             <listitem>
-                <para><literal>reconnect-attempts</literal>。可先参数。它表示要进行多少重试后才放弃
+                <para><literal>reconnect-attempts</literal>。可选参数。它表示要进行多少重试后才放弃
                     并退出。<literal>-1</literal>表示进行无限次重试。默认值是<literal>0</literal>。</para>
             </listitem>
         </itemizedlist>
