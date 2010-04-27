@@ -19,43 +19,28 @@
 <!-- ============================================================================= -->
 
 <chapter id="diverts">
-    <title>Diverting and Splitting Message Flows</title>
-    <para>HornetQ allows you to configure objects called <emphasis>diverts</emphasis> with
-        some simple server configuration.</para>
-    <para>Diverts allow you to transparently divert messages routed to one address to some other
-        address, without making any changes to any client application logic.</para>
-    <para>Diverts can be <emphasis>exclusive</emphasis>, meaning that that the message is diverted
-        to the new address, and does not go to the old address at all, or they can be
-            <emphasis>non-exclusive</emphasis> which means the message continues to go the old
-        address, and a <emphasis>copy</emphasis> of it is also sent to the new address.
-        Non-exclusive diverts can therefore be used for <emphasis>splitting</emphasis> message
-        flows, e.g. there may be a requirement to monitor every order sent to an order queue.</para>
-    <para>Diverts can also be configured to have an optional message filter. If specified then only
-        messages that match the filter will be diverted.</para>
-    <para>Diverts can also be configured to apply a <literal>Transformer</literal>. If specified,
-        all diverted messages will have the opportunity of being transformed by the <literal
-            >Transformer</literal>.</para>
-    <para>A divert will only divert a message to an address on the <emphasis>same server</emphasis>,
-        however, if you want to divert to an address on a different server, a common pattern would
-        be to divert to a local store-and-forward queue, then set up a bridge which consumes from
-        that queue and forwards to an address on a different server.</para>
-    <para>Diverts are therefore a very sophisticated concept, which when combined with bridges can
-        be used to create interesting and complex routings. The set of diverts on a server can be
-        thought of as a type of routing table for messages. Combining diverts with bridges allows
-        you to create a distributed network of reliable routing connections between multiple
-        geographically distributed servers, creating your global messaging mesh.</para>
-    <para>Diverts are defined as xml in the <literal>hornetq-configuration.xml</literal> file. There can
-        be zero or more diverts in the file.</para>
-    <para>Please see <xref linkend="divert-example" /> for a full working
-        example showing you how to configure and use diverts.</para>
-    <para>Let's take a look at some divert examples:</para>
+    <title>消息的转发（divert)与分流</title>
+    <para>在HornetQ中可以配置一些称为转发器（<emphasis>diverts</emphasis>）的对象。</para>
+    <para>转发器可以将路由到一个地址的消息透明地转发到其它的地址去，不需要客户端的参与。</para>
+    <para>转发器可以是<emphasis>唯一（exclusive）</emphasis>的，即消息只转发到新的地址，不发到原
+        来的地址；也可以是<emphasis>不唯一（non-exclusive）</emphasis>的，即消息在发往原有地址的
+        同时，它的一个<emphasis>拷贝</emphasis>被发往新的地址。不唯一的转发器可以在应用中将消息进行
+        <emphasis>分流（splitting）</emphasis>。比如在一个订单系统中它可以用于监视发往订单队列中
+        的每个订单消息。</para>
+    <para>转发器还可以带一个可选的消息选择器。只有被选择器选择的消息才会被转发。</para>
+    <para>转发器还可以带有一个<literal>转换器（Transformer）</literal>。它可以将消息进行转换。</para>
+    <para>转发器只在同一个服务器中的地址间进行转发。如果要向另外服务器中的地址进行转发，可以采用转发器与桥配合
+        来实现。先将消息通过转发器转发到一个存储与转发的队列中，再由一个桥将这个队列的消息转发到远程服务器的目的
+        地址中。</para>
+    <para>由转发器与桥进行配合可以组成复杂的路由系统。在服务器中由一组转发器可以形成一个消息路由表。如果加上桥，就
+        可以进一步形成一个分布式的可靠的消息路由网。</para>
+    <para>转发器的配置在<literal>hornetq-configuration.xml</literal>中定义。可以配置零个或多个转发器。</para>
+    <para>参见转发器的例子<xref linkend="divert-example" />，它展示了如何配置与使用转发器。</para>
+    <para>让我们看一些转发器的配置例子：</para>
     <section>
-        <title>Exclusive Divert</title>
-        <para>Let's take a look at an exclusive divert. An exclusive divert diverts all matching
-            messages that are routed to the old address to the new address. Matching messages do not
-            get routed to the old address.</para>
-        <para>Here's some example xml configuration for an exclusive divert, it's taken from the
-            divert example:</para>
+        <title>唯一式转发器</title>
+        <para>下面是一个唯一式转发器的例子。它将所有符合条件的消息转发到新的地址，而旧的地址将不能得到这些消息。</para>
+        <para>以下配置来自于divert例子：</para>
         <programlisting>
 &lt;divert name="prices-divert"&gt;                  
     &lt;address&gt;jms.topic.priceUpdates&lt;/address&gt;
@@ -67,34 +52,24 @@
     &lt;exclusive&gt;true&lt;/exclusive&gt;
 &lt;/divert&gt;                        
         </programlisting>
-        <para>We define a divert called '<literal>prices-divert</literal>' that will divert any
-            messages sent to the address '<literal>jms.topic.priceUpdates</literal>' (this
-            corresponds to any messages sent to a JMS Topic called '<literal
-            >priceUpdates</literal>') to another local address '<literal
-                >jms.queue.priceForwarding</literal>' (this corresponds to a local JMS queue called
-                '<literal>priceForwarding</literal>'</para>
-        <para>We also specify a message filter string so only messages with the message property
-                <literal>office</literal> with value <literal>New York</literal> will get diverted,
-            all other messages will continue to be routed to the normal address. The filter string
-            is optional, if not specified then all messages will be considered matched.</para>
-        <para>In this example a transformer class is specified. Again this is optional, and if
-            specified the transformer will be executed for each matching message. This allows you to
-            change the messages body or properties before it is diverted. In this example the
-            transformer simply adds a header that records the time the divert happened.</para>
-        <para>This example is actually diverting messages to a local store and forward queue, which
-            is configured with a bridge which forwards the message to an address on another HornetQ
-            server. Please see the example for more details.</para>
+        <para>在这里我们定义了一相名为“<literal>prices-divert</literal>”的转发器，它将发往
+            “<literal>jms.topic.priceUpdates</literal>”（对应JMS话题<literal
+            >priceUpdates</literal>）的消息转向另一个本地地址“<literal
+                >jms.queue.priceForwarding</literal>”（对应JMS队列
+                <literal>priceForwarding</literal>）。</para>
+        <para>我们还配置了一相消息过滤器。只有<literal>office</literal>属性值为<literal>New York</literal>
+            的消息才被转发到新地址，其它消息则继续发往原地址。如果没有定义过滤器，所有消息将被转发。</para>
+        <para>本例中还配置了一个转换器的类。当每转发一个消息时，该转换器就被执行一次。转换器可以对消息在转发前进行
+            更改。这里的转换器只是在消息中加入了一个记录转发时间的消息头。</para>
+        <para>本例中消息被转发到一个’存贮与转发是‘队列，然后通过一个桥将消息转发到另一个HornetQ服务器中。</para>
     </section>
     <section>
-        <title>Non-exclusive Divert</title>
-        <para>Now we'll take a look at a non-exclusive divert. Non exclusive diverts are the same as
-            exclusive diverts, but they only forward a <emphasis>copy</emphasis> of the message to
-            the new address. The original message continues to the old address</para>
-        <para>You can therefore think of non-exclusive diverts as <emphasis>splitting</emphasis> a
-            message flow.</para>
-        <para>Non exclusive diverts can be configured in the same was as exclusive diverts with an
-            optional filter and transformer, here's an example non-exclusive divert, again from the
-            divert example:</para>
+        <title>不唯一转发器</title>
+        <para>下面我们来看一个不唯一的转发器。不唯一转发器将消息的<emphasis>拷贝</emphasis>转发到新的地址中，
+            原消息则继续发往原有地址。</para>
+        <para>因此不唯一转发器可以将消息进行分流（splitting）。</para>
+        <para>不唯一转发器的配置与唯一转发器的配置中一样的，也可以带一个可选的过滤器和转换器。下面的配置也是出自
+             divert例子：</para>
         <programlisting>
 &lt;divert name="order-divert"&gt;                 
     &lt;address&gt;jms.queue.orders&lt;/address&gt;
