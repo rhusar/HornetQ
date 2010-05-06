@@ -17,18 +17,17 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="interoperability">
-    <title>Interoperability</title>
+    <title>互操作性</title>
     <section id="stomp">
         <title>Stomp</title>
-        <para><ulink url="http://stomp.codehaus.org/">Stomp</ulink> is a text-orientated wire protocol that allows
-            Stomp clients to communicate with Stomp Brokers.</para>
-        <para><ulink url="http://stomp.codehaus.org/Clients">Stomp clients</ulink> are available for
-        several languages and platforms making it a good choice for interoperability.</para>
+        <para><ulink url="http://stomp.codehaus.org/">Stomp</ulink>是一个基于文本的协议。使用Stomp协议的
+            客户端可以与Stomp的代理（broker）进行通迅。</para>
+        <para><ulink url="http://stomp.codehaus.org/Clients">Stomp客户端</ulink>支持多种语言和平台，因此
+        它有着很好的互操作性。</para>
         <section id="stomp.native">
-          <title>Native Stomp support</title>
-          <para>HornetQ provides native support for Stomp. To be able to send and receive Stomp messages,
-            you must configure a <literal>NettyAcceptor</literal> with a <literal>protocol</literal>
-            parameter set to <literal>stomp</literal>:</para>
+          <title>内建Stomp支持</title>
+          <para>HornetQ内建支持Stomp功能。要使用Stomp发送与接收消息，必须配置一个<literal>NettyAcceptor</literal>，
+            其中的<literal>protocol</literal>参数值应设为<literal>stomp</literal>：</para>
 <programlisting>
 	&lt;acceptor name="stomp-acceptor">
 		&lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
@@ -36,53 +35,47 @@
 		&lt;param key="port"  value="61613"/>
 	&lt;/acceptor>
 </programlisting>
-          <para>With this configuration, HornetQ will accept Stomp connections on 
-            the port <literal>61613</literal> (which is the default port of the Stomp brokers).</para>
-          <para>See the <literal>stomp</literal> example which shows how to configure a HornetQ server with Stomp.</para>
+          <para>有了上述的配置，HornetQ就可以在端口<literal>61613</literal>（这是Stomp代理的默认端口）接受Stomp连接了。</para>
+          <para><literal>stomp</literal>例子展示了如何在HornetQ中配置Stomp。</para>
           <section>
-            <title>Limitations</title>
-            <para>Message acknowledgements are not transactional. The ACK frame can not be part of a transaction
-              (it will be ignored if its <literal>transaction</literal> header is set).</para>
+            <title>限制</title>
+            <para>消息的通知不是事务性的。ACK信号不能作为事务的一部分来传输（如果设置了<literal>transaction</literal>
+              属性，它将被忽略）。</para>
           </section>
         </section>
         <section id="stompconnect">
           <title>StompConnect</title>
-          <para><ulink url="http://stomp.codehaus.org/StompConnect">StompConnect</ulink> is a server that
-            can act as a Stomp broker and proxy the Stomp protocol to the standard JMS API.
-            Consequently, using StompConnect it is possible to turn HornetQ into a Stomp Broker and
-            use any of the available stomp clients. These include clients written in C, C++, c# and
-            .net etc.</para>
-          <para>To run StompConnect first start the HornetQ server and make sure that it is using
-            JNDI.</para>
-          <para>Stomp requires the file <literal>jndi.properties</literal> to be available on the
-            classpath. This should look something like:</para>
+          <para><ulink url="http://stomp.codehaus.org/StompConnect">StompConnect</ulink>是一个Stomp代理服务器，
+            它可以将Stomp协议转换为标准的JMS接口调用。因此，通过StompConnect的作用HornetQ可以作为一个Stomp代理，
+            与任何一个Stomp客户端通迅。这些客户端可以由C、C++、C#及.net等语言实现。</para>
+          <para>要运行StompConnect首先要启动HornetQ服务以及JNDI服务。</para>
+          <para>Stomp需要<literal>jndi.properties</literal>文件要在classpath中。该文件
+            应有如下类似的内容：</para>
           <programlisting>java.naming.factory.initial=org.jnp.interfaces.NamingContextFactory
 java.naming.provider.url=jnp://localhost:1099
 java.naming.factory.url.pkgs=org.jboss.naming:org.jnp.interfaces</programlisting>
-          <para>Make sure this file is in the classpath along with the StompConnect jar and the
-            HornetQ jars and simply run <literal>java org.codehaus.stomp.jms.Main</literal>.</para>
+          <para>要确保该文件与StompConnect的jar包以及HornetQ的jar文件都在classpath中。最后，运行
+            <literal>java org.codehaus.stomp.jms.Main</literal>。</para>
         </section>
         <section>
-          <title>Mapping Stomp destinations to HornetQ addresses and queues</title>
-          <para>Stomp clients deals with <emphasis>destinations</emphasis> when sending messages and subscribing.
-            Destination names are simply strings which are mapped to some form of destination on the 
-            server - how the server translates these is left to the server implementation.</para>
-           <para>In HornetQ, these destinations are mapped to <emphasis>addresses</emphasis> and <emphasis>queues</emphasis>.
-            When a Stomp client sends a message (using a <literal>SEND</literal> frame), the specified destination is mapped
-            to an address.
-            When a Stomp client subscribes (or unsubscribes) for a destination (using a <literal>SUBSCRIBE</literal>
-            or <literal>UNSUBSCRIBE</literal> frame), the destination is mapped to a HornetQ queue.</para>
+          <title>Stomp目标与HornetQ的地址和队列的映射</title>
+          <para>Stomp客户端在消息发送和订阅中使用的是<emphasis>目标（destination）</emphasis>。目标名称是简单的字符串，对应的是服务
+            器端的目的地。不同服务器对这种映射有着不同的实现。</para>
+           <para>在HornetQ中这些目标被映射为<emphasis>地址</emphasis>和<emphasis>队列</emphasis>。
+            当一个Stomp客户端发送一个消息（使用<literal>SEND</literal>信号）到一个目标时，这个目标被映射到一个地址。
+            如果一个Stomp客户端订阅（或解除订阅）一个目标时（使用<literal>SUBSCRIBE</literal>或
+            <literal>UNSUBSCRIBE</literal>），这个目标被映射到一个HornetQ的队列。</para>
         </section>
         <section>
-          <title>Stomp and JMS interoperabilty</title>
+          <title>Stomp与JMS的互操作性</title>
           <section>
-            <title>Using JMS destinations</title>
-            <para>As explained in <xref linkend="jms-core-mapping" />, JMS destinations are also mapped to HornetQ addresses and queues.
-              If you want to use Stomp to send messages to JMS destinations, the Stomp destinations must follow the same convention:</para>
+            <title>使用JMS目标</title>
+            <para>正如<xref linkend="jms-core-mapping" />解释的那样，JMS的目标同样映射到HornetQ的地址与队列。如果你使用
+              Stomp向JMS的目标发送消息，那么Stomp的目标必须要遵照相同的命名规则：</para>
             <itemizedlist>
               <listitem>
-                <para>send or subscribe to a JMS <emphasis>Queue</emphasis> by prepending the queue name by <literal>jms.queue.</literal>.</para>
-                <para>For example, to send a message to the <literal>orders</literal> JMS Queue, the Stomp client must send the frame:</para>
+                <para>如果向JMS<emphasis>队列</emphasis>发送数据或订阅它，则队列的名称前缀必须是<literal>jms.queue.</literal>。</para>
+                <para>例如，如果向名为<literal>orders</literal>的JMS队列发送消息，Stomp客户端必须发送以下信息：</para>
                 <programlisting>
 SEND
 destination:jms.queue.orders
@@ -92,8 +85,8 @@ hello queue orders
                 </programlisting>
               </listitem>
               <listitem>
-                <para>send or subscribe to a JMS <emphasis>Topic</emphasis> by prepending the topic name by <literal>jms.topic.</literal>.</para>
-                <para>For example to subscribe to the <literal>stocks</literal> JMS Topic, the Stomp client must send the frame:</para>
+                <para>如果向JMS <emphasis>话题（topic）</emphasis>发送或订阅消息，话题名称前缀必须是<literal>jms.topic.</literal>。</para>
+                <para>例如，如果订阅名为 <literal>stocks</literal>的JMS话题，Stomp客户端必须发送以下信息：</para>
                 <programlisting>
   SUBSCRIBE
   destination:jms.topic.stocks
@@ -105,17 +98,16 @@ hello queue orders
            </section>
 
            <section>
-             <title>Send and consuming Stomp message from JMS</title>
-             <para>Stomp messages can be sent and consumed from a JMS Destination by using <literal>BytesMessage</literal> where
-                the Stomp message body is stored in the JMS BytesMessage body.</para>
-             <para>If the Stomp message contained a UTF-8 String, the corresponding code to read the string from a JMS BytesMessage is:</para>
+             <title>使用Stomp通过JMS发送和接收Stomp消息</title>
+             <para>如果要通过JMS目标来传送Stomp消息，可以使用<literal>BytesMessage</literal>将Stomp的消息封装后进行传送。</para>
+             <para>如果Stomp消息中含有UTF-8字符串，则可以用以下代码将其读入到JMS的BytesMessage：</para>
              <programlisting>
 BytesMessage message = (BytesMessage)consumer.receive();
 byte[] data = new byte[1024];
 int size = message.readBytes(data);
 String text = new String(data, 0, size, "UTF-8");
              </programlisting>
-             <para>Conversely, to send a JMS BytesMessage destined to be consumed by Stomp as a UTF-8 String, the code is:</para>
+             <para>相反地，要将一个UTF－8字符串的消息发给Stomp客户端，可以作用以下代码：</para>
              <programlisting>
 String text = ...
 BytesMessage message = session.createBytesMessage();
@@ -127,10 +119,10 @@ producer.send(message);
     </section>
     <section>
         <title>REST</title>
-        <para>REST support coming soon!</para>
+        <para>HornetQ即将支持REST！</para>
     </section>
     <section>
         <title>AMQP</title>
-        <para>AMQP support coming soon!</para>
+        <para>HornetQ即将支持AMQP！</para>
     </section>
 </chapter>
