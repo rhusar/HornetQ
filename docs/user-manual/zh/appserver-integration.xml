@@ -43,16 +43,21 @@ public class MDBExample implements MessageListener
         <para>上例中配置了MDB从一个队列中接收消息，它的JNDI绑定名为<literal>queue/testQueue</literal>。
             这个队列必须事先在HornetQ服务器配置文件中配置并部署好的。</para>
         <para><literal>ResourceAdapter</literal> annotation用来指出使用哪个适配器。要使用它必须要引入
-            <literal>org.jboss.ejb3.annotation.ResourceAdapter</literal>。这个类在
+            <literal>org.jboss.ejb3.annotation.ResourceAdapter</literal> （JBoss AS 5.x或以上）。
+            这个类在
             <literal>jboss-ejb3-ext-api.jar</literal>文件中。该文件可以在JBoss的repository中找到。
             另外一个方法是使用部署描述文件（deployment descriptor），即在文件<literal
             >jboss.xml</literal>中加入类似以下的内容：
 <programlisting>&lt;message-driven>
    &lt;ejb-name>ExampleMDB&lt;/ejb-name>
-   &lt;resource-adapter-name>quartz-ra.rar&lt;/resource-adapter-name>
+   &lt;resource-adapter-name>hornetq-ra.rar&lt;/resource-adapter-name>
 &lt;/message-driven>
 </programlisting>你还可以将hornetq-ra.rar改名为jms-ra.rar而不需要任何annotation或额外的部署描述信息。但是你需要
             编辑<literal>jms-ds.xml</literal>文件，将其中的<literal>rar-name</literal>项改成相应的值。</para>
+        <note>
+           <para>HornetQ是JBoss AS 6默认的JMS提供者。从这个版本开始HornetQ的资源适配器名字是
+               <literal>jms-ra.rar</literal>，并且你不需要在MDB的annotation中指定它。</para>
+        </note>
         <para>HornetQ发布包中的所有例子都使用annotation方法。</para>
         <section>
             <title>使用容器管理事务（CMT）</title>
@@ -79,7 +84,7 @@ public class MDB_CMP_TxRequiredExample implements MessageListener
             <para>如果要回滚事务，可以调用<literal>MessageDrivenContext</literal>的
                 <literal>setRollbackOnly</literal>方法。如下面的代码所示：</para>
             <programlisting>   @Resource
-   MessageDrivenContext ctx;
+   MessageDrivenContextContext ctx;
 
    public void onMessage(Message message)
    {
@@ -148,6 +153,7 @@ public class MDB_BMPExample implements MessageListener
          tx.begin();
          
          //do some stuff within the transaction
+
          tx.commit();
 
       }
@@ -333,10 +339,10 @@ public class MDBMessageSendTxExample implements MessageListener
             <title>适配器的全局参数</title>
             <para>首先看到的第一个参数是<literal>resourceadapter-class</literal>。这是HornetQ
                 的适配器类。此参数不可更改。</para>
-            <para>在此之后是可配置的参数。前两个配置适配器所使用的传输。其余的用来配置连接工厂。
+            <para>在此之后是可配置的参数。前两个配置适配器所使用的传输。其余的用来配置连接工厂。</para>
             <note><para>所有连接工厂的参数在没有定义时使用默认值。参数<literal>reconnectAttempts</literal>
                         的默认值取-1，表示如果连接失败，HornetQ会不停地尝试重新连接。这个参数只适用于创建远程
-                        连接的情况。如果是InVm连接器，则永远不可能发生连接故障。</para></note></para>
+                        连接的情况。如果是InVm连接器，则永远不可能发生连接故障。</para></note>
             <para>下面给出了每个参数的说明：</para>
             <table frame="topbot" border="2">
                 <title>全局配置参数</title>
@@ -362,17 +368,12 @@ public class MDBMessageSendTxExample implements MessageListener
                             <entry>ConnectionParameters</entry>
                             <entry>String</entry>
                             <entry>传输配置参数。它的值必须是采用
-                                key=val;key=val;的形式。不同连接器有不同的参数。</entry>
+                                <literal>key1=val1;key2=val2;</literal>的形式。不同连接器有不同的参数。</entry>
                         </row>
                         <row>
                             <entry>useLocalTx</entry>
                             <entry>boolean</entry>
                             <entry>设为True，则进行本地事务优化。</entry>
-                        </row>
-                        <row>
-                            <entry>UseXA</entry>
-                            <entry>boolean</entry>
-                            <entry>是否使用XA</entry>
                         </row>
                         <row>
                             <entry>UserName</entry>
@@ -385,149 +386,216 @@ public class MDBMessageSendTxExample implements MessageListener
                             <entry>用于创建连接时使用的用户密码</entry>
                         </row>
                         <row>
-                            <entry>BackUpTransportType</entry>
+                            <entry>BackupConnectorClassName</entry>
                             <entry>String</entry>
                             <entry>发生故障是使用的备份传输</entry>
                         </row>
                         <row>
-                            <entry>TransportConfiguration</entry>
+                            <entry>BackupConnectionParameters</entry>
                             <entry>String</entry>
-                            <entry>备份传输的配置</entry>
+                            <entry>备份传输的配置参数</entry>
                         </row>
                         <row>
-                            <entry>DiscoveryGroupAddress</entry>
+                            <link linkend="configuration.discovery-group.group-address">DiscoveryAddress</link></entry>
                             <entry>String</entry>
                             <entry>服务器自动检测所使用的发现组（discovery group）地址</entry>
                         </row>
                         <row>
-                            <entry>DiscoveryGroupPort</entry>
-                            <entry>integer</entry>
+                            <link linkend="configuration.discovery-group.group-port">DiscoveryPort</link></entry>
+                            <entry>Integer</entry>
                             <entry>检测所使用的端口号</entry>
                         </row>
                         <row>
-                            <entry>DiscoveryRefreshTimeout</entry>
-                            <entry>long</entry>
+                            <entry><link linkend="configuration.discovery-group.refresh-timeout">DiscoveryRefreshTimeout</link></entry></entry>
+                            <entry>Long</entry>
                             <entry>刷新的时间（timeout）。单位为毫秒</entry>
                         </row>
                         <row>
-                            <entry>DiscoveryInitialWaitTimeout</entry>
-                            <entry>long</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.discovery-initial-wait-timeout">
+                                  DiscoveryInitialWaitTimeout
+                               </link>
+                            </entry>
+                            <entry>Long</entry>
                             <entry>检测之前所需等待的时间</entry>
                         </row>
                         <row>
-                            <entry>LoadBalancingPolicyClassName</entry>
-                            <entry>String</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.connection-load-balancing-policy-class-name">
+                                  ConnectionLoadBalancingPolicyClassName</link>
+                            </entry>
+                                   <entry>String</entry>
                             <entry>负载均衡策略使用的类</entry>
                         </row>
                         <row>
-                            <entry>PingPeriod</entry>
-                            <entry>long</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.discovery-initial-wait-timeout">
+                                  DiscoveryInitialWaitTimeout
+                               </link>
+                            </entry>
+                            <entry>Long</entry>
                             <entry>向服务器发送ping的周期，单位毫秒</entry>
                         </row>
                         <row>
-                            <entry>ConnectionTTL</entry>
-                            <entry>long</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.connection-ttl">ConnectionTTL</link>
+                            </entry>
+                            <entry>Long</entry>
                             <entry>连接的存活时间（TTL）</entry>
                         </row>
                         <row>
-                            <entry>CallTimeout</entry>
-                            <entry>long</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.call-timeout">CallTimeout</link>
+                            </entry>
+                            <entry>Long</entry>
                             <entry>每个数据包的调用超时。单位毫秒</entry>
                         </row>
                         <row>
-                            <entry>DupsOKBatchSize</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.dups-ok-batch-size">DupsOKBatchSize</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>Dups OK的情况下消息批量的大小。</entry>
                         </row>
-                    </tbody>
-                </tgroup>
-            </table>
-            <para>继续..</para>
-            <informaltable frame="topbot">
-                <tgroup cols="3">
-                    <colspec colname="c1" colnum="1"/>
-                    <colspec colname="c2" colnum="2"/>
-                    <colspec colname="c3" colnum="3"/>
-                    <tbody>
                         <row>
-                            <entry>TransactionBatchSize</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.transaction-batch-size">TransactionBatchSize</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>在事务中发送消息的批量大小</entry>
                         </row>
                         <row>
-                            <entry>ConsumerWindowSize</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.consumer-window-size">ConsumerWindowSize</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>接收者内部缓存的窗口大小</entry>
                         </row>
                         <row>
-                            <entry>ConsumerMaxRate</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.consumer-max-rate">ConsumerMaxRate</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>接收者接收消息的最大速度</entry>
                         </row>
                         <row>
-                            <entry>ConfirmationWindowSize</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.confirmation-window-size">ConfirmationWindowSize</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>用于确认的窗口大小</entry>
                         </row>
                         <row>
-                            <entry>ProducerMaxRate</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.producer-max-rate">ProducerMaxRate</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>发送者发送消息的最大速度</entry>
                         </row>
                         <row>
-                            <entry>MinLargeMessageSize</entry>
-                            <entry>integer</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.min-large-message-size">MinLargeMessageSize</link>
+                            </entry>
+                            <entry>Integer</entry>
                             <entry>大消息的最小数值，单位字节。</entry>
                         </row>
                         <row>
-                            <entry>BlockOnAcknowledge</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.block-on-acknowledge">BlockOnAcknowledge</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>如果为true，表示以阻塞方法发送消息通知。</entry>
                         </row>
                         <row>
-                            <entry>BlockOnNonDurableSend</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.block-on-non-durable-send">BlockOnNonDurableSend</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>如果为true，表示以阻塞方式发送非持久消息</entry>
                         </row>
                         <row>
-                            <entry>BlockOnDurableSend</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.block-on-durable-send">BlockOnDurableSend</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>如果为true，表示以阻塞方式发送持久消息</entry>
                         </row>
                         <row>
-                            <entry>AutoGroup</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.auto-group">AutoGroup</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>如果为true，表示自动消息分组</entry>
                         </row>
                         <row>
-                            <entry>PreAcknowledge</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.pre-acknowledge">PreAcknowledge</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>决定是否进行消息的预先通知（pre-acknowledge）。</entry>
                         </row>
                         <row>
-                            <entry>reconnectAttempts</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.reconnect-attempts">ReconnectAttempts</link>
+                            </entry>
                             <entry>Integer</entry>
                             <entry>连接重试的次数，默认为 -1</entry>
                         </row>
                         <row>
-                            <entry>RetryInterval</entry>
-                            <entry>long</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.retry-interval">RetryInterval</link>
+                            </entry>
+                            <entry>Long</entry>
                             <entry>每次连接重试前等待的时间，单位毫秒。</entry>
                         </row>
                         <row>
-                            <entry>RetryIntervalMultiplier</entry>
-                            <entry>double</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.retry-interval-multiplier">RetryIntervalMultiplier</link>
+                            </entry>
+                            <entry>Double</entry>
                             <entry>用于计算重试间隔</entry>
                         </row>
                         <row>
-                            <entry>FailoverOnServerShutdown</entry>
-                            <entry>boolean</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.failover-on-server-shutdown">FailoverOnServerShutdown</link>
+                            </entry>
+                            <entry>Boolean</entry>
                             <entry>如果设为true表示尝试连接其它的服务器</entry>
                         </row>
                         <row>
-                            <entry>ClientID</entry>
+                            <entry>
+                               <link linkend="configuration.connection-factory.client-id">ClientID</link>
+                            </entry>
                             <entry>String</entry>
                             <entry>连接的客户端ID</entry>
+                        </row>
+                        <row>
+                            <entry>
+                               <link linkend="configuration.connection-factory.client-failure-check-period">ClientFailureCheckPeriod</link>
+                            </entry>
+                            <entry>Long</entry>
+                            <entry>客户端如果在这个时间内没有收到服务器数据包，将认为连接出现故障。</entry>
+                        </row>
+                        <row>
+                            <entry>
+                               <link linkend="configuration.connection-factory.use-global-pools">UseGlobalPools</link>
+                            </entry>
+                            <entry>Boolean</entry>
+                            <entry>是否使用全局线程池</entry>
+                        </row>
+                        <row>
+                            <entry>
+                               <link linkend="configuration.connection-factory.scheduled-thread-pool-max-size">ScheduledThreadPoolMaxSize</link>
+                            </entry>
+                            <entry>Integer</entry>
+                            <entry><emphasis>可计划线程池</emphasis>的最大线程数</entry>
+                        </row>
+                        <row>
+                            <entry>
+                               <link linkend="configuration.connection-factory.thread-pool-max-size">ThreadPoolMaxSize</link>
+                            </entry>
+                            <entry>Integer</entry>
+                            <entry>线程池的大小</entry>
                         </row>
                     </tbody>
                 </tgroup>
@@ -540,8 +608,10 @@ public class MDBMessageSendTxExample implements MessageListener
                 <literal>hornetq.sar</literal>下有一个默认的配置文件<literal>jms-ds.xml</literal>。
                 在这个文件中的连接工厂的配置从主要的配置文件<literal>ra.xml</literal>中继承，
                 但是可以在这里重新定义。下面的例子中给出了重新定义的方法。</para>
+            <note>
             <para>请注意这里的配置只适用于在JBoss应用服务器中安装的HornetQ。如果要在其它JEE应用服务器中
                 使用并配置HornetQ，请参照相应的应用服务器手册。</para>
+            </note>
             <programlisting>&lt;tx-connection-factory>
       &lt;jndi-name>RemoteJmsXA&lt;/jndi-name>
       &lt;xa-transaction/>
@@ -551,7 +621,7 @@ public class MDBMessageSendTxExample implements MessageListener
       &lt;config-property name="SessionDefaultType" type="String">javax.jms.Topic
       &lt;/config-property>
       &lt;config-property name="ConnectorClassName" type="String">
-        org.hornetq.integration.transports.netty.NettyConnectorFactory
+        org.hornetq.core.remoting.impl.netty.NettyConnectorFactory
       &lt;/config-property>
       &lt;config-property name="ConnectionParameters" type="String">
           port=5445&lt;/config-property>
@@ -563,12 +633,107 @@ public class MDBMessageSendTxExample implements MessageListener
 private ConnectionFactory connectionFactory;</programlisting>
             <para><literal>config-property</literal>覆盖了<literal>ra.xml</literal>文件中的配置。
                 以此类推，其它有关连接工厂的参数也可以在此覆盖。</para>
+            <para>除了全局的配置参数外，外部的配置还定义了其它一些参数。</para>
+
+            <table frame="topbot" border="2">
+                <title>外部配置参数</title>
+                <tgroup cols="3">
+                    <colspec colname="c1" colnum="1"/>
+                    <colspec colname="c2" colnum="2"/>
+                    <colspec colname="c3" colnum="3"/>
+                    <thead>
+                        <row>
+                            <entry>参数名</entry>
+                            <entry>参数类型</entry>
+                            <entry>说明</entry>
+                        </row>
+                    </thead>
+                    <tbody>
+                        <row>
+                            <entry>SessionDefaultType</entry>
+                            <entry>String</entry>
+                            <entry>默认的会话类型</entry>
+                        </row>
+                        <row>
+                            <entry>UseTryLock</entry>
+                            <entry>Integer</entry>
+                            <entry>在规定的秒数内获得锁。如果不想使用这个功能，将它设为0或负数</entry>
+                        </row>
+                     </tbody>
+                  </tgroup>
+               </table>
         </section>
         <section>
             <title>适配器内部（inbound）配置</title>
             <para>内部配置参数也应该保持不变。它们控制向MDB转发消息的各种属性。通过在MDB上添加相应的激活配置
                 （activation configuration）可以覆盖这些参数的值。它可以用来配置一个MDB从另外一个服务器
-                接收消息。下一节将讲述如何覆盖这些配置。</para>
+                接收消息。</para>
+                <para>除了全局的配置参数外，内部的配置还定义了其它一些参数。</para>
+
+                <table frame="topbot" border="2">
+                    <title>Inbound Configuration Properties</title>
+                    <tgroup cols="3">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <thead>
+                            <row>
+                            <entry>参数名</entry>
+                            <entry>参数类型</entry>
+                            <entry>说明</entry>
+                            </row>
+                        </thead>
+                        <tbody>
+                            <row>
+                                <entry>Destination</entry>
+                                <entry>String</entry>
+                                <entry>目标的JNDI名字</entry>
+                            </row>
+                            <row>
+                                <entry>DestinationType</entry>
+                                <entry>String</entry>
+                                <entry>目标的类型，<literal>javax.jms.Queue</literal>或者<literal>javax.jms.Topic</literal>
+                                 (默认是javax.jms.Queue)</entry>
+                            </row>
+                            <row>
+                                <entry>AcknowledgeMode</entry>
+                                <entry>String</entry>
+                                <entry>通知模式，<literal>Auto-acknowledge</literal> 或 <literal>Dups-ok-acknowledge</literal>
+                                (默认值是Auto-acknowledge). <literal>AUTO_ACKNOWLEDGE</literal>和<literal>DUPS_OK_ACKNOWLEDGE</literal>也是有效值</entry>
+                            </row>
+                            <row>
+                                <entry>MaxSession</entry>
+                                <entry>Integer</entry>
+                                <entry>内部配置创建的最大会话数（默认是5）</entry>
+                            </row>
+                            <row>
+                                <entry>MessageSelector</entry>
+                                <entry>String</entry>
+                                <entry>接收者的消息选择器</entry>
+                            </row>
+                            <row>
+                                <entry>SubscriptionDurability</entry>
+                                <entry>String</entry>
+                                <entry>订阅的类型，<literal>Durable</literal>或者<literal>NonDurable</literal></entry>
+                            </row>
+                            <row>
+                                <entry>SubscriptionName</entry>
+                                <entry>String</entry>
+                                <entry>订阅的名字</entry>
+                            </row>
+                            <row>
+                                <entry>TransactionTimeout</entry>
+                                <entry>Long</entry>
+                                <entry>事务超时（毫秒，默认是0，表示事务不会超时）</entry>
+                            </row>
+                            <row>
+                                <entry>UseJNDI</entry>
+                                <entry>Boolean</entry>
+                                <entry>是否使用JNDI来查找目标（默认是true）</entry>
+                            </row>
+                         </tbody>
+                      </tgroup>
+                   </table>
         </section>
     </section>
     <section>
@@ -618,7 +783,7 @@ initialContext = new InitialContext(jndiParameters);</programlisting>
                         的类名，用来连接HornetQ服务器。其值可以是<literal
                             >org.hornetq.core.remoting.impl.invm.InVMConnectorFactory</literal> 或
                             <literal
-                            >org.hornetq.integration.transports.netty.NettyConnectorFactory</literal></para>
+                            >org.hornetq.core.remoting.impl.netty.NettyConnectorFactory</literal></para>
                 </listitem>
                 <listitem>
                     <para><literal>[用户名]</literal>是用于创建客户会话的用户名。是可选项。</para>
@@ -651,7 +816,7 @@ initialContext = new InitialContext(jndiParameters);</programlisting>
                 <para>如果配置了一个netty接受器，并且端口不是默认的：</para>
                 <programlisting>
 &lt;acceptor name="netty">
-    &lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
+    &lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyConnectorFactory&lt;/factory-class>
     &lt;param key="port" value="8888"/>
 &lt;/acceptor>
                 </programlisting>
@@ -659,7 +824,7 @@ initialContext = new InitialContext(jndiParameters);</programlisting>
                         >conf/jbossts-properties.xml</literal>文件中：</para>
                 <programlisting>
 &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
-       value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, , , port=8888"/>        			                    
+       value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.core.remoting.impl.netty.NettyConnectorFactory, , , port=8888"/>        			                    
                 </programlisting>
                 <note>
                     <para>注意在没有用户名和密码时，逗号是不能省略的。</para>
@@ -668,7 +833,7 @@ initialContext = new InitialContext(jndiParameters);</programlisting>
                     应为如下所示：</para>
                 <programlisting>
                     &lt;property name="com.arjuna.ats.jta.recovery.XAResourceRecovery.HORNETQ1"
-                           value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.integration.transports.netty.NettyConnectorFactory, admin, adminpass, port=8888"/>        			                    
+                           value="org.hornetq.jms.server.recovery.HornetQXAResourceRecovery;org.hornetq.core.remoting.impl.netty.NettyConnectorFactory, admin, adminpass, port=8888"/>        			                    
                 </programlisting>
                 <para>推荐在XA恢复中，将HornetQ配置一个invm接受器，并配置恢复管理器使用invm连接器。</para>
             </section>
