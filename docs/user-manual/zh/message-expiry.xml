@@ -66,7 +66,7 @@ producer.setTimeToLive(5000);
       <itemizedlist>
          <listitem>
             <para><literal>message-expiry-scan-period</literal></para>
-            <para>过期消息的扫描间隔（单位毫秒，默认为30000ms）。</para>
+            <para>过期消息的扫描间隔（单位毫秒，默认为30000ms）。如要关闭扫描，将其设为<literal>-1</literal>。</para>
          </listitem>
          <listitem>
             <para><literal>message-expiry-thread-priority</literal></para>
