@@ -28,7 +28,7 @@
 &lt;acceptors&gt;                
     &lt;acceptor name="netty"&gt;
         &lt;factory-class&gt;
-org.hornetq.integration.transports.netty.NettyAcceptorFactory
+org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory
         &lt;/factory-class&gt;
         &lt;param key="port" value="5446"/&gt;
     &lt;/acceptor&gt;
@@ -46,7 +46,7 @@ org.hornetq.integration.transports.netty.NettyAcceptorFactory
             中定义的是键-值对（key-value）。这些参数用来配置某个传输实现。不同传输有不同的配置参数。</para>
         <para>像IP地址、端口号等都是传输配置参数的例子。</para>
     </section>
-    <section id="understanding.connectors">
+    <section id="configuring-transports.connectors">
         <title>连接器（Connectors）</title>
         <para>接收器定义的是如何在服务器端接收连接，而连接器则是定义客户端如何连接到服务器。</para>
         <para>以下是<literal>hornetq-configuration.xml</literal>文件中一个连接器配置的例子。</para>
@@ -54,7 +54,7 @@ org.hornetq.integration.transports.netty.NettyAcceptorFactory
 &lt;connectors&gt;
     &lt;connector name="netty"&gt;
         &lt;factory-class&gt;
-            org.hornetq.integration.transports.netty.NettyConnectorFactory
+            org.hornetq.core.remoting.impl.netty.NettyConnectorFactory
         &lt;/factory-class&gt;
         &lt;param key="port" value="5446"/&gt;
     &lt;/connector&gt;
@@ -103,12 +103,12 @@ org.hornetq.integration.transports.netty.NettyAcceptorFactory
         <programlisting>
 Map&lt;String, Object&gt; connectionParams = new HashMap&lt;String, Object&gt;();
     
-connectionParams.put(org.hornetq.integration.transports.netty.TransportConstants.PORT_PROP_NAME, 
+connectionParams.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME, 
                     5446);
 
 TransportConfiguration transportConfiguration = 
     new TransportConfiguration(
-    "org.hornetq.integration.transports.netty.NettyConnectorFactory", 
+    "org.hornetq.core.remoting.impl.netty.NettyConnectorFactory", 
     connectionParams);
 
 ClientSessionFactory sessionFactory = HornetQClient.createClientSessionFactory(transportConfiguration);
@@ -122,11 +122,11 @@ etc
         <programlisting>
 Map&lt;String, Object&gt; connectionParams = new HashMap&lt;String, Object&gt;();
 
-connectionParams.put(org.hornetq.integration.transports.netty.TransportConstants.PORT_PROP_NAME, 5446);
+connectionParams.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME, 5446);
 
 TransportConfiguration transportConfiguration = 
     new TransportConfiguration(
-    "org.hornetq.integration.transports.netty.NettyConnectorFactory", 
+    "org.hornetq.core.remoting.impl.netty.NettyConnectorFactory", 
     connectionParams);
 
 ConnectionFactory connectionFactory = HornetQJMSClient.createConnectionFactory(transportConfiguration);
@@ -151,7 +151,7 @@ etc
             <para>如果你的应用是运行在不信任的网络上，你应该选择使用SSL或HTTPS。</para>
             <para>Netty TCP的所有连接都是从客户端发起的。服务器端不向客户端发起任何连接。在有防火墙的环境中，这种方式
                 是比较适合的。因为防火墙只允许单方向的连接。</para>
-            <para>在<literal>org.hornetq.integration.transports.netty.TransportConstants</literal>类中定义了所
+            <para>在<literal>org.hornetq.core.remoting.impl.netty.TransportConstants</literal>类中定义了所
                 有的配置参数的名称（key）。它们既用于配置接收器以用于配置连接器。下面列出的参数用以配置一个简单的Netty TCP：</para>
             <itemizedlist>
                 <listitem>
@@ -296,7 +296,7 @@ etc
 
       &lt;acceptor name="netty-invm">
          &lt;factory-class>
-            org.hornetq.integration.transports.netty.NettyAcceptorFactory
+            org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory
          &lt;/factory-class>
          &lt;param key="use-invm" value="true"/>
          &lt;param key="host" value="org.hornetq"/>
@@ -311,7 +311,7 @@ etc
 
       &lt;connector name="netty-servlet">
          &lt;factory-class>
-            org.hornetq.integration.transports.netty.NettyConnectorFactory
+            org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory
          &lt;/factory-class>
          &lt;param key="host" value="localhost"/>
          &lt;param key="port" value="8080"/>
@@ -332,7 +332,7 @@ etc
             <para>在<literal>web.xml</literal>中定义的servlet的URL形式与在连接器配置文件中定义的
                 <literal>servlet-path</literal>值应该相匹配。</para>
             <para>servlet可以与SSL一起使用。只需要在连接器配置中加上下面的配置即可：<programlisting>    &lt;connector name="netty-servlet">
-         &lt;factory-class>org.hornetq.integration.transports.netty.NettyConnectorFactory&lt;/factory-class>
+         &lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory&lt;/factory-class>
          &lt;param key="host" value="localhost"/>
          &lt;param key="port" value="8443"/>
          &lt;param key="use-servlet" value="true"/>

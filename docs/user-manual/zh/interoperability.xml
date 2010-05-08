@@ -30,8 +30,7 @@
             其中的<literal>protocol</literal>参数值应设为<literal>stomp</literal>：</para>
 <programlisting>
 	&lt;acceptor name="stomp-acceptor">
-		&lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
-		&lt;param key="protocol"  value="stomp"/>
+		&lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory&lt;/factory-class>		&lt;param key="protocol"  value="stomp"/>
 		&lt;param key="port"  value="61613"/>
 	&lt;/acceptor>
 </programlisting>
@@ -42,20 +41,6 @@
             <para>消息的通知不是事务性的。ACK信号不能作为事务的一部分来传输（如果设置了<literal>transaction</literal>
               属性，它将被忽略）。</para>
           </section>
-        </section>
-        <section id="stompconnect">
-          <title>StompConnect</title>
-          <para><ulink url="http://stomp.codehaus.org/StompConnect">StompConnect</ulink>是一个Stomp代理服务器，
-            它可以将Stomp协议转换为标准的JMS接口调用。因此，通过StompConnect的作用HornetQ可以作为一个Stomp代理，
-            与任何一个Stomp客户端通迅。这些客户端可以由C、C++、C#及.net等语言实现。</para>
-          <para>要运行StompConnect首先要启动HornetQ服务以及JNDI服务。</para>
-          <para>Stomp需要<literal>jndi.properties</literal>文件要在classpath中。该文件
-            应有如下类似的内容：</para>
-          <programlisting>java.naming.factory.initial=org.jnp.interfaces.NamingContextFactory
-java.naming.provider.url=jnp://localhost:1099
-java.naming.factory.url.pkgs=org.jboss.naming:org.jnp.interfaces</programlisting>
-          <para>要确保该文件与StompConnect的jar包以及HornetQ的jar文件都在classpath中。最后，运行
-            <literal>java org.codehaus.stomp.jms.Main</literal>。</para>
         </section>
         <section>
           <title>Stomp目标与HornetQ的地址和队列的映射</title>
@@ -98,23 +83,52 @@ hello queue orders
            </section>
 
            <section>
-             <title>使用Stomp通过JMS发送和接收Stomp消息</title>
-             <para>如果要通过JMS目标来传送Stomp消息，可以使用<literal>BytesMessage</literal>将Stomp的消息封装后进行传送。</para>
-             <para>如果Stomp消息中含有UTF-8字符串，则可以用以下代码将其读入到JMS的BytesMessage：</para>
-             <programlisting>
-BytesMessage message = (BytesMessage)consumer.receive();
-byte[] data = new byte[1024];
-int size = message.readBytes(data);
-String text = new String(data, 0, size, "UTF-8");
-             </programlisting>
-             <para>相反地，要将一个UTF－8字符串的消息发给Stomp客户端，可以作用以下代码：</para>
-             <programlisting>
-String text = ...
-BytesMessage message = session.createBytesMessage();
-message.writeBytes(text.getBytes("UTF-8"));
-producer.send(message);
-             </programlisting>
+             <title>使用JMS或核心接口发送和接收Stomp消息</title>
+             <para>Stomp基本上是一个基于文本的协议。为了使用更简单，我们的Stomp实现通过检查<literal>content-length</literal>的值
+               来决定如何将一个Stomp消息映射成一个JMS消息或核心消息。
+             </para>
+             <para>如果在Stomp消息中有<literal>content-length</literal>头，它将被映射为一个JMS的
+               <emphasis>TextMessage</emphasis>，或者是一个核心消息，其消息体的缓存是一个SimpleString。</para>
+             <para>如果Stomp消息中没有<literal>content-length</literal>，则它被映射为一个JMS的
+                   <emphasis>BytesMessage</emphasis>，或者是一个核心消息，其消息体缓存中是一个字节数组byte[]。</para>
+             <para>从一个JMS消息或核心消息映射为Stomp消息时遵从同样的逻辑。一个Stomp客户端可以通过检查
+                   <literal>content-length</literal>来决定消息体的类型（UTF－8字符串或字节）。</para>
           </section>
+        </section>
+        <section id="stomp.websockets">
+         <title>通过Web Sockets使用Stomp</title>
+         <para>HornetQ还支持通过<ulink url="http://dev.w3.org/html5/websockets/">Web Sockets</ulink>使用Stomp。任何支持
+            Web Socket的浏览器中可以利用HornetQ来发送和接收Stomp消息。</para>
+         <para>要使用些功能，必须配置一个<literal>NettyAcceptor</literal>，并设置<literal>protocol</literal>
+            的值为<literal>stomp_ws</literal>：</para>
+         <programlisting>
+&lt;acceptor name="stomp-ws-acceptor">
+	&lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory&lt;/factory-class>
+	&lt;param key="protocol" value="stomp_ws"/>
+	&lt;param key="port" value="61614"/>
+&lt;/acceptor>
+         </programlisting>
+         <para>使用上面配置，HornetQ在URL路径<literal>/stomp</literal>下端口<literal>61614</literal>接收Stomp连接。
+            浏览器然后就可以连接到<literal>ws://&lt;server&gt;:61614/stomp</literal>，使用Web Socket来发送和接收
+            Stomp消息了。</para>
+         <para>为了简化客户端的开发，在<ulink url="http://github.com/jmesnil/stomp-websocket">GitHub</ulink>
+            上提供了一个JavaScript库（参见<ulink url="http://jmesnil.net/stomp-websocket/doc/">文档</ulink>）。</para>
+         <para><literal>stomp-websockets</literal>例子给出一如何配置HornetQ服务器以使浏览器和Java应用程序通过一个JMS话题
+            进行消息的传递。</para>
+        </section>
+        <section id="stompconnect">
+          <title>StompConnect</title>
+          <para><ulink url="http://stomp.codehaus.org/StompConnect">StompConnect</ulink>是一个Stomp代理服务器，
+            它可以将Stomp协议转换为标准的JMS接口调用。因此，通过StompConnect的作用HornetQ可以作为一个Stomp代理，
+            与任何一个Stomp客户端通迅。这些客户端可以由C、C++、C#及.net等语言实现。</para>
+          <para>要运行StompConnect首先要启动HornetQ服务以及JNDI服务。</para>
+          <para>Stomp需要<literal>jndi.properties</literal>文件要在classpath中。该文件
+            应有如下类似的内容：</para>
+          <programlisting>java.naming.factory.initial=org.jnp.interfaces.NamingContextFactory
+java.naming.provider.url=jnp://localhost:1099
+java.naming.factory.url.pkgs=org.jboss.naming:org.jnp.interfaces</programlisting>
+          <para>要确保该文件与StompConnect的jar包以及HornetQ的jar文件都在classpath中。最后，运行
+            <literal>java org.codehaus.stomp.jms.Main</literal>。</para>
         </section>
     </section>
     <section>

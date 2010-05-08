@@ -313,6 +313,11 @@
             <para><literal>stomp</literal>例子展示了如何配置HornetQ来发送与接收Stomp消息。</para>
         </section>
         <section>
+            <title>Stomp与Web Sockets</title>
+            <para><literal>stomp-websockets</literal>例子给出了如何配置一个HornetQ服务器直接从Web浏览器
+                中（需要支持Web Socket）发送和接收Stomp消息。</para>
+        </section>
+        <section>
             <title>对称型集群</title>
             <para><literal>symmetric-cluster</literal>例子展示如何设置一个HornetQ的对称型集群。</para>
             <para>HornetQ的集群配置是非常灵活的。你可以根据需要设置不同的集群结构。最常用的就是对称型的集群了。这是在应用

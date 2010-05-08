@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!-- ============================================================================= -->
 <!-- Copyright © 2009 Red Hat, Inc. and others.                                    -->
 <!--                                                                               -->
@@ -17,7 +16,6 @@
 <!-- and agrees not to assert, Section 4d of CC-BY-SA to the fullest extent        -->
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
-
 <chapter id="clusters">
     <title>集群</title>    
     <section>
@@ -65,10 +63,11 @@
             <para>让我们来看一个<literal>hornetq-configuration.xml</literal>文件中广播组的例子：</para>
             <programlisting>&lt;broadcast-groups>
    &lt;broadcast-group name="my-broadcast-group">
+      &lt;local-bind-address>172.16.9.3&lt;/local-bind-address>
       &lt;local-bind-port>54321&lt;/local-bind-port>
       &lt;group-address>231.7.7.7&lt;/group-address>
       &lt;group-port>9876&lt;/group-port>
-      &lt;broadcast-period>1000&lt;/broadcast-period>
+      &lt;broadcast-period>2000&lt;/broadcast-period>
       &lt;connector-ref connector-name="netty-connector" 
         backup-connector="backup-connector"/>
    &lt;/broadcast-group>
@@ -86,7 +85,8 @@
                 </listitem>
                 <listitem>
                     <para><literal>local-bind-port</literal>。这个参数指定了套接字的本地绑定端口。通常情况下
-                        可以使用其默认值<literal>-1</literal>，表示使用随机的端口。</para>
+                        可以使用其默认值<literal>-1</literal>，表示使用随机的端口。这个参数总是和
+                        <literal>local-bind-address</literal>一起定义。</para>
                 </listitem>
                 <listitem>
                     <para><literal>group-address</literal>。这个参数指定的是广播地址。它是一个D类的IP地址，
@@ -131,6 +131,7 @@
                 在<literal>discovery-groups</literal>内定义。发现组可以定义多个。请看下面的例子：</para>
             <programlisting>&lt;discovery-groups>
    &lt;discovery-group name="my-discovery-group">
+      &lt;local-bind-address>172.16.9.7&lt;/local-bind-address>
       &lt;group-address>231.7.7.7&lt;/group-address>
       &lt;group-port>9876&lt;/group-port>
       &lt;refresh-timeout>10000&lt;/refresh-timeout>
@@ -140,6 +141,10 @@
             <itemizedlist>
                 <listitem>
                     <para><literal>name</literal>属性。每个发现组都必须有一个唯一的名字。</para>
+                </listitem>
+                <listitem>
+                    <para><literal>local-bind-address</literal>。如果你的主机有多个网络接口，你可能希望发现组只监听一个指定的
+                    网络接口。这个参数就可以用于这个目的。它是一个可选参数。</para>
                 </listitem>
                 <listitem>
                     <para><literal>group-address</literal>。需要监听的广播地址。它需要与广播组的
@@ -188,10 +193,10 @@ Connection jmsConnection1 = jmsConnectionFactory.createConnection();
 Connection jmsConnection2 = jmsConnectionFactory.createConnection();</programlisting></para>
                 <para><literal>refresh-timeout</literal>参数可以直接在连接工厂上使用
                     <literal>setDiscoveryRefreshTimeout()</literal>方法设置。</literal></para>
-                <para>连接工厂还有一个方法<literal>setInitialWaitTimeout()</literal>。它可以设置连接工厂的
+                <para>连接工厂还有一个方法<literal>setDiscoveryInitialWaitTimeout()</literal>。它可以设置连接工厂的
                     初始等待时间。当一个连接工厂被创建后立即进行用于创建连接的话，连接工厂可能没有足够的时间来接收各
                     个服务器发出的广播信息，也就无法建立完整的服务器列表。有了这个参数，连接工厂会在首次创建连接时
-                    等待一定的时间，以接收广播。默认值是<literal>2000</literal>毫秒。</para>
+                    等待一定的时间，以接收广播。默认值是<literal>10000</literal>毫秒。</para>
             </section>
             <section>
                 <title>使用核心API的客户端的配置</title>
@@ -208,10 +213,10 @@ Connection jmsConnection2 = jmsConnectionFactory.createConnection();</programlis
                 </para>
                 <para>方法<literal>setDiscoveryRefreshTimeout()</literal>可以用来直接设置参数
                     <literal>refresh-timeout</literal>。</para>
-                <para>会话工厂还有一个方法<literal>setInitialWaitTimeout()</literal>。它可以设置会话工厂的
+                <para>会话工厂还有一个方法<literal>setDiscoveryInitialWaitTimeout()</literal>。它可以设置会话工厂的
                     初始等待时间。当一个会话工厂被创建后立即进行用于创建连接的话，该会话工厂可能没有足够的时间来接收各
                     个服务器发出的广播信息，也就无法建立完整的服务器列表。有了这个参数，会话工厂会在首次创建连接时
-                    等待一定的时间，以接收广播。默认值是<literal>2000</literal>毫秒。</para>
+                    等待一定的时间，以接收广播。默认值是<literal>10000</literal>毫秒。</para>
             </section>
         </section>
     </section>

@@ -60,7 +60,7 @@
      &lt;!-- 这个连接器用于连接备份服务喝咖啡    -->
      &lt;!-- 备份服务器在主机"192.168.0.11"上，端口"5445" -->
      &lt;connector name="backup-connector">
-       &lt;factory-class>org.hornetq.integration.transports.netty.NettyConnectorFactory&lt;/factory-class>
+       &lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyConnectorFactory&lt;/factory-class>
        &lt;param key="host" value="192.168.0.11"/>
        &lt;param key="port" value="5445"/>
      &lt;/connector>
@@ -74,7 +74,7 @@
   
   &lt;acceptors>
      &lt;acceptor name="acceptor">
-        &lt;factory-class>org.hornetq.integration.transports.netty.NettyAcceptorFactory&lt;/factory-class>
+        &lt;factory-class>org.hornetq.core.remoting.impl.netty.NettyConnectorFactory&lt;/factory-class>
         &lt;param key="host" value="192.168.0.11"/>
         &lt;param key="port" value="5445"/>
      &lt;/acceptor>
@@ -118,6 +118,10 @@
                     <programlisting>
                    &lt;shared-store>true&lt;shared-store>
                 </programlisting>
+                    <para>此外，备份服务器必须显式地指定：</para>
+                    <programlisting>
+                   &lt;backup>true&lt;/backup>
+                     </programlisting>
                     <para>另外，需要将主服务器和备份服务器的日志文件位置指向<emphasis>同一个共享位置</emphasis>。
                         （参见<xref linkend="configuring.message.journal"/>）</para>
                     <para>如果客户端使用JMS自动失效备援，主服务器除了要配置一个连接器以连接到备份服务器外，还要在
@@ -166,7 +170,7 @@
             <para>有时你需要在主服务器正常关机的情况下仍然进行失效备援。如果使用JMS，你需要将<literal
                     >HornetQConnectionFactory</literal>的<literal
                     >FailoverOnServerShutdown</literal>属性设为true，或者是在<literal
-                    >hornetq-jms.xml</literal>文件中进行相应的配置。如果使用的是核心接口，可以在创建
+                    >hornetq-jms.xml</literal>（参数为failover-on-server-shutdown）文件中进行相应的配置。如果使用的是核心接口，可以在创建
                     <literal>ClientSessionFactoryImpl</literal>实例时将上述同名属性设置为true。
                 这个属性的默认值是false。这表示如果主服务器是正常关机，<emphasis>客户端将不会进行失效备援</emphasis>。</para>
             <para>
@@ -178,6 +182,14 @@
                         设为true。</para>
                 </note>
             </para>
+            <para>默认情况下至少创建了一个与主服务器的连接后失效备援才会发生。换句话说，如果客户端每一次创建与
+                主服务器的连接失败，它会根据参数reconnection-attempts的设置进行连接重试，而不是进行失效备援。
+                如果重试次数超过的该参数的值，则连接失败。</para>
+            <para>在有些情况下，你可能希望在初始连接失败和情况下自动连接到备份服务器，那么你可以直接在
+                <literal>ClientSessionFactoryImpl</literal>或<literal
+                >HornetQConnectionFactory</literal>上设置<literal>FailoverOnInitialConnection</literal>
+                参数，或者在配置文件中设置<literal
+                >failover-on-initial-connection</literal>。默认的值是<literal>false</literal>。</para>
             <para>有关事务性及非事务性JMS会话的自动失效备援的例子，请参见
                     <xref linkend="examples.transaction-failover"/>及<xref
                     linkend="examples.non-transaction-failover"/>。</para>
@@ -222,7 +234,8 @@
                         >javax.jms.TransactionRolledBackException</literal>异常（如果是JMS），或者是一
                         个<literal>HornetQException</literal>的异常，错误代码为<literal
                         >HornetQException.TRANSACTION_ROLLED_BACK</literal>（如果是核心接口）。</para>
-                <para>客户端需要自行处理这些异常，进行必要的回滚处理。用户可以通过同一个会话重试该事务操作。</para>
+                <para>客户端需要自行处理这些异常，进行必要的回滚处理。注意这里不需要人工将会话进行回滚－此时它已经
+                      被回滚了。用户可以通过同一个会话重试该事务操作。</para>
                 <para>HornetQ发布包中包括了一个完整的例子来展示如何处理这种情况。参见
                      <xref linkend="examples.transaction-failover"/></para>
                 <para>如果是在提交过程中发生了失效备援，服务器将这个阻塞调用解除。这种情况下客户端很难确定在事故发生

@@ -27,7 +27,7 @@
     <section>
         <title>使用HornetQ内核的客户端</title>
         <para>如果客户端只使用HornetQ内核（非JMS客户端），需要将 <literal
-                >hornetq-core-client.jar</literal>、 <literal>hornetq-transports.jar</literal> 和
+                >hornetq-core-client.jar</literal>和
                 <literal>netty.jar</literal> 放到classpath中。</para>
     </section>
     <section>

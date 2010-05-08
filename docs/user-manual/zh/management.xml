@@ -429,8 +429,10 @@
 &lt;jmx-management-enabled&gt;false&lt;/jmx-management-enabled&gt;            
          </programlisting>
          <para>如果JMX功能是打开的，则使用<literal>jconsole</literal>可以管理本地的HornetQ。
-            出于安全考虑，默认情况下JMX远程连接是关闭的。参见<ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html#remote"
+         <note>
+           <para>出于安全考虑，默认情况下JMX远程连接是关闭的。参见<ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html#remote"
                >Java管理指南</ulink>来配置服务器的远程管理（系统变量必须在<literal>run.sh</literal>或<literal>run.bat</literal>中定义）。</para>
+         </note>
          <para>HornetQ默认使用JMX域名"org.hornetq"。如果要用一个MBeanServer管理多个HornetQ服务器，可以将每个HornetQ
             服务器配置成不同的JMX域。方法就是在<literal>hornetq-configuration.xml</literal>文件中设置<literal>jmx-domain</literal>：</para>
          <programlisting>
@@ -638,13 +640,16 @@
       <section>
          <title>JMS消息通知</title>
          <para>HornetQ还可以通过JMS消息的方式发送通知。</para>
-         <para>这种方式与核心消息通知相似，但是有一个重要的不同：JMS消息需要一个JMS的目标（通常是一个Topic）：</para>
+         <para>这种方式与核心消息通知相似，但是有一个重要的不同：JMS消息需要一个JMS的目标（通常是一个Topic）。</para>
+         <para>要通过一个JMS目标来接收管理通知，必须将服务器的管理通知地址修改为以<literal>jms.queue</literal>开头（如果是一个
+            JMS队列）或者<literal>jms.topic</literal>（如果是一个话题）：</para>
          <programlisting>
-   Topic notificationsTopic = HornetQJMSClient.createHornetQTopic("hornetq.notifications", "hornetq.notifications");
+            &lt;!-- 通知将从JMS话题 "notificationsTopic"上接收 --> 
+            &lt;management-notification-address&gt;jms.topic.notificationsTopic&lt;/management-notification-address&gt;
          </programlisting>
          <para>这个通知话题一旦被创建，就可以接收消息了（或者使用<literal>MessageListener</literal>）：</para>
          <programlisting>
-   Topic notificationsTopic = HornetQJMSClient.createHornetQTopic("hornetq.notifications", "hornetq.notifications");
+   Topic notificationsTopic = HornetQJMSClient.createTopic("notificationsTopic");
 
    Session session = ...
    MessageConsumer notificationConsumer = session.createConsumer(notificationsTopic);
@@ -749,6 +754,49 @@ System.out.format("%s message(s) in the queue (since last sample: %s)\n",
       <section>
          <title>例子</title>
          <para>参见<xref linkend="examples.message-counters"/>。这个例子使用消息计数器来获得一个JMS队列的相关数据。</para>
+      </section>
+   </section>
+   <section>
+      <title>通过JBoss应用服务器的Admin Console来管理HornetQ的资源</title>
+      <para>通过JBoss应用服务器的Admin Console可以创建与配置HornetQ的各种资源。</para>
+      <para>Admin Console允许你创建各种目标（JMS话题与队列）和JMS的连接工厂。</para>
+      <para>登录admin console后你在左边的树中会看到JMS Manager节点。所有HornetQ的资源都属于这个节点。在它的下面有JMS Queues、
+         Topics以及Connection Factories。分别点击它们将会看到相应的资源。下面将解释如何创建并配置它们。</para>
+      <section>
+         <title>JMS队列</title>
+         <para>要创建一个新的JMS队列，点击JMS Queues将列出当前的队列。在右边的窗口中有一个“add a new resource“按钮，点击这个按钮
+            并选择默认（JMS 队列）模板。点击“continue“。填入相应的队列名称与JNDI名称。其它的参数值都给出了合理的默认值，通常情况下
+            不用改动它们。在底部可以配置安全角色，如果你不提供将使用默认的配置。当这个队列成功创建后这些配置将会显示出来。除了队列的名字
+            和JNDI名字外，其它参数都可以在contiguration标签页下进行修改。下面就对它们分别解释。</para>
+         <para>点击 configuration后你将看到如下显示：</para>
+         <para>
+            <graphic fileref="images/console1.png" align="center"/>
+        </para>
+         <para>name和JNDI name是不能改变的。如果你想改变它们，必须重新创建队列。其它选项是关于地址设置与安全设置。
+The default address settings are picked up from the servers configuration, if you change any of these
+         settings or create a queue via the console a new Address Settings enrty will be added. For a full explanation on
+         Address Settings see <xref linkend="queue-attributes.address-settings"/></para>
+         <para>To delete a queue simply click on the delete button beside the queue name in the main JMS Queues screen.
+         This will also delete any address settings or security settings previously created for the queues address</para>
+         <para>The last part of the configuration options are security roles. If non are provided on creation then the
+            servers default security settings will be shown. If these are changed or updated then new securty settings are
+         created for the address of this queue. For more information on securuty setting see <xref linkend="security"/> </para>
+         <para>It is also possible via the metrics tab to view statistics for this queue. This will show statistics such
+            as message count, consumer count etc.</para>
+         <para>Operations can be performed on a queue via the control tab. This will allow you to start and stop the queue,
+         list,move,expire and delete messages from the queue and other useful operations. To invoke an operation click on
+         the button for the operation you want, this will take you to a screen where you can parameters for the opertion can be set.
+         Once set clicking the ok button will invoke the operation, results appear at the bottom of the screen.</para>
+      </section>
+      <section>
+         <title>JMS Topics</title>
+         <para>Creating and configuring JMS Topics is almost identical to creating queues. The only difference is that the
+         configuration will be applied to the queue representing a subscription.</para>
+      </section>
+      <section>
+         <title>JMS Connection Factories</title>
+         <para>The format for creating connection factories is the same as for JMS Queues and topics apart frm the configuration
+         being different. For as list of all the connection factory settings see the configuration index </para>
       </section>
    </section>
 </chapter>

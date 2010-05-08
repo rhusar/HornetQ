@@ -197,14 +197,14 @@
                &lt;address-settings>
                   &lt;address-setting match="jms.queue.exampleQueue">            
                      &lt;max-size-bytes>100000&lt;/max-size-bytes>
-                     &lt;address-full-policy>DROP&lt;/address-full-policy>   
+                     &lt;address-full-policy>BLOCK&lt;/address-full-policy>   
                   &lt;/address-setting>
                &lt;/address-settings></programlisting>
             <para>上面的例子将JMS队列"exampleQueue"的最大内存值设为
                100000 字节并且阻塞发送者以防止消息量超过这个值。</para>
-            <para>注意必须设置 <literal>DROP</literal>的策略才能打开限定发送者窗口控制。</para>
+            <para>注意必须设置 <literal>BLOCK</literal>的策略才能打开限定发送者窗口控制。</para>
             <para>请注意默认的<literal>address-full-policy</literal> 是
-                  <literal>PAGE</literal>。请参阅分页转存（paging）的相关章节作进一步的了解。</para>
+                  <literal>PAGE</literal>。请参阅分页转存（<xref linkend="paging" />）的相关章节作进一步的了解。</para>
          </section>
       </section>
       <section>

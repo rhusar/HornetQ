@@ -38,9 +38,9 @@
                 >confirmation-window-size</literal>项。如果你并不将JMS连接工厂注册到JNDI，则你需要在
             <literal>HornetQConnectionFactory</literal>上使用相应的方法直接设置该参数。</para>
         <para>如果使用核心服务，你可以直接在<literal>ClientSessionFactory</literal>实例上直接设置该参数。</para>
-        <para>参数的单位是字节，默认值是<literal>1MiB</literal>。</para>
+        <para>参数的单位是字节。</para>
         <para>如果该参数是值设为<literal>-1</literal>，则关闭缓存，即关闭了重新恢复功能，迫使进行重新连接。默认
-              值是<literal>-1</literal>。</para>
+              值是<literal>-1</literal>（表示没有自动恢复）。</para>
     </section>
     <section>
         <title>会话重新连接</title>
