@@ -773,30 +773,22 @@ System.out.format("%s message(s) in the queue (since last sample: %s)\n",
             <graphic fileref="images/console1.png" align="center"/>
         </para>
          <para>name和JNDI name是不能改变的。如果你想改变它们，必须重新创建队列。其它选项是关于地址设置与安全设置。
-The default address settings are picked up from the servers configuration, if you change any of these
-         settings or create a queue via the console a new Address Settings enrty will be added. For a full explanation on
-         Address Settings see <xref linkend="queue-attributes.address-settings"/></para>
-         <para>To delete a queue simply click on the delete button beside the queue name in the main JMS Queues screen.
-         This will also delete any address settings or security settings previously created for the queues address</para>
-         <para>The last part of the configuration options are security roles. If non are provided on creation then the
-            servers default security settings will be shown. If these are changed or updated then new securty settings are
-         created for the address of this queue. For more information on securuty setting see <xref linkend="security"/> </para>
-         <para>It is also possible via the metrics tab to view statistics for this queue. This will show statistics such
-            as message count, consumer count etc.</para>
-         <para>Operations can be performed on a queue via the control tab. This will allow you to start and stop the queue,
-         list,move,expire and delete messages from the queue and other useful operations. To invoke an operation click on
-         the button for the operation you want, this will take you to a screen where you can parameters for the opertion can be set.
-         Once set clicking the ok button will invoke the operation, results appear at the bottom of the screen.</para>
+         默认的地址设置来自于服务器的配置。如果你通过console修改或创建一个队列，那么就会增加一条新的地址设置。有关
+         地址设置的完整说明参见<xref linkend="queue-attributes.address-settings"/>。</para>
+         <para>要删除一个队列，只要点击队列名称旁边的“delete“按钮即可。与此队列相关的任何地址设置或安全设置也将被删除。</para>
+         <para>配置的最后一部分是安全角色。如果在创建时没有给出则默认的安全设置将会显示在屏幕上。如果它们被修改并更新则队列的安全设置
+            将被更新。关于安全设置参见<xref linkend="security"/>。 </para>
+         <para>在console中还有一个metrics标签页，它显示了队列的各项统计数据，如消息计数，接收者计数等。</para>
+         <para>在control标签页中可以对队列进行各种操作，比如启动和停止队列，对队列中的消息进行列表，移动，变为过期，删除等。
+         要进行一项操作只要点击相应的按钮，然后在出现的提示中输入相应的参数，再点击ok按钮即可。操作的結果会显示在屏幕的底部。</para>
       </section>
       <section>
-         <title>JMS Topics</title>
-         <para>Creating and configuring JMS Topics is almost identical to creating queues. The only difference is that the
-         configuration will be applied to the queue representing a subscription.</para>
+         <title>JMS话题</title>
+         <para>创建及配置JMS话题几乎与队列的操作是一样的。唯一不同的是这些配置应用于一个代表订阅的队列。</para>
       </section>
       <section>
-         <title>JMS Connection Factories</title>
-         <para>The format for creating connection factories is the same as for JMS Queues and topics apart frm the configuration
-         being different. For as list of all the connection factory settings see the configuration index </para>
+         <title>JMS连接工厂</title>
+         <para>JMS连接工厂的创建的操作过程与上述队列或话题的操作一致，只是配置具体的参数不同而已。关于连接工厂的参数参见配置索引。</para>
       </section>
    </section>
 </chapter>
