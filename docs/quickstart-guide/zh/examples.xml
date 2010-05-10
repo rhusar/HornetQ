@@ -17,46 +17,40 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="examples">
-   <title>Running the Examples</title>
-   <para>In the directory <literal>examples</literal> there are 2 sets of examples, these are </para>
+   <title>运行HornetQ例子</title>
+   <para>在HornetQ的<literal>examples</literal>目录下有两组例子，它们是：</para>
    <itemizedlist>
       <listitem>
-         <para>JMS Examples - these demonstrate functionality while sending and consumng JMS
-            messages.</para>
+         <para>JMS例子 - 这些例子展示的是使用JMS发送与接收消息的功能。</para>
       </listitem>
       <listitem>
-         <para>Java EE Examples - these demonstrate application server integration, e.g. MDBs, EJBs,
-            Servlets, etc.</para>
+         <para>Java EE 例子 - 这些例子展示的是与应用服务器的集成，例如MDB，EJB，Servlet等。</para>
       </listitem>
    </itemizedlist>
    <section id="examples.jms">
-      <title>The JMS examples</title>
-      <para>The JMS Examples all follow the same format. Each examples is contained in its own
-         directory which contains the following.</para>
+      <title>JMS例子</title>
+      <para>所有JMS都有统一的格式。每个例子都有自己的目录，它的内容包括：</para>
       <itemizedlist>
          <listitem>
             <para><literal>build.xml</literal></para>
-            <para>This is the ant build file used to run the example</para>
+            <para>ant的build文件，用来运行例子。</para>
          </listitem>
          <listitem>
-            <para><literal>src</literal> directory</para>
-            <para>This contains the source code for the example</para>
+            <para><literal>src</literal> 目录</para>
+            <para>例子的代码。</para>
          </listitem>
          <listitem>
-            <para><literal>server0</literal> configuration directory</para>
-            <para>This contains the configuration files needed to run the server for the example.
-               There may be multiple configuration directories <literal>server0</literal>, <literal
-                  >server1</literal> etc for clustered examples etc.</para>
+            <para><literal>server0</literal>配置目录</para>
+            <para>它包含了运行服务器所需要的配置文件。有的集群的例子可能有多个这样的目录，如<literal>server0</literal>, 
+                  <literal>server1</literal>等。</para>
          </listitem>
       </itemizedlist>
-      <para>Each example will start one or more stand-alone servers and stop them after the example
-         has completed.</para>
-      <para>As a quick start we'll run the queue example. For all other examples refer to the main
-         user manual.</para>
-      <para>Firstly open a Shell or a Command prompt and navigate to the <literal
-            >examples/jms/queue</literal> directory.</para>
-      <para>Type the command <literal>./build.sh</literal> (or <literal>build.bat</literal> if you
-         are running on Windows), and you should see the following output:</para>
+      <para>在运行每个例子时，都要先启动一个或多个单独的服务器。当例子运行完毕，再将它们停止。</para>
+      <para>做为演示我们这里运行queue例子。其它的例子可以参见用户手册。</para>
+      <para>首先打开一个命令行窗口（shell），进入到HornetQ的 <literal
+            >examples/jms/queue</literal>目录。</para>
+      <para>敲入命令<literal>./build.sh</literal> (或者在Windows上<literal>build.bat</literal>），你
+         将看到如下的输出：</para>
       <programlisting>Buildfile: build.xml
 
 run:
@@ -113,28 +107,20 @@ or jndi
 BUILD SUCCESSFUL
 Total time: 13 seconds
 </programlisting>
-      <para>Congratulations! You have successfully run your first HornetQ example. Try some of the
-         others.</para>
+      <para>恭喜！你已经成功地运行了你的第一个HornetQ例子。试着运行其它的例子。</para>
    </section>
    <section id="examples.messaging">
-      <title>The Java EE Examples</title>
-      <para>The Java EE Examples are examples that require a JEE application server to run. They
-         include MDB, Servlet, EJB examples etc. For this you will need the JBoss Application Server
-         installed. How to do this is explained in the previous chapters.</para>
-      <para>We'll use the MDB example for the purposes of this guide. For the other examples refer
-         to the user guide. Before going any further ensure that the JBoss Application Server is
-         running.</para>
-      <para>Like the other Java EE examples the MDB example is a JEE Application which first needs
-         deploying in the JBoss Application Server. The first thing we need to do is set the
-            <literal>JBOSS_HOME</literal> environment property to the location of the JBoss
-         Application Server, in a Linux shell this would be something like:</para>
+      <title>Java EE例子</title>
+      <para>Java EE的例子需要首先运行一个JEE应用服务器。这些例子包括MDB，Servlet，EJB等等。你首先要安装JBoss应用服务
+         器。参见前面的章节进行安装。</para>
+      <para>这里我们将用MDB例子来说明。有关其它例子的详细信息参见用户手册。首先确认JBoss应用服务器已经启动。</para>
+      <para>如同其它Java EE例子一样，MDB需要部署到应用服务器。第一，将<literal>JBOSS_HOME</literal>环境变量
+         指向你的应用服务器安装目录。如在Linux下：</para>
       <programlisting>export JBOSS_HOME=/home/jbossas5.1/build/output/jboss-5.1.0.GA</programlisting>
-      <para>Once set we can then deploy the application, from inside the <literal
-            >examples/javaee/mdb</literal> directory run the command:</para>
+      <para>然后就可以进行部署了。在<literal>examples/javaee/mdb</literal>目录下运行：</para>
       <programlisting>./build.sh deploy</programlisting>
-      <para>This will make a copy of the messaging profile in the JBoss Application server and start
-         the server.</para>
-      <para>In the shell window you should see something like the following output:</para>
+      <para>它将创建一个“messaging"的AS配置，并用它来启动AS服务器。</para>
+      <para>在命令行窗口你会看到如下的输出：</para>
       <programlisting>Buildfile: build.xml
 
 validate-jboss:
@@ -183,10 +169,9 @@ deploy-ear:
      =JBoss_5_1_0_GA date=200905151005)] Started in 6m:21s:797ms
 
 </programlisting>
-      <para>We can now run the example, do this by running the following command from within the
-            <literal>mdb</literal> directory.</para>
+      <para>现在我们可以运行例子了。在<literal>mdb</literal>目录下运行下列命令：</para>
       <programlisting>./build.sh</programlisting>
-      <para>You should see some output similar to the following:</para>
+      <para>你将看到如下输出：</para>
       <programlisting>Buildfile: build.xml
 
 run:
@@ -224,11 +209,10 @@ undeploy-misc:
 BUILD SUCCESSFUL
 Total time: 1 second
 </programlisting>
-      <para>You can verify that the application has been undeployed by checking the output from the
-         JBoss Application Server, in this instance it will be something like:</para>
+      <para>你还会在窗口输出中看到MDB的应用最終被删除了，如：</para>
       <programlisting>16:36:45,277 INFO  [EJBContainer] STOPPED EJB: org.jboss.javaee.example.server.MDBExample 
          ejbName: MessageMDBExample
 </programlisting>
-      <para>Congratulations! you have successfully deployed and run a Java EE example.</para>
+      <para>恭喜！你已经成功地部署并运行了一个Java EE的例子。</para>
    </section>
 </chapter>

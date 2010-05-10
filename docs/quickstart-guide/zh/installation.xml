@@ -104,59 +104,56 @@
          </listitem>
          <listitem>
             <para>运行HornetQ的<literal>config/jboss-as-5</literal>下的<literal>./build.sh</literal> （或
-               者如果在Windows下运行<literal>build.bat</literal>）。 if you are on
-               Windows) in HornetQ <literal>config/jboss-as-5</literal> directory</para>
+               者如果在Windows下运行<literal>build.bat</literal>）。</para>
          </listitem>
       </orderedlist>
-      <para>This will create 2 new profiles in <literal>$JBOSS_HOME/server</literal>:</para>
+      <para>这将会在<literal>$JBOSS_HOME/server</literal>创建两个服务器配置：</para>
       <itemizedlist>
          <listitem>
-            <para><literal>default-with-hornetq</literal> -- it corresponds to AS 5 <literal
-                  >default</literal> profile with HornetQ as its JMS provider. In this profile,
-               HornetQ is <emphasis>non-clustered</emphasis></para>
+            <para><literal>default-with-hornetq</literal> -- 这个相当于AS 5的<literal
+                  >default</literal>配置但其JMS提供者替换成为HornetQ。在这个配置中的HornetQ
+               是<emphasis>非集群</emphasis>的。</para>
          </listitem>
          <listitem>
-            <para><literal>all-with-hornetq</literal> -- it corresponds to AS 5 <literal
-                  >all</literal> profile with HornetQ as its JMS provider. In this profile, HornetQ
-               is <emphasis>clustered</emphasis></para>
+            <para><literal>all-with-hornetq</literal> -- 这个相当于AS 5的<literal
+                  >all</literal>配置但其JMS提供者替换成为HornetQ。这个配置中的HornetQ
+               是<emphasis>集群</emphasis>的。</para>
          </listitem>
       </itemizedlist>
-      <para>You can then start JBoss AS 5 using one of these profiles, e.g. :</para>
+      <para>这时，你就可以启动上面其中任何一个配置的JBoss AS 5服务器了，例如：</para>
       <programlisting>$JBOSS_HOME/bin/run.sh -c default-with-hornetq</programlisting>
    </section>
    <section id="installation.jboss.as4">
-      <title>HornetQ In JBoss Application Server 4.x</title>
-      <para>As in AS 4, it is not shipped by default with the application server, so you will need
-         to create new AS 4 profiles to run AS 4 with HornetQ.</para>
-      <para>To create AS 4 profiles:</para>
+      <title>HornetQ运行于JBoss应用服务器4.x</title>
+      <para>为了在AS 4中安装HornetQ，你需要创建新的配置（profile）。</para>
+      <para>步骤如下：</para>
       <orderedlist>
          <listitem>
-            <para>Download JBoss AS 4</para>
+            <para>下载并安装JBoss AS 4</para>
          </listitem>
          <listitem>
-            <para>Set the environment property <literal>JBOSS_HOME</literal> to point to the
-               directory where you installed JBoss AS 4</para>
+            <para>设置环境变量<literal>JBOSS_HOME</literal>指向JBoss AS 4的安装目录。</para>
          </listitem>
          <listitem>
-            <para>run <literal>./build.sh</literal> (or <literal>build.bat as4</literal> if you
-                  are on Windows) in HornetQ <literal>config/jboss-as-4</literal>
+            <para>运行HornetQ的<literal>config/jboss-as-4</literal>下的<literal>./build.sh</literal> （或
+               者如果在Windows下运行<literal>build.bat</literal>）。</literal>
                directory</para>
          </listitem>
       </orderedlist>
-      <para>This will create 2 new profiles in <literal>$JBOSS_HOME/server</literal>:</para>
+      <para>这将会在<literal>$JBOSS_HOME/server</literal>创建两个服务器配置：</para>
       <itemizedlist>
          <listitem>
-            <para><literal>default-with-hornetq</literal> -- it corresponds to AS 4 <literal
-                  >default</literal> profile with HornetQ as its JMS provider. In this profile,
-               HornetQ is <emphasis>non-clustered</emphasis></para>
+            <para><literal>default-with-hornetq</literal> -- 这个相当于AS 4的<literal
+                  >default</literal>配置但其JMS提供者替换成为HornetQ。在这个配置中的HornetQ
+               是<emphasis>非集群</emphasis>的。</para>
          </listitem>
          <listitem>
-            <para><literal>all-with-hornetq</literal> -- it corresponds to AS 4 <literal
-                  >all</literal> profile with HornetQ as its JMS provider. In this profile, HornetQ
-               is <emphasis>clustered</emphasis></para>
+            <para><literal>all-with-hornetq</literal> -- 这个相当于AS 4的<literal
+                  >all</literal>配置但其JMS提供者替换成为HornetQ。这个配置中的HornetQ
+               是<emphasis>集群</emphasis>的。</para>
          </listitem>
       </itemizedlist>
-      <para>You can then start JBoss AS 4 using one of these profiles:</para>
+      <para>这时，你就可以启动上面其中任何一个配置的JBoss AS 4服务器了，例如：</para>
       <programlisting>$JBOSS_HOME/bin/run.sh -c default-with-hornetq</programlisting>
    </section>
 </chapter>
