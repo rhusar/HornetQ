@@ -17,12 +17,9 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="introduction">
-    <title>Getting Started</title>
-    <para>This short guide explains how to download, install and quickly get started with
-        HornetQ.</para>
-    <para>After downloading and installing we highly recommend you run the examples to get
-        acquainted with HornetQ. We ship with over 70 examples demonstrating most of the
-        features.</para>
-    <para>This guide is not intended to be a replacement for the user manual. The user manual goes
-        into much more depth, so please consult that for further information.</para>
+    <title>快速入手</title>
+    <para>本简短的指南给出了如何下载、安装HornetQ，以及尽快开始使用HornetQ。</para>
+    <para>我们强烈建议当下载安装完成后，运行HornetQ的例子来了解HornetQ。我们有70多个例子来展示几乎
+        所有HornetQ的功能。</para>
+    <para>本指南不能代替用户手册。用户手册包括更加完整和深入的信息，供用户进一步全面掌握HornetQ。</para>
 </chapter>

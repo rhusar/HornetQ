@@ -17,52 +17,52 @@
 <!-- permitted by applicable law.                                                  -->
 <!-- ============================================================================= -->
 <chapter id="download">
-   <title>Download</title>
-   <para>The official HornetQ project page is <ulink url="http://hornetq.org/"
-         >http://hornetq.org/</ulink>.</para>
+   <title>下载</title>
+   <para>HornetQ项目的官方地址是 <ulink url="http://hornetq.org/"
+         >http://hornetq.org/</ulink>。</para>
    <section id="download.software">
-      <title>Software Download</title>
-      <para>The software can be download from the Download page:<ulink
+      <title>软件下载</title>
+      <para>HornetQ的下载地址是<ulink
             url="http://hornetq.org/downloads.html/"
          >http://hornetq.org/downloads.html</ulink></para>
    </section>
    <section id="download.svn">
-      <title>Project Information</title>
+      <title>项目信息</title>
       <para>
          <itemizedlist>
             <listitem>
-               <para>Please take a look at our project <ulink
+               <para>HornetQ的 <ulink
                      url="http://www.jboss.org/community/wiki/HornetQ">wiki</ulink></para>
             </listitem>
             <listitem>
-               <para>If you have any user questions please use our <ulink
-                     url="http://www.jboss.org/index.html?module=bb&amp;op=viewforum&amp;f=312">user
-                     forum</ulink></para>
+               <para>如果在使用HornetQ中发生任何问题，可以去我们的 <ulink
+                     url="http://www.jboss.org/index.html?module=bb&amp;op=viewforum&amp;f=312">用户论坛
+                     </ulink></para>
             </listitem>
             <listitem>
-               <para>If you have development related questions, please use our <ulink
+               <para>如果你有开发方面的问题与想法，请访问我们的 <ulink
                      url="http://www.jboss.org/index.html?module=bb&amp;op=viewforum&amp;f=313"
-                     >developer forum</ulink></para>
+                     >开发论坛</ulink></para>
             </listitem>
             <listitem>
-               <para>Pop in and chat to us in our <ulink url="irc://irc.freenode.net:6667/hornetq"
-                     >IRC channel</ulink></para>
+               <para>请加入我们的<ulink url="irc://irc.freenode.net:6667/hornetq"
+                     >IRC频道</ulink>与我们的核心开发工程师交流。</para>
             </listitem>
             <listitem>
-               <para>Our project <ulink url="http://hornetq.blogspot.com/">blog</ulink></para>
+               <para>我们项目有自己的 <ulink url="http://hornetq.blogspot.com/">博客</ulink></para>
             </listitem>
             <listitem>
-               <para>Follow us on <ulink url="http://twitter.com/hornetq">twitter</ulink></para>
+               <para>还可以跟踪我们的<ulink url="http://twitter.com/hornetq">twitter</ulink></para>
             </listitem>
             <listitem>
-               <para>HornetQ Subversion trunk is <ulink
+               <para>HornetQ的Subversion代码库地址 <ulink
                      url="http://anonsvn.jboss.org/repos/hornetq/trunk"
                      >http://anonsvn.jboss.org/repos/hornetq/trunk</ulink></para>
             </listitem>
             <listitem>
-               <para>All release tags are availble from <ulink
+               <para>每次发布的版本标签都在<ulink
                      url="http://anonsvn.jboss.org/repos/hornetq/tags"
-                     >http://anonsvn.jboss.org/repos/hornetq/tags</ulink></para>
+                     >http://anonsvn.jboss.org/repos/hornetq/tags</ulink>下能找到。</para>
             </listitem>
          </itemizedlist>
       </para>

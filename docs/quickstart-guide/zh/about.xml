@@ -19,61 +19,49 @@
 <!-- ============================================================================= -->
 
 <chapter id="about">
-   <title>About HornetQ</title>
-    <para>What is HornetQ?</para>
+   <title>关于HornetQ</title>
+    <para>什么是HornetQ?</para>
     <itemizedlist>
         <listitem>
-            <para>HornetQ is an open source project to build a multi-protocol, embeddable, very high
-                performance, clustered, asynchronous messaging system.</para>
+            <para>HornetQ是一个开源项目。它的目标是一个多协议、可嵌入、高性能、可集群的异步的消息系统。</para>
         </listitem>
         <listitem>
-            <para>For answers to more questions about what HornetQ is and what it isn't please visit
-                the <ulink url="http://www.jboss.org/community/wiki/HornetQGeneralFAQs">FAQs wiki
-                    page</ulink>.</para>
+            <para>有关HornetQ是什么及不是什么的更多的问题，请访问
+                <ulink url="http://www.jboss.org/community/wiki/HornetQGeneralFAQs">FAQs wiki
+                    页</ulink>。</para>
         </listitem>
     </itemizedlist>
-    <para>Why use HornetQ? Here are just a few of the reasons:</para>
+    <para>为什么要使用HornetQ？ 以下给出了几个理由：</para>
     <itemizedlist>
         <listitem>
-            <para>100% open source software. HornetQ is licenced using the Apache Software License v2.0
-                to minimise barriers to adoption.</para>
+            <para>HornetQ是100%的开源软件。 HornetQ 采用 Apache v 2.0开源协议，对用户的限制最小。</para>
         </listitem>
         <listitem>
-            <para>HornetQ is designed with usability in mind.</para>
+            <para>HornetQ的设计强调可用性。</para>
         </listitem>
         <listitem>
-            <para>Written in Java. Runs on any platform with a Java 6+ runtime, that's everything
-                from Windows desktops to IBM mainframes.</para>
+            <para>采用Java语言编写。可以在任何Java 6+ 的平台上运行。这几乎包括了从Windows到IBM mainframes的每个平台。</para>
         </listitem>
         <listitem>
-            <para>Amazing performance. Our class beating high performance journal provides persistent
-                messaging performance at rates normally seen for non persistent messaging, our non
-                persistent messaging performance rocks the boat too.</para>
+            <para>性能出众。不但对非持久化消息的处理性能达到了非常高的性能。独特高效的日志（journal）使持久消息处理接近非持久消息的性能。</para>
         </listitem>
         <listitem>
-            <para>Full feature set. All the features you'd expect in any serious messaging system,
-                and others you won't find anywhere else.</para>
+            <para>功能全面。不仅拥有其它成熟消息产品所具有的全部功能，而且还有很多独特的功能。</para>
         </listitem>
         <listitem>
-            <para>Elegant, clean-cut design with minimal third party dependencies. Run HornetQ
-                stand-alone, run it in integrated in your favourite JEE application server, or run
-                it embedded inside your own product. It's up to you.</para>
+            <para>HornetQ的设计遵从了简约的原则。对第三方软件的依赖极少。根据不同的需要，
+                  HornetQ可以单独运行，也可以运行于JEE应用服务器中。它还可以嵌入到你自己的应用程序中。</para>
         </listitem>
         <listitem>
-            <para>Seamless high availability. We provide a HA solution with automatic client
-                failover so you can guarantee zero message loss or duplication in event of server
-                failure.</para>
+            <para>完美的可获得性。HornetQ提供自动客户端失效备援（automatic client failover）功能，能保证在服务器故障时没有消息丢失或消息重复。</para>
         </listitem>
         <listitem>
-            <para>Hugely flexible clustering. Create clusters of servers that know how to load
-                balance messages. Link geographically distributed clusters over unreliable
-                connections to form a global network. Configure routing of messages in a highly
-                flexible way.</para>
+            <para>超级灵活的集群方案。可以控制集群进行消息负载均衡的方式。分布在不同地理位置的各个集群间可以通过非可靠的网络连接形成一个全球网络。
+                  还可以非常灵活地配置消息路由。</para>
         </listitem>
         <listitem>
-            <para>For a full list of features, please see the <ulink
-                url="http://www.jboss.org/community/wiki/HornetQFeatures">features wiki
-                page</ulink> .</para>
+            <para>请访问 <ulink
+                url="http://www.jboss.org/community/wiki/HornetQFeatures">wiki</ulink>来全面了解HornetQ的所有功能介绍。</para>
         </listitem>
     </itemizedlist>
 </chapter>
