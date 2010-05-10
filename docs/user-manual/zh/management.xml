@@ -172,7 +172,7 @@
                </listitem>
                <listitem>
                   <para>消息计数器</para>
-                  <para>用<literal>listMessageCounter()方法和<literal>
+                  <para>用<literal>listMessageCounter()</literal>方法和<literal>
                         listMessageCounterHistory()</literal>方法可以列出一个队列的消息计数器。
                         （参见 <xref linkend="management.message-counters"/>）。消息计数器还可以
                        用<literal>resetMessageCounter()</literal>方法重置。</para>
@@ -185,8 +185,8 @@
                </listitem>
                <listitem>
                   <para>暂停和恢复队列</para>
-                     <literal>QueueControl</literal>可用来暂停与恢复队列。如果一个队列被暂停，它
-                     虽然可以继续接收消息但是不传递消息；当被恢复时，队列又会开始传递消息。<para>
+                     <para><literal>QueueControl</literal>可用来暂停与恢复队列。如果一个队列被暂停，它
+                     虽然可以继续接收消息但是不传递消息；当被恢复时，队列又会开始传递消息。</para>
                </listitem>
             </itemizedlist>
          </section>
@@ -428,7 +428,7 @@
 &lt;!-- false to disable JMX management for HornetQ --&gt;
 &lt;jmx-management-enabled&gt;false&lt;/jmx-management-enabled&gt;            
          </programlisting>
-         <para>如果JMX功能是打开的，则使用<literal>jconsole</literal>可以管理本地的HornetQ。
+         <para>如果JMX功能是打开的，则使用<literal>jconsole</literal>可以管理本地的HornetQ。</para>
          <note>
            <para>出于安全考虑，默认情况下JMX远程连接是关闭的。参见<ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/management/agent.html#remote"
                >Java管理指南</ulink>来配置服务器的远程管理（系统变量必须在<literal>run.sh</literal>或<literal>run.bat</literal>中定义）。</para>

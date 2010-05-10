@@ -160,6 +160,7 @@ etc
                     <para>我们建议使用Java NIO。因为Java NIO不是为每一个连接分配一个线程，所以它要比传统的阻塞式
                         Java IO具有更强的并发连接的处理能力。另外我们还建议使用Java 6的NIO以获得最佳性能。这个参
                         数的默认值在服务器端是<literal>true</literal>，在客户端是<literal>false</literal>。
+                        </para>
                 </listitem>
                 <listitem>
                     <para><literal>host</literal>。主机名或IP地址。对于接收器来说，它是服务器接收连接的地址。

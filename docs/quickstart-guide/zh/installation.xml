@@ -136,8 +136,7 @@
          </listitem>
          <listitem>
             <para>运行HornetQ的<literal>config/jboss-as-4</literal>下的<literal>./build.sh</literal> （或
-               者如果在Windows下运行<literal>build.bat</literal>）。</literal>
-               directory</para>
+               者如果在Windows下运行<literal>build.bat</literal>）。</para>
          </listitem>
       </orderedlist>
       <para>这将会在<literal>$JBOSS_HOME/server</literal>创建两个服务器配置：</para>

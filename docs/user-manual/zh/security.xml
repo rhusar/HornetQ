@@ -191,7 +191,7 @@
         <para>注意你需要为JAAS安全管理器提供三个参数：</para>
         <itemizedlist>
             <listitem>
-                <para>ConfigurationName: <literal>LoginModule</literal>的名字。
+                <para>ConfigurationName: <literal>LoginModule</literal>的名字。</para>
             </listitem>
             <listitem>
                 <para>Configuration: <literal>Configuration</literal>的实现。</para>

@@ -192,7 +192,7 @@ Connection jmsConnection1 = jmsConnectionFactory.createConnection();
 
 Connection jmsConnection2 = jmsConnectionFactory.createConnection();</programlisting></para>
                 <para><literal>refresh-timeout</literal>参数可以直接在连接工厂上使用
-                    <literal>setDiscoveryRefreshTimeout()</literal>方法设置。</literal></para>
+                    <literal>setDiscoveryRefreshTimeout()</literal>方法设置。</para>
                 <para>连接工厂还有一个方法<literal>setDiscoveryInitialWaitTimeout()</literal>。它可以设置连接工厂的
                     初始等待时间。当一个连接工厂被创建后立即进行用于创建连接的话，连接工厂可能没有足够的时间来接收各
                     个服务器发出的广播信息，也就无法建立完整的服务器列表。有了这个参数，连接工厂会在首次创建连接时

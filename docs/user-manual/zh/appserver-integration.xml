@@ -395,18 +395,18 @@ public class MDBMessageSendTxExample implements MessageListener
                             <entry>String</entry>
                             <entry>备份传输的配置参数</entry>
                         </row>
-                        <row>
-                            <link linkend="configuration.discovery-group.group-address">DiscoveryAddress</link></entry>
+                        <row>399
+                            <entry><link linkend="configuration.discovery-group.group-address">DiscoveryAddress</link></entry>
                             <entry>String</entry>
                             <entry>服务器自动检测所使用的发现组（discovery group）地址</entry>
                         </row>
                         <row>
-                            <link linkend="configuration.discovery-group.group-port">DiscoveryPort</link></entry>
+                            <entry><link linkend="configuration.discovery-group.group-port">DiscoveryPort</link></entry>
                             <entry>Integer</entry>
                             <entry>检测所使用的端口号</entry>
                         </row>
                         <row>
-                            <entry><link linkend="configuration.discovery-group.refresh-timeout">DiscoveryRefreshTimeout</link></entry></entry>
+                            <entry><link linkend="configuration.discovery-group.refresh-timeout">DiscoveryRefreshTimeout</link></entry>
                             <entry>Long</entry>
                             <entry>刷新的时间（timeout）。单位为毫秒</entry>
                         </row>
@@ -599,7 +599,7 @@ public class MDBMessageSendTxExample implements MessageListener
                         </row>
                     </tbody>
                 </tgroup>
-            </informaltable>
+            </table>
         </section>
         <section>
             <title>适配器外部（outbound）配置</title>

@@ -134,7 +134,7 @@
     <section id="server.microcontainer.configuration">
         <title>JBoss Microcontainer Beans 文件</title>
         <para>HornetQ的POJO对象是由<ulink url="http://www.jboss.org/jbossmc/"> JBoss Microcontainer
-            </ulink>进行加载和运行的。JBoss Microcontainer是一个轻量级的加载工具。
+            </ulink>进行加载和运行的。JBoss Microcontainer是一个轻量级的加载工具。</para>
         <note>
             <para>如果是在JBoss应用服务器内运行，HornetQ同样需要一个bean的配置文件来将其部署到JBoss中。但是这与单独运行时的配置文件略有不同。
                 这是因为应用服务器内已经部署了一些服务，如安全服务等。所以在HornetQ中这些服务就不需要再部署了。</para>
