@@ -25,7 +25,7 @@
       <para>用来标识一个定期消息的参数是<literal
             >"_HQ_SCHED_DELIVERY"</literal> （相当于常量<literal
             >Message.HDR_SCHEDULED_DELIVERY_TIME</literal>）。</para>
-      <para>这个参数的值必须是一个长整型，单位是毫秒。下面例子给出了使用JMS接口创建定期消息的方法：</para>
+      <para>这个参数的值必须是一个大于零的长整型，单位是毫秒。下面例子给出了使用JMS接口创建定期消息的方法：</para>
       <programlisting>
   TextMessage message = 
    session.createTextMessage("This is a scheduled message message which will be delivered

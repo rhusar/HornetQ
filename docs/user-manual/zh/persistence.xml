@@ -38,7 +38,7 @@
     <itemizedlist>
         <listitem>
             <para>Java <ulink url="http://en.wikipedia.org/wiki/New_I/O">NIO</ulink>。</para>
-            <para>第一种采用的是标准的Java NIO接口来进行文件的操作。它可以在任何安装有Java 1.5或以上的系统中运行。
+            <para>第一种采用的是标准的Java NIO接口来进行文件的操作。它可以在任何安装有Java 1.6或以上的系统中运行。
                 NIO的性能是很高的。</para>
         </listitem>
         <listitem id="aio-journal">
@@ -49,6 +49,8 @@
             <para>使用AIO通常可以有比NIO更高的性能。</para>
             <para>采用AIO的日志只能在运行 Linux kernel 2.6 或以上版本的内核的系统中才有。另外你需要安装libaio。
                 有关如何安装libaio请参见 <xref linkend="installing-aio"/>。</para>
+            <para>另外请注意AIO只在以下文件系统上能正确工作：ext2, ext3, ext4, jfs, xfs。其他文件系统如NFS，虽然
+            AIO看上去可以工作，实际上是以较慢的同步的方式在运行。所以不要在NFS上使用日志。</para>
             <para>有关libaio的更多介绍参见 <xref linkend="libaio"/>。</para>
             <para>libaio是Linux内核项目的一部分。</para>
         </listitem>
@@ -59,6 +61,12 @@
             <para>绑定日志</para>
             <para>这个日志用来保存与绑定有关的数据。其中包括在HornetQ上部署的队列及其属性，还有ID序列计数器。 </para>
             <para>绑定日志是一个NIO型日志。与消息日志相比它的呑吐量是比较低的。</para>
+        </listitem>
+        <listitem>
+            <para>JMS日志</para>
+            <para>这个日志保存所有JMS相关的数据，包括JMS队列，话题及连接工厂，以及它们的JNDI绑定信息。</para>
+            <para>通过管理接口创建的JMS资源将被保存在这个日志中。但是通过配置文件配置的资源则不保存。只有使用JMS时JMS的日志
+               才被创建。</para>
         </listitem>
         <listitem>
             <para>消息日志</para>
@@ -85,6 +93,10 @@
                         >bindings-directory</literal> 所设定的位置不存在的情况下会自动创建它。默认值是<literal>true</literal>。</para>
             </listitem>
         </itemizedlist>
+    </section>
+   <section id="configuring.bindings.jms">
+        <title>配置JMS日志</title>
+        <para>JMS日志的配置与绑定日志共用配置。</para>
     </section>
     <section id="configuring.message.journal">
         <title>配置消息日志</title>

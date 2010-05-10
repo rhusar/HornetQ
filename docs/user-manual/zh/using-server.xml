@@ -31,7 +31,7 @@
               它被用来部署HornetQ的POJO对象。</para>
         <para>要停止服务，运行其中的相应脚本：在Unix/Linux环境下，运行 <literal>stop.sh</literal>。
               在Windows环境，运行 <literal>run.bat</literal>。</para>
-        <para>注意HornetQ需要在Java 5及以上版本才能正常运行。我们建议使用Java 6。</para>
+        <para>注意HornetQ需要在Java 6及以上版本才能正常运行。</para>
         <para>启动和停止脚本在默认条件下读取<literal>config/stand-alone/non-clustered</literal>目录下的配置文件。
               如果要指向其他目录，可以在命令行实现，例如： <literal>./run.sh ../config/stand-alone/clustered</literal>。
               这一方法同样适用于Windows批处理文件。</para>

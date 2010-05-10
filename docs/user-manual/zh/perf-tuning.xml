@@ -123,6 +123,9 @@
                     消息发送时不阻塞等待服务器的响应。参见 <xref linkend="send-guarantees"/>。</para>
             </listitem>
             <listitem>
+                <para>如果你的接收者速度很快，你可以增加consumer-window-size。这样实际上就关闭了流控制的功能。</para>
+            </listitem>
+            <listitem>
                 <para>套接字NIO与旧的IO对比。默认情况下HornetQ在服务器端使用套接字NIO技术，而在客户端则使用旧的（阻塞）
                     IO（参见传输配置一章<xref linkend="configuring-transports"/>）。NIO比旧的阻塞式IO有更
                     强的可扩展性，但是也会带来一些延时。如果你的服务器要同时有数千个连接，使用NIO效果比较好。但是如果
@@ -140,13 +143,6 @@
     <section>
         <title>传输层的优化</title>
         <itemizedlist>
-            <listitem>
-                <para>使用<ulink url="http://en.wikipedia.org/wiki/Nagle's_algorithm">Nagle's
-                    算法</ulink>。如果发送的是许多小的消息，多个消息可以在一个IP包中发送，因此性能可以提高。
-                    这需要将Netty传输中的<literal>tcp-no-delay</literal>设为false。参见
-                    <xref linkend="configuring-transports"/>中的详细说明。</para>
-                <para>采用Nagle算法可以显著提高性能，如果应用程序有很多异步的发送，强烈推荐使用它。</para>
-            </listitem>
             <listitem>
                 <para>TCP缓存大小。如果你的网络速度很快，并且你的主机也很快，你可以通过增加TCP的发送和接收缓存
                     来提高性能。参见<xref linkend="configuring-transports"/>中的详细说明。

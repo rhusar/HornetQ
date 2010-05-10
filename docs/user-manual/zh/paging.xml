@@ -70,10 +70,13 @@
             </table>
         </para>
     </section>
-    
     <section id="paging.mode">
         <title>分页转存模式</title>
         <para>一个地址只要消息的数量超过定义的值，它就转到分页转存的模式。</para>
+        <note>
+            <para>分页转存是针对每个地址设置的。如果你为一个地址配置了一个max-size-bytes，那么每个匹配的地址
+                都有一个最大值的限制。但是这并不表示所有匹配的地址的大小总和受这个参数的限制。</para>
+        </note>
         <section>
             <title>配置</title>
             <para>有关分页转存的配置在主要配置文件（<literal>hornetq-configuration.xml</literal>）
@@ -113,7 +116,7 @@
                                 <entry>10MiB (10 * 1024 * 1024 字节)</entry>
                             </row>
                             <row>
-                                <entry><literal>address-full-message-policy</literal></entry>
+                                <entry><literal>address-full-policy</literal></entry>
                                 <entry>要使用分页转存，这个参数必须设为PAGE。PAGE表示多余的消息会被保存到磁盘。
                                     如果设为DROP，那么多余的消息将会被丢弃。如果设为BLOCK，当消息占满设定的最大
                                     内存时，在客户端消息的发送者将被阻塞，不能向服务器发送更多的消息。</entry>

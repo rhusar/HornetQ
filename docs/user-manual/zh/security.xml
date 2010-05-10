@@ -39,10 +39,10 @@
                 <para><literal>deleteDurableQueue</literal>。允许用户在相应的地址上删除相应的持久的队列。</para>
             </listitem>
             <listitem>
-                <para><literal>createTempQueue</literal>。允许用户在相应地址上创建临时队列。</para>
+                <para><literal>createNonDurableQueue</literal>。允许用户在相应地址上创建非持久的队列。</para>
             </listitem>
             <listitem>
-                <para><literal>deleteTempQueue</literal>。允许用户在相应地址上删除临时队列。</para>
+                <para><literal>deleteNonDurableQueue</literal>。允许用户在相应地址上删除非持久队列。</para>
             </listitem>
             <listitem>
                 <para><literal>send</literal>。允许用户向相应地址发送消息。</para>
@@ -61,8 +61,8 @@
 &lt;security-setting match="globalqueues.europe.#"&gt;
     &lt;permission type="createDurableQueue" roles="admin"/&gt;
     &lt;permission type="deleteDurableQueue" roles="admin"/&gt;
-    &lt;permission type="createTempQueue" roles="admin, guest, europe-users"/&gt;
-    &lt;permission type="deleteTempQueue" roles="admin, guest, europe-users"/&gt;
+    &lt;permission type="createNonDurableQueue" roles="admin, guest, europe-users"/&gt;
+    &lt;permission type="deleteNonDurableQueue" roles="admin, guest, europe-users"/&gt;
     &lt;permission type="send" roles="admin, europe-users"/&gt;
     &lt;permission type="consume" roles="admin, europe-users"/&gt;
 &lt;/security-setting&gt;            
@@ -94,8 +94,8 @@
             能被采用。即角色europe-users有<literal
                 >send</literal>和<literal>consume</literal>权限。权限
             <literal>createDurableQueue</literal>、 <literal
-            >deleteDurableQueue</literal>、<literal>createTempQueue</literal>、<literal
-                >deleteTempQueue</literal>不会从先前的设置中继承。</para>
+            >deleteDurableQueue</literal>、<literal>createNonDurableQueue</literal>、<literal
+                >deleteNonDurableQueue</literal>不会从先前的设置中继承。</para>
         <para>由于权限的不可继承，如果我们不在更具体的security-setting设置中给出一个权限，这个权限就是没有的，不会因为继承而带来
             麻烦。否则就不可能对一组地址中的部分地址进行如此的设置。</para>
     </section>
