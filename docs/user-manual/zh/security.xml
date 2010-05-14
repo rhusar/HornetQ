@@ -213,6 +213,18 @@
                 >org.hornetq.integration.jboss.security.JBossASSecurityManager</literal>。</para>
         <para>要了解如何配置JBoss安全管理器，可以看一眼HornetQ发布包中相关例子中的
             <literal>hornetq-jboss-beans.xml</literal>文件。</para>
+       <section>
+          <title>配置客户端登录</title>
+          <para>JBoss可以配置使用客户登录。JEE的模块如servlet或EJB可以将安全认证信息设置到安全上下文（security context）中，
+             用于整个调用过程。如果想在HornetQ在发送和接收消息时使用这些认证（credential）信息，需要将参数
+             <literal>allowClientLogin</literal>设为true。它会越过HornetQ的身份验证过程并会传播安全上下文（security
+             context）。如果你想要HornetQ使用传播的安全信息进行身份验证，需要同时将参数<literal>authoriseOnClientLogin</literal>
+             设为true。</para>
+          <para>关于客户端登录的详细信息请访问<ulink
+                url="http://community.jboss.org/wiki/ClientLoginModule">这里</ulink>。 </para>
+          <note><para>如果消息是以非阻塞方式发送的，那么有可能在消息到达服务器时，调用线程已经结束，安全上下文也被清除了。
+          所以如果使用安全上下文，需要采用阻塞方式发送消息。</para></note>
+       </section>
     </section>
     <section>
         <title>集群用户名／密码的配置</title>
