@@ -395,7 +395,7 @@ public class MDBMessageSendTxExample implements MessageListener
                             <entry>String</entry>
                             <entry>备份传输的配置参数</entry>
                         </row>
-                        <row>399
+                        <row>
                             <entry><link linkend="configuration.discovery-group.group-address">DiscoveryAddress</link></entry>
                             <entry>String</entry>
                             <entry>服务器自动检测所使用的发现组（discovery group）地址</entry>
@@ -471,6 +471,16 @@ public class MDBMessageSendTxExample implements MessageListener
                             <entry>Integer</entry>
                             <entry>接收者内部缓存的窗口大小</entry>
                         </row>
+                    </tbody>
+                </tgroup>
+            </table>
+            <para>接上页..</para>
+            <informaltable frame="topbot">
+                <tgroup cols="3">
+                    <colspec colname="c1" colnum="1"/>
+                    <colspec colname="c2" colnum="2"/>
+                    <colspec colname="c3" colnum="3"/>
+                    <tbody>
                         <row>
                             <entry>
                                <link linkend="configuration.connection-factory.consumer-max-rate">ConsumerMaxRate</link>
@@ -599,7 +609,7 @@ public class MDBMessageSendTxExample implements MessageListener
                         </row>
                     </tbody>
                 </tgroup>
-            </table>
+            </informaltable>
         </section>
         <section>
             <title>适配器外部（outbound）配置</title>

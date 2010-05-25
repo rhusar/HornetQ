@@ -26,6 +26,10 @@
     <!-- this controls whether xrefs have the title in it.  We 
          don't want that -->
     <xsl:param name="xref.with.number.and.title" select="0"/>
+
+    <xsl:param name="body.font.family">FangSong</xsl:param>
+    <xsl:param name="title.font.family">FangSong</xsl:param>
+    <xsl:param name="monospace.font.family">FangSong</xsl:param>
     
     <xsl:template match="processing-instruction('lb')">
         <fo:block>
@@ -52,22 +56,22 @@
                                 </fo:block>
                             </xsl:if>
                             <xsl:if test="bookinfo/title">
-                                <fo:block font-family="Helvetica" font-size="22pt" padding-before="10mm">
+                                <fo:block font-family="FangSong" font-size="22pt" padding-before="10mm">
                                     <xsl:value-of select="bookinfo/title"/>
                                 </fo:block>
                             </xsl:if>
                             <xsl:if test="bookinfo/subtitle">
-                                <fo:block font-family="Helvetica" font-size="18pt" padding-before="10mm">
+                                <fo:block font-family="FangSong" font-size="18pt" padding-before="10mm">
                                     <xsl:value-of select="bookinfo/subtitle"/>
                                 </fo:block>
                             </xsl:if>
                             <xsl:if test="bookinfo/releaseinfo">
-                                <fo:block font-family="Helvetica" font-size="12pt"
+                                <fo:block font-family="FangSong" font-size="12pt"
                                     padding="10mm"><xsl:value-of select="bookinfo/releaseinfo"/>
                                 </fo:block>
                             </xsl:if>
                             <xsl:if test="bookinfo/copyright">
-                                <fo:block font-family="Helvetica" font-size="12pt"
+                                <fo:block font-family="FangSong" font-size="12pt"
                                     padding="10mm">                                    
                                   
                                     <xsl:apply-templates select="bookinfo/copyright"
@@ -256,7 +260,7 @@
                        Fonts & Styles
         ################################################### -->
     <!-- Default Font size -->
-    <xsl:param name="body.font.master">11</xsl:param>
+    <xsl:param name="body.font.master">9</xsl:param>
     <!-- Line height in body text -->
     <xsl:param name="line-height">1.4</xsl:param>
     <!-- Monospaced fonts are smaller than regular text -->

@@ -185,13 +185,11 @@ runExample:
 
 BUILD SUCCESSFUL
 Total time: 7 seconds</programlisting>
-      <para>You may also see some output from the JBoss Application Server, in this instance it
-         is:</para>
+      <para>在JBoss应用服务器端你还会看到如下的输出：</para>
       <programlisting>16:27:54,703 INFO  [STDOUT] message This is a text message received</programlisting>
-      <para>The application can then be undeployed by running the following command from within the
-            <literal>mdb</literal> directory.</para>
+      <para>然后在<literal>mdb</literal>目录下运行下面的命令可以将这个例子卸载。</para>
       <programlisting>./build.sh undeploy</programlisting>
-      <para>This should so some output similar to the following:</para>
+      <para>你将会看到如下的输出：</para>
       <programlisting>Buildfile: build.xml
 
 validate-jboss:
