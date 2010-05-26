@@ -24,6 +24,13 @@
         <title>服务器端线程的管理</title>
         <para>每个HornetQ服务器都有一个线程池作为一般线程使用，另外还有一个可计划线程池。Java的可计划线程池不能作为
             标准的线程池使用，因此我们采用了两个单独的线程池。</para>
+        <para>当使用旧的（阻塞）IO时，使用了一个单独的线程池来处理连接。但是旧的IO要求一个线程配一个连接，所以如果你
+            的应用有很多并发的连接，这个线程池会很快用光所有的线程，造成服务器出现“挂起”现象。因此，对于大量并发连接
+            的应用，一定要使用NIO。</para>
+        <para>如果使用NIO，默认情况下HornetQ会使用系统中处理器内核（或超线程）数量三倍的线程来处理接收的数据包。
+            内核的数量是通过调用<literal>Runtime.getRuntime().availableProcessors()</literal>来得到
+            的。如果你想改变这个数量，可以设置传输层配置参数<literal>nio-remoting-threads</literal>。
+            参见<xref linkend="configuring-transports"/>。</para>
         <para>另外在其它一些地方直接使用了线程，没有用线程池。我们将对这些线程作出解释。</para>
         <section id="server.scheduled.thread.pool">
             <title>服务器端可计划线程池</title>
@@ -47,7 +54,7 @@
                 处于忙的状态并且线程数已经达到n时，任何新的请求都将被阻塞直到有线程空闲为止。在设置线程上限时，我们建议
                 要非常谨慎。因为如何线程数量过低会造成死锁情况的发生。</para>
             <para><literal>thread-pool-max-size</literal>的默认值是<literal
-                    >-1</literal>，即线程池没有上限。</para>
+                    >30</literal>。</para>
             <para>参见<ulink
                     url="http://java.sun.com/j2se/1.5.0/docs/api/java/util/concurrent/ThreadPoolExecutor.html"
                     >J2SE javadoc</ulink>有关无边界（缓存）和有边界（固定）线程池的解释。</para>

@@ -745,6 +745,45 @@ private ConnectionFactory connectionFactory;</programlisting>
                       </tgroup>
                    </table>
         </section>
+       <section>
+          <title>配置适配器访问单独的HornetQ服务器</title>
+          <para>在有的情况下，消息服务器与应用服务器运行在不同的机器上。</para>
+          <para>这时你需要同时配置内部和外部适配器。</para>
+          <para>为了使MDB能接收远程HornetQ服务器的消息，你需要配置ra.xml文件。这个文件的位置是<literal>deploy/hornet-ra.rar/META-INF</literal>。你需要配置一个netty连接器（不是invm连接器）及其传输参数。下面是一个配置的例子：</para>
+          <programlisting>
+            &lt;resourceadapter-class&gt;org.hornetq.ra.HornetQResourceAdapter&lt;/resourceadapter-class&gt;
+              &lt;config-property&gt;
+                 &lt;description&gt;The transport type&lt;/description&gt;
+                 &lt;config-property-name&gt;ConnectorClassName&lt;/config-property-name&gt;
+                 &lt;config-property-type&gt;java.lang.String&lt;/config-property-type&gt;
+                 &lt;config-property-value&gt;org.hornetq.core.remoting.impl.netty.NettyConnectorFactory&lt;/config-property-value&gt;
+              &lt;/config-property&gt;
+              &lt;config-property&gt;
+                 &lt;description&gt;The transport configuration. These values must be in the form of key=val;key=val;&lt;/description&gt;
+                 &lt;config-property-name&gt;ConnectionParameters&lt;/config-property-name&gt;
+                 &lt;config-property-type&gt;java.lang.String&lt;/config-property-type&gt;
+                 &lt;config-property-value&gt;host=127.0.0.1;port=5446&lt;/config-property-value&gt;
+              &lt;/config-property>
+          </programlisting>
+          <para>上面的配置中，适配器连接到一个运行在本机上端口为5446的服务器。</para>
+          <para>同时你还需要配置外部的连接，也连接到这个服务器。这需要配置<literal>deploy/hornetq.sar</literal>
+             下的jms-ds.xml文件，或者创建一个新的配置文件，文件名必须以-ds.xml结尾。</para>
+          <para>下面是一个配置的例子。</para>
+          <programlisting>
+             &lt;tx-connection-factory&gt;
+              &lt;jndi-name&gt;RemoteJmsXA&lt;/jndi-name&gt;
+              &lt;xa-transaction/&gt;
+              &lt;rar-name&gt;hornetq-ra.rar&lt;/rar-name&gt;
+              &lt;connection-definition&gt;org.hornetq.ra.HornetQRAConnectionFactory&lt;/connection-definition&gt;
+              &lt;config-property name="SessionDefaultType" type="java.lang.String"&gt;javax.jms.Topic&lt;/config-property&gt;
+              &lt;config-property name="ConnectorClassName" type="java.lang.String"&gt;org.hornetq.core.remoting.impl.netty.NettyConnectorFactory&lt;/config-property&gt;
+              &lt;config-property name="ConnectionParameters" type="java.lang.String"&gt;host=127.0.0.1;port=5446&lt;/config-property&gt;
+              &lt;max-pool-size&gt;20&lt;/max-pool-size&gt;
+           &lt;/tx-connection-factory&gt;
+          </programlisting>
+          <para>这个配置同样是连接到运行在本机上的端口为5446的HornetQ服务器。JEE模块可以通过JNDI查找
+                <literal>java:/RemoteJmsXA</literal>来使用外部的服务了。</para>
+       </section>
     </section>
     <section>
         <title>高可获得性JNDI (HA-JNDI)</title>

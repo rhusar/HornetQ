@@ -139,6 +139,7 @@
               的发送，以防止服务器由于消息过多而耗尽内存。</para>
         <para>随着服务器的内存被释放，发送者自动解除阻塞，继续发送消息。</para>
         <para>这种方式需要将<literal>address-full-policy</literal>设为<literal>BLOCK</literal>。</para>
+        <para>在默认的配置中，所有的地址在消息的量达到10MiB后将阻塞发送者。</para>
     </section>
     <section>
         <title>对于有多个队列绑定的地址的配置注意事项</title>

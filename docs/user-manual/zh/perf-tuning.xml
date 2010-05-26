@@ -80,6 +80,10 @@
                 <para>避免持久化消息。默认情况下JMS消息是持久的。如果你不需要持久消息，则将其设定为非持久。
                     持久消息都会被写到磁盘中，这给系统带来了明显的负担。</para>
             </listitem>
+            <listitem>
+                <para>将多个发送或通知放到一个事务中完成。这样HornetQ只需要一次网络的往返来发生事务的提交，而不是每次发送
+                    或通知就需要一次网络的往返通迅。</para>
+            </listitem>
         </itemizedlist>
     </section>
     <section>
@@ -159,6 +163,15 @@ serveruser     hard    nofile  20000
                 </programlisting>
                     它设置了用户<literal>serveruser</literal>可以最多打开20000个文件句柄。</para>
             </listitem>
+            <listitem>
+                <para>利用参数<literal>batch-delay</literal>并将参数<literal>direct-deliver</literal>
+                    设为false来提高小消息的处理效率。HornetQ在其<literal>hornetq-configuration.xml</literal>
+                    中预先配置了一个连接器／接受器对（<literal>netty-throughput</literal>），并且在
+                    <literal>hornetq-jms.xml</literal>中配置了一个JMS连接工厂（
+                    <literal>ThroughputConnectionFactory</literal>）。它们可以用在小消息的处理应用中以提
+                    供最佳呑吐量。参见<xref
+                        linkend="configuring-transports"/>。</para>
+            </listitem>
         </itemizedlist>
     </section>
     <section>
@@ -175,13 +188,6 @@ serveruser     hard    nofile  20000
                     <xref linkend="paging"/>中有说明）。但是如果所有队列都在内存运行，性能将会很好。具体需要
                     多少内存要由你的队列的大小和数量以及消息的大小和数量决定。使用JVM参数<literal>-Xms</literal>
                     和<literal>-Xmx</literal>来为你的服务器分配内存。我们建议两个参数的设为相同的值。</para>
-                <para>HornetQ可以定期地检测JVM的内存并报告是否可用内存低于指定的值。参考这个报告的值可以对JVM的内存
-                    及分页转存进行合理的设定。这个检测功能默认是关闭的。如要使用，需要配置
-                    <literal>hornetq-configuration.xml</literal>文件中的参数
-                    <literal>memory-measure-interval</literal>，它表示检测的频度（单位毫秒）。
-                    当可用内存低于指定的值时，在日志会输出一个警告。这个指定的内存值也在文件<literal
-                        >hornetq-configuration.xml</literal>中定义，参数名为<literal
-                        >memory-warning-threshold</literal>（默认值25%)。</para>
             </listitem>
             <listitem>
                 <para>主动选项（Aggressive options）。不同JVM有不同的JVM优化参数。对于Sun的Hotspot JVM，在<ulink
@@ -200,8 +206,9 @@ serveruser     hard    nofile  20000
                 <para>重用连接／会话／接收者／发送者。最常见的错误恐怕就是每发送／接收一个消息都要创建一个新的连接
                     ／会话／发送者或接收者。这样非常浪费资源。这些对象的创建要占用时间和网络带宽。它们应该进行重用。</para>
                 <note>
-                    <para>有些常用的框架如Spring JMS Template在使用JMS时违背了设计模式。如果你使用了它，性能
-                        就会受到影响。这不是HornetQ的原因！</para>
+                    <para>有些常用的框架如Spring JMS Template在使用JMS时违背了设计模式。如果你在使用了它后性能
+                        受到了影响。这不是HornetQ的原因！Spring的JMS模板只有与能缓存JMS会话的应用服务器一起使用
+                        才是安全的，并且只能是用于发送消息。使用它在应用服务器中同步接收消息是不安全的。</para>
                 </note>
             </listitem>
             <listitem>

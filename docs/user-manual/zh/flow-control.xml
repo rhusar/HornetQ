@@ -203,8 +203,10 @@
             <para>上面的例子将JMS队列"exampleQueue"的最大内存值设为
                100000 字节并且阻塞发送者以防止消息量超过这个值。</para>
             <para>注意必须设置 <literal>BLOCK</literal>的策略才能打开限定发送者窗口控制。</para>
-            <para>请注意默认的<literal>address-full-policy</literal> 是
-                  <literal>PAGE</literal>。请参阅分页转存（<xref linkend="paging" />）的相关章节作进一步的了解。</para>
+            <note><para>请注意默认的配置下当一个地址中的消息量达到10MiB时，其所有的消息发送者将变为阻塞状态，也就是说
+                  在没有接收的情况下你不能向一个地址不阻塞地一次发送超过10MiB的消息。要想增加这个限制，可以加大
+                  <literal>max-size-bytes</literal>参数的值，或者调整地址的消息容量限制。</para>
+            </note>
          </section>
       </section>
       <section>

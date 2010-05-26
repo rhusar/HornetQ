@@ -399,6 +399,10 @@
             <title>资源适配器的配置（JCA）</title>
             <para>本例展示了如何配置HornetQ的JCA适配器的各种参数。</para>
         </section>
+        <section>
+            <title>资源适配器运程服务器的配置</title>
+            <para>本例展示了如何配置HornetQ的JCA适配器来与远程的HornetQ服务器通迅。</para>
+        </section>
         <section id="examples.javaee.jms-bridge">
             <title>JMS 桥（Bridge）</title>
             <para>本例展示了如何使用HornetQ的JMS bridge。</para>

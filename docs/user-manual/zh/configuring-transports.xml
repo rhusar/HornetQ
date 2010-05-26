@@ -152,14 +152,15 @@ etc
             <para>Netty TCP的所有连接都是从客户端发起的。服务器端不向客户端发起任何连接。在有防火墙的环境中，这种方式
                 是比较适合的。因为防火墙只允许单方向的连接。</para>
             <para>在<literal>org.hornetq.core.remoting.impl.netty.TransportConstants</literal>类中定义了所
-                有的配置参数的名称（key）。它们既用于配置接收器以用于配置连接器。下面列出的参数用以配置一个简单的Netty TCP：</para>
+                有的配置参数的名称（key）。它们当中绝大多娄既用于配置接收器也用于配置连接器，有一些只适用于接收器。
+                下面列出的参数用以配置一个简单的Netty TCP：</para>
             <itemizedlist>
                 <listitem>
                     <para><literal>use-nio</literal>。如果设为<literal>true</literal>则使用非阻塞的Java
                         NIO。如果<literal>false</literal>则使用传统的阻塞方式的Java IO。</para>
-                    <para>我们建议使用Java NIO。因为Java NIO不是为每一个连接分配一个线程，所以它要比传统的阻塞式
-                        Java IO具有更强的并发连接的处理能力。另外我们还建议使用Java 6的NIO以获得最佳性能。这个参
-                        数的默认值在服务器端是<literal>true</literal>，在客户端是<literal>false</literal>。
+                    <para>我们建议使用Java NIO处理并行连接。因为Java NIO不是为每一个连接分配一个线程，所以它要比传统的阻塞式
+                        Java IO具有更强的并发连接的处理能力。如果你不需要处理并发连接，那么使用旧的阻塞式的IO性能会好一些。这个参
+                        数的默认值在服务器端是<literal>false</literal>，在客户端是<literal>false</literal>。
                         </para>
                 </listitem>
                 <listitem>
@@ -199,6 +200,25 @@ etc
                 <listitem>
                     <para><literal>tcp-receive-buffer-size</literal>。这个参数指定了TCP接收缓冲的大小，单位是字节。
                         默认值是<literal>32768</literal>字节(32KiB)。</para>
+                </listitem>
+                <listitem>
+                    <para><literal>batch-delay</literal>。HornetQ可以通过配置该参数，在数据包写入传输层之前有一个
+                        最大延时（毫秒），达到批量写入的目的。这样可以提高小消息的发送效率。但这样做会增加单个消息的平均发送
+                        延迟。默认值为<literal>0</literal>毫秒。</para>
+                </listitem>
+                <listitem>
+                    <para><literal>direct-deliver</literal>。消息到达服务器后，默认是由一个不同的线程来将消息传递
+                        到接收者。这样可以使服务的呑吐量和可扩展性达到最佳，特别是在多核的系统上效果更为明显。但是线程切换
+                        会带来一些传递的延迟。如果你希望延迟最小，并不在意呑吐量的话，可以将参数<literal
+                            >direct-deliver</literal>设为true。默认值是<literal>true</literal>。如果你更希望有
+                        较大的呑吐量的话，将它设为<literal>false</literal>。</para>
+                </listitem>
+                <listitem>
+                    <para><literal>nio-remoting-threads</literal>。如果使用NIO，默认情况下HornetQ会使用系统中处理
+                        器内核（或超线程）数量三倍的线程来处理接收的数据包。内核的数量是通过调用<literal
+                            >Runtime.getRuntime().availableProcessors()</literal>来得到的。如果你想改变这个数量，
+                        你可以设定本参数。默认的值是<literal>-1</literal>，表示线程数为<literal
+                            >Runtime.getRuntime().availableProcessors()</literal> * 3。</para>
                 </listitem>
             </itemizedlist>
         </section>
