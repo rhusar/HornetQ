@@ -258,16 +258,15 @@ public interface Configuration extends Serializable
    void setConnectorConfigurations(Map<String, TransportConfiguration> infos);
 
    /**
-    * Returns the name of the connector used to connect to the backup.
-    * <br>
-    * If this server has no backup or is itself a backup, the value is {@code null}.
+    * Returns the name of the connector used to connect to the live node - only used when using shared nothing (shared store = false).
+    * <br> 
     */
-   String getBackupConnectorName();
+   String getLiveConnectorName();
 
    /**
-    * Sets the name of the connector used to connect to the backup.
+    * Sets the name of the connector used to connect to the live node - only used when using shared nothing (shared store = false).
     */
-   void setBackupConnectorName(String name);
+   void setLiveConnectorName(String name);
 
    /**
     * Returns the broadcast groups configured for this server.

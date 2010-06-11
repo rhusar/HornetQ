@@ -100,8 +100,6 @@ public class JournalStorageManager implements StorageManager
 
    public static final byte QUEUE_BINDING_RECORD = 21;
 
-   public static final byte PERSISTENT_ID_RECORD = 23;
-
    public static final byte ID_COUNTER_RECORD = 24;
 
    public static final byte ADDRESS_SETTING_RECORD = 25;
@@ -132,8 +130,6 @@ public class JournalStorageManager implements StorageManager
    public static final byte DUPLICATE_ID = 37;
 
    public static final byte HEURISTIC_COMPLETION = 38;
-
-   private UUID persistentID;
 
    private final BatchingIDGenerator idGenerator;
 
@@ -261,14 +257,7 @@ public class JournalStorageManager implements StorageManager
          throw new IllegalArgumentException("Unsupported journal type " + config.getJournalType());
       }
 
-      if (config.isBackup())
-      {
-         idGenerator = null;
-      }
-      else
-      {
-         idGenerator = new BatchingIDGenerator(0, JournalStorageManager.CHECKPOINT_BATCH_SIZE, bindingsJournal);
-      }
+      idGenerator = new BatchingIDGenerator(0, JournalStorageManager.CHECKPOINT_BATCH_SIZE, bindingsJournal);      
 
       Journal localMessage = new JournalImpl(config.getJournalFileSize(),
                                              config.getJournalMinFiles(),
@@ -391,26 +380,6 @@ public class JournalStorageManager implements StorageManager
    public void afterCompleteOperations(final IOAsyncTask run)
    {
       getContext().executeOnCompletion(run);
-   }
-
-   public UUID getPersistentID()
-   {
-      return persistentID;
-   }
-
-   public void setPersistentID(final UUID id) throws Exception
-   {
-      long recordID = generateUniqueID();
-
-      if (id != null)
-      {
-         bindingsJournal.appendAddRecord(recordID,
-                                         JournalStorageManager.PERSISTENT_ID_RECORD,
-                                         new PersistentIDEncoding(id),
-                                         true);
-      }
-
-      persistentID = id;
    }
 
    public long generateUniqueID()
@@ -1079,14 +1048,6 @@ public class JournalStorageManager implements StorageManager
 
             queueBindingInfos.add(bindingEncoding);
          }
-         else if (rec == JournalStorageManager.PERSISTENT_ID_RECORD)
-         {
-            PersistentIDEncoding encoding = new PersistentIDEncoding();
-
-            encoding.decode(buffer);
-
-            persistentID = encoding.uuid;
-         }
          else if (rec == JournalStorageManager.ID_COUNTER_RECORD)
          {
             idGenerator.loadState(record.id, buffer);
@@ -1154,16 +1115,11 @@ public class JournalStorageManager implements StorageManager
       }
 
       // Must call close to make sure last id is persisted
-      if (idGenerator != null)
-      {
-         idGenerator.close();
-      }
+      idGenerator.close();      
 
       bindingsJournal.stop();
 
       messageJournal.stop();
-
-      persistentID = null;
 
       started = false;
    }

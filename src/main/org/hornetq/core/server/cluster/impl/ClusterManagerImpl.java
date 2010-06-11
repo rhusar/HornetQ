@@ -44,8 +44,11 @@ import org.hornetq.core.server.cluster.Bridge;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.ClusterManager;
+import org.hornetq.core.server.cluster.ClusterTopologyListener;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.core.server.management.ManagementService;
+import org.hornetq.utils.ConcurrentHashSet;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.UUID;
 
 /**
@@ -67,9 +70,9 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final Map<String, Bridge> bridges = new HashMap<String, Bridge>();
 
-   private final Map<String, ClusterConnection> clusters = new HashMap<String, ClusterConnection>();
+   private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
 
-   private final org.hornetq.utils.ExecutorFactory executorFactory;
+   private final ExecutorFactory executorFactory;
 
    private final HornetQServer server;
 
@@ -89,7 +92,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final boolean clustered;
 
-   public ClusterManagerImpl(final org.hornetq.utils.ExecutorFactory executorFactory,
+   public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
                              final PostOffice postOffice,
                              final ScheduledExecutorService scheduledExecutor,
@@ -177,7 +180,7 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterDiscoveryGroup(group.getName());
          }
 
-         for (ClusterConnection clusterConnection : clusters.values())
+         for (ClusterConnection clusterConnection : clusterConnections.values())
          {
             clusterConnection.stop();
             managementService.unregisterCluster(clusterConnection.getName().toString());
@@ -211,7 +214,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public Set<ClusterConnection> getClusterConnections()
    {
-      return new HashSet<ClusterConnection>(clusters.values());
+      return new HashSet<ClusterConnection>(clusterConnections.values());
    }
 
    public Set<BroadcastGroup> getBroadcastGroups()
@@ -221,7 +224,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public ClusterConnection getClusterConnection(final SimpleString name)
    {
-      return clusters.get(name.toString());
+      return clusterConnections.get(name.toString());
    }
 
    public synchronized void activate()
@@ -236,12 +239,41 @@ public class ClusterManagerImpl implements ClusterManager
          bridge.activate();
       }
 
-      for (ClusterConnection cc : clusters.values())
+      for (ClusterConnection cc : clusterConnections.values())
       {
          cc.activate();
       }
 
       backup = false;
+   }
+   
+   public void startAnnouncement()
+   {
+      
+   }
+   
+   public void stopAnnouncement()
+   {
+      
+   }
+   
+   private Set<ClusterTopologyListener> listeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   
+   private List<Pair<TransportConfiguration, TransportConfiguration>> topology;
+   
+   public List<Pair<TransportConfiguration, TransportConfiguration>> getClusterTopology()
+   {
+      return topology;
+   }
+   
+   public void registerTopologyListener(final ClusterTopologyListener listener)
+   {
+      listeners.add(listener);
+   }
+   
+   public void unregisterTopologyListener(final ClusterTopologyListener listener)
+   {
+      listeners.remove(listener);
    }
 
    private synchronized void deployBroadcastGroup(final BroadcastGroupConfiguration config) throws Exception
@@ -270,32 +302,18 @@ public class ClusterManagerImpl implements ClusterManager
                                                         config.getGroupPort(),
                                                         !backup);
 
-      for (Pair<String, String> connectorInfo : config.getConnectorInfos())
+      for (String connectorInfo : config.getConnectorInfos())
       {
-         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorInfo.a);
+         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorInfo);
 
          if (connector == null)
          {
-            logWarnNoConnector(config.getName(), connectorInfo.a);
+            logWarnNoConnector(config.getName(), connectorInfo);
 
             return;
          }
 
-         TransportConfiguration backupConnector = null;
-
-         if (connectorInfo.b != null)
-         {
-            backupConnector = configuration.getConnectorConfigurations().get(connectorInfo.b);
-
-            if (connector == null)
-            {
-               logWarnNoConnector(config.getName(), connectorInfo.b);
-
-               return;
-            }
-         }
-
-         group.addConnectorPair(new Pair<TransportConfiguration, TransportConfiguration>(connector, backupConnector));
+         group.addConnector(connector);
       }
 
       ScheduledFuture<?> future = scheduledExecutor.scheduleWithFixedDelay(group,
@@ -607,7 +625,7 @@ public class ClusterManagerImpl implements ClusterManager
 
       managementService.registerCluster(clusterConnection, config);
 
-      clusters.put(config.getName(), clusterConnection);
+      clusterConnections.put(config.getName(), clusterConnection);
 
       clusterConnection.start();
    }

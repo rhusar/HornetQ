@@ -506,9 +506,9 @@ public class DelegatingSession implements ClientSessionInternal
       session.stop();
    }
 
-   public FailoverManager getConnectionManager()
+   public ClientSessionFactoryInternal getSessionFactory()
    {
-      return session.getConnectionManager();
+      return session.getSessionFactory();
    }
 
    public void setForceNotSameRM(final boolean force)

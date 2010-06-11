@@ -67,7 +67,7 @@ import org.hornetq.utils.VersionLoader;
  * Created 27 Nov 2008 18:46:06
  *
  */
-public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycleListener
+public class FailoverManagerImpl_Old implements FailoverManager, ConnectionLifeCycleListener
 {
    // Constants
    // ------------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
    // Constructors
    // ---------------------------------------------------------------------------------
 
-   public FailoverManagerImpl(final ClientSessionFactory sessionFactory,
+   public FailoverManagerImpl_Old(final ClientSessionFactory sessionFactory,
                               final TransportConfiguration connectorConfig,
                               final TransportConfiguration backupConfig,
                               final boolean failoverOnServerShutdown,

@@ -319,6 +319,22 @@ Copyright 2009 Red Hat, Inc.
       <ant antfile="build-hornetq.xml" target="runServer"/>
    </target>
 
+   <target name="runLive" depends="createthirdparty">
+      <ant antfile="build-hornetq.xml" target="runLive"/>
+   </target>
+
+   <target name="runBackup1" depends="createthirdparty">
+      <ant antfile="build-hornetq.xml" target="runBackup1"/>
+   </target>
+
+   <target name="runBackup2" depends="createthirdparty">
+      <ant antfile="build-hornetq.xml" target="runBackup2"/>
+   </target>
+
+   <target name="runBackup3" depends="createthirdparty">
+      <ant antfile="build-hornetq.xml" target="runBackup3"/>
+   </target>
+
    <target name="runClusteredServer" depends="createthirdparty">
       <ant antfile="build-hornetq.xml" target="runClusteredServer"/>
    </target>

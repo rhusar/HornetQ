@@ -13,6 +13,13 @@
 
 package org.hornetq.core.server.impl;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -40,8 +47,6 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.client.impl.FailoverManager;
-import org.hornetq.core.client.impl.FailoverManagerImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.CoreQueueConfiguration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -80,8 +85,6 @@ import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.replication.ReplicationManager;
-import org.hornetq.core.replication.impl.ReplicationEndpointImpl;
-import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.security.SecurityStore;
@@ -94,8 +97,10 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.cluster.ClusterManager;
+import org.hornetq.core.server.cluster.LockFile;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
+import org.hornetq.core.server.cluster.impl.LockFileImpl;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
@@ -274,6 +279,329 @@ public class HornetQServerImpl implements HornetQServer
    // lifecycle methods
    // ----------------------------------------------------------------
 
+   private interface Activation extends Runnable
+   {
+      void close() throws Exception;
+   }
+
+   /*
+    * Can be overridden for tests
+    */
+   protected LockFile createLockFile(final String fileName, final String directory)
+   {
+      return new LockFileImpl(fileName, directory);
+   }
+
+   private class SharedStoreLiveActivation implements Activation
+   {
+      LockFile liveLock;
+
+      public void run()
+      {
+         try
+         {
+            log.info("Waiting to obtain live lock");
+
+            File journalDir = new File(configuration.getJournalDirectory());
+
+            if (!journalDir.exists())
+            {
+               if (configuration.isCreateJournalDir())
+               {
+                  journalDir.mkdirs();
+               }
+               else
+               {
+                  throw new IllegalArgumentException("Directory " + journalDir +
+                                                     " does not exist and will not create it");
+               }
+            }
+
+            liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
+
+            liveLock.lock();
+
+            log.info("Obtained live lock");
+
+            // We now load the node id file, creating it, if it doesn't exist yet
+            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
+
+            if (!nodeIDFile.exists())
+            {
+               // We use another file lock to prevent a backup reading it before it is complete
+
+               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
+
+               nodeIDLockFile.lock();
+
+               OutputStream os = null;
+
+               try
+               {
+                  os = new BufferedOutputStream(new FileOutputStream(nodeIDFile));
+
+                  uuid = UUIDGenerator.getInstance().generateUUID();
+
+                  nodeID = new SimpleString(uuid.toString());
+
+                  os.write(uuid.asBytes());
+
+                  log.info("Wrote node id, it is " + nodeID);
+               }
+               finally
+               {
+                  if (os != null)
+                  {
+                     os.close();
+                  }
+               }
+
+               nodeIDLockFile.unlock();
+            }
+            else
+            {
+               // Read it
+
+               readNodeID(nodeIDFile);
+            }
+
+            initialisePart1();
+
+            initialisePart2();
+
+            log.info("Server is now live");
+         }
+         catch (Exception e)
+         {
+            log.error("Failure in initialisation", e);
+         }
+      }
+
+      public void close() throws Exception
+      {
+         if (liveLock != null)
+         {
+            // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
+            // started before the live
+
+            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
+
+            liveFile.delete();
+
+            liveLock.unlock();
+
+         }
+      }
+   }
+
+   private void readNodeID(final File nodeIDFile) throws Exception
+   {
+      // Read it
+      InputStream is = null;
+
+      try
+      {
+         is = new BufferedInputStream(new FileInputStream(nodeIDFile));
+
+         byte[] bytes = new byte[16];
+
+         int read = 0;
+
+         while (read < 16)
+         {
+            int r = is.read(bytes, read, 16 - read);
+
+            if (r <= 0)
+            {
+               throw new IllegalStateException("Cannot read node id file, perhaps it is corrupt?");
+            }
+
+            read += r;
+         }
+
+         uuid = new UUID(UUID.TYPE_TIME_BASED, bytes);
+
+         nodeID = new SimpleString(uuid.toString());
+
+         log.info("Read node id, it is " + nodeID);
+      }
+      finally
+      {
+         if (is != null)
+         {
+            is.close();
+         }
+      }
+   }
+
+   private class SharedStoreBackupActivation implements Activation
+   {
+      LockFile backupLock;
+
+      LockFile liveLock;
+
+      public void run()
+      {
+         try
+         {
+            backupLock = createLockFile("backup.lock", configuration.getJournalDirectory());
+
+            log.info("Waiting to become backup node");
+
+            backupLock.lock();
+
+            log.info("** got backup lock");
+
+            // We load the node id from the file in the journal dir - if the backup is started before live and live has
+            // never been started before it may not exist yet, so
+            // we wait for it
+
+            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
+
+            while (true)
+            {
+               // We also need to create another lock file for the node.id file since we don't want to see any partially
+               // written
+               // node id if the live node is still creating it.
+               // Also renaming is not atomic necessarily so we can't use a write and rename strategy safely
+
+               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
+
+               nodeIDLockFile.lock();
+
+               if (!nodeIDFile.exists())
+               {
+                  nodeIDLockFile.unlock();
+
+                  Thread.sleep(2000);
+
+                  continue;
+               }
+
+               nodeIDLockFile.unlock();
+
+               break;
+            }
+
+            readNodeID(nodeIDFile);
+
+            log.info("Read node id " + nodeID);
+
+            initialisePart1();
+
+            // TODO - now send announcement message to cluster
+
+            // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
+            // for that
+            
+            clusterManager.startAnnouncement();
+
+            while (true)
+            {
+               File liveLockFile = new File(configuration.getJournalDirectory(), "live.lock");
+
+               while (!liveLockFile.exists())
+               {
+                  log.info("Waiting for server live lock file. Live server is not started");
+
+                  Thread.sleep(2000);
+               }
+
+               liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
+
+               log.info("Live server is up - waiting for failover");
+
+               liveLock.lock();
+
+               // We need to test if the file exists again, since the live might have shutdown
+               if (!liveLockFile.exists())
+               {
+                  liveLock.unlock();
+
+                  continue;
+               }
+
+               log.info("Obtained live lock");
+
+               break;
+            }
+            
+            configuration.setBackup(false);
+
+            initialisePart2();
+
+            log.info("Server is now live");
+
+            backupLock.unlock();
+         }
+         catch (InterruptedException e)
+         {
+            // This can occur when closing if the thread is blocked - it's ok
+         }
+         catch (Exception e)
+         {
+            log.error("Failure in initialisation", e);
+         }
+      }
+
+      public void close() throws Exception
+      {
+         long timeout = 30000;
+
+         long start = System.currentTimeMillis();
+
+         while (backupActivationThread.isAlive() && System.currentTimeMillis() - start < timeout)
+         {
+            backupActivationThread.interrupt();
+
+            Thread.sleep(1000);
+         }
+
+         if (System.currentTimeMillis() - start >= timeout)
+         {
+            log.warn("Timed out waiting for backup activation to exit");
+         }
+
+         if (liveLock != null)
+         {
+            liveLock.unlock();
+         }
+
+         if (backupLock != null)
+         {
+            backupLock.unlock();
+         }
+
+      }
+   }
+
+   private class SharedNothingBackupActivation implements Activation
+   {
+      public void run()
+      {
+         try
+         {
+            // TODO
+
+            // Try-Connect to live server using live-connector-ref
+
+            // sit in loop and try and connect, if server is not live then it will return NOT_LIVE
+         }
+         catch (Exception e)
+         {
+            log.error("Failure in initialisation", e);
+         }
+      }
+
+      public void close() throws Exception
+      {
+      }
+   }
+
+   private Thread backupActivationThread;
+
+   private Activation activation;
+
    public synchronized void start() throws Exception
    {
       initialiseLogging();
@@ -293,30 +621,66 @@ public class HornetQServerImpl implements HornetQServer
          test.run();
       }
 
-      initialisePart1();
-
-      if (configuration.isBackup())
+      if (!configuration.isBackup())
       {
-         if (!configuration.isSharedStore())
+         if (configuration.isSharedStore())
          {
-            replicationEndpoint = new ReplicationEndpointImpl(this);
-            replicationEndpoint.start();
-         }
-         // We defer actually initialisation until the live node has contacted the backup
-         HornetQServerImpl.log.info("Backup server initialised");
-      }
-      else
-      {
-         initialisePart2();
-      }
+            activation = new SharedStoreLiveActivation();
 
-      // We start the remoting service here - if the server is a backup remoting service needs to be started
-      // so it can be initialised by the live node
-      remotingService.start();
+            // This should block until the lock is got
+
+            activation.run();
+         }
+      }
 
       started = true;
 
       HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " started");
+
+      if (configuration.isBackup())
+      {
+         if (configuration.isSharedStore())
+         {
+            activation = new SharedStoreBackupActivation();
+         }
+         else
+         {
+            // Replicated
+
+            activation = new SharedNothingBackupActivation();
+         }
+
+         backupActivationThread = new Thread(activation);
+
+         backupActivationThread.start();
+      }
+
+      // initialisePart1();
+      //
+      // if (configuration.isBackup())
+      // {
+      // if (!configuration.isSharedStore())
+      // {
+      // replicationEndpoint = new ReplicationEndpointImpl(this);
+      // replicationEndpoint.start();
+      // }
+      // else
+      // {
+      // backupLock = new FailoverLockFileImpl("backup.lock", configuration.getJournalDirectory());
+      // liveLock = new FailoverLockFileImpl("live.lock", configuration.getJournalDirectory());
+      // }
+      //         
+      // // We defer actually initialisation until the live node has contacted the backup
+      // //HornetQServerImpl.log.info("Backup server initialised");
+      // }
+      // else
+      // {
+      // initialisePart2();
+      // }
+      //
+      //      
+      // remotingService.start();
+
    }
 
    @Override
@@ -334,6 +698,10 @@ public class HornetQServerImpl implements HornetQServer
 
    public void stop() throws Exception
    {
+      System.out.println("*** stop called on server");
+
+      System.out.flush();
+
       synchronized (this)
       {
          if (!started)
@@ -351,12 +719,6 @@ public class HornetQServerImpl implements HornetQServer
             managementService.removeNotificationListener(groupingHandler);
             groupingHandler = null;
          }
-         // // Need to flush all sessions to make sure all confirmations get sent back to client
-         //
-         // for (ServerSession session : sessions.values())
-         // {
-         // session.getChannel().flushConfirmations();
-         // }
       }
 
       // we stop the remoting service outside a lock
@@ -459,8 +821,18 @@ public class HornetQServerImpl implements HornetQServer
 
          started = false;
          initialised = false;
-         uuid = null;
+         // uuid = null;
          nodeID = null;
+
+         if (activation != null)
+         {
+            activation.close();
+         }
+
+         if (backupActivationThread != null)
+         {
+            backupActivationThread.join();
+         }
 
          HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " stopped");
 
@@ -584,8 +956,8 @@ public class HornetQServerImpl implements HornetQServer
                                                               managementService,
                                                               this,
                                                               configuration.getManagementAddress(),
-                                                              defaultAddress == null ? null : 
-                                                                 new SimpleString(defaultAddress),
+                                                              defaultAddress == null ? null
+                                                                                    : new SimpleString(defaultAddress),
                                                               callback);
 
       sessions.put(name, session);
@@ -685,6 +1057,8 @@ public class HornetQServerImpl implements HornetQServer
                             final boolean durable,
                             final boolean temporary) throws Exception
    {
+      log.info("trying to deploy queue " + queueName);
+
       return createQueue(address, queueName, filterString, durable, temporary, true);
    }
 
@@ -760,7 +1134,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       return replicationEndpoint;
    }
-   
+
    public ReplicationManager getReplicationManager()
    {
       return replicationManager;
@@ -793,7 +1167,7 @@ public class HornetQServerImpl implements HornetQServer
                                      0,
                                      1.0d,
                                      0,
-                                     1, 
+                                     1,
                                      false,
                                      threadPool,
                                      scheduledPool,
@@ -827,33 +1201,33 @@ public class HornetQServerImpl implements HornetQServer
    // Private
    // --------------------------------------------------------------------------------------
 
-   private boolean startReplication() throws Exception
-   {
-      String backupConnectorName = configuration.getBackupConnectorName();
-
-      if (!configuration.isSharedStore() && backupConnectorName != null)
-      {
-         TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
-
-         if (backupConnector == null)
-         {
-            HornetQServerImpl.log.warn("connector with name '" + backupConnectorName +
-                                       "' is not defined in the configuration.");
-         }
-         else
-         {
-
-            replicationFailoverManager = createBackupConnectionFailoverManager(backupConnector,
-                                                                               threadPool,
-                                                                               scheduledPool);
-
-            replicationManager = new ReplicationManagerImpl(replicationFailoverManager, executorFactory);
-            replicationManager.start();
-         }
-      }
-
-      return true;
-   }
+   // private boolean startReplication() throws Exception
+   // {
+   // String backupConnectorName = configuration.getBackupConnectorName();
+   //
+   // if (!configuration.isSharedStore() && backupConnectorName != null)
+   // {
+   // TransportConfiguration backupConnector = configuration.getConnectorConfigurations().get(backupConnectorName);
+   //
+   // if (backupConnector == null)
+   // {
+   // HornetQServerImpl.log.warn("connector with name '" + backupConnectorName +
+   // "' is not defined in the configuration.");
+   // }
+   // else
+   // {
+   //
+   // replicationFailoverManager = createBackupConnectionFailoverManager(backupConnector,
+   // threadPool,
+   // scheduledPool);
+   //
+   // replicationManager = new ReplicationManagerImpl(replicationFailoverManager, executorFactory);
+   // replicationManager.start();
+   // }
+   // }
+   //
+   // return true;
+   // }
 
    private void callActivateCallbacks()
    {
@@ -862,7 +1236,6 @@ public class HornetQServerImpl implements HornetQServer
          callback.activated();
       }
    }
-
 
    private void callPreActiveCallbacks()
    {
@@ -902,11 +1275,31 @@ public class HornetQServerImpl implements HornetQServer
       return true;
    }
 
+   private class FileActivateRunner implements Runnable
+   {
+      public void run()
+      {
+
+      }
+   }
+
+   private void initialiseLogging()
+   {
+      LogDelegateFactory logDelegateFactory = (LogDelegateFactory)instantiateInstance(configuration.getLogDelegateFactoryClassName());
+
+      Logger.setDelegateFactory(logDelegateFactory);
+   }
+
+   /*
+    * Start everything apart from RemotingService and loading the data
+    */
    private void initialisePart1() throws Exception
    {
       // Create the pools - we have two pools - one for non scheduled - and another for scheduled
 
-      ThreadFactory tFactory = new HornetQThreadFactory("HornetQ-server-threads" + System.identityHashCode(this), false, getThisClassLoader());
+      ThreadFactory tFactory = new HornetQThreadFactory("HornetQ-server-threads" + System.identityHashCode(this),
+                                                        false,
+                                                        getThisClassLoader());
 
       if (configuration.getThreadPoolMaxSize() == -1)
       {
@@ -920,7 +1313,9 @@ public class HornetQServerImpl implements HornetQServer
       executorFactory = new OrderedExecutorFactory(threadPool);
 
       scheduledPool = new ScheduledThreadPoolExecutor(configuration.getScheduledThreadPoolMaxSize(),
-                                                      new HornetQThreadFactory("HornetQ-scheduled-threads", false, getThisClassLoader()));
+                                                      new HornetQThreadFactory("HornetQ-scheduled-threads",
+                                                                               false,
+                                                                               getThisClassLoader()));
 
       managementService = new ManagementServiceImpl(mbeanServer, configuration);
 
@@ -933,27 +1328,17 @@ public class HornetQServerImpl implements HornetQServer
 
          memoryManager.start();
       }
-   }
 
-   private void initialiseLogging()
-   {
-      LogDelegateFactory logDelegateFactory = (LogDelegateFactory)instantiateInstance(configuration.getLogDelegateFactoryClassName());
-
-      Logger.setDelegateFactory(logDelegateFactory);
-   }
-
-   private void initialisePart2() throws Exception
-   {
       // Create the hard-wired components
 
       if (configuration.isFileDeploymentEnabled())
       {
          deploymentManager = new FileDeploymentManager(configuration.getFileDeployerScanPeriod());
       }
-      
+
       callPreActiveCallbacks();
 
-      startReplication();
+      // startReplication();
 
       storageManager = createStorageManager();
 
@@ -1049,32 +1434,8 @@ public class HornetQServerImpl implements HornetQServer
       {
          deploySecurityFromConfiguration();
       }
-      
+
       deployGroupingHandlerConfiguration(configuration.getGroupingHandlerConfiguration());
-
-      // Load the journal and populate queues, transactions and caches in memory
-      JournalLoadInformation[] journalInfo = loadJournals();
-
-      compareJournals(journalInfo);
-
-      // Deploy any predefined queues
-      if (configuration.isFileDeploymentEnabled())
-      {
-         queueDeployer = new QueueDeployer(deploymentManager, this);
-
-         queueDeployer.start();
-      }
-      else
-      {
-         deployQueuesFromConfiguration();
-      }
-
-      // We need to call this here, this gives any dependent server a chance to deploy its own addresses
-      // this needs to be done before clustering is initialised
-      callActivateCallbacks();
-
-      // Deply any pre-defined diverts
-      deployDiverts();
 
       // This can't be created until node id is set
       clusterManager = new ClusterManagerImpl(executorFactory,
@@ -1087,12 +1448,18 @@ public class HornetQServerImpl implements HornetQServer
                                               configuration.isBackup(),
                                               configuration.isClustered());
 
-      clusterManager.start();
+   }
 
-      if (deploymentManager != null)
-      {
-         deploymentManager.start();
-      }
+   /*
+    * Load the data, and start remoting service so clients can connect
+    */
+   private void initialisePart2() throws Exception
+   {
+      // Load the journal and populate queues, transactions and caches in memory
+
+      JournalLoadInformation[] journalInfo = loadJournals();
+
+      compareJournals(journalInfo);
 
       pagingManager.resumeDepages();
 
@@ -1111,7 +1478,40 @@ public class HornetQServerImpl implements HornetQServer
          }, 0, dumpInfoInterval, TimeUnit.MILLISECONDS);
       }
 
+      // Deploy the rest of the stuff
+
+      // Deploy any predefined queues
+      if (configuration.isFileDeploymentEnabled())
+      {
+         queueDeployer = new QueueDeployer(deploymentManager, this);
+
+         queueDeployer.start();
+      }
+      else
+      {
+         deployQueuesFromConfiguration();
+      }
+
+      // We need to call this here, this gives any dependent server a chance to deploy its own addresses
+      // this needs to be done before clustering is fully activated
+      callActivateCallbacks();
+
+      // Deply any pre-defined diverts
+      deployDiverts();
+
+      if (deploymentManager != null)
+      {
+         deploymentManager.start();
+      }
+
+      clusterManager.start();
+
       initialised = true;
+
+      // We do this at the end - we don't want things like MDBs or other connections connecting to a backup server until
+      // it is activated
+
+      remotingService.start();
    }
 
    /**
@@ -1164,9 +1564,6 @@ public class HornetQServerImpl implements HornetQServer
       journalInfo[0] = storageManager.loadBindingJournal(queueBindingInfos, groupingInfos);
 
       recoverStoredConfigs();
-
-      // Set the node id - must be before we load the queues into the postoffice, but after we load the journal
-      setNodeID();
 
       Map<Long, Queue> queues = new HashMap<Long, Queue>();
 
@@ -1248,42 +1645,6 @@ public class HornetQServerImpl implements HornetQServer
                                                                roleItem.getManageRoles());
 
          securityRepository.addMatch(roleItem.getAddressMatch().toString(), setRoles);
-      }
-   }
-
-   private void setNodeID() throws Exception
-   {
-      if (!configuration.isBackup())
-      {
-         if (uuid == null)
-         {
-            uuid = storageManager.getPersistentID();
-
-            if (uuid == null)
-            {
-               uuid = UUIDGenerator.getInstance().generateUUID();
-
-               storageManager.setPersistentID(uuid);
-            }
-
-            nodeID = new SimpleString(uuid.toString());
-         }
-      }
-      else
-      {
-         UUID currentUUID = storageManager.getPersistentID();
-
-         if (currentUUID != null)
-         {
-            if (!currentUUID.equals(uuid))
-            {
-               throw new IllegalStateException("Backup server already has an id but it's not the same as live");
-            }
-         }
-         else
-         {
-            storageManager.setPersistentID(uuid);
-         }
       }
    }
 
@@ -1445,19 +1806,18 @@ public class HornetQServerImpl implements HornetQServer
          throw new IllegalArgumentException("Error instantiating class \"" + className + "\"", e);
       }
    }
-   
+
    private static ClassLoader getThisClassLoader()
    {
       return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>()
-                                    {
-                                       public ClassLoader run()
-                                       {
-                                          return ClientSessionFactoryImpl.class.getClassLoader();
-                                       }
-                                    });
-      
+      {
+         public ClassLoader run()
+         {
+            return ClientSessionFactoryImpl.class.getClassLoader();
+         }
+      });
+
    }
-   
 
    // Inner classes
    // --------------------------------------------------------------------------------

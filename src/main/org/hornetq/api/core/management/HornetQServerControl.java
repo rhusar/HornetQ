@@ -29,11 +29,11 @@ public interface HornetQServerControl
    // Attributes ----------------------------------------------------
 
    /**
-    * Returns the name of the connector used to connect to the backup.
+    * Returns the name of the connector used to connect to the live.
     * <br>
-    * If this server has no backup or is itself a backup, the value is {@code null}.
+    * If this server is not a backup that uses shared nothing HA, it's value is null
     */
-   String getBackupConnectorName();
+   String getLiveConnectorName();
 
    /**
     * Returns this server's version.

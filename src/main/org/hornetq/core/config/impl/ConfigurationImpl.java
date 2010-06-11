@@ -225,7 +225,7 @@ public class ConfigurationImpl implements Configuration
 
    protected Set<TransportConfiguration> acceptorConfigs = new HashSet<TransportConfiguration>();
 
-   protected String backupConnectorName;
+   protected String liveConnectorName;
 
    protected List<BridgeConfiguration> bridgeConfigurations = new ArrayList<BridgeConfiguration>();
 
@@ -477,14 +477,14 @@ public class ConfigurationImpl implements Configuration
       connectorConfigs = infos;
    }
 
-   public String getBackupConnectorName()
+   public String getLiveConnectorName()
    {
-      return backupConnectorName;
+      return liveConnectorName;
    }
 
-   public void setBackupConnectorName(final String backupConnectorName)
+   public void setLiveConnectorName(final String liveConnectorName)
    {
-      this.backupConnectorName = backupConnectorName;
+      this.liveConnectorName = liveConnectorName;
    }
    
    public GroupingHandlerConfiguration getGroupingHandlerConfiguration()
@@ -1015,14 +1015,14 @@ public class ConfigurationImpl implements Configuration
       {
          return false;
       }
-      if (backupConnectorName == null)
+      if (liveConnectorName == null)
       {
-         if (other.backupConnectorName != null)
+         if (other.liveConnectorName != null)
          {
             return false;
          }
       }
-      else if (!backupConnectorName.equals(other.backupConnectorName))
+      else if (!liveConnectorName.equals(other.liveConnectorName))
       {
          return false;
       }

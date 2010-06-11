@@ -13,7 +13,6 @@
 
 package org.hornetq.core.persistence;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -82,11 +81,7 @@ public interface StorageManager extends HornetQComponent
    void waitOnOperations() throws Exception;
 
    void clearContext();
-
-   UUID getPersistentID();
-
-   void setPersistentID(UUID id) throws Exception;
-
+   
    long generateUniqueID();
 
    long getCurrentUniqueID();

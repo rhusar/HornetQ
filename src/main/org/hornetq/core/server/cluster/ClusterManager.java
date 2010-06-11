@@ -13,10 +13,13 @@
 
 package org.hornetq.core.server.cluster;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.server.HornetQComponent;
 
 /**
@@ -38,4 +41,14 @@ public interface ClusterManager extends HornetQComponent
    Set<BroadcastGroup> getBroadcastGroups();
 
    void activate();
+   
+   void startAnnouncement();
+   
+   void stopAnnouncement();
+   
+   List<Pair<TransportConfiguration, TransportConfiguration>> getClusterTopology();
+   
+   void registerTopologyListener(ClusterTopologyListener listener);
+   
+   void unregisterTopologyListener(ClusterTopologyListener listener);
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
@@ -71,7 +70,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
    private volatile boolean started;
 
    private final String nodeID;
-   
+
    private final InetAddress localBindAddress;
 
    private final InetAddress groupAddress;
@@ -94,7 +93,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       this.name = name;
 
       this.timeout = timeout;
-      
+
       this.localBindAddress = localBindAddress;
 
       this.groupAddress = groupAddress;
@@ -114,7 +113,8 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
          return;
       }
 
-      try {
+      try
+      {
          socket = new MulticastSocket(groupPort);
 
          if (localBindAddress != null)
@@ -129,10 +129,10 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       catch (IOException e)
       {
          log.error("Failed to create discovery group socket", e);
-         
+
          return;
       }
-      
+
       started = true;
 
       thread = new Thread(this, "hornetq-discovery-group-thread-" + name);
@@ -144,11 +144,11 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       if (notificationService != null)
       {
          TypedProperties props = new TypedProperties();
-         
+
          props.putSimpleStringProperty(new SimpleString("name"), new SimpleString(name));
-         
+
          Notification notification = new Notification(nodeID, NotificationType.DISCOVERY_GROUP_STARTED, props);
-         
+
          notificationService.sendNotification(notification);
       }
    }
@@ -258,12 +258,11 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       else
       {
          if (!currentUniqueID.equals(uniqueID))
-         {            
-            log.warn("There are more than one servers on the network broadcasting the same node id. " +
-                     "You will see this message exactly once (per node) if a node is restarted, in which case it can be safely " + 
-                     "ignored. But if it is logged continuously it means you really do have more than one node on the same network " +
-                     "active concurrently with the same node id. This could occur if you have a backup node active at the same time as " +
-                     "its live node.");
+         {
+            log.warn("There are more than one servers on the network broadcasting the same node id. " + "You will see this message exactly once (per node) if a node is restarted, in which case it can be safely "
+                     + "ignored. But if it is logged continuously it means you really do have more than one node on the same network "
+                     + "active concurrently with the same node id. This could occur if you have a backup node active at the same time as "
+                     + "its live node.");
             uniqueIDMap.put(originatingNodeID, uniqueID);
          }
       }
@@ -308,7 +307,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
             String uniqueID = buffer.readString();
 
             checkUniqueID(originatingNodeID, uniqueID);
-            
+
             if (nodeID.equals(originatingNodeID))
             {
                // Ignore traffic from own node
@@ -318,7 +317,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
             int size = buffer.readInt();
 
             boolean changed = false;
-            
+
             synchronized (this)
             {
                for (int i = 0; i < size; i++)
@@ -326,22 +325,8 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
                   TransportConfiguration connector = new TransportConfiguration();
 
                   connector.decode(buffer);
-
-                  boolean existsBackup = buffer.readBoolean();
-
-                  TransportConfiguration backupConnector = null;
-
-                  if (existsBackup)
-                  {
-                     backupConnector = new TransportConfiguration();
-
-                     backupConnector.decode(buffer);
-                  }
-
-                  Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(connector,
-                                                                                                                                                backupConnector);
-
-                  DiscoveryEntry entry = new DiscoveryEntry(connectorPair, System.currentTimeMillis());
+                 
+                  DiscoveryEntry entry = new DiscoveryEntry(connector, System.currentTimeMillis());
 
                   DiscoveryEntry oldVal = connectors.put(originatingNodeID, entry);
 

@@ -175,14 +175,14 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       }
    }
 
-   public String getBackupConnectorName()
+   public String getLiveConnectorName()
    {
       checkStarted();
 
       clearIO();
       try
       {
-         return configuration.getBackupConnectorName();
+         return configuration.getLiveConnectorName();
       }
       finally
       {

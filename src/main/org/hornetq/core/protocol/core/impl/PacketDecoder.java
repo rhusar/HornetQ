@@ -13,6 +13,7 @@
 
 package org.hornetq.core.protocol.core.impl;
 
+import static org.hornetq.core.protocol.core.impl.PacketImpl.CLUSTER_TOPOLOGY;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.CREATESESSION;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.CREATESESSION_RESP;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.CREATE_QUEUE;
@@ -82,6 +83,7 @@ import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SUSPEND;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
+import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
@@ -484,6 +486,11 @@ public class PacketDecoder
          case SESS_FORCE_CONSUMER_DELIVERY:
          {
             packet = new SessionForceConsumerDelivery();
+            break;
+         }
+         case CLUSTER_TOPOLOGY:
+         {
+            packet = new ClusterTopologyMessage();
             break;
          }
          default:

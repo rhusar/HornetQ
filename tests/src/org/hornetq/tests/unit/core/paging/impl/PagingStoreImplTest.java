@@ -984,13 +984,6 @@ public class PagingStoreImplTest extends UnitTestCase
          return 0;
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#getPersistentID()
-       */
-      public UUID getPersistentID()
-      {
-         return null;
-      }
 
       /* (non-Javadoc)
        * @see org.hornetq.core.persistence.StorageManager#loadBindingJournal(java.util.List)
@@ -1038,13 +1031,6 @@ public class PagingStoreImplTest extends UnitTestCase
        * @see org.hornetq.core.persistence.StorageManager#rollback(long)
        */
       public void rollback(final long txID) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.persistence.StorageManager#setPersistentID(org.hornetq.utils.UUID)
-       */
-      public void setPersistentID(final UUID id) throws Exception
       {
       }
 

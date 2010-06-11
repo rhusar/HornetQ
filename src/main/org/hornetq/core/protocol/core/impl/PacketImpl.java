@@ -181,6 +181,10 @@ public class PacketImpl implements Packet
    public static final byte REPLICATION_COMPARE_DATA = 102;
 
    public static final byte REPLICATION_SYNC = 103;
+   
+   // HA
+   
+   public static final byte CLUSTER_TOPOLOGY = 110;
 
    // Static --------------------------------------------------------
 

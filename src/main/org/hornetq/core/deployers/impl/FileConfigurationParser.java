@@ -31,15 +31,14 @@ import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.CoreQueueConfiguration;
 import org.hornetq.core.config.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.DivertConfiguration;
-import org.hornetq.core.config.CoreQueueConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.config.impl.FileConfiguration;
 import org.hornetq.core.config.impl.Validators;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
@@ -278,15 +277,15 @@ public class FileConfigurationParser
 
       config.setInterceptorClassNames(interceptorList);
 
-      NodeList backups = e.getElementsByTagName("backup-connector-ref");
+      NodeList lives = e.getElementsByTagName("live-connector-ref");
 
-      // There should be only one - this will be enforced by the DTD
+      // There should be at most one - this will be enforced by the DTD
 
-      if (backups.getLength() > 0)
+      if (lives.getLength() > 0)
       {
-         Node backupNode = backups.item(0);
+         Node liveNode = lives.item(0);
 
-         config.setBackupConnectorName(backupNode.getAttributes().getNamedItem("connector-name").getNodeValue());
+         config.setLiveConnectorName(liveNode.getAttributes().getNamedItem("connector-name").getNodeValue());
       }
 
       NodeList connectorNodes = e.getElementsByTagName("connector");
@@ -872,7 +871,7 @@ public class FileConfigurationParser
 
       NodeList children = e.getChildNodes();
 
-      List<Pair<String, String>> connectorNames = new ArrayList<Pair<String, String>>();
+      List<String> connectorNames = new ArrayList<String>();
 
       for (int j = 0; j < children.getLength(); j++)
       {
@@ -882,18 +881,7 @@ public class FileConfigurationParser
          {
             String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
 
-            Node backupConnectorNode = child.getAttributes().getNamedItem("backup-connector-name");
-
-            String backupConnectorName = null;
-
-            if (backupConnectorNode != null)
-            {
-               backupConnectorName = backupConnectorNode.getNodeValue();
-            }
-
-            Pair<String, String> connectorInfo = new Pair<String, String>(connectorName, backupConnectorName);
-
-            connectorNames.add(connectorInfo);
+            connectorNames.add(connectorName);
          }
       }
 
