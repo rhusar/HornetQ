@@ -16,8 +16,6 @@ package org.hornetq.core.config;
 import java.io.Serializable;
 import java.util.List;
 
-import org.hornetq.api.core.Pair;
-
 /**
  * A ClusterConnectionConfiguration
  *
@@ -41,7 +39,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    private final boolean forwardWhenNoConsumers;
 
-   private final List<Pair<String, String>> staticConnectorNamePairs;
+   private final List<String> staticConnectors;
 
    private final String discoveryGroupName;
 
@@ -56,12 +54,12 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final List<Pair<String, String>> staticConnectorNamePairs)
+                                         final List<String> staticConnectors)
    {
       this.name = name;
       this.address = address;
       this.retryInterval = retryInterval;
-      this.staticConnectorNamePairs = staticConnectorNamePairs;
+      this.staticConnectors = staticConnectors;
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
       discoveryGroupName = null;
@@ -84,7 +82,7 @@ public class ClusterConnectionConfiguration implements Serializable
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
       this.discoveryGroupName = discoveryGroupName;
-      staticConnectorNamePairs = null;
+      this.staticConnectors = null;
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
    }
@@ -119,9 +117,9 @@ public class ClusterConnectionConfiguration implements Serializable
       return confirmationWindowSize;
    }
 
-   public List<Pair<String, String>> getStaticConnectorNamePairs()
+   public List<String> getStaticConnectors()
    {
-      return staticConnectorNamePairs;
+      return staticConnectors;
    }
 
    public String getDiscoveryGroupName()

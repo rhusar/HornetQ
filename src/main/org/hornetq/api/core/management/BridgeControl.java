@@ -48,9 +48,9 @@ public interface BridgeControl extends HornetQComponentControl
    String getTransformerClassName();
 
    /**
-    * Returns the pair of connectors used by this bridge.
+    * Returns any list of static connectors used by this bridge
     */
-   String[] getConnectorPair() throws Exception;
+   String[] getStaticConnectors() throws Exception;
 
    /**
     * Returns the name of the discovery group used by this bridge.
@@ -82,4 +82,9 @@ public interface BridgeControl extends HornetQComponentControl
     * Returns whether this bridge is using duplicate detection.
     */
    boolean isUseDuplicateDetection();
+   
+   /**
+    * Returns whether this bridge is using high availability    
+    */
+   boolean isHA();
 }

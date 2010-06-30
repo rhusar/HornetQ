@@ -13,10 +13,9 @@
 
 package org.hornetq.api.core.client;
 
-import java.util.List;
-
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
+
 
 /**
  * A ClusterTopologyListener
@@ -27,6 +26,7 @@ import org.hornetq.api.core.TransportConfiguration;
  */
 public interface ClusterTopologyListener
 {
-   void onTopologyChanged(List<Pair<TransportConfiguration, TransportConfiguration>> clusterTopology);
-
+   void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last);
+   
+   void nodeDown(String nodeID);
 }

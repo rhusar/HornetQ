@@ -12,14 +12,10 @@
  */
 package org.hornetq.api.jms;
 
-import java.util.List;
-
 import javax.jms.Queue;
 import javax.jms.Topic;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.client.HornetQDestination;
@@ -34,73 +30,60 @@ public class HornetQJMSClient
    private static final Logger log = Logger.getLogger(HornetQJMSClient.class);
 
    /**
-    * Creates a HornetQConnectionFactory using all the defaults.
-    *
-    * @return The HornetQConnectionFactory.
+    * Create a HornetQConnectionFactory which will receive cluster topology updates from the cluster as servers leave or join and new backups are appointed or removed.
+    * The discoveryAddress and discoveryPort parameters in this method are used to listen for UDP broadcasts which contain connection information for members of the cluster.
+    * The broadcasted connection information is simply used to make an initial connection to the cluster, once that connection is made, up to date
+    * cluster topology information is downloaded and automatically updated whenever the cluster topology changes. If the topology includes backup servers
+    * that information is also propagated to the client so that it can know which server to failover onto in case of live server failure.
+    * @param discoveryAddress The UDP group address to listen for updates
+    * @param discoveryPort the UDP port to listen for updates
+    * @return the HornetQConnectionFactory
     */
-   public static HornetQConnectionFactory createConnectionFactory()
+   public static HornetQConnectionFactory createConnectionFactoryWithHA(final String discoveryAddress, final int discoveryPort)
    {
-      return new HornetQConnectionFactory();
+      return new HornetQConnectionFactory(true, discoveryAddress, discoveryPort);
    }
 
    /**
-    * Creates a HornetQConnectionFactory using the ClientSessionFactory for its underlying connection.
-    *
-    * @param sessionFactory The underlying ClientSessionFactory to use.
-    * @return The HornetQConnectionFactory.
+    * Create a HornetQConnectionFactory which creates session factories from a set of live servers, no HA backup information is propagated to the client
+    * 
+    * The UDP address and port are used to listen for live servers in the cluster
+    * 
+    * @param discoveryAddress The UDP group address to listen for updates
+    * @param discoveryPort the UDP port to listen for updates
+    * @return the HornetQConnectionFactory
     */
-   public static HornetQConnectionFactory createConnectionFactory(final ClientSessionFactory sessionFactory)
+   public static HornetQConnectionFactory createConnectionFactoryWithoutHA(final String discoveryAddress, final int discoveryPort)
    {
-      return new HornetQConnectionFactory(sessionFactory);
+      return new HornetQConnectionFactory(false, discoveryAddress, discoveryPort);
+   }
+   
+   /**
+    * Create a HornetQConnectionFactory which will receive cluster topology updates from the cluster as servers leave or join and new backups are appointed or removed.
+    * The initial list of servers supplied in this method is simply to make an initial connection to the cluster, once that connection is made, up to date
+    * cluster topology information is downloaded and automatically updated whenever the cluster topology changes. If the topology includes backup servers
+    * that information is also propagated to the client so that it can know which server to failover onto in case of live server failure.
+    * @param initialServers The initial set of servers used to make a connection to the cluster. Each one is tried in turn until a successful connection is made. Once
+    * a connection is made, the cluster topology is downloaded and the rest of the list is ignored.
+    * @return the HornetQConnectionFactory
+    */
+   public static HornetQConnectionFactory createConnectionFactoryWithHA(final TransportConfiguration... initialServers)
+   {
+      return new HornetQConnectionFactory(true, initialServers);
    }
 
    /**
-    * Creates a HornetQConnectionFactory that will use discovery to connect to the  server.
-    *
-    * @param discoveryAddress The address to use for discovery.
-    * @param discoveryPort The port to use for discovery.
-    * @return The HornetQConnectionFactory.
+    * Create a HornetQConnectionFactory which creates session factories using a static list of transportConfigurations, the HornetQConnectionFactory is not updated automatically
+    * as the cluster topology changes, and no HA backup information is propagated to the client
+    * 
+    * @param transportConfigurations
+    * @return the HornetQConnectionFactory
     */
-   public static HornetQConnectionFactory createConnectionFactory(final String discoveryAddress, final int discoveryPort)
+   public static HornetQConnectionFactory createConnectionFactoryWithoutHA(final TransportConfiguration... initialServers)
    {
-      return new HornetQConnectionFactory(discoveryAddress, discoveryPort);
+      return new HornetQConnectionFactory(false, initialServers);
    }
-
-   /**
-    * Creates a HornetQConnectionFactory using a List of TransportConfigurations and backups.
-    *
-    * @param staticConnectors The list of TransportConfiguration to use.
-    * @return The HornetQConnectionFactory.
-    */
-   public static HornetQConnectionFactory createConnectionFactory(final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors)
-   {
-      return new HornetQConnectionFactory(staticConnectors);
-   }
-
-   /**
-    * Creates a HornetQConnectionFactory using a single pair of live-backup TransportConfiguration.
-    *
-    * @param connectorConfig The TransportConfiguration of the server to connect to.
-    * @param backupConnectorConfig The TransportConfiguration of the backup server to connect to. can be null.
-    * @return The HornetQConnectionFactory.
-    */
-   public static HornetQConnectionFactory createConnectionFactory(final TransportConfiguration connectorConfig,
-                                   final TransportConfiguration backupConnectorConfig)
-   {
-      return new HornetQConnectionFactory(connectorConfig, backupConnectorConfig);
-   }
-
-   /**
-    * Creates a HornetQConnectionFactory to connect to a single live server.
-    *
-    * @param connectorConfig The TransportConfiguration of the server.
-    * @return The HornetQConnectionFactory.
-    */
-   public static HornetQConnectionFactory createConnectionFactory(final TransportConfiguration connectorConfig)
-   {
-      return new HornetQConnectionFactory(connectorConfig);
-   }
-
+   
    /**
     * Creates a client-side representation of a JMS Topic.
     *

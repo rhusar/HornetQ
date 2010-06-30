@@ -13,9 +13,6 @@
 
 package org.hornetq.core.protocol.core.impl.wireformat;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
@@ -26,47 +23,80 @@ import org.hornetq.core.protocol.core.impl.PacketImpl;
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  *
  */
-public class ClusterTopologyMessage extends PacketImpl
+public class ClusterTopologyChangeMessage extends PacketImpl
 {
    // Constants -----------------------------------------------------
 
-   private static final Logger log = Logger.getLogger(ClusterTopologyMessage.class);
+   private static final Logger log = Logger.getLogger(ClusterTopologyChangeMessage.class);
 
    // Attributes ----------------------------------------------------
 
-   private List<Pair<TransportConfiguration, TransportConfiguration>> topology;
+   private boolean exit;
+   
+   private String nodeID;
+   
+   private Pair<TransportConfiguration, TransportConfiguration> pair;
+   
+   private boolean last;
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public ClusterTopologyMessage(final List<Pair<TransportConfiguration, TransportConfiguration>> topology)
+   public ClusterTopologyChangeMessage(final String nodeID, final Pair<TransportConfiguration, TransportConfiguration> pair, final boolean last)
    {
       super(PacketImpl.CLUSTER_TOPOLOGY);
 
-      this.topology = topology;
+      this.nodeID = nodeID;
+      
+      this.pair = pair;
+      
+      this.last = last;
+      
+      this.exit = false;
+   }
+   
+   public ClusterTopologyChangeMessage(final String nodeID)
+   {
+      super(PacketImpl.CLUSTER_TOPOLOGY);
+      
+      this.exit = true;
    }
 
-   public ClusterTopologyMessage()
+   public ClusterTopologyChangeMessage()
    {
       super(PacketImpl.CLUSTER_TOPOLOGY);
    }
 
    // Public --------------------------------------------------------
 
-
-   public List<Pair<TransportConfiguration, TransportConfiguration>> getTopology()
+   public String getNodeID()
    {
-      return topology;
+      return nodeID;
+   }
+
+   public Pair<TransportConfiguration, TransportConfiguration> getPair()
+   {
+      return pair;
    }
    
-
+   public boolean isLast()
+   {
+      return last;
+   }
+   
+   public boolean isExit()
+   {
+      return exit;
+   }
+  
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
-      buffer.writeInt(topology.size());
-      for (Pair<TransportConfiguration, TransportConfiguration> pair: topology)
-      {
+      buffer.writeBoolean(exit);
+      buffer.writeString(nodeID);
+      if (!exit)
+      {         
          pair.a.encode(buffer);
          if (pair.b != null)
          {
@@ -77,16 +107,17 @@ public class ClusterTopologyMessage extends PacketImpl
          {
             buffer.writeBoolean(false);
          }
+         buffer.writeBoolean(last);
       }
    }
 
    @Override
    public void decodeRest(final HornetQBuffer buffer)
    {
-      int size = buffer.readInt();
-      topology = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      for (int i = 0; i < size; i++)
-      {
+      exit = buffer.readBoolean();
+      nodeID = buffer.readString();
+      if (!exit)
+      {         
          TransportConfiguration a = new TransportConfiguration();
          a.decode(buffer);
          boolean hasBackup = buffer.readBoolean();
@@ -100,8 +131,8 @@ public class ClusterTopologyMessage extends PacketImpl
          {
             b = null;
          }
-         Pair<TransportConfiguration, TransportConfiguration> pair = new Pair<TransportConfiguration, TransportConfiguration>(a, b);
-         topology.add(pair);
+         pair = new Pair<TransportConfiguration, TransportConfiguration>(a, b);
+         last = buffer.readBoolean();
       }
    }
 

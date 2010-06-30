@@ -961,8 +961,8 @@ public class FileConfigurationParser
 
       String discoveryGroupName = null;
 
-      List<Pair<String, String>> connectorPairs = new ArrayList<Pair<String, String>>();
-
+      List<String> staticConnectorNames = new ArrayList<String>();
+      
       NodeList children = e.getChildNodes();
 
       for (int j = 0; j < children.getLength(); j++)
@@ -973,22 +973,21 @@ public class FileConfigurationParser
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
          }
-         else if (child.getNodeName().equals("connector-ref"))
+         else if (child.getNodeName().equals("static-connectors"))
          {
-            String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
-
-            Node backupNode = child.getAttributes().getNamedItem("backup-connector-name");
-
-            String backupConnectorName = null;
-
-            if (backupNode != null)
+            NodeList children2 = child.getChildNodes();
+            
+            for (int k = 0; k < children2.getLength(); k++)
             {
-               backupConnectorName = backupNode.getNodeValue();
+               Node child2 = children.item(k);
+               
+               if (child2.getNodeName().equals("connector-ref"))
+               {
+                  String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
+
+                  staticConnectorNames.add(connectorName);
+               }
             }
-
-            Pair<String, String> connectorPair = new Pair<String, String>(connectorName, backupConnectorName);
-
-            connectorPairs.add(connectorPair);
          }
       }
 
@@ -1003,7 +1002,7 @@ public class FileConfigurationParser
                                                      forwardWhenNoConsumers,
                                                      maxHops,
                                                      confirmationWindowSize,
-                                                     connectorPairs);
+                                                     staticConnectorNames);
       }
       else
       {
@@ -1087,10 +1086,12 @@ public class FileConfigurationParser
                                                        "password",
                                                        ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD,
                                                        Validators.NO_CHECK);
+      
+      boolean ha = XMLConfigurationUtil.getBoolean(brNode, "ha", false);
 
       String filterString = null;
-
-      Pair<String, String> connectorPair = null;
+  
+      List<String> staticConnectorNames = new ArrayList<String>();
 
       String discoveryGroupName = null;
 
@@ -1108,26 +1109,27 @@ public class FileConfigurationParser
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
          }
-         else if (child.getNodeName().equals("connector-ref"))
+         else if (child.getNodeName().equals("static-connectors"))
          {
-            String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
-
-            Node backupNode = child.getAttributes().getNamedItem("backup-connector-name");
-
-            String backupConnectorName = null;
-
-            if (backupNode != null)
+            NodeList children2 = child.getChildNodes();
+            
+            for (int k = 0; k < children2.getLength(); k++)
             {
-               backupConnectorName = backupNode.getNodeValue();
-            }
+               Node child2 = children.item(k);
+               
+               if (child2.getNodeName().equals("connector-ref"))
+               {
+                  String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
 
-            connectorPair = new Pair<String, String>(connectorName, backupConnectorName);
+                  staticConnectorNames.add(connectorName);
+               }
+            }
          }
       }
 
       BridgeConfiguration config;
 
-      if (connectorPair != null)
+      if (!staticConnectorNames.isEmpty())
       {
          config = new BridgeConfiguration(name,
                                           queueName,
@@ -1141,7 +1143,8 @@ public class FileConfigurationParser
                                           useDuplicateDetection,
                                           confirmationWindowSize,
                                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                          connectorPair,
+                                          staticConnectorNames,
+                                          ha,
                                           user,
                                           password);
       }
@@ -1160,6 +1163,7 @@ public class FileConfigurationParser
                                           confirmationWindowSize,
                                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                           discoveryGroupName,
+                                          ha,
                                           user,
                                           password);
       }

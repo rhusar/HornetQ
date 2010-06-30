@@ -14,8 +14,7 @@
 package org.hornetq.core.config;
 
 import java.io.Serializable;
-
-import org.hornetq.api.core.Pair;
+import java.util.List;
 
 /**
  * A BridgeConfiguration
@@ -38,9 +37,11 @@ public class BridgeConfiguration implements Serializable
 
    private String filterString;
 
-   private Pair<String, String> connectorPair;
+   private List<String> staticConnectors;
 
    private String discoveryGroupName;
+   
+   private boolean ha;
 
    private String transformerClassName;
 
@@ -74,7 +75,8 @@ public class BridgeConfiguration implements Serializable
                               final boolean useDuplicateDetection,
                               final int confirmationWindowSize,
                               final long clientFailureCheckPeriod,
-                              final Pair<String, String> connectorPair,
+                              final List<String> staticConnectors,
+                              final boolean ha,
                               final String user,
                               final String password)
    {
@@ -90,7 +92,7 @@ public class BridgeConfiguration implements Serializable
       this.useDuplicateDetection = useDuplicateDetection;
       this.confirmationWindowSize = confirmationWindowSize;
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      this.connectorPair = connectorPair;
+      this.staticConnectors = staticConnectors;
       this.user = user;
       this.password = password;
       discoveryGroupName = null;
@@ -109,6 +111,7 @@ public class BridgeConfiguration implements Serializable
                               final int confirmationWindowSize,
                               final long clientFailureCheckPeriod,
                               final String discoveryGroupName,
+                              final boolean ha,
                               final String user,
                               final String password)
    {
@@ -124,8 +127,9 @@ public class BridgeConfiguration implements Serializable
       this.useDuplicateDetection = useDuplicateDetection;
       this.confirmationWindowSize = confirmationWindowSize;
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      connectorPair = null;
+      this.staticConnectors = null;
       this.discoveryGroupName = discoveryGroupName;
+      this.ha = ha;
       this.user = user;
       this.password = password;
    }
@@ -155,14 +159,19 @@ public class BridgeConfiguration implements Serializable
       return transformerClassName;
    }
 
-   public Pair<String, String> getConnectorPair()
+   public List<String> getStaticConnectors()
    {
-      return connectorPair;
+      return staticConnectors;
    }
 
    public String getDiscoveryGroupName()
    {
       return discoveryGroupName;
+   }
+   
+   public boolean isHA()
+   {
+      return ha;
    }
 
    public long getRetryInterval()
@@ -233,11 +242,11 @@ public class BridgeConfiguration implements Serializable
    }
 
    /**
-    * @param connectorPair the connectorPair to set
+    * @param staticConnectors the staticConnectors to set
     */
-   public void setConnectorPair(final Pair<String, String> connectorPair)
+   public void setStaticConnectors(final List<String> staticConnectors)
    {
-      this.connectorPair = connectorPair;
+      this.staticConnectors = staticConnectors;
    }
 
    /**
@@ -246,6 +255,15 @@ public class BridgeConfiguration implements Serializable
    public void setDiscoveryGroupName(final String discoveryGroupName)
    {
       this.discoveryGroupName = discoveryGroupName;
+   }
+   
+   /**
+    * 
+    * @param ha is the bridge supporting HA?
+    */
+   public void setHA(final boolean ha)
+   {
+      this.ha = ha;
    }
 
    /**

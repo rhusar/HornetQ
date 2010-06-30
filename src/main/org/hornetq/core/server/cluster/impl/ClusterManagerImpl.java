@@ -15,8 +15,8 @@ package org.hornetq.core.server.cluster.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.lang.reflect.Array;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,8 +28,9 @@ import java.util.concurrent.ScheduledFuture;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.core.cluster.DiscoveryGroup;
-import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
+import org.hornetq.api.core.client.ClusterTopologyListener;
+import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
@@ -44,7 +45,6 @@ import org.hornetq.core.server.cluster.Bridge;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.ClusterManager;
-import org.hornetq.core.server.cluster.ClusterTopologyListener;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.core.server.management.ManagementService;
 import org.hornetq.utils.ConcurrentHashSet;
@@ -65,8 +65,6 @@ public class ClusterManagerImpl implements ClusterManager
    private static final Logger log = Logger.getLogger(ClusterManagerImpl.class);
 
    private final Map<String, BroadcastGroup> broadcastGroups = new HashMap<String, BroadcastGroup>();
-
-   private final Map<String, DiscoveryGroup> discoveryGroups = new HashMap<String, DiscoveryGroup>();
 
    private final Map<String, Bridge> bridges = new HashMap<String, Bridge>();
 
@@ -140,15 +138,11 @@ public class ClusterManagerImpl implements ClusterManager
             deployBroadcastGroup(config);
          }
 
-         for (DiscoveryGroupConfiguration config : configuration.getDiscoveryGroupConfigurations().values())
-         {
-            deployDiscoveryGroup(config);
-         }
-
          for (ClusterConnectionConfiguration config : configuration.getClusterConfigurations())
          {
             deployClusterConnection(config);
          }
+
       }
 
       for (BridgeConfiguration config : configuration.getBridgeConfigurations())
@@ -174,12 +168,6 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterBroadcastGroup(group.getName());
          }
 
-         for (DiscoveryGroup group : discoveryGroups.values())
-         {
-            group.stop();
-            managementService.unregisterDiscoveryGroup(group.getName());
-         }
-
          for (ClusterConnection clusterConnection : clusterConnections.values())
          {
             clusterConnection.stop();
@@ -187,8 +175,6 @@ public class ClusterManagerImpl implements ClusterManager
          }
 
          broadcastGroups.clear();
-
-         discoveryGroups.clear();
       }
 
       for (Bridge bridge : bridges.values())
@@ -246,34 +232,122 @@ public class ClusterManagerImpl implements ClusterManager
 
       backup = false;
    }
-   
+
    public void startAnnouncement()
    {
-      
+
    }
-   
+
    public void stopAnnouncement()
    {
-      
+
    }
-   
-   private Set<ClusterTopologyListener> listeners = new ConcurrentHashSet<ClusterTopologyListener>();
-   
-   private List<Pair<TransportConfiguration, TransportConfiguration>> topology;
-   
-   public List<Pair<TransportConfiguration, TransportConfiguration>> getClusterTopology()
+
+   private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+
+   private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+
+   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology;
+
+   public synchronized void registerTopologyListener(final ClusterTopologyListener listener,
+                                                     final boolean clusterConnection)
    {
-      return topology;
+      if (clusterConnection)
+      {
+         this.clusterConnectionListeners.add(listener);
+      }
+      else
+      {
+         this.clientListeners.add(listener);
+      }
+
+      // We now need to send the current topology to the client
+
+      int count = 0;
+      for (Map.Entry<String, Pair<TransportConfiguration, TransportConfiguration>> entry : topology.entrySet())
+      {
+         listener.nodeUP(entry.getKey(), entry.getValue(), ++count == topology.size());
+      }
    }
-   
-   public void registerTopologyListener(final ClusterTopologyListener listener)
+
+   public synchronized void unregisterTopologyListener(final ClusterTopologyListener listener,
+                                                       final boolean clusterConnection)
    {
-      listeners.add(listener);
+      if (clusterConnection)
+      {
+         this.clusterConnectionListeners.remove(listener);
+      }
+      else
+      {
+         this.clientListeners.remove(listener);
+      }
    }
-   
-   public void unregisterTopologyListener(final ClusterTopologyListener listener)
+
+   public synchronized void announceNode(final String nodeID,
+                                         final boolean backup,
+                                         final TransportConfiguration connector)
    {
-      listeners.remove(listener);
+      Pair<TransportConfiguration, TransportConfiguration> pair = topology.get(nodeID);
+
+      if (pair == null)
+      {
+         if (backup)
+         {
+            pair = new Pair<TransportConfiguration, TransportConfiguration>(null, connector);
+         }
+         else
+         {
+            pair = new Pair<TransportConfiguration, TransportConfiguration>(connector, null);
+         }
+
+         topology.put(nodeID, pair);
+      }
+      else
+      {
+         if (backup)
+         {
+            pair.b = connector;
+         }
+         else
+         {
+            pair.a = connector;
+         }
+      }
+
+      // Propagate the announcement
+
+      for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeUP(nodeID, pair, false);
+      }
+
+      for (ClusterTopologyListener listener : clusterConnectionListeners)
+      {
+         listener.nodeUP(nodeID, pair, false);
+      }
+
+   }
+
+   public synchronized void nodeDown(final String nodeID)
+   {
+      topology.remove(nodeID);
+
+      for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeDown(nodeID);
+      }
+   }
+
+   public synchronized void nodeUP(final String nodeID,
+                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                                   final boolean last)
+   {
+      topology.put(nodeID, connectorPair);
+
+      for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeUP(nodeID, connectorPair, false);
+      }
    }
 
    private synchronized void deployBroadcastGroup(final BroadcastGroupConfiguration config) throws Exception
@@ -338,41 +412,27 @@ public class ClusterManagerImpl implements ClusterManager
                                   "' will not be deployed.");
    }
 
-   private synchronized void deployDiscoveryGroup(final DiscoveryGroupConfiguration config) throws Exception
+   private TransportConfiguration[] connectorNameListToArray(final List<String> connectorNames)
    {
-      if (discoveryGroups.containsKey(config.getName()))
+      TransportConfiguration[] tcConfigs = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class,
+                                                                                       connectorNames.size());
+      int count = 0;
+      for (String connectorName : connectorNames)
       {
-         ClusterManagerImpl.log.warn("There is already a discovery-group with name " + config.getName() +
-                                     " deployed. This one will not be deployed.");
+         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorName);
 
-         return;
+         if (connector == null)
+         {
+            ClusterManagerImpl.log.warn("No connector defined with name '" + connectorName +
+                                        "'. The bridge will not be deployed.");
+
+            return null;
+         }
+
+         tcConfigs[count++] = connector;
       }
 
-      InetAddress groupAddress = InetAddress.getByName(config.getGroupAddress());
-      
-      InetAddress localBindAddress;
-      
-      if (config.getLocalBindAddress() != null)
-      {
-         localBindAddress = InetAddress.getByName(config.getLocalBindAddress());
-      }
-      else
-      {
-         localBindAddress = null;
-      }
-
-      DiscoveryGroup group = new DiscoveryGroupImpl(nodeUUID.toString(),
-                                                    config.getName(),
-                                                    localBindAddress,
-                                                    groupAddress,
-                                                    config.getGroupPort(),
-                                                    config.getRefreshTimeout());
-
-      discoveryGroups.put(config.getName(), group);
-
-      managementService.registerDiscoveryGroup(group, config);
-
-      group.start();
+      return tcConfigs;
    }
 
    private synchronized void deployBridge(final BridgeConfiguration config) throws Exception
@@ -406,8 +466,6 @@ public class ClusterManagerImpl implements ClusterManager
 
       Transformer transformer = instantiateTransformer(config.getTransformerClassName());
 
-      Pair<String, String> connectorNamePair = config.getConnectorPair();
-
       Binding binding = postOffice.getBinding(new SimpleString(config.getQueueName()));
 
       if (binding == null)
@@ -420,7 +478,7 @@ public class ClusterManagerImpl implements ClusterManager
 
       Queue queue = (Queue)binding.getBindable();
 
-      Bridge bridge = null;
+      ServerLocator serverLocator;
 
       if (config.getDiscoveryGroupName() != null)
       {
@@ -434,85 +492,59 @@ public class ClusterManagerImpl implements ClusterManager
             return;
          }
 
-         bridge = new BridgeImpl(nodeUUID,
-                                 new SimpleString(config.getName()),
-                                 queue,
-                                 discoveryGroupConfiguration.getGroupAddress(),
-                                 discoveryGroupConfiguration.getGroupPort(),
-                                 null,
-                                 executorFactory.getExecutor(),
-                                 SimpleString.toSimpleString(config.getFilterString()),
-                                 new SimpleString(config.getForwardingAddress()),
-                                 scheduledExecutor,
-                                 transformer,
-                                 config.getRetryInterval(),
-                                 config.getRetryIntervalMultiplier(),
-                                 config.getReconnectAttempts(),
-                                 config.isFailoverOnServerShutdown(),
-                                 config.isUseDuplicateDetection(),
-                                 config.getConfirmationWindowSize(),
-                                 managementService.getManagementAddress(),
-                                 managementService.getManagementNotificationAddress(),
-                                 config.getUser(),
-                                 config.getPassword(),
-                                 null,
-                                 !backup,
-                                 server.getStorageManager());
+         if (config.isHA())
+         {
+            serverLocator = HornetQClient.createServerLocatorWithHA(discoveryGroupConfiguration.getGroupAddress(),
+                                                                    discoveryGroupConfiguration.getGroupPort());
+         }
+         else
+         {
+            serverLocator = HornetQClient.createServerLocatorWithoutHA(discoveryGroupConfiguration.getGroupAddress(),
+                                                                       discoveryGroupConfiguration.getGroupPort());
+         }
+
       }
       else
       {
-         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorNamePair.a);
+         TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
 
-         if (connector == null)
+         if (tcConfigs == null)
          {
-            ClusterManagerImpl.log.warn("No connector defined with name '" + connectorNamePair.a +
-                                        "'. The bridge will not be deployed.");
-
             return;
          }
 
-         TransportConfiguration backupConnector = null;
-
-         if (connectorNamePair.b != null)
+         if (config.isHA())
          {
-            backupConnector = configuration.getConnectorConfigurations().get(connectorNamePair.b);
-
-            if (backupConnector == null)
-            {
-               ClusterManagerImpl.log.warn("No connector defined with name '" + connectorNamePair.b +
-                                           "'. The bridge will not be deployed.");
-
-               return;
-            }
+            serverLocator = HornetQClient.createServerLocatorWithHA(tcConfigs);
+         }
+         else
+         {
+            serverLocator = HornetQClient.createServerLocatorWithoutHA(tcConfigs);
          }
 
-         Pair<TransportConfiguration, TransportConfiguration> pair = new Pair<TransportConfiguration, TransportConfiguration>(connector,
-                                                                                                                              backupConnector);
-         bridge = new BridgeImpl(nodeUUID,
-                                 new SimpleString(config.getName()),
-                                 queue,
-                                 null,
-                                 -1,
-                                 pair,
-                                 executorFactory.getExecutor(),
-                                 SimpleString.toSimpleString(config.getFilterString()),
-                                 SimpleString.toSimpleString(config.getForwardingAddress()),
-                                 scheduledExecutor,
-                                 transformer,
-                                 config.getRetryInterval(),
-                                 config.getRetryIntervalMultiplier(),
-                                 config.getReconnectAttempts(),
-                                 config.isFailoverOnServerShutdown(),
-                                 config.isUseDuplicateDetection(),
-                                 config.getConfirmationWindowSize(),
-                                 managementService.getManagementAddress(),
-                                 managementService.getManagementNotificationAddress(),
-                                 server.getConfiguration().getClusterUser(),
-                                 server.getConfiguration().getClusterPassword(),
-                                 null,
-                                 !backup,
-                                 server.getStorageManager());
       }
+
+      serverLocator.setConfirmationWindowSize(config.getConfirmationWindowSize());
+      serverLocator.setFailoverOnServerShutdown(config.isFailoverOnServerShutdown());
+      serverLocator.setReconnectAttempts(config.getReconnectAttempts());
+      serverLocator.setRetryInterval(config.getRetryInterval());
+      serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());
+      serverLocator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
+
+      Bridge bridge = new BridgeImpl(serverLocator,
+                                     nodeUUID,
+                                     new SimpleString(config.getName()),
+                                     queue,
+                                     executorFactory.getExecutor(),
+                                     SimpleString.toSimpleString(config.getFilterString()),
+                                     new SimpleString(config.getForwardingAddress()),
+                                     scheduledExecutor,
+                                     transformer,
+                                     config.isUseDuplicateDetection(),
+                                     config.getUser(),
+                                     config.getPassword(),
+                                     !backup,
+                                     server.getStorageManager());
 
       bridges.put(config.getName(), bridge);
 
@@ -537,66 +569,18 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
 
-      ClusterConnection clusterConnection;
+      ServerLocator serverLocator;
 
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-
-      if (config.getStaticConnectorNamePairs() != null)
+      if (config.getStaticConnectors() != null)
       {
-         for (Pair<String, String> connectorNamePair : config.getStaticConnectorNamePairs())
-         {
-            TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorNamePair.a);
+         TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
 
-            if (connector == null)
-            {
-               ClusterManagerImpl.log.warn("No connector defined with name '" + connectorNamePair.a +
-                                           "'. The cluster connection will not be deployed.");
-
-               return;
-            }
-
-            TransportConfiguration backupConnector = null;
-
-            if (connectorNamePair.b != null)
-            {
-               backupConnector = configuration.getConnectorConfigurations().get(connectorNamePair.b);
-
-               if (backupConnector == null)
-               {
-                  ClusterManagerImpl.log.warn("No connector defined with name '" + connectorNamePair.b +
-                                              "'. The cluster connection will not be deployed.");
-
-                  return;
-               }
-            }
-
-            Pair<TransportConfiguration, TransportConfiguration> pair = new Pair<TransportConfiguration, TransportConfiguration>(connector,
-                                                                                                                                 backupConnector);
-
-            connectors.add(pair);
-         }
-
-         clusterConnection = new ClusterConnectionImpl(new SimpleString(config.getName()),
-                                                       new SimpleString(config.getAddress()),
-                                                       config.getRetryInterval(),
-                                                       config.isDuplicateDetection(),
-                                                       config.isForwardWhenNoConsumers(),
-                                                       config.getConfirmationWindowSize(),
-                                                       executorFactory,
-                                                       server,
-                                                       postOffice,
-                                                       managementService,
-                                                       scheduledExecutor,
-                                                       connectors,
-                                                       config.getMaxHops(),
-                                                       nodeUUID,
-                                                       backup,
-                                                       server.getConfiguration().getClusterUser(),
-                                                       server.getConfiguration().getClusterPassword());
+         serverLocator = HornetQClient.createServerLocatorWithHA(tcConfigs);
       }
       else
       {
-         DiscoveryGroup dg = discoveryGroups.get(config.getDiscoveryGroupName());
+         DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations()
+                                                       .get(config.getDiscoveryGroupName());
 
          if (dg == null)
          {
@@ -604,24 +588,26 @@ public class ClusterManagerImpl implements ClusterManager
                                         "'. The cluster connection will not be deployed.");
          }
 
-         clusterConnection = new ClusterConnectionImpl(new SimpleString(config.getName()),
-                                                       new SimpleString(config.getAddress()),
-                                                       config.getRetryInterval(),
-                                                       config.isDuplicateDetection(),
-                                                       config.isForwardWhenNoConsumers(),
-                                                       config.getConfirmationWindowSize(),
-                                                       executorFactory,
-                                                       server,
-                                                       postOffice,
-                                                       managementService,
-                                                       scheduledExecutor,
-                                                       dg,
-                                                       config.getMaxHops(),
-                                                       nodeUUID,
-                                                       backup,
-                                                       server.getConfiguration().getClusterUser(),
-                                                       server.getConfiguration().getClusterPassword());
+         serverLocator = HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
       }
+
+      ClusterConnection clusterConnection = new ClusterConnectionImpl(serverLocator,
+                                                                      new SimpleString(config.getName()),
+                                                                      new SimpleString(config.getAddress()),
+                                                                      config.getRetryInterval(),
+                                                                      config.isDuplicateDetection(),
+                                                                      config.isForwardWhenNoConsumers(),
+                                                                      config.getConfirmationWindowSize(),
+                                                                      executorFactory,
+                                                                      server,
+                                                                      postOffice,
+                                                                      managementService,
+                                                                      scheduledExecutor,
+                                                                      config.getMaxHops(),
+                                                                      nodeUUID,
+                                                                      backup,
+                                                                      server.getConfiguration().getClusterUser(),
+                                                                      server.getConfiguration().getClusterPassword());
 
       managementService.registerCluster(clusterConnection, config);
 

@@ -483,7 +483,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
                                                    isXA,
                                                    false,
                                                    false,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    transactionBatchSize);
          }
          else if (acknowledgeMode == Session.AUTO_ACKNOWLEDGE)
@@ -493,7 +493,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
                                                    isXA,
                                                    true,
                                                    true,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    0);
          }
          else if (acknowledgeMode == Session.DUPS_OK_ACKNOWLEDGE)
@@ -503,7 +503,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
                                                    isXA,
                                                    true,
                                                    true,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    dupsOKBatchSize);
          }
          else if (acknowledgeMode == Session.CLIENT_ACKNOWLEDGE)
@@ -513,7 +513,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
                                                    isXA,
                                                    true,
                                                    false,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    transactionBatchSize);
          }
          else if (acknowledgeMode == HornetQJMSConstants.PRE_ACKNOWLEDGE)

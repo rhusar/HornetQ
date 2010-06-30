@@ -205,9 +205,13 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       return name;
    }
 
-   public synchronized Map<String, DiscoveryEntry> getDiscoveryEntryMap()
+   public synchronized List<DiscoveryEntry> getDiscoveryEntries()
    {
-      return new HashMap<String, DiscoveryEntry>(connectors);
+      List<DiscoveryEntry> list = new ArrayList<DiscoveryEntry>();
+      
+      list.addAll(connectors.values());
+      
+      return list;
    }
 
    public boolean waitForBroadcast(final long timeout)

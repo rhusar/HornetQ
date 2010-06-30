@@ -23,6 +23,7 @@ import org.hornetq.api.core.client.SessionFailureListener;
  */
 public interface ClientSessionFactoryInternal extends ClientSessionFactory
 {
+   void causeExit();
    
    void addFailureListener(SessionFailureListener listener);
 

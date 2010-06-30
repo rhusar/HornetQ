@@ -13,9 +13,6 @@
 
 package org.hornetq.api.jms.management;
 
-import java.util.List;
-
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.management.Operation;
@@ -373,12 +370,7 @@ public interface ConnectionFactoryControl
     /**
     * @see ClientSessionFactory#getStaticConnectors()
     */
-   List<Pair<TransportConfiguration, TransportConfiguration>> getStaticConnectors();
-
-    /**
-    * @see ClientSessionFactory#setStaticConnectors(java.util.List)
-    */
-   void setStaticConnectors(List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors);
+   TransportConfiguration[] getStaticConnectors();
 
    /**
     * @see ClientSessionFactory#getLocalBindAddress()
@@ -396,21 +388,9 @@ public interface ConnectionFactoryControl
    String getDiscoveryAddress();
 
     /**
-    * @see ClientSessionFactory#setDiscoveryAddress(String)
-    */
-   void setDiscoveryAddress(String discoveryAddress);
-   
-   
-
-    /**
     * @see ClientSessionFactory#getDiscoveryPort()
     */
    int getDiscoveryPort();
-
-    /**
-    * @see ClientSessionFactory#setDiscoveryPort(int)
-    */
-   void setDiscoveryPort(int discoveryPort);
 
    /**
     * Add the JNDI binding to this destination

@@ -35,6 +35,7 @@ import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.loadbalance.ConnectionLoadBalancingPolicy;
 import org.hornetq.core.cluster.DiscoveryEntry;
@@ -58,17 +59,21 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private static final Logger log = Logger.getLogger(ServerLocatorImpl.class);
 
-   private final boolean useHA;
+   private final boolean ha;
 
    private final String discoveryAddress;
 
    private final int discoveryPort;
 
-   private final TransportConfiguration[] transportConfigs;
+   private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
 
    private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
-   private Pair<TransportConfiguration, TransportConfiguration>[] topology;
+   private TransportConfiguration[] initialConnectors;
+
+   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology;
+
+   private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
    private Map<TransportConfiguration, TransportConfiguration> pairs = new HashMap<TransportConfiguration, TransportConfiguration>();
 
@@ -289,10 +294,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
             discoveryGroup.start();
          }
-         else
-         {
-            setTopologyFromStaticList();
-         }
+
          readOnly = true;
       }
    }
@@ -302,13 +304,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                              final int discoveryPort,
                              final TransportConfiguration[] transportConfigs)
    {
-      this.useHA = useHA;
+      this.ha = useHA;
 
       this.discoveryAddress = discoveryAddress;
 
       this.discoveryPort = discoveryPort;
 
-      this.transportConfigs = transportConfigs;
+      this.initialConnectors = transportConfigs;
 
       discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
 
@@ -390,6 +392,62 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       this(useHA, null, -1, transportConfigs);
    }
 
+   private TransportConfiguration selectConnector()
+   {
+      if (receivedTopology)
+      {
+         int pos = loadBalancingPolicy.select(topologyArray.length);
+
+         Pair<TransportConfiguration, TransportConfiguration> pair = topologyArray[pos];
+
+         return pair.a;
+      }
+      else
+      {
+         // Get from initialconnectors
+
+         int pos = loadBalancingPolicy.select(initialConnectors.length);
+
+         return initialConnectors[pos];
+      }
+   }
+
+   public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
+   {
+      if (closed)
+      {
+         throw new IllegalStateException("Cannot create session factory, server locator is closed (maybe it has been garbage collected)");
+      }
+
+      try
+      {
+         initialise();
+      }
+      catch (Exception e)
+      {
+         throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
+      }
+
+      ClientSessionFactory factory = new ClientSessionFactoryImpl(this,
+                                                                  transportConfiguration,
+                                                                  failoverOnServerShutdown,
+                                                                  callTimeout,
+                                                                  clientFailureCheckPeriod,
+                                                                  connectionTTL,
+                                                                  retryInterval,
+                                                                  retryIntervalMultiplier,
+                                                                  maxRetryInterval,
+                                                                  reconnectAttempts,
+                                                                  failoverOnInitialConnection,
+                                                                  threadPool,
+                                                                  scheduledThreadPool,
+                                                                  interceptors);
+
+      factories.add(factory);
+
+      return factory;
+   }
+
    public ClientSessionFactory createSessionFactory() throws Exception
    {
       if (closed)
@@ -406,7 +464,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
       }
 
-      if (topology == null && discoveryGroup != null)
+      if (initialConnectors == null && discoveryGroup != null)
       {
          // Wait for an initial broadcast to give us at least one node in the cluster
 
@@ -420,7 +478,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
 
       ClientSessionFactory factory = null;
-      
+
       synchronized (this)
       {
          boolean retry;
@@ -428,17 +486,15 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          do
          {
             retry = false;
-            
-            int pos = loadBalancingPolicy.select(topology.length);
-   
-            Pair<TransportConfiguration, TransportConfiguration> pair = topology[pos];
-   
+
+            TransportConfiguration tc = selectConnector();
+
             // try each factory in the list until we find one which works
-   
+
             try
             {
                factory = new ClientSessionFactoryImpl(this,
-                                                      pair.a,
+                                                      tc,
                                                       failoverOnServerShutdown,
                                                       callTimeout,
                                                       clientFailureCheckPeriod,
@@ -457,12 +513,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                if (e.getCode() == HornetQException.NOT_CONNECTED)
                {
                   attempts++;
-                  
-                  if (attempts == topology.length)
+
+                  if (attempts == topologyArray.length)
                   {
-                     throw new HornetQException(HornetQException.NOT_CONNECTED, "Cannot connect to server(s). Tried with all available servers.");
+                     throw new HornetQException(HornetQException.NOT_CONNECTED,
+                                                "Cannot connect to server(s). Tried with all available servers.");
                   }
-                  
+
                   retry = true;
                }
                else
@@ -473,7 +530,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
          while (retry);
 
-         if (useHA)
+         if (ha)
          {
             long toWait = 30000;
             long start = System.currentTimeMillis();
@@ -483,7 +540,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
                try
                {
-                  this.wait(toWait);
+                  wait(toWait);
                }
                catch (InterruptedException ignore)
                {
@@ -507,6 +564,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          return factory;
       }
+   }
+
+   public synchronized boolean isHA()
+   {
+      return ha;
    }
 
    public synchronized boolean isCacheLargeMessagesClient()
@@ -828,7 +890,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    public TransportConfiguration[] getStaticTransportConfigurations()
    {
-      return transportConfigs;
+      return this.initialConnectors;
    }
 
    public synchronized long getDiscoveryRefreshTimeout()
@@ -954,85 +1016,120 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       closed = true;
    }
 
-   public synchronized void onTopologyChanged(List<Pair<TransportConfiguration, TransportConfiguration>> topology)
+   public synchronized void nodeDown(final String nodeID)
    {
-      if (!useHA)
+      if (!ha)
       {
          return;
       }
 
-      this.topology = topology.toArray(this.topology);
+      topology.remove(nodeID);
 
-      this.pairs.clear();
+      if (!topology.isEmpty())
+      {
+         updateArraysAndPairs();
+      }
+      else
+      {
+         pairs.clear();
 
-      for (Pair<TransportConfiguration, TransportConfiguration> pair : topology)
+         topologyArray = null;
+
+         receivedTopology = false;
+      }
+
+      for (ClusterTopologyListener listener : topologyListeners)
+      {
+         listener.nodeDown(nodeID);
+      }
+   }
+
+   public synchronized void nodeUP(final String nodeID,
+                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                                   final boolean last)
+   {
+      if (!ha)
+      {
+         return;
+      }
+
+      topology.put(nodeID, connectorPair);
+
+      updateArraysAndPairs();
+
+      if (last)
+      {
+         receivedTopology = true;
+      }
+
+      for (ClusterTopologyListener listener : topologyListeners)
+      {
+         listener.nodeUP(nodeID, connectorPair, last);
+      }
+
+      // Notify if waiting on getting topology
+
+      notify();
+   }
+
+   private void updateArraysAndPairs()
+   {
+      topologyArray = (Pair<TransportConfiguration, TransportConfiguration>[])Array.newInstance(Pair.class,
+                                                                                                topology.size());
+
+      int count = 0;
+      for (Pair<TransportConfiguration, TransportConfiguration> pair : topology.values())
       {
          if (pair.b != null)
          {
             pairs.put(pair.a, pair.b);
          }
+
+         topologyArray[count++] = pair;
       }
-
-      receivedTopology = true;
-   }
-
-   private void createTopologyArray(final int size)
-   {
-      topology = (Pair<TransportConfiguration, TransportConfiguration>[])Array.newInstance(Pair.class, size);
    }
 
    public synchronized void connectorsChanged()
    {
-      if (receivedTopology)
+      List<DiscoveryEntry> newConnectors = discoveryGroup.getDiscoveryEntries();
+
+      this.initialConnectors = (TransportConfiguration[])Array.newInstance(Pair.class, newConnectors.size());
+
+      int count = 0;
+      for (DiscoveryEntry entry : newConnectors)
       {
-         return;
-      }
-
-      Map<String, DiscoveryEntry> newConnectors = discoveryGroup.getDiscoveryEntryMap();
-
-      createTopologyArray(newConnectors.size());
-
-      int i = 0;
-      for (DiscoveryEntry entry : newConnectors.values())
-      {
-         topology[i++] = new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null);
+         this.initialConnectors[count++] = entry.getConnector();
       }
    }
 
    public synchronized void factoryClosed(final ClientSessionFactory factory)
    {
-      this.factories.remove(factory);
+      factories.remove(factory);
 
-      if (this.factories.isEmpty())
+      if (factories.isEmpty())
       {
          // Go back to using the broadcast or static list
 
          receivedTopology = false;
 
-         if (transportConfigs != null)
-         {
-            setTopologyFromStaticList();
-         }
-         else
-         {
-            topology = null;
-         }
+         topology = null;
+
       }
    }
 
-   private void setTopologyFromStaticList()
+   public void registerTopologyListener(final ClusterTopologyListener listener)
    {
-      createTopologyArray(transportConfigs.length);
+      topologyListeners.add(listener);
+   }
 
-      int i = 0;
-      for (TransportConfiguration config : transportConfigs)
-      {
-         topology[i++] = new Pair<TransportConfiguration, TransportConfiguration>(config, null);
-      }
+   public void unregisterTopologyListener(final ClusterTopologyListener listener)
+   {
+      topologyListeners.remove(listener);
    }
 
    public synchronized TransportConfiguration getBackup(final TransportConfiguration live)
    {
       return pairs.get(live);
    }
+
 }

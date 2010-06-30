@@ -15,7 +15,9 @@ package org.hornetq.core.server.cluster;
 
 import java.util.Map;
 
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.server.HornetQComponent;
 
 /**
@@ -47,4 +49,6 @@ public interface ClusterConnection extends HornetQComponent
                                    int distance) throws Exception;
 
    void activate();
+   
+   Pair<TransportConfiguration, TransportConfiguration>[] getTopology();
 }

@@ -31,6 +31,7 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Channel;
@@ -39,10 +40,11 @@ import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
 import org.hornetq.core.protocol.core.impl.RemotingConnectionImpl;
-import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
+import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.version.Version;
 import org.hornetq.spi.core.protocol.ProtocolType;
@@ -396,7 +398,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       closed = true;
    }
-
+   
+   public ServerLocator getServerLocator()
+   {
+      return serverLocator;
+   }
+   
    // Public
    // ---------------------------------------------------------------------------------------
 
@@ -1012,8 +1019,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          connection = new RemotingConnectionImpl(tc, callTimeout, interceptors);
 
          connection.addFailureListener(new DelegatingFailureListener(connection.getID()));
+         
+         Channel channel0 = connection.getChannel(0, -1);
 
-         connection.getChannel(0, -1).setHandler(new Channel0Handler(connection));
+         channel0.setHandler(new Channel0Handler(connection));
 
          if (clientFailureCheckPeriod != -1)
          {
@@ -1032,6 +1041,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                pingRunnable.run();
             }
+         }
+         
+         if (serverLocator.isHA())
+         {
+            channel0.send(new SubscribeClusterTopologyUpdatesMessage(false));
          }
       }
 
@@ -1119,9 +1133,16 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
          else if (type == PacketImpl.CLUSTER_TOPOLOGY)
          {
-            ClusterTopologyMessage topMessage = (ClusterTopologyMessage)packet;
+            ClusterTopologyChangeMessage topMessage = (ClusterTopologyChangeMessage)packet;
             
-            serverLocator.onTopologyChanged(topMessage.getTopology());
+            if (topMessage.isExit())
+            {
+               serverLocator.nodeDown(topMessage.getNodeID());
+            }
+            else
+            {
+               serverLocator.nodeUP(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
+            }
          }
       }
    }

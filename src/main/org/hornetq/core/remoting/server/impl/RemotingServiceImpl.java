@@ -30,7 +30,9 @@ import java.util.concurrent.TimeUnit;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.ServerSessionPacketHandler;
@@ -371,9 +373,9 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       if (config.isBackup())
       {
          serverSideReplicatingConnection = entry.connection;
-      }
+      }      
    }
-
+   
    public void connectionDestroyed(final Object connectionID)
    {
       ConnectionEntry conn = connections.get(connectionID);

@@ -27,7 +27,21 @@ import org.hornetq.api.core.client.loadbalance.ConnectionLoadBalancingPolicy;
  */
 public interface ServerLocator
 {
+   /**
+    * Create a ClientSessionFactory using whatever load balancing policy is in force
+    * @return The ClientSessionFactory
+    * @throws Exception
+    */
    ClientSessionFactory createSessionFactory() throws Exception;
+   
+   /**
+    * Create a ClientSessionFactory to a specific server. The server must already be known about by this ServerLocator.
+    * This method allows the user to make a connection to a specific server bypassing any load balancing policy in force
+    * @param transportConfiguration
+    * @return The ClientSesionFactory
+    * @throws Exception if a failure happened in creating the ClientSessionFactory or the ServerLocator does not know about the passed in transportConfiguration
+    */
+   ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception;
    
    /**
     * Returns the period used to check if a client has failed to receive pings from the server.
@@ -641,4 +655,10 @@ public interface ServerLocator
     * Closes this factory and release all its resources
     */
    void close();
+   
+   void registerTopologyListener(ClusterTopologyListener listener);
+   
+   void unregisterTopologyListener(ClusterTopologyListener listener);
+   
+   boolean isHA();
 }
