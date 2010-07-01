@@ -569,7 +569,12 @@ public class HornetQConnectionFactory implements ConnectionFactory, QueueConnect
    {
       serverLocator.close();
    }
-
+   
+   public ServerLocator getServerLocator()
+   {
+      return serverLocator;
+   }
+   
    // Package protected ----------------------------------------------------------------------------
 
    // Protected ------------------------------------------------------------------------------------

@@ -79,9 +79,9 @@ public class HornetQJMSClient
     * @param transportConfigurations
     * @return the HornetQConnectionFactory
     */
-   public static HornetQConnectionFactory createConnectionFactoryWithoutHA(final TransportConfiguration... initialServers)
+   public static HornetQConnectionFactory createConnectionFactoryWithoutHA(final TransportConfiguration... transportConfigurations)
    {
-      return new HornetQConnectionFactory(false, initialServers);
+      return new HornetQConnectionFactory(false, transportConfigurations);
    }
    
    /**

@@ -93,6 +93,8 @@ public class HornetQClient
 
    public static final int DEFAULT_INITIAL_MESSAGE_PACKET_SIZE = 1500;
    
+   public static final boolean DEFAULT_HA = false;
+   
    /**
     * Create a ServerLocator which creates session factories using a static list of transportConfigurations, the ServerLocator is not updated automatically
     * as the cluster topology changes, and no HA backup information is propagated to the client

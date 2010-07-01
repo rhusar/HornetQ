@@ -18,7 +18,6 @@ import java.util.Set;
 
 import javax.naming.Context;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.HornetQComponent;
@@ -158,40 +157,16 @@ public interface JMSServerManager extends HornetQComponent
     */
    boolean destroyTopic(String name) throws Exception;
 
-   void createConnectionFactory(String name, String discoveryAddress, int discoveryPort, String ... jndiBindings) throws Exception;
+   void createConnectionFactory(String name, boolean ha, String discoveryAddress, int discoveryPort, String ... jndiBindings) throws Exception;
 
    void createConnectionFactory(String name,
-                                List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs,
+                                boolean ha,
+                                List<TransportConfiguration> connectorConfigs,
                                 String ... jndiBindings) throws Exception;
 
    void createConnectionFactory(String name,
-                                TransportConfiguration liveTC,
-                                TransportConfiguration backupTC,
-                                String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name, TransportConfiguration liveTC, String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name,
-                                String clientID,
-                                String discoveryAddress,
-                                int discoveryPort,
-                                String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name,
-                                String clientID,
-                                List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs,
-                                String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name,
-                                String clientID,
-                                TransportConfiguration liveTC,
-                                TransportConfiguration backupTC,
-                                String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name, String clientID, TransportConfiguration liveTC,  String ... jndiBindings) throws Exception;
-
-   void createConnectionFactory(String name,
-                                List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs,
+                                boolean ha,
+                                List<TransportConfiguration> connectorConfigs,                                
                                 String clientID,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
@@ -224,6 +199,7 @@ public interface JMSServerManager extends HornetQComponent
                                 String ... jndiBindings) throws Exception;
 
    void createConnectionFactory(String name,
+                                boolean ha,
                                 String localBindAdress,
                                 String discoveryAddress,
                                 int discoveryPort,

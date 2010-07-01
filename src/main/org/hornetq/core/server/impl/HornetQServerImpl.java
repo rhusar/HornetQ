@@ -208,7 +208,7 @@ public class HornetQServerImpl implements HornetQServer
 
    private boolean initialised;
 
-   private FailoverManager replicationFailoverManager;
+  // private FailoverManager replicationFailoverManager;
 
    private ReplicationManager replicationManager;
 
@@ -1153,26 +1153,26 @@ public class HornetQServerImpl implements HornetQServer
     * Protected so tests can change this behaviour
     * @param backupConnector
     */
-   protected FailoverManagerImpl createBackupConnectionFailoverManager(final TransportConfiguration backupConnector,
-                                                                       final ExecutorService threadPool,
-                                                                       final ScheduledExecutorService scheduledPool)
-   {
-      return new FailoverManagerImpl((ClientSessionFactory)null,
-                                     backupConnector,
-                                     null,
-                                     false,
-                                     HornetQClient.DEFAULT_CALL_TIMEOUT,
-                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                     HornetQClient.DEFAULT_CONNECTION_TTL,
-                                     0,
-                                     1.0d,
-                                     0,
-                                     1,
-                                     false,
-                                     threadPool,
-                                     scheduledPool,
-                                     null);
-   }
+//   protected FailoverManagerImpl createBackupConnectionFailoverManager(final TransportConfiguration backupConnector,
+//                                                                       final ExecutorService threadPool,
+//                                                                       final ScheduledExecutorService scheduledPool)
+//   {
+//      return new FailoverManagerImpl((ClientSessionFactory)null,
+//                                     backupConnector,
+//                                     null,
+//                                     false,
+//                                     HornetQClient.DEFAULT_CALL_TIMEOUT,
+//                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+//                                     HornetQClient.DEFAULT_CONNECTION_TTL,
+//                                     0,
+//                                     1.0d,
+//                                     0,
+//                                     1,
+//                                     false,
+//                                     threadPool,
+//                                     scheduledPool,
+//                                     null);
+//   }
 
    protected PagingManager createPagingManager()
    {

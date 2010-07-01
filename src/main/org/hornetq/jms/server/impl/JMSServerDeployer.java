@@ -44,7 +44,7 @@ public class JMSServerDeployer extends XmlDeployer
 
    protected static final String ENTRY_NODE_NAME = "entry";
 
-   protected static final String CONNECTORS_NODE_NAME = "connectors";
+   protected static final String CONNECTORS_NODE_NAME = "static-connectors";
 
    protected static final String CONNECTION_FACTORY_NODE_NAME = "connection-factory";
 
@@ -63,7 +63,7 @@ public class JMSServerDeployer extends XmlDeployer
 
       this.jmsServerManager = jmsServerManager;
 
-      parser = new JMSServerConfigParserImpl();
+      parser = new JMSServerConfigParserImpl(jmsServerManager.getHornetQServer().getConfiguration());
    }
 
    /**

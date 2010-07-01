@@ -33,9 +33,9 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.ra.inflow.HornetQActivation;
 import org.hornetq.ra.inflow.HornetQActivationSpec;
 
@@ -80,11 +80,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
    private String unparsedProperties;
 
    /**
-    * The JBoss connection factory
-    */
-   private ClientSessionFactory sessionFactory;
-
-   /**
     * Have the factory been configured
     */
    private final AtomicBoolean configured;
@@ -107,7 +102,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
 
       raProperties = new HornetQRAProperties();
-      sessionFactory = null;
       configured = new AtomicBoolean(false);
       activations = new ConcurrentHashMap<ActivationSpec, HornetQActivation>();
    }
@@ -254,33 +248,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
    }
 
-   public String getBackupConnectorClassName()
-   {
-      return raProperties.getBackupConnectorClassName();
-   }
-
-   public void setBackupConnectorClassName(final String backupConnector)
-   {
-      if (HornetQResourceAdapter.trace)
-      {
-         HornetQResourceAdapter.log.trace("setBackUpTransportType(" + backupConnector + ")");
-      }
-      raProperties.setBackupConnectorClassName(backupConnector);
-   }
-
-   public Map<String, Object> getBackupConnectionParameters()
-   {
-      return raProperties.getParsedBackupConnectionParameters();
-   }
-
-   public void setBackupTransportConfiguration(final String config)
-   {
-      if (config != null)
-      {
-         raProperties.setParsedBackupConnectionParameters(Util.parseConfig(config));
-      }
-   }
-
    /**
     * Get the discovery group name
     *
@@ -339,6 +306,16 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
 
       raProperties.setDiscoveryPort(dgp);
+   }
+   
+   public Boolean isHA()
+   {
+      return raProperties.isHA();
+   }
+   
+   public void setHA(final Boolean ha)
+   {
+      this.raProperties.setHA(ha);
    }
 
    /**
@@ -1331,7 +1308,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
    protected void setup() throws HornetQException
    {
       defaultHornetQConnectionFactory = createHornetQConnectionFactory(raProperties);
-      sessionFactory = defaultHornetQConnectionFactory.getCoreFactory();
    }
 
    public HornetQConnectionFactory getDefaultHornetQConnectionFactory() throws ResourceException
@@ -1350,6 +1326,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       return defaultHornetQConnectionFactory;
    }
 
+   //TODO - currently RA only allows a single target server to be specified we should allow a list of servers to be passed in
    public HornetQConnectionFactory createHornetQConnectionFactory(final ConnectionFactoryProperties overrideProperties)
    {
       HornetQConnectionFactory cf;
@@ -1357,28 +1334,38 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
                                                                                     : getConnectorClassName();
       String discoveryAddress = overrideProperties.getDiscoveryAddress() != null ? overrideProperties.getDiscoveryAddress()
                                                                                 : getDiscoveryAddress();
+      
+      Boolean ha = overrideProperties.isHA() != null ? overrideProperties.isHA() : isHA();
+      
       if (connectorClassName != null)
       {
          Map<String, Object> connectionParams =
                overrideConnectionParameters(overrideProperties.getParsedConnectionParameters(),raProperties.getParsedConnectionParameters());
+         
          TransportConfiguration transportConf = new TransportConfiguration(connectorClassName, connectionParams);
-
-         String backUpCOnnectorClassname = overrideProperties.getBackupConnectorClassName() != null ? overrideProperties.getBackupConnectorClassName()
-                                                                                                   : getBackupConnectorClassName();
-         Map<String, Object> backupConnectionParams =
-               overrideConnectionParameters(overrideProperties.getParsedBackupConnectionParameters(),
-                     getBackupConnectionParameters());
-         TransportConfiguration backup = backUpCOnnectorClassname == null ? null
-                                                                         : new TransportConfiguration(backUpCOnnectorClassname,
-                                                                                                      backupConnectionParams);
-
-         cf = HornetQJMSClient.createConnectionFactory(transportConf, backup);
+         
+         if (ha)
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithHA(new TransportConfiguration[] {transportConf});
+         }
+         else
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration[] {transportConf});
+         }
       }
       else if (discoveryAddress != null)
       {
          Integer discoveryPort = overrideProperties.getDiscoveryPort() != null ? overrideProperties.getDiscoveryPort()
                                                                               : getDiscoveryPort();
-         cf = HornetQJMSClient.createConnectionFactory(discoveryAddress, discoveryPort);
+         
+         if (ha)
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithHA(discoveryAddress, discoveryPort);
+         }
+         else
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithoutHA(discoveryAddress, discoveryPort);
+         }
       }
       else
       {
