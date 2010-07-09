@@ -49,7 +49,7 @@ public class ConfigurationValidationTest extends UnitTestCase
       Assert.assertNotNull(element);
       element = XMLUtil.stringToElement(xml);
       Assert.assertNotNull(element);
-      XMLUtil.validate(element, "hornetq-configuration.xsd");
+      XMLUtil.validate(element, "schema/hornetq-configuration.xsd");
    }
 
    public void testFullConfiguration() throws Exception

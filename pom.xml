@@ -27,6 +27,7 @@
 
     <properties>
         <netty.version>3.2.0.Final</netty.version>
+        <netty.version.string>3.2.0.Final-r2292</netty.version.string>
         <hornetq.version.versionName>Stripey</hornetq.version.versionName>
         <hornetq.version.majorVersion>2</hornetq.version.majorVersion>
         <hornetq.version.minorVersion>1</hornetq.version.minorVersion>
@@ -92,6 +93,7 @@
         <module>hornetq-jboss-as-integration</module>
         <module>hornetq-twitter-integration</module>
         <module>hornetq-service-sar</module>
+        <module>tests</module>
     </modules>
 
     <dependencyManagement>

@@ -25,7 +25,6 @@ import javax.naming.NamingException;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -35,9 +34,7 @@ import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.jms.server.config.impl.JMSConfigurationImpl;
-import org.hornetq.jms.server.config.impl.TopicConfigurationImpl;
 import org.hornetq.jms.server.impl.JMSServerManagerImpl;
-import org.hornetq.tests.integration.cluster.distribution.ClusterTestBase;
 import org.hornetq.tests.unit.util.InVMContext;
 
 /**
@@ -50,7 +47,7 @@ import org.hornetq.tests.unit.util.InVMContext;
 public class JMSClusteredTestBase extends ServiceTestBase
 {
 
-   private static final Logger log = Logger.getLogger(ClusterTestBase.class);
+   private static final Logger log = Logger.getLogger(JMSClusteredTestBase.class);
 
    protected HornetQServer server1;
 
