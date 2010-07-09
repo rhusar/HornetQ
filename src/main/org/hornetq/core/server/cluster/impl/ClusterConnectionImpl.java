@@ -256,6 +256,8 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
    {
       server.getClusterManager().nodeDown(nodeID);
 
+      //Remove the flow record for that node
+      
       MessageFlowRecord record = records.remove(nodeID);
 
       if (record != null)

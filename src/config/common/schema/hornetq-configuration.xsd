@@ -200,9 +200,6 @@
 
 	<xsd:element name="broadcast-period" type="xsd:long"/>
 
-	<xsd:element name="connector-ref" type="connector-refType">
-	</xsd:element>
-
 	<xsd:element name="broadcast-group">
 		<xsd:complexType>
 			<xsd:sequence>
@@ -295,6 +292,8 @@
 			</xsd:element>
 			<xsd:element maxOccurs="1" minOccurs="0" name="forwarding-address" type="xsd:string">
 			</xsd:element>
+			<xsd:element maxOccurs="1" minOccurs="0" name="ha" type="xsd:boolean">
+			</xsd:element>
             <xsd:element maxOccurs="1" minOccurs="0" name="filter">
                 <xsd:complexType>
                    <xsd:attribute name="string" type="xsd:string" use="required"/>
@@ -318,9 +317,14 @@
 			</xsd:element>
 			<xsd:element maxOccurs="1" minOccurs="0" name="password" type="xsd:string">
 			</xsd:element>
-			<xsd:choice>
-				<xsd:element maxOccurs="1" minOccurs="1" name="connector-ref" type="connector-refType">
-				</xsd:element>
+			<xsd:choice>				
+				<xsd:element maxOccurs="1" minOccurs="1" name="static-connectors">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element maxOccurs="unbounded" minOccurs="1" name="connector-ref" type="connectorRefType"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>				
 				<xsd:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
 					<xsd:complexType>
 						<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
@@ -347,9 +351,13 @@
 			<xsd:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xsd:int">
 			</xsd:element>
 			<xsd:choice>
-				<xsd:element maxOccurs="1" minOccurs="1" name="static-connectors" type="connector-refType">
-				    
-				</xsd:element>
+				<xsd:element maxOccurs="1" minOccurs="1" name="static-connectors">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="connectorRefType"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>	
 				<xsd:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
 					<xsd:complexType>
 						<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
