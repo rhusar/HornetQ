@@ -97,8 +97,11 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
    private Pair<TransportConfiguration, TransportConfiguration>[] topology;
 
    private final ServerLocator serverLocator;
+   
+   private final TransportConfiguration connector;
 
    public ClusterConnectionImpl(final ServerLocator serverLocator,
+                                final TransportConfiguration connector,
                                 final SimpleString name,
                                 final SimpleString address,
                                 final long retryInterval,
@@ -117,6 +120,8 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
                                 final String clusterPassword) throws Exception
    {
       this.serverLocator = serverLocator;
+      
+      this.connector = connector;
 
       this.name = name;
 
@@ -248,6 +253,11 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       }
 
       backup = false;
+   }
+   
+   public TransportConfiguration getConnector()
+   {
+      return connector;
    }
 
    // ClusterTopologyListener implementation ------------------------------------------------------------------

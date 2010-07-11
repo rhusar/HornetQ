@@ -283,21 +283,24 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   public synchronized void announceNode(final String nodeID,
-                                         final boolean backup,
-                                         final TransportConfiguration connector)
+   public synchronized void announceNode(final String nodeID, final boolean backup)
    {
+      // TODO does this really work with more than one cluster connection? I think not
+
+      // Just take the first one for now
+      ClusterConnection cc = clusterConnections.values().iterator().next();
+
       Pair<TransportConfiguration, TransportConfiguration> pair = topology.get(nodeID);
 
       if (pair == null)
       {
          if (backup)
          {
-            pair = new Pair<TransportConfiguration, TransportConfiguration>(null, connector);
+            pair = new Pair<TransportConfiguration, TransportConfiguration>(null, cc.getConnector());
          }
          else
          {
-            pair = new Pair<TransportConfiguration, TransportConfiguration>(connector, null);
+            pair = new Pair<TransportConfiguration, TransportConfiguration>(cc.getConnector(), null);
          }
 
          topology.put(nodeID, pair);
@@ -306,11 +309,11 @@ public class ClusterManagerImpl implements ClusterManager
       {
          if (backup)
          {
-            pair.b = connector;
+            pair.b = cc.getConnector();
          }
          else
          {
-            pair.a = connector;
+            pair.a = cc.getConnector();
          }
       }
 
@@ -569,6 +572,15 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
 
+      TransportConfiguration connector = configuration.getConnectorConfigurations().get(config.getConnectorName());
+
+      if (connector == null)
+      {
+         log.warn("No connecor with name '" + config.getConnectorName() +
+                  "'. The cluster connection will not be deployed.");
+         return;
+      }
+
       ServerLocator serverLocator;
 
       if (config.getStaticConnectors() != null)
@@ -592,6 +604,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       ClusterConnection clusterConnection = new ClusterConnectionImpl(serverLocator,
+                                                                      connector,
                                                                       new SimpleString(config.getName()),
                                                                       new SimpleString(config.getAddress()),
                                                                       config.getRetryInterval(),

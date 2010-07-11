@@ -368,7 +368,7 @@ public class HornetQServerImpl implements HornetQServer
             
             // Announce presence of live node to cluster
             
-            clusterManager.announceNode(nodeID, false, connector);
+            clusterManager.announceNode(nodeID.toString(), false);
 
             log.info("Server is now live");
          }
@@ -492,7 +492,7 @@ public class HornetQServerImpl implements HornetQServer
             
             //Announce presence of this backup to rest of cluster
             
-            clusterManager.announceNode(nodeID, true, connector);
+            clusterManager.announceNode(nodeID.toString(), true);
             
             // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
             // for that
@@ -526,7 +526,7 @@ public class HornetQServerImpl implements HornetQServer
                
                // Announce presence of live node to cluster
                
-               clusterManager.announceNode(nodeID, false, connector);
+               clusterManager.announceNode(nodeID.toString(), false);
 
                break;
             }

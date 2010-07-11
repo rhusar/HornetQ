@@ -32,6 +32,8 @@ public class ClusterConnectionConfiguration implements Serializable
    private final String name;
 
    private final String address;
+   
+   private final String connectorName;
 
    private final long retryInterval;
 
@@ -49,6 +51,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
+                                         final String connectorName,
                                          final long retryInterval,
                                          final boolean duplicateDetection,
                                          final boolean forwardWhenNoConsumers,
@@ -58,6 +61,7 @@ public class ClusterConnectionConfiguration implements Serializable
    {
       this.name = name;
       this.address = address;
+      this.connectorName = connectorName;
       this.retryInterval = retryInterval;
       this.staticConnectors = staticConnectors;
       this.duplicateDetection = duplicateDetection;
@@ -69,6 +73,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
+                                         final String connectorName,
                                          final long retryInterval,
                                          final boolean duplicateDetection,
                                          final boolean forwardWhenNoConsumers,
@@ -78,6 +83,7 @@ public class ClusterConnectionConfiguration implements Serializable
    {
       this.name = name;
       this.address = address;
+      this.connectorName = connectorName;
       this.retryInterval = retryInterval;
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
@@ -95,6 +101,11 @@ public class ClusterConnectionConfiguration implements Serializable
    public String getAddress()
    {
       return address;
+   }
+   
+   public String getConnectorName()
+   {
+      return connectorName;
    }
 
    public boolean isDuplicateDetection()

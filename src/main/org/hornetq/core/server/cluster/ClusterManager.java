@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.core.server.HornetQComponent;
 
@@ -45,5 +44,5 @@ public interface ClusterManager extends HornetQComponent, ClusterTopologyListene
    
    void unregisterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
-   void announceNode(String nodeID, boolean backup, TransportConfiguration connector);
+   void announceNode(String nodeID, boolean backup);
 }

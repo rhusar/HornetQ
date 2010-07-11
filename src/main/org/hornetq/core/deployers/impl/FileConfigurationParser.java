@@ -935,6 +935,8 @@ public class FileConfigurationParser
       String name = e.getAttribute("name");
 
       String address = XMLConfigurationUtil.getString(e, "address", null, Validators.NOT_NULL_OR_EMPTY);
+      
+      String connectorName = XMLConfigurationUtil.getString(e, "connector-ref", null, Validators.NOT_NULL_OR_EMPTY);
 
       boolean duplicateDetection = XMLConfigurationUtil.getBoolean(e,
                                                                    "use-duplicate-detection",
@@ -983,9 +985,9 @@ public class FileConfigurationParser
                
                if (child2.getNodeName().equals("connector-ref"))
                {
-                  String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
+                  String connName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
 
-                  staticConnectorNames.add(connectorName);
+                  staticConnectorNames.add(connName);
                }
             }
          }
@@ -997,6 +999,7 @@ public class FileConfigurationParser
       {
          config = new ClusterConnectionConfiguration(name,
                                                      address,
+                                                     connectorName,
                                                      retryInterval,
                                                      duplicateDetection,
                                                      forwardWhenNoConsumers,
@@ -1008,6 +1011,7 @@ public class FileConfigurationParser
       {
          config = new ClusterConnectionConfiguration(name,
                                                      address,
+                                                     connectorName,
                                                      retryInterval,
                                                      duplicateDetection,
                                                      forwardWhenNoConsumers,
