@@ -366,10 +366,6 @@ public class HornetQServerImpl implements HornetQServer
 
             initialisePart2();
             
-            // Announce presence of live node to cluster
-            
-            clusterManager.announceNode(nodeID.toString(), false);
-
             log.info("Server is now live");
          }
          catch (Exception e)
@@ -490,9 +486,7 @@ public class HornetQServerImpl implements HornetQServer
 
             initialisePart1();
             
-            //Announce presence of this backup to rest of cluster
-            
-            clusterManager.announceNode(nodeID.toString(), true);
+            //TODO TODO at this point the clustermanager needs to announce it's presence so the cluster can know about the backup
             
             // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
             // for that
@@ -526,12 +520,13 @@ public class HornetQServerImpl implements HornetQServer
                
                // Announce presence of live node to cluster
                
-               clusterManager.announceNode(nodeID.toString(), false);
-
+               
                break;
             }
             
             configuration.setBackup(false);
+            
+            clusterManager.activate();
 
             initialisePart2();
 

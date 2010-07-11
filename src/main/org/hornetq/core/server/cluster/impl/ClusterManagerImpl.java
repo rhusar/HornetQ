@@ -150,6 +150,10 @@ public class ClusterManagerImpl implements ClusterManager
          deployBridge(config);
       }
 
+      // Now announce presence
+
+      announceNode();
+
       started = true;
    }
 
@@ -213,36 +217,6 @@ public class ClusterManagerImpl implements ClusterManager
       return clusterConnections.get(name.toString());
    }
 
-   public synchronized void activate()
-   {
-      for (BroadcastGroup bg : broadcastGroups.values())
-      {
-         bg.activate();
-      }
-
-      for (Bridge bridge : bridges.values())
-      {
-         bridge.activate();
-      }
-
-      for (ClusterConnection cc : clusterConnections.values())
-      {
-         cc.activate();
-      }
-
-      backup = false;
-   }
-
-   public void startAnnouncement()
-   {
-
-   }
-
-   public void stopAnnouncement()
-   {
-
-   }
-
    private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
@@ -283,12 +257,25 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   public synchronized void announceNode(final String nodeID, final boolean backup)
+   // backup node becomes live
+   public synchronized void activate()
+   {
+      if (backup)
+      {
+         backup = false;
+
+         announceNode();
+      }
+   }
+
+   private synchronized void announceNode()
    {
       // TODO does this really work with more than one cluster connection? I think not
 
       // Just take the first one for now
       ClusterConnection cc = clusterConnections.values().iterator().next();
+
+      String nodeID = server.getNodeID().toString();
 
       Pair<TransportConfiguration, TransportConfiguration> pair = topology.get(nodeID);
 

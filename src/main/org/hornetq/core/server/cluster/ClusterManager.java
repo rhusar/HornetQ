@@ -38,11 +38,9 @@ public interface ClusterManager extends HornetQComponent, ClusterTopologyListene
 
    Set<BroadcastGroup> getBroadcastGroups();
 
-   void activate();
-   
    void registerTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
    void unregisterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
-   void announceNode(String nodeID, boolean backup);
+   void activate();
 }
