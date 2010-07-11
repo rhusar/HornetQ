@@ -133,12 +133,12 @@ public class CoreProtocolManager implements ProtocolManager
                   }
                });
             }
-            else if (packet.getType() == PacketImpl.NODE_ANNOUNCE)
-            {
-               NodeAnnounceMessage msg = (NodeAnnounceMessage)packet;
-               
-               server.getClusterManager().announceNode(msg.getNodeID(), msg.isBackup(), msg.getConnector());
-            }
+//            else if (packet.getType() == PacketImpl.NODE_ANNOUNCE)
+//            {
+//               NodeAnnounceMessage msg = (NodeAnnounceMessage)packet;
+//               
+//               server.getClusterManager().announceNode(msg.getNodeID(), msg.isBackup(), msg.getConnector());
+//            }
          }
       });
       

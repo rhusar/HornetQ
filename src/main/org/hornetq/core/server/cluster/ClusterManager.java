@@ -41,10 +41,6 @@ public interface ClusterManager extends HornetQComponent, ClusterTopologyListene
 
    void activate();
    
-   void startAnnouncement();
-   
-   void stopAnnouncement();
-   
    void registerTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
    void unregisterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);

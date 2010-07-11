@@ -43,9 +43,6 @@ import javax.management.MBeanServer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.CoreQueueConfiguration;
@@ -368,6 +365,10 @@ public class HornetQServerImpl implements HornetQServer
             initialisePart1();
 
             initialisePart2();
+            
+            // Announce presence of live node to cluster
+            
+            clusterManager.announceNode(nodeID, false, connector);
 
             log.info("Server is now live");
          }
@@ -488,14 +489,14 @@ public class HornetQServerImpl implements HornetQServer
             log.info("Read node id " + nodeID);
 
             initialisePart1();
-
-            // TODO - now send announcement message to cluster
-
+            
+            //Announce presence of this backup to rest of cluster
+            
+            clusterManager.announceNode(nodeID, true, connector);
+            
             // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
             // for that
             
-            clusterManager.startAnnouncement();
-
             while (true)
             {
                File liveLockFile = new File(configuration.getJournalDirectory(), "live.lock");
@@ -522,6 +523,10 @@ public class HornetQServerImpl implements HornetQServer
                }
 
                log.info("Obtained live lock");
+               
+               // Announce presence of live node to cluster
+               
+               clusterManager.announceNode(nodeID, false, connector);
 
                break;
             }
@@ -654,32 +659,6 @@ public class HornetQServerImpl implements HornetQServer
 
          backupActivationThread.start();
       }
-
-      // initialisePart1();
-      //
-      // if (configuration.isBackup())
-      // {
-      // if (!configuration.isSharedStore())
-      // {
-      // replicationEndpoint = new ReplicationEndpointImpl(this);
-      // replicationEndpoint.start();
-      // }
-      // else
-      // {
-      // backupLock = new FailoverLockFileImpl("backup.lock", configuration.getJournalDirectory());
-      // liveLock = new FailoverLockFileImpl("live.lock", configuration.getJournalDirectory());
-      // }
-      //         
-      // // We defer actually initialisation until the live node has contacted the backup
-      // //HornetQServerImpl.log.info("Backup server initialised");
-      // }
-      // else
-      // {
-      // initialisePart2();
-      // }
-      //
-      //      
-      // remotingService.start();
 
    }
 
