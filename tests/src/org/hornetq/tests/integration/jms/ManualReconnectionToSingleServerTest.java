@@ -14,6 +14,7 @@ package org.hornetq.tests.integration.jms;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 
@@ -166,8 +167,11 @@ public class ManualReconnectionToSingleServerTest extends UnitTestCase
       configuration.setContext(context);
       configuration.getQueueConfigurations().add(new JMSQueueConfigurationImpl(queueName, null, true, queueName));
 
+      ArrayList<TransportConfiguration> configs = new ArrayList<TransportConfiguration>();
+      configs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
       ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf",
-                                                                                       new TransportConfiguration(NettyConnectorFactory.class.getName()),
+            false,
+            configs,
                                                                                        "/cf");
       cfConfig.setRetryInterval(1000);
       cfConfig.setRetryIntervalMultiplier(1.0);

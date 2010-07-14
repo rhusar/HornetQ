@@ -60,7 +60,7 @@ public class MessageRateTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createInVMFactory();
-         sf.setProducerMaxRate(10);
+         sf.getServerLocator().setProducerMaxRate(10);
          ClientSession session = sf.createSession(false, true, true);
 
          session.createQueue(ADDRESS, ADDRESS, true);
@@ -96,7 +96,7 @@ public class MessageRateTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createInVMFactory();
-         sf.setConsumerMaxRate(10);
+         sf.getServerLocator().setConsumerMaxRate(10);
 
          ClientSession session = sf.createSession(false, true, true);
 
@@ -145,7 +145,7 @@ public class MessageRateTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createInVMFactory();
-         sf.setConsumerMaxRate(10);
+         sf.getServerLocator().setConsumerMaxRate(10);
 
          ClientSession session = sf.createSession(false, true, true);
 

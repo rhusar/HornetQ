@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
@@ -79,12 +80,7 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -101,17 +97,17 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertTrue(ok);
 
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
+      List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
 
-      Assert.assertNotNull(entryMap);
+      Assert.assertNotNull(entries);
 
-      Assert.assertEquals(1, entryMap.size());
+      Assert.assertEquals(1, entries.size());
 
-      DiscoveryEntry entry = entryMap.get(nodeID);
+      DiscoveryEntry entry = entries.get(0);
 
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(connectorPair, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       bg.stop();
 
@@ -179,12 +175,7 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -201,17 +192,17 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertTrue(ok);
 
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
+      List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
 
-      Assert.assertNotNull(entryMap);
+      Assert.assertNotNull(entries);
 
-      Assert.assertEquals(1, entryMap.size());
+      Assert.assertEquals(1, entries.size());
 
-      DiscoveryEntry entry = entryMap.get(nodeID);
+      DiscoveryEntry entry = entries.get(0);
 
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(connectorPair, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       bg.stop();
 
@@ -239,12 +230,8 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
 
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -261,17 +248,17 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertTrue(ok);
 
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
+      List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
 
-      Assert.assertNotNull(entryMap);
+      Assert.assertNotNull(entries);
 
-      Assert.assertEquals(1, entryMap.size());
+      Assert.assertEquals(1, entries.size());
 
-      DiscoveryEntry entry = entryMap.get(nodeID);
+      DiscoveryEntry entry = entries.get(0);
 
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(connectorPair, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       bg.stop();
 
@@ -287,17 +274,17 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertTrue(ok);
 
-      entryMap = dg.getDiscoveryEntryMap();
+      entries = dg.getDiscoveryEntries();
 
-      Assert.assertNotNull(entryMap);
+      Assert.assertNotNull(entries);
 
-      Assert.assertEquals(1, entryMap.size());
+      Assert.assertEquals(1, entries.size());
 
-      entry = entryMap.get(nodeID);
+      entry = entries.get(0);
 
       Assert.assertNotNull(entry);
 
-      Assert.assertEquals(connectorPair, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
    }
 
@@ -321,12 +308,8 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
 
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(nodeID, RandomUtil.randomString(), null, groupAddress, groupPort, timeout);
 
@@ -338,11 +321,17 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertFalse(ok);
 
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
+      List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
 
-      Assert.assertNotNull(entryMap);
+      Assert.assertNotNull(entries);
 
-      Assert.assertEquals(0, entryMap.size());
+      Assert.assertEquals(1, entries.size());
+
+      DiscoveryEntry entry = entries.get(0);
+
+      Assert.assertNotNull(entry);
+
+      Assert.assertEquals(live1, entry.getConnector());
 
       bg.stop();
 
@@ -410,12 +399,7 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       final int port2 = 6746;
 
@@ -457,12 +441,7 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      TransportConfiguration backup1 = generateTC();
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    backup1);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       final InetAddress groupAddress2 = InetAddress.getByName(DiscoveryTest.address2);
       final int port2 = 6746;
@@ -534,26 +513,14 @@ public class DiscoveryTest extends UnitTestCase
       bg3.start();
 
       TransportConfiguration live1 = generateTC();
-      TransportConfiguration backup1 = generateTC();
 
       TransportConfiguration live2 = generateTC();
-      TransportConfiguration backup2 = generateTC();
 
       TransportConfiguration live3 = generateTC();
-      TransportConfiguration backup3 = generateTC();
 
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair1 = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                     backup1);
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair2 = new Pair<TransportConfiguration, TransportConfiguration>(live2,
-                                                                                                                                     backup2);
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair3 = new Pair<TransportConfiguration, TransportConfiguration>(live3,
-                                                                                                                                     backup3);
-
-      bg1.addConnectorPair(connectorPair1);
-      bg2.addConnectorPair(connectorPair2);
-      bg3.addConnectorPair(connectorPair3);
+      bg1.addConnector(live1);
+      bg2.addConnector(live2);
+      bg3.addConnector(live3);
 
       DiscoveryGroup dg1 = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                   RandomUtil.randomString(),
@@ -587,30 +554,45 @@ public class DiscoveryTest extends UnitTestCase
 
       boolean ok = dg1.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      Map<String, DiscoveryEntry> entryMap = dg1.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      DiscoveryEntry entry = entryMap.get(node1);
+      List<DiscoveryEntry> entries = dg1.getDiscoveryEntries();
+
+      Assert.assertNotNull(entries);
+
+      Assert.assertEquals(1, entries.size());
+
+      DiscoveryEntry entry = entries.get(0);
+
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair1, entry.getConnectorPair());
+
+      Assert.assertEquals(live1, entry.getConnector());
 
       ok = dg2.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg2.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      entry = entryMap.get(node2);
+      entries = dg2.getDiscoveryEntries();
+
+      Assert.assertNotNull(entries);
+
+      Assert.assertEquals(1, entries.size());
+
+      entry = entries.get(0);
+
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair2, entry.getConnectorPair());
+
+      Assert.assertEquals(live2, entry.getConnector());
 
       ok = dg3.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg3.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      entry = entryMap.get(node3);
+      entries = dg3.getDiscoveryEntries();
+
+      Assert.assertNotNull(entries);
+
+      Assert.assertEquals(1, entries.size());
+
+      entry = entries.get(0);
+
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair3, entry.getConnectorPair());
+
+      Assert.assertEquals(live3, entry.getConnector());
 
       bg1.stop();
       bg2.stop();
@@ -621,58 +603,7 @@ public class DiscoveryTest extends UnitTestCase
       dg3.stop();
    }
 
-   public void testBroadcastNullBackup() throws Exception
-   {
-      final InetAddress groupAddress = InetAddress.getByName(DiscoveryTest.address1);
-      final int groupPort = 6745;
-      final int timeout = 500;
 
-      String nodeID = RandomUtil.randomString();
-
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
-
-      bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    null);
-
-      bg.addConnectorPair(connectorPair);
-
-      DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 timeout);
-
-      dg.start();
-
-      bg.broadcastConnectors();
-
-      boolean ok = dg.waitForBroadcast(1000);
-
-      Assert.assertTrue(ok);
-
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      DiscoveryEntry entry = entryMap.get(nodeID);
-      Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair, entry.getConnectorPair());
-
-      bg.stop();
-
-      dg.stop();
-
-   }
 
    public void testDiscoveryListenersCalled() throws Exception
    {
@@ -694,10 +625,7 @@ public class DiscoveryTest extends UnitTestCase
 
       TransportConfiguration live1 = generateTC();
 
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                    null);
-
-      bg.addConnectorPair(connectorPair);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -780,22 +708,13 @@ public class DiscoveryTest extends UnitTestCase
       bg3.start();
 
       TransportConfiguration live1 = generateTC();
-      TransportConfiguration backup1 = generateTC();
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair1 = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                     backup1);
-      bg1.addConnectorPair(connectorPair1);
+      bg1.addConnector(live1);
 
       TransportConfiguration live2 = generateTC();
-      TransportConfiguration backup2 = generateTC();
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair2 = new Pair<TransportConfiguration, TransportConfiguration>(live2,
-                                                                                                                                     backup2);
-      bg2.addConnectorPair(connectorPair2);
+      bg2.addConnector(live2);
 
       TransportConfiguration live3 = generateTC();
-      TransportConfiguration backup3 = generateTC();
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair3 = new Pair<TransportConfiguration, TransportConfiguration>(live3,
-                                                                                                                                     backup3);
-      bg3.addConnectorPair(connectorPair3);
+      bg3.addConnector(live3);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -814,12 +733,17 @@ public class DiscoveryTest extends UnitTestCase
       bg1.broadcastConnectors();
       boolean ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      Map<String, DiscoveryEntry> entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      DiscoveryEntry entry = entryMap.get(node1);
+      List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
+
+      Assert.assertNotNull(entries);
+
+      Assert.assertEquals(1, entries.size());
+
+      DiscoveryEntry entry = entries.get(0);
+
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair1, entry.getConnectorPair());
+
+      Assert.assertEquals(live1, entry.getConnector());
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -828,15 +752,15 @@ public class DiscoveryTest extends UnitTestCase
       bg2.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(2, entryMap.size());
-      DiscoveryEntry entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      DiscoveryEntry entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      DiscoveryEntry entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      DiscoveryEntry entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
+      Assert.assertEquals(live2, entry2.getConnector());
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -845,18 +769,18 @@ public class DiscoveryTest extends UnitTestCase
       bg3.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(3, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
-      DiscoveryEntry entry3 = entryMap.get(node3);
+      Assert.assertEquals(live2, entry2.getConnector());
+      DiscoveryEntry entry3 = entries.get(2);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -865,18 +789,18 @@ public class DiscoveryTest extends UnitTestCase
       bg1.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(3, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
-      entry3 = entryMap.get(node3);
+      Assert.assertEquals(live2, entry2.getConnector());
+      entry3 = entries.get(2);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -885,18 +809,18 @@ public class DiscoveryTest extends UnitTestCase
       bg2.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(3, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
-      entry3 = entryMap.get(node3);
+      Assert.assertEquals(live2, entry2.getConnector());
+      entry3 = entries.get(2);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -905,42 +829,42 @@ public class DiscoveryTest extends UnitTestCase
       bg3.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(3, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
-      entry3 = entryMap.get(node3);
+      Assert.assertEquals(live2, entry2.getConnector());
+      entry3 = entries.get(2);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
       listener2.called = false;
 
-      bg2.removeConnectorPair(connectorPair2);
+      bg2.removeConnector(live2);
       bg2.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
 
       // Connector2 should still be there since not timed out yet
 
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(3, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry2 = entryMap.get(node2);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry2 = entries.get(1);
       Assert.assertNotNull(entry2);
-      Assert.assertEquals(connectorPair2, entry2.getConnectorPair());
-      entry3 = entryMap.get(node3);
+      Assert.assertEquals(live2, entry2.getConnector());
+      entry3 = entries.get(2);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
 
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
@@ -956,23 +880,23 @@ public class DiscoveryTest extends UnitTestCase
       bg3.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
 
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(2, entryMap.size());
-      entry1 = entryMap.get(node1);
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(2, entries.size());
+      entry1 = entries.get(0);
       Assert.assertNotNull(entry1);
-      Assert.assertEquals(connectorPair1, entry1.getConnectorPair());
-      entry3 = entryMap.get(node3);
+      Assert.assertEquals(live1, entry1.getConnector());
+      entry3 = entries.get(1);
       Assert.assertNotNull(entry3);
-      Assert.assertEquals(connectorPair3, entry3.getConnectorPair());
+      Assert.assertEquals(live3, entry3.getConnector());
 
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
       listener2.called = false;
 
-      bg1.removeConnectorPair(connectorPair1);
-      bg3.removeConnectorPair(connectorPair3);
+      bg1.removeConnector(live1);
+      bg3.removeConnector(live3);
 
       Thread.sleep(timeout);
 
@@ -983,9 +907,9 @@ public class DiscoveryTest extends UnitTestCase
       bg3.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
 
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(0, entryMap.size());
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(0, entries.size());
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -998,9 +922,9 @@ public class DiscoveryTest extends UnitTestCase
       bg3.broadcastConnectors();
       ok = dg.waitForBroadcast(1000);
 
-      entryMap = dg.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(0, entryMap.size());
+      entries = dg.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(0, entries.size());
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
 
@@ -1030,12 +954,8 @@ public class DiscoveryTest extends UnitTestCase
       bg.start();
 
       TransportConfiguration live1 = generateTC();
-      TransportConfiguration backup1 = generateTC();
 
-      Pair<TransportConfiguration, TransportConfiguration> connectorPair1 = new Pair<TransportConfiguration, TransportConfiguration>(live1,
-                                                                                                                                     backup1);
-
-      bg.addConnectorPair(connectorPair1);
+      bg.addConnector(live1);
 
       DiscoveryGroup dg1 = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                   RandomUtil.randomString(),
@@ -1066,30 +986,30 @@ public class DiscoveryTest extends UnitTestCase
 
       boolean ok = dg1.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      Map<String, DiscoveryEntry> entryMap = dg1.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      DiscoveryEntry entry = entryMap.get(nodeID);
+      List<DiscoveryEntry> entries = dg1.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(1, entries.size());
+      DiscoveryEntry entry = entries.get(0);
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair1, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       ok = dg2.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg2.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      entry = entryMap.get(nodeID);
+      entries = dg2.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(1, entries.size());
+      entry = entries.get(0);
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair1, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       ok = dg3.waitForBroadcast(1000);
       Assert.assertTrue(ok);
-      entryMap = dg3.getDiscoveryEntryMap();
-      Assert.assertNotNull(entryMap);
-      Assert.assertEquals(1, entryMap.size());
-      entry = entryMap.get(nodeID);
+      entries = dg3.getDiscoveryEntries();
+      Assert.assertNotNull(entries);
+      Assert.assertEquals(1, entries.size());
+      entry = entries.get(0);
       Assert.assertNotNull(entry);
-      Assert.assertEquals(connectorPair1, entry.getConnectorPair());
+      Assert.assertEquals(live1, entry.getConnector());
 
       bg.stop();
 

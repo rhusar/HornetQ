@@ -26,6 +26,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -41,6 +42,8 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
+
+import static org.hornetq.tests.util.ServiceTestBase.*;
 
 /**
  * 
@@ -58,7 +61,7 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    protected static final String INVM_ACCEPTOR_FACTORY = InVMAcceptorFactory.class.getCanonicalName();
 
-   protected static final String INVM_CONNECTOR_FACTORY = InVMConnectorFactory.class.getCanonicalName();
+   public static final String INVM_CONNECTOR_FACTORY = InVMConnectorFactory.class.getCanonicalName();
 
    protected static final String NETTY_ACCEPTOR_FACTORY = NettyAcceptorFactory.class.getCanonicalName();
 
@@ -198,7 +201,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       if (isNetty)
       {
          return createServer(realFiles,
-                             createClusteredDefaultConfig(index, params, ServiceTestBase.NETTY_ACCEPTOR_FACTORY),
+                             createClusteredDefaultConfig(index, params, NETTY_ACCEPTOR_FACTORY),
                              -1,
                              -1,
                              new HashMap<String, AddressSettings>());
@@ -206,7 +209,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       else
       {
          return createServer(realFiles,
-                             createClusteredDefaultConfig(index, params, ServiceTestBase.INVM_ACCEPTOR_FACTORY),
+                             createClusteredDefaultConfig(index, params, INVM_ACCEPTOR_FACTORY),
                              -1,
                              -1,
                              new HashMap<String, AddressSettings>());
@@ -223,7 +226,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       if (isNetty)
       {
          return createServer(realFiles,
-                             createClusteredDefaultConfig(index, params, ServiceTestBase.NETTY_ACCEPTOR_FACTORY),
+                             createClusteredDefaultConfig(index, params, NETTY_ACCEPTOR_FACTORY),
                              pageSize,
                              maxAddressSize,
                              new HashMap<String, AddressSettings>());
@@ -231,7 +234,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       else
       {
          return createServer(realFiles,
-                             createClusteredDefaultConfig(index, params, ServiceTestBase.INVM_ACCEPTOR_FACTORY),
+                             createClusteredDefaultConfig(index, params, INVM_ACCEPTOR_FACTORY),
                              -1,
                              -1,
                              new HashMap<String, AddressSettings>());
@@ -248,12 +251,12 @@ public abstract class ServiceTestBase extends UnitTestCase
       if (netty)
       {
          return createDefaultConfig(new HashMap<String, Object>(),
-                                    ServiceTestBase.INVM_ACCEPTOR_FACTORY,
-                                    ServiceTestBase.NETTY_ACCEPTOR_FACTORY);
+                                    INVM_ACCEPTOR_FACTORY,
+                                    NETTY_ACCEPTOR_FACTORY);
       }
       else
       {
-         return createDefaultConfig(new HashMap<String, Object>(), ServiceTestBase.INVM_ACCEPTOR_FACTORY);
+         return createDefaultConfig(new HashMap<String, Object>(), INVM_ACCEPTOR_FACTORY);
       }
    }
 
@@ -324,7 +327,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       return configuration;
    }
 
-   protected ClientSessionFactoryImpl createFactory(final boolean isNetty)
+   protected ClientSessionFactoryImpl createFactory(final boolean isNetty) throws Exception
    {
       if (isNetty)
       {
@@ -336,19 +339,20 @@ public abstract class ServiceTestBase extends UnitTestCase
       }
    }
 
-   protected ClientSessionFactoryImpl createInVMFactory()
+   protected ClientSessionFactoryImpl createInVMFactory() throws Exception
    {
-      return createFactory(ServiceTestBase.INVM_CONNECTOR_FACTORY);
+      return createFactory(INVM_CONNECTOR_FACTORY);
    }
 
-   protected ClientSessionFactoryImpl createNettyFactory()
+   protected ClientSessionFactoryImpl createNettyFactory() throws Exception
    {
-      return createFactory(ServiceTestBase.NETTY_CONNECTOR_FACTORY);
+      return createFactory(NETTY_CONNECTOR_FACTORY);
    }
 
-   protected ClientSessionFactoryImpl createFactory(final String connectorClass)
+   protected ClientSessionFactoryImpl createFactory(final String connectorClass) throws Exception
    {
-      return (ClientSessionFactoryImpl) HornetQClient.createClientSessionFactory(new TransportConfiguration(connectorClass), null);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(connectorClass));
+      return (ClientSessionFactoryImpl) locator.createSessionFactory();
 
    }
 

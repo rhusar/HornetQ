@@ -49,8 +49,8 @@ public class AcknowledgeTest extends ServiceTestBase
       {
          server.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setAckBatchSize(0);
-         cf.setBlockOnAcknowledge(true);
+         cf.getServerLocator().setAckBatchSize(0);
+         cf.getServerLocator().setBlockOnAcknowledge(true);
          ClientSession sendSession = cf.createSession(false, true, true);
          ClientSession session = cf.createSession(false, true, true);
          sendSession.createQueue(addressA, queueA, false);
@@ -132,8 +132,8 @@ public class AcknowledgeTest extends ServiceTestBase
       {
          server.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setBlockOnAcknowledge(true);
-         cf.setAckBatchSize(0);
+         cf.getServerLocator().setBlockOnAcknowledge(true);
+         cf.getServerLocator().setAckBatchSize(0);
          ClientSession sendSession = cf.createSession(false, true, true);
          final ClientSession session = cf.createSession(false, true, true);
          sendSession.createQueue(addressA, queueA, false);
@@ -190,8 +190,8 @@ public class AcknowledgeTest extends ServiceTestBase
       {
          server.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setBlockOnAcknowledge(true);
-         cf.setAckBatchSize(0);
+         cf.getServerLocator().setBlockOnAcknowledge(true);
+         cf.getServerLocator().setAckBatchSize(0);
          ClientSession sendSession = cf.createSession(false, true, true);
          final ClientSession session = cf.createSession(false, true, true);
          sendSession.createQueue(addressA, queueA, false);

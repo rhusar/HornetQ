@@ -28,12 +28,7 @@ import org.hornetq.api.core.Message;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -45,6 +40,7 @@ import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
+import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
@@ -1087,7 +1083,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
    }
 
-   protected void setupSessionFactory(final int node, final boolean netty)
+   protected void setupSessionFactory(final int node, final boolean netty) throws Exception
    {
       if (sfs[node] != null)
       {
@@ -1107,15 +1103,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
          serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
       }
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(serverTotc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ClientSessionFactory sf = locator.createSessionFactory();
 
-      sf.setBlockOnNonDurableSend(true);
-      sf.setBlockOnDurableSend(true);
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
+      sf.getServerLocator().setBlockOnDurableSend(true);
 
       sfs[node] = sf;
    }
 
-   protected void setupSessionFactory(final int node, final int backupNode, final boolean netty, final boolean blocking)
+   protected void setupSessionFactory(final int node, final int backupNode, final boolean netty, final boolean blocking) throws Exception
    {
       if (sfs[node] != null)
       {
@@ -1135,35 +1132,21 @@ public abstract class ClusterTestBase extends ServiceTestBase
          serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
       }
 
-      TransportConfiguration serverBackuptc = null;
 
-      if (backupNode != -1)
-      {
-         Map<String, Object> backupParams = generateParams(backupNode, netty);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
-         if (netty)
-         {
-            serverBackuptc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, backupParams);
-         }
-         else
-         {
-            serverBackuptc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, backupParams);
-         }
-      }
-
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(serverTotc, serverBackuptc);
-
-      sf.setFailoverOnServerShutdown(false);
-      sf.setRetryInterval(100);
-      sf.setRetryIntervalMultiplier(1d);
-      sf.setReconnectAttempts(-1);
-      sf.setBlockOnNonDurableSend(blocking);
-      sf.setBlockOnDurableSend(blocking);
+      sf.getServerLocator().setFailoverOnServerShutdown(false);
+      sf.getServerLocator().setRetryInterval(100);
+      sf.getServerLocator().setRetryIntervalMultiplier(1d);
+      sf.getServerLocator().setReconnectAttempts(-1);
+      sf.getServerLocator().setBlockOnNonDurableSend(blocking);
+      sf.getServerLocator().setBlockOnDurableSend(blocking);
 
       sfs[node] = sf;
    }
 
-   protected void setupSessionFactory(final int node, final int backupNode, final boolean netty)
+   protected void setupSessionFactory(final int node, final int backupNode, final boolean netty) throws Exception
    {
       this.setupSessionFactory(node, backupNode, netty, true);
    }
@@ -1242,30 +1225,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setJournalCompactMinFiles(0);
       configuration.setBackup(backup);
 
-      if (backupNode != -1)
-      {
-         Map<String, Object> backupParams = generateParams(backupNode, netty);
-
-         if (netty)
-         {
-            TransportConfiguration nettyBackuptc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY,
-                                                                              backupParams);
-
-            configuration.getConnectorConfigurations().put(nettyBackuptc.getName(), nettyBackuptc);
-
-            configuration.setBackupConnectorName(nettyBackuptc.getName());
-         }
-         else
-         {
-            TransportConfiguration invmBackuptc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY,
-                                                                             backupParams);
-
-            configuration.getConnectorConfigurations().put(invmBackuptc.getName(), invmBackuptc);
-
-            configuration.setBackupConnectorName(invmBackuptc.getName());
-         }
-      }
-
       configuration.getAcceptorConfigurations().clear();
 
       Map<String, Object> params = generateParams(node, netty);
@@ -1342,29 +1301,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setBackup(backup);
 
       TransportConfiguration nettyBackuptc = null;
-      TransportConfiguration invmBackuptc = null;
-
-      if (backupNode != -1)
-      {
-         Map<String, Object> backupParams = generateParams(backupNode, netty);
-
-         if (netty)
-         {
-            nettyBackuptc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, backupParams);
-
-            configuration.getConnectorConfigurations().put(nettyBackuptc.getName(), nettyBackuptc);
-
-            configuration.setBackupConnectorName(nettyBackuptc.getName());
-         }
-         else
-         {
-            invmBackuptc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, backupParams);
-
-            configuration.getConnectorConfigurations().put(invmBackuptc.getName(), invmBackuptc);
-
-            configuration.setBackupConnectorName(invmBackuptc.getName());
-         }
-      }
 
       configuration.getAcceptorConfigurations().clear();
 
@@ -1381,23 +1317,21 @@ public abstract class ClusterTestBase extends ServiceTestBase
          configuration.getAcceptorConfigurations().add(invmtc);
       }
 
-      List<Pair<String, String>> connectorPairs = new ArrayList<Pair<String, String>>();
+      List<String> connectorPairs = new ArrayList<String>();
 
       if (netty)
       {
          TransportConfiguration nettytc_c = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
          configuration.getConnectorConfigurations().put(nettytc_c.getName(), nettytc_c);
 
-         connectorPairs.add(new Pair<String, String>(nettytc_c.getName(),
-                                                     nettyBackuptc == null ? null : nettyBackuptc.getName()));
+         connectorPairs.add(nettytc_c.getName());
       }
       else
       {
          TransportConfiguration invmtc_c = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
          configuration.getConnectorConfigurations().put(invmtc_c.getName(), invmtc_c);
 
-         connectorPairs.add(new Pair<String, String>(invmtc_c.getName(), invmBackuptc == null ? null
-                                                                                             : invmBackuptc.getName()));
+         connectorPairs.add(invmtc_c.getName());
       }
 
       BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
@@ -1499,13 +1433,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(serverTotc.getName(), null);
 
-      List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
-      pairs.add(connectorPair);
+      List<String> pairs = new ArrayList<String>();
+      pairs.add(serverTotc.getName());
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
+                                                                                      name,
                                                                                       100,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
@@ -1532,7 +1466,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       Map<String, TransportConfiguration> connectors = serverFrom.getConfiguration().getConnectorConfigurations();
 
-      List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
+      List<String> pairs = new ArrayList<String>();
 
       for (int element : nodesTo)
       {
@@ -1551,13 +1485,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          connectors.put(serverTotc.getName(), serverTotc);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(serverTotc.getName(), null);
-
-         pairs.add(connectorPair);
+         pairs.add(serverTotc.getName());
       }
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
+                                                                                      name,
                                                                                       250,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
@@ -1586,7 +1519,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       Map<String, TransportConfiguration> connectors = serverFrom.getConfiguration().getConnectorConfigurations();
 
-      List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
+      List<String> pairs = new ArrayList<String>();
 
       for (int i = 0; i < nodesTo.length; i++)
       {
@@ -1605,7 +1538,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          connectors.put(serverTotc.getName(), serverTotc);
 
-         Map<String, Object> backupParams = generateParams(backupsTo[i], netty);
+         /*Map<String, Object> backupParams = generateParams(backupsTo[i], netty);
 
          TransportConfiguration serverBackupTotc;
 
@@ -1620,13 +1553,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          connectors.put(serverBackupTotc.getName(), serverBackupTotc);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(serverTotc.getName(), serverBackupTotc.getName());
+         Pair<String, String> connectorPair = new Pair<String, String>(serverTotc.getName(), serverBackupTotc.getName());*/
 
-         pairs.add(connectorPair);
+         pairs.add(serverTotc.getName());
       }
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
+                                                                                      name,
                                                                                       250,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
@@ -1654,6 +1588,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
+                                                                                      name,
                                                                                       100,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,

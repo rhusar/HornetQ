@@ -203,7 +203,7 @@ public class InVMNonPersistentMessageBufferTest extends ServiceTestBase
 
    }
 
-   protected ClientSessionFactory createFactory()
+   protected ClientSessionFactory createFactory() throws Exception
    {
       if (isNetty())
       {

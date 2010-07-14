@@ -306,7 +306,7 @@ public class InterceptorTest extends ServiceTestBase
 
       ClientSessionFactory sf = createInVMFactory();
 
-      sf.setBlockOnNonDurableSend(false);
+      sf.getServerLocator().setBlockOnNonDurableSend(false);
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -340,7 +340,7 @@ public class InterceptorTest extends ServiceTestBase
 
       MyInterceptor3 interceptor = new MyInterceptor3();
 
-      sf.addInterceptor(interceptor);
+      sf.getServerLocator().addInterceptor(interceptor);
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -370,7 +370,7 @@ public class InterceptorTest extends ServiceTestBase
          Assert.assertEquals("orange", message.getStringProperty(InterceptorTest.key));
       }
 
-      sf.removeInterceptor(interceptor);
+      sf.getServerLocator().removeInterceptor(interceptor);
 
       for (int i = 0; i < numMessages; i++)
       {
@@ -397,7 +397,7 @@ public class InterceptorTest extends ServiceTestBase
 
       MyInterceptor4 interceptor = new MyInterceptor4();
 
-      sf.addInterceptor(interceptor);
+      sf.getServerLocator().addInterceptor(interceptor);
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -523,10 +523,10 @@ public class InterceptorTest extends ServiceTestBase
 
       ClientSessionFactory sf = createInVMFactory();
 
-      sf.addInterceptor(interceptor1);
-      sf.addInterceptor(interceptor2);
-      sf.addInterceptor(interceptor3);
-      sf.addInterceptor(interceptor4);
+      sf.getServerLocator().addInterceptor(interceptor1);
+      sf.getServerLocator().addInterceptor(interceptor2);
+      sf.getServerLocator().addInterceptor(interceptor3);
+      sf.getServerLocator().addInterceptor(interceptor4);
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -557,7 +557,7 @@ public class InterceptorTest extends ServiceTestBase
          Assert.assertEquals(4, message.getIntProperty("d").intValue());
       }
 
-      sf.removeInterceptor(interceptor2);
+      sf.getServerLocator().removeInterceptor(interceptor2);
 
       for (int i = 0; i < numMessages; i++)
       {

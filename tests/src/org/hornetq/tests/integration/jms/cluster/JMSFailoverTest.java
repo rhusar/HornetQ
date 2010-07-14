@@ -157,7 +157,7 @@ public class JMSFailoverTest extends UnitTestCase
 
    public void testAutomaticFailover() throws Exception
    {
-      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
+      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"),
                                                                    new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
                                                                                               backupParams));
 
@@ -243,12 +243,12 @@ public class JMSFailoverTest extends UnitTestCase
 
    public void testManualFailover() throws Exception
    {
-      HornetQConnectionFactory jbcfLive = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      HornetQConnectionFactory jbcfLive = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
       jbcfLive.setBlockOnNonDurableSend(true);
       jbcfLive.setBlockOnDurableSend(true);
 
-      HornetQConnectionFactory jbcfBackup = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
+      HornetQConnectionFactory jbcfBackup = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory",
                                                                                                     backupParams));
       jbcfBackup.setBlockOnNonDurableSend(true);
       jbcfBackup.setBlockOnDurableSend(true);

@@ -82,7 +82,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          ClientSession session = sf.createSession(false, false, false);
          session.createQueue("testWindow", "testWindow", true);
@@ -146,7 +146,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
          
          ClientSessionFactory sf = createFactory(false);
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          ClientSession session = sf.createSession(false, false, false);
          session.createQueue("testReceive", "testReceive", true);
@@ -200,7 +200,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          ClientSession session = sf.createSession(false, false, false);
          session.createQueue("testWindow", "testWindow", true);
@@ -263,7 +263,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          ClientSession session = sf.createSession(false, false, false);
          session.createQueue("testWindow", "testWindow", true);
@@ -330,9 +330,9 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
       try
       {
          messagingService.start();
-         cf.setBlockOnNonDurableSend(false);
+         cf.getServerLocator().setBlockOnNonDurableSend(false);
          int numMessage = 100;
-         cf.setConsumerWindowSize(numMessage * getMessageEncodeSize(addressA));
+         cf.getServerLocator().setConsumerWindowSize(numMessage * getMessageEncodeSize(addressA));
          ClientSession sendSession = cf.createSession(false, true, true);
          ClientSession receiveSession = cf.createSession(false, true, true);
          sendSession.createQueue(addressA, queueA, false);
@@ -392,7 +392,7 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
-         sf.setConsumerWindowSize(1);
+         sf.getServerLocator().setConsumerWindowSize(1);
 
          session = sf.createSession(false, true, true);
 
@@ -485,11 +485,11 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          if (largeMessages)
          {
-            sf.setMinLargeMessageSize(100);
+            sf.getServerLocator().setMinLargeMessageSize(100);
          }
 
          session = sf.createSession(false, true, true);
@@ -616,11 +616,11 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          if (largeMessages)
          {
-            sf.setMinLargeMessageSize(100);
+            sf.getServerLocator().setMinLargeMessageSize(100);
          }
 
          session1 = sf.createSession(false, true, true);
@@ -806,11 +806,11 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
-         sf.setConsumerWindowSize(0);
+         sf.getServerLocator().setConsumerWindowSize(0);
 
          if (largeMessages)
          {
-            sf.setMinLargeMessageSize(100);
+            sf.getServerLocator().setMinLargeMessageSize(100);
          }
 
          session = sf.createSession(false, true, true);
@@ -971,11 +971,11 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
-         sf.setConsumerWindowSize(1);
+         sf.getServerLocator().setConsumerWindowSize(1);
 
          if (largeMessage)
          {
-            sf.setMinLargeMessageSize(100);
+            sf.getServerLocator().setMinLargeMessageSize(100);
          }
 
          session = sf.createSession(false, true, true);
@@ -1137,10 +1137,10 @@ public class ConsumerWindowSizeTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
-         sf.setConsumerWindowSize(-1);
+         sf.getServerLocator().setConsumerWindowSize(-1);
          if (largeMessages)
          {
-            sf.setMinLargeMessageSize(100);
+            sf.getServerLocator().setMinLargeMessageSize(100);
          }
 
          sessionA = sf.createSession(false, true, true);

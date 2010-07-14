@@ -55,8 +55,8 @@ public class ReplicatedAsynchronousFailoverTest extends AsynchronousFailoverTest
       config0.getAcceptorConfigurations().clear();
       config0.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
 
-      config0.getConnectorConfigurations().put("toBackup", getConnectorTransportConfiguration(false));
-      config0.setBackupConnectorName("toBackup");
+      /*config0.getConnectorConfigurations().put("toBackup", getConnectorTransportConfiguration(false));
+      config0.setBackupConnectorName("toBackup");*/
       config0.setSecurityEnabled(false);
       config0.setSharedStore(false);
       server0Service = super.createServer(true, config0);

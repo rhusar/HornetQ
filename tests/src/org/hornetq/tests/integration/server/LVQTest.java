@@ -24,6 +24,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.tests.util.UnitTestCase;
 
 /**
@@ -579,10 +580,11 @@ public class LVQTest extends UnitTestCase
       AddressSettings qs = new AddressSettings();
       qs.setLastValueQueue(true);
       server.getAddressSettingsRepository().addMatch(address.toString(), qs);
-      // then we create a client as normal
-      ClientSessionFactory sessionFactory = HornetQClient.createClientSessionFactory(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      sessionFactory.setBlockOnAcknowledge(true);
-      sessionFactory.setAckBatchSize(0);
+      // then we create a client as normalServer
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sessionFactory = locator.createSessionFactory();
+      sessionFactory.getServerLocator().setBlockOnAcknowledge(true);
+      sessionFactory.getServerLocator().setAckBatchSize(0);
       clientSession = sessionFactory.createSession(false, true, true);
       clientSessionTxReceives = sessionFactory.createSession(false, true, false);
       clientSessionTxSends = sessionFactory.createSession(false, false, true);

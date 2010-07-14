@@ -156,7 +156,10 @@ public class ConsumerCloseTest extends ServiceTestBase
       address = RandomUtil.randomSimpleString();
       queue = RandomUtil.randomSimpleString();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      sf = locator.createSessionFactory();
+
       session = sf.createSession(false, true, true);
       session.createQueue(address, queue, false);
 

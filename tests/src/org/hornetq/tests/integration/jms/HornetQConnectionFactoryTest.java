@@ -61,11 +61,9 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    private TransportConfiguration liveTC;
 
-   private TransportConfiguration backupTC;
-
    public void testDefaultConstructor() throws Exception
    {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory();
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA();
       assertFactoryParams(cf,
                           null,
                           null,
@@ -123,15 +121,10 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testDefaultConstructorAndSetConnectorPairs() throws Exception
    {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory();
-      final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            backupTC);
-      staticConnectors.add(pair0);
-      cf.setStaticConnectors(staticConnectors);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
 
       assertFactoryParams(cf,
-                          staticConnectors,
+                          new TransportConfiguration[]{liveTC},
                           null,
                           0,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
@@ -172,7 +165,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testDiscoveryConstructor() throws Exception
    {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(groupAddress, groupPort);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(groupAddress, groupPort);
       assertFactoryParams(cf,
                           null,
                           groupAddress,
@@ -214,14 +207,9 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testStaticConnectorListConstructor() throws Exception
    {
-      final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            backupTC);
-      staticConnectors.add(pair0);
-
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(staticConnectors);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
       assertFactoryParams(cf,
-                          staticConnectors,
+                          new TransportConfiguration[]{liveTC},
                           null,
                           0,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
@@ -262,14 +250,9 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testStaticConnectorLiveAndBackupConstructor() throws Exception
    {
-      final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            backupTC);
-      staticConnectors.add(pair0);
-
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(liveTC, backupTC);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
       assertFactoryParams(cf,
-                          staticConnectors,
+                          new TransportConfiguration[]{liveTC},
                           null,
                           0,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
@@ -310,14 +293,9 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testStaticConnectorLiveConstructor() throws Exception
    {
-      final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            null);
-      staticConnectors.add(pair0);
-
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(liveTC);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
       assertFactoryParams(cf,
-                          staticConnectors,
+                          new TransportConfiguration[]{liveTC},
                           null,
                           0,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
@@ -357,13 +335,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testGettersAndSetters()
    {
-      ClientSessionFactory csf = HornetQClient.createClientSessionFactory();
-
-      List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            backupTC);
-      staticConnectors.add(pair0);
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(csf);
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
 
       String discoveryAddress = RandomUtil.randomString();
       int discoveryPort = RandomUtil.randomPositiveInt();
@@ -391,9 +363,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       int reconnectAttempts = RandomUtil.randomPositiveInt();
       boolean failoverOnServerShutdown = RandomUtil.randomBoolean();
 
-      cf.setStaticConnectors(staticConnectors);
-      cf.setDiscoveryAddress(discoveryAddress);
-      cf.setDiscoveryPort(discoveryPort);
       cf.setDiscoveryRefreshTimeout(discoveryRefreshTimeout);
       cf.setClientFailureCheckPeriod(clientFailureCheckPeriod);
       cf.setConnectionTTL(connectionTTL);
@@ -418,7 +387,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       cf.setReconnectAttempts(reconnectAttempts);
       cf.setFailoverOnServerShutdown(failoverOnServerShutdown);
 
-      Assert.assertEquals(staticConnectors, cf.getStaticConnectors());
       Assert.assertEquals(discoveryAddress, cf.getDiscoveryAddress());
       Assert.assertEquals(discoveryPort, cf.getDiscoveryPort());
       Assert.assertEquals(discoveryRefreshTimeout, cf.getDiscoveryRefreshTimeout());
@@ -450,10 +418,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    private void testSettersThrowException(final HornetQConnectionFactory cf)
    {
-      List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
-                                                                                                                            backupTC);
-      staticConnectors.add(pair0);
 
       String discoveryAddress = RandomUtil.randomString();
       int discoveryPort = RandomUtil.randomPositiveInt();
@@ -484,33 +448,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       int reconnectAttempts = RandomUtil.randomPositiveInt();
       boolean failoverOnServerShutdown = RandomUtil.randomBoolean();
 
-      try
-      {
-         cf.setStaticConnectors(staticConnectors);
-         Assert.fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
-      try
-      {
-         cf.setDiscoveryAddress(discoveryAddress);
-         Assert.fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
-      try
-      {
-         cf.setDiscoveryPort(discoveryPort);
-         Assert.fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
       try
       {
          cf.setDiscoveryRefreshTimeout(discoveryRefreshTimeout);
@@ -779,7 +716,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
    }
 
    private void assertFactoryParams(final HornetQConnectionFactory cf,
-                                    final List<Pair<TransportConfiguration, TransportConfiguration>> staticConnectors,
+                                    final TransportConfiguration[] staticConnectors,
                                     final String discoveryAddress,
                                     final int discoveryPort,
                                     final long discoveryRefreshTimeout,
@@ -809,18 +746,18 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                                     final int reconnectAttempts,
                                     final boolean failoverOnServerShutdown)
    {
-      List<Pair<TransportConfiguration, TransportConfiguration>> cfStaticConnectors = cf.getStaticConnectors();
+      TransportConfiguration[] cfStaticConnectors = cf.getStaticConnectors();
       if (staticConnectors == null)
       {
-         Assert.assertNull(cfStaticConnectors);
+         Assert.assertNull(staticConnectors);
       }
       else
       {
-         Assert.assertEquals(staticConnectors.size(), cfStaticConnectors.size());
+         Assert.assertEquals(staticConnectors.length, cfStaticConnectors.length);
 
-         for (int i = 0; i < staticConnectors.size(); i++)
+         for (int i = 0; i < staticConnectors.length; i++)
          {
-            Assert.assertEquals(staticConnectors.get(i), cfStaticConnectors.get(i));
+            Assert.assertEquals(staticConnectors[i], cfStaticConnectors[i]);
          }
       }
       Assert.assertEquals(cf.getDiscoveryAddress(), discoveryAddress);
@@ -872,8 +809,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
       liveTC = null;
 
-      backupTC = null;
-
       super.tearDown();
    }
 
@@ -909,16 +844,13 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       liveConf.getAcceptorConfigurations()
               .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory"));
       Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
-      backupTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory", backupParams);
-      connectors.put(backupTC.getName(), backupTC);
       connectors.put(liveTC.getName(), liveTC);
       liveConf.setConnectorConfigurations(connectors);
       liveConf.setSharedStore(true);
-      liveConf.setBackupConnectorName(backupTC.getName());
       liveConf.setClustered(true);
 
-      List<Pair<String, String>> connectorNames = new ArrayList<Pair<String, String>>();
-      connectorNames.add(new Pair<String, String>(liveTC.getName(), backupTC.getName()));
+      List<String> connectorNames = new ArrayList<String>();
+      connectorNames.add(liveTC.getName());
 
       final long broadcastPeriod = 250;
 

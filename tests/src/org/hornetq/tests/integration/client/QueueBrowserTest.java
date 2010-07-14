@@ -58,9 +58,12 @@ public class QueueBrowserTest extends ServiceTestBase
 
    public void testSimpleConsumerBrowser() throws Exception
    {
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
-      sf.setBlockOnNonDurableSend(true);
+      sf = locator.createSessionFactory();
+
+
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -360,7 +363,7 @@ public class QueueBrowserTest extends ServiceTestBase
    {
       ClientSessionFactory sf = createInVMFactory();
       
-      sf.setConsumerWindowSize(0);
+      sf.getServerLocator().setConsumerWindowSize(0);
 
       ClientSession session = sf.createSession(false, true, true);
 

@@ -29,6 +29,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -84,9 +85,11 @@ public class SessionFactoryTest extends ServiceTestBase
       super.tearDown();
    }
 
-   public void testSerializable() throws Exception
+  /* public void testSerializable() throws Exception
    {
-      ClientSessionFactory cf = HornetQClient.createClientSessionFactory();
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      ClientSessionFactory cf = locator.createSessionFactory();
 
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -109,8 +112,10 @@ public class SessionFactoryTest extends ServiceTestBase
 
    public void testCloseUnusedClientSessionFactoryWithoutGlobalPools() throws Exception
    {
-      ClientSessionFactoryImpl csf = (ClientSessionFactoryImpl) HornetQClient.createClientSessionFactory();
-      csf.setUseGlobalPools(false);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      ClientSessionFactory csf = locator.createSessionFactory();
+      csf.getServerLocator().setUseGlobalPools(false);
       csf.close();
    }
 
@@ -119,7 +124,10 @@ public class SessionFactoryTest extends ServiceTestBase
       try
       {
          startLiveAndBackup();
-         ClientSessionFactory cf = HornetQClient.createClientSessionFactory();
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+         ClientSessionFactory cf = locator.createSessionFactory();
+
          assertFactoryParams(cf,
                              null,
                              null,
@@ -162,7 +170,7 @@ public class SessionFactoryTest extends ServiceTestBase
          Pair<TransportConfiguration, TransportConfiguration> pair0 = new Pair<TransportConfiguration, TransportConfiguration>(liveTC,
                                                                                                                                backupTC);
          staticConnectors.add(pair0);
-         cf.setStaticConnectors(staticConnectors);
+         cf.getServerLocator().setStaticConnectors(staticConnectors);
          ClientSession session = cf.createSession(false, true, true);
          Assert.assertNotNull(session);
          session.close();
@@ -907,5 +915,5 @@ public class SessionFactoryTest extends ServiceTestBase
 
       liveService = HornetQServers.newHornetQServer(liveConf, false);
       liveService.start();
-   }
+   }*/
 }

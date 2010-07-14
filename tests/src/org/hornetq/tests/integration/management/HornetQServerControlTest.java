@@ -96,7 +96,7 @@ public class HornetQServerControlTest extends ManagementTestBase
       Assert.assertEquals(conf.isAsyncConnectionExecutionEnabled(), serverControl.isAsyncConnectionExecutionEnabled());
       Assert.assertEquals(conf.getInterceptorClassNames().size(), serverControl.getInterceptorClassNames().length);
       Assert.assertEquals(conf.getConnectionTTLOverride(), serverControl.getConnectionTTLOverride());
-      Assert.assertEquals(conf.getBackupConnectorName(), serverControl.getBackupConnectorName());
+      //Assert.assertEquals(conf.getBackupConnectorName(), serverControl.getBackupConnectorName());
       Assert.assertEquals(conf.getManagementAddress().toString(), serverControl.getManagementAddress());
       Assert.assertEquals(conf.getManagementNotificationAddress().toString(),
                           serverControl.getManagementNotificationAddress());

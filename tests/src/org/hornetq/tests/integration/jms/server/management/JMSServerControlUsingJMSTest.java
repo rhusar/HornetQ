@@ -68,7 +68,7 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
    {
       super.setUp();
 
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
       connection = cf.createQueueConnection();
       session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
       connection.start();
@@ -97,18 +97,51 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
 
 
          public void createConnectionFactory(final String name,
+                                             final boolean  ha,
                                              final String discoveryAddress,
                                              final int discoveryPort,
                                              final Object[] jndiBindings) throws Exception
          {
             proxy.invokeOperation("createConnectionFactory",
                                   name,
+                                    ha,
                                   discoveryAddress,
                                   discoveryPort,
                                   jndiBindings);
          }
 
+         public void createConnectionFactory(String name, boolean ha, String liveTransportClassName, Map<String, Object> liveTransportParams, Object[] jndiBindings) throws Exception
+         {
+            proxy.invokeOperation("createConnectionFactory",
+                                  name,
+                                  ha,
+                                  liveTransportClassName,
+                                  liveTransportParams,
+                                  jndiBindings);
+         }
+
+         public void createConnectionFactory(String name, boolean ha, Object[] liveConnectorsTransportClassNames, Object[] liveConnectorTransportParams, Object[] bindings) throws Exception
+         {
+            proxy.invokeOperation("createConnectionFactory",
+                                  name,
+                                  ha,
+                                  liveConnectorsTransportClassNames,
+                                  liveConnectorTransportParams,
+                                  bindings);
+         }
+
+         public void createConnectionFactory(@Parameter(name = "name") String name, @Parameter(name = "ha") boolean ha, @Parameter(name = "liveTransportClassNames", desc = "comma-separated list of class names for transport to live servers") String liveTransportClassNames, @Parameter(name = "liveTransportParams", desc = "comma-separated list of key=value parameters for the live transports (enclosed between { } for each transport)") String liveTransportParams, @Parameter(name = "jndiBindings", desc = "comma-separated list of JNDI bindings (use '&comma;' if u need to use commas in your jndi name)") String jndiBindings) throws Exception
+         {
+            proxy.invokeOperation("createConnectionFactory",
+                                  name,
+                                  ha,
+                                  liveTransportClassNames,
+                                  liveTransportParams,
+                                  jndiBindings);
+         }
+
          public void createConnectionFactory(final String name,
+                                             final boolean  ha,
                                              final String discoveryAddress,
                                              final int discoveryPort,
                                              final String jndiBindings) throws Exception
@@ -120,49 +153,6 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
                                   jndiBindings);
          }
 
-         public void createConnectionFactory(final String name,
-                                             final Object[] liveConnectorsTransportClassNames,
-                                             final Object[] liveConnectorTransportParams,
-                                             final Object[] backupConnectorsTransportClassNames,
-                                             final Object[] backupConnectorTransportParams,
-                                             final Object[] jndiBindings) throws Exception
-         {
-            proxy.invokeOperation("createConnectionFactory",
-                                  name,
-                                  liveConnectorsTransportClassNames,
-                                  liveConnectorTransportParams,
-                                  backupConnectorsTransportClassNames,
-                                  backupConnectorTransportParams,
-                                  jndiBindings);
-         }
-
-         public void createConnectionFactory(String name,
-                                             String liveTransportClassNames,
-                                             String liveTransportParams,
-                                             String backupTransportClassNames,
-                                             String backupTransportParams,
-                                             String jndiBindings) throws Exception
-         {
-            proxy.invokeOperation("createConnectionFactory",
-                  name,
-                  liveTransportClassNames,
-                  liveTransportParams,
-                  backupTransportClassNames,
-                  backupTransportParams,
-                  jndiBindings);
-         }
-
-         public void createConnectionFactory(String name,
-                                             String liveTransportClassName,
-                                             Map<String, Object> liveTransportParams,
-                                             Object[] jndiBindings) throws Exception
-         {
-            proxy.invokeOperation("createConnectionFactory",
-                                  name,
-                                  liveTransportClassName,
-                                  liveTransportParams,
-                                  jndiBindings);
-         }
 
          public boolean closeConnectionsForAddress(final String ipAddress) throws Exception
          {

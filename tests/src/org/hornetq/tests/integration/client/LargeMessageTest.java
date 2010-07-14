@@ -950,9 +950,9 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
          
-         sf.setMinLargeMessageSize(111);
+         sf.getServerLocator().setMinLargeMessageSize(111);
          
-         sf.setCacheLargeMessagesClient(true);
+         sf.getServerLocator().setCacheLargeMessagesClient(true);
 
          session = sf.createSession(false, false, false);
 
@@ -2272,8 +2272,8 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setMinLargeMessageSize(1024);
-         sf.setConsumerWindowSize(1024 * 1024);
+         sf.getServerLocator().setMinLargeMessageSize(1024);
+         sf.getServerLocator().setConsumerWindowSize(1024 * 1024);
 
          session = sf.createSession(null, null, false, false, false, false, 0);
 
@@ -2375,8 +2375,8 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setMinLargeMessageSize(1024);
-         sf.setConsumerWindowSize(1024 * 1024);
+         sf.getServerLocator().setMinLargeMessageSize(1024);
+         sf.getServerLocator().setConsumerWindowSize(1024 * 1024);
 
          session = sf.createSession(null, null, false, false, false, false, 0);
 
@@ -2478,7 +2478,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setMinLargeMessageSize(100 * 1024);
+         sf.getServerLocator().setMinLargeMessageSize(100 * 1024);
 
          session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -2552,7 +2552,7 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientSessionFactory sf = createFactory(isNetty());
 
-         sf.setMinLargeMessageSize(1024);
+         sf.getServerLocator().setMinLargeMessageSize(1024);
 
          session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -2728,9 +2728,9 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          if (sendBlocking)
          {
-            sf.setBlockOnNonDurableSend(true);
-            sf.setBlockOnDurableSend(true);
-            sf.setBlockOnAcknowledge(true);
+            sf.getServerLocator().setBlockOnNonDurableSend(true);
+            sf.getServerLocator().setBlockOnDurableSend(true);
+            sf.getServerLocator().setBlockOnAcknowledge(true);
          }
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);

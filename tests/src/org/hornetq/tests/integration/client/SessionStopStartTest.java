@@ -558,7 +558,7 @@ public class SessionStopStartTest extends ServiceTestBase
    public void testStopStartMultipleConsumers() throws Exception
    {
       ClientSessionFactory sf = createInVMFactory();
-      sf.setConsumerWindowSize(getMessageEncodeSize(QUEUE) * 33);
+      sf.getServerLocator().setConsumerWindowSize(getMessageEncodeSize(QUEUE) * 33);
 
       final ClientSession session = sf.createSession(false, true, true);
 

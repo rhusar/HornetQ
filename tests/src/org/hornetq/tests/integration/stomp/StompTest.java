@@ -1329,7 +1329,7 @@ public class StompTest extends UnitTestCase
 
    protected ConnectionFactory createConnectionFactory()
    {
-      return new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      return new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()));
    }
 
    protected Socket createSocket() throws IOException

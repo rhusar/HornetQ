@@ -92,7 +92,8 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
       final String bridgeName = "bridge1";
 
@@ -108,7 +109,8 @@ public class BridgeStartTest extends ServiceTestBase
                                                                         true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        connectorPair,
+                                                                        staticConnectors,
+                                                                        false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -129,9 +131,10 @@ public class BridgeStartTest extends ServiceTestBase
       server1.start();
       server0.start();
 
-      ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+      ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-      ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+      ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
       ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -244,7 +247,8 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
       final String bridgeName = "bridge1";
 
@@ -260,7 +264,8 @@ public class BridgeStartTest extends ServiceTestBase
                                                                         true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        connectorPair,
+                                                                        staticConnectors,
+                                                                        false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -284,7 +289,10 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.start();
 
-         ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
+
+
 
          ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -307,8 +315,7 @@ public class BridgeStartTest extends ServiceTestBase
          Thread.sleep(1000);
 
          server1.start();
-
-         ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
          ClientSession session1 = sf1.createSession(false, true, true);
 
@@ -376,7 +383,7 @@ public class BridgeStartTest extends ServiceTestBase
 
          BridgeStartTest.log.info("started server1");
 
-         sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         sf1 = locator.createSessionFactory(server1tc);
 
          session1 = sf1.createSession(false, true, true);
 
@@ -443,7 +450,8 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
       final String bridgeName = "bridge1";
 
@@ -459,7 +467,8 @@ public class BridgeStartTest extends ServiceTestBase
                                                                         false,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        connectorPair,
+                                                                        staticConnectors,
+                                                                        false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -481,7 +490,10 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.start();
 
-      ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
+
+
 
       ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -506,8 +518,7 @@ public class BridgeStartTest extends ServiceTestBase
       // JMSBridge should be stopped since retries = 0
 
       server1.start();
-
-      ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+      ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
       ClientSession session1 = sf1.createSession(false, true, true);
 
@@ -580,7 +591,8 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
       final String bridgeName = "bridge1";
 
@@ -596,7 +608,8 @@ public class BridgeStartTest extends ServiceTestBase
                                                                         true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        connectorPair,
+                                                                        staticConnectors,
+                                                                        false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -618,7 +631,10 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.start();
 
-      ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
+
+
 
       ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -636,8 +652,7 @@ public class BridgeStartTest extends ServiceTestBase
 
          producer0.send(message);
       }
-
-      ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+      ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
       ClientSession session1 = sf1.createSession(false, true, true);
 

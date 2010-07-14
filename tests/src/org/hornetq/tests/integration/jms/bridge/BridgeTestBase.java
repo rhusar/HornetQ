@@ -203,7 +203,7 @@ public abstract class BridgeTestBase extends UnitTestCase
       {
          public ConnectionFactory createConnectionFactory() throws Exception
          {
-            HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+            HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
 
             // Note! We disable automatic reconnection on the session factory. The bridge needs to do the reconnection
             cf.setReconnectAttempts(0);
@@ -223,7 +223,7 @@ public abstract class BridgeTestBase extends UnitTestCase
 
          public ConnectionFactory createConnectionFactory() throws Exception
          {
-            HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName(),
+            HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                                                   params1));
 
             // Note! We disable automatic reconnection on the session factory. The bridge needs to do the reconnection

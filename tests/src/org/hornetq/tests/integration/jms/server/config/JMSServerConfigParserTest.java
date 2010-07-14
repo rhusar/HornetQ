@@ -54,7 +54,7 @@ public class JMSServerConfigParserTest extends ServiceTestBase
       // anything so the parsing will work
       config.getConnectorConfigurations().put("netty", new TransportConfiguration());
       
-      JMSServerConfigParser parser = new JMSServerConfigParserImpl();
+      JMSServerConfigParser parser = new JMSServerConfigParserImpl(config);
       
       String conf = "hornetq-jms-for-JMSServerDeployerTest.xml";
       URL confURL = Thread.currentThread().getContextClassLoader().getResource(conf);

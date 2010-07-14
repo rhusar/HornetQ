@@ -1258,12 +1258,12 @@ public class BasicXaRecoveryTest extends ServiceTestBase
       return message;
    }
 
-   private void createClients() throws HornetQException
+   private void createClients() throws Exception
    {
       createClients(false, true);
    }
 
-   private void createClients(final boolean createQueue, final boolean commitACKs) throws HornetQException
+   private void createClients(final boolean createQueue, final boolean commitACKs) throws Exception
    {
 
       sessionFactory = createInVMFactory();

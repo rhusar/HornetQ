@@ -188,11 +188,11 @@ public class MultiThreadConsumerStressTest extends ServiceTestBase
 
       sf = createNettyFactory();
 
-      sf.setBlockOnDurableSend(false);
+      sf.getServerLocator().setBlockOnDurableSend(false);
 
-      sf.setBlockOnNonDurableSend(false);
+      sf.getServerLocator().setBlockOnNonDurableSend(false);
 
-      sf.setBlockOnAcknowledge(false);
+      sf.getServerLocator().setBlockOnAcknowledge(false);
 
       ClientSession sess = sf.createSession();
 

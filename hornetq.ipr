@@ -398,63 +398,6 @@
     <option name="USE_PROJECT_PROFILE" value="true" />
     <version value="1.0" />
   </component>
-  <component name="IntelliJadProjectConfigComponent">
-    <config>
-      <stat type="boolean">false</stat>
-      <nocode type="boolean">false</nocode>
-      <nodos type="boolean">false</nodos>
-      <create-output-directory type="boolean">false</create-output-directory>
-      <noinner type="boolean">false</noinner>
-      <pf type="string">_fld</pf>
-      <b type="boolean">false</b>
-      <af type="boolean">false</af>
-      <safe type="boolean">false</safe>
-      <lnc type="boolean">false</lnc>
-      <lradix type="integer">10</lradix>
-      <v type="boolean">false</v>
-      <noctor type="boolean">false</noctor>
-      <nonlb type="boolean">false</nonlb>
-      <ff type="boolean">false</ff>
-      <pp type="string">_prm</pp>
-      <read-only type="boolean">false</read-only>
-      <o type="boolean">false</o>
-      <nolvt type="boolean">false</nolvt>
-      <nl type="boolean">false</nl>
-      <noconv type="boolean">false</noconv>
-      <pm type="string">_mth</pm>
-      <nocast type="boolean">false</nocast>
-      <jad-path type="string" />
-      <r type="boolean">false</r>
-      <sort type="boolean">false</sort>
-      <exclusion-table-model type="table-model" model-class="net.stevechaloner.intellijad.config.ExclusionTableModel" content-types="string,boolean,boolean" />
-      <always-exclude-recursively type="boolean">false</always-exclude-recursively>
-      <d type="string" />
-      <pe type="string">_ex</pe>
-      <l type="integer">64</l>
-      <decompile-to-memory type="boolean">true</decompile-to-memory>
-      <use-project-specific-settings type="boolean">false</use-project-specific-settings>
-      <clear type="boolean">false</clear>
-      <nofd type="boolean">false</nofd>
-      <clear-and-close-console-on-success type="boolean">false</clear-and-close-console-on-success>
-      <indentation type="integer">4</indentation>
-      <a type="boolean">false</a>
-      <dead type="boolean">false</dead>
-      <noclass type="boolean">false</noclass>
-      <i type="boolean">false</i>
-      <pc type="string">_cls</pc>
-      <t type="boolean">false</t>
-      <decompile-on-navigation type="string">Always</decompile-on-navigation>
-      <f type="boolean">false</f>
-      <pv type="integer">3</pv>
-      <radix type="integer">10</radix>
-      <pa type="string" />
-      <space type="boolean">false</space>
-      <reformat-according-to-style type="boolean">false</reformat-according-to-style>
-      <s type="string">java</s>
-      <dis type="boolean">false</dis>
-      <pl type="string">_lcl</pl>
-    </config>
-  </component>
   <component name="JavadocGenerationManager">
     <option name="OUTPUT_DIRECTORY" />
     <option name="OPTION_SCOPE" value="protected" />

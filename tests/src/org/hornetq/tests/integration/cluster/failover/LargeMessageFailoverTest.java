@@ -84,10 +84,10 @@ public class LargeMessageFailoverTest extends FailoverTest
    }
    
 
-   protected ClientSessionFactoryInternal getSessionFactory()
+   protected ClientSessionFactoryInternal getSessionFactory() throws Exception
    {
       ClientSessionFactoryInternal sf = super.getSessionFactory();
-      sf.setMinLargeMessageSize(LARGE_MESSAGE_SIZE);
+      sf.getServerLocator().setMinLargeMessageSize(LARGE_MESSAGE_SIZE);
       return sf;
    }
 

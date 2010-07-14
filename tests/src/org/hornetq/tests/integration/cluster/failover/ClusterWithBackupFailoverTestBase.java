@@ -25,7 +25,6 @@ package org.hornetq.tests.integration.cluster.failover;
 import java.util.Map;
 
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.core.client.impl.FailoverManagerImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.BroadcastGroup;
@@ -55,7 +54,7 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
    {
       super.setUp();
 
-      FailoverManagerImpl.enableDebug();
+      //FailoverManagerImpl.enableDebug();
 
       setupServers();
    }
@@ -65,7 +64,7 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
    {
       stopServers();
 
-      FailoverManagerImpl.disableDebug();
+     // FailoverManagerImpl.disableDebug();
 
       super.tearDown();
    }
@@ -336,7 +335,7 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
          }
       }
       
-      FailoverManagerImpl.failAllConnectionsForConnector(serverTC);
+      //FailoverManagerImpl.failAllConnectionsForConnector(serverTC);
 
       server.stop();
    }

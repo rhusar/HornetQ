@@ -12,8 +12,10 @@
  */
 package org.hornetq.jms.example;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -92,7 +94,9 @@ public class EmbeddedExample
 
          // Step 6. Configure the JMS ConnectionFactory
          TransportConfiguration connectorConfig = new TransportConfiguration(NettyConnectorFactory.class.getName());
-         ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf", connectorConfig, "/cf");
+         List<TransportConfiguration> configurations = new ArrayList<TransportConfiguration>();
+         configurations.add(connectorConfig);
+         ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf", false,  configurations, "/cf");
          jmsConfig.getConnectionFactoryConfigurations().add(cfConfig);
 
          // Step 7. Configure the JMS Queue

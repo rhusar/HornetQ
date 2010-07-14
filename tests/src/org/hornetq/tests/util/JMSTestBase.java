@@ -158,9 +158,8 @@ public class JMSTestBase extends ServiceTestBase
 
    protected void registerConnectionFactory() throws Exception
    {
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration(NettyConnectorFactory.class.getName()),
-                                                                                    null));
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
       createCF(connectorConfigs, "/cf");
 
@@ -173,7 +172,7 @@ public class JMSTestBase extends ServiceTestBase
     * @param jndiBindings
     * @throws Exception
     */
-   protected void createCF(final List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs,
+   protected void createCF(final List<TransportConfiguration> connectorConfigs,
                            final String ... jndiBindings) throws Exception
    {
       int retryInterval = 1000;
@@ -183,6 +182,7 @@ public class JMSTestBase extends ServiceTestBase
       int callTimeout = 30000;
 
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
+                                       false,
                                         connectorConfigs,
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

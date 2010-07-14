@@ -320,7 +320,7 @@ public class JMSServerControlTest extends ManagementTestBase
       checkResource(ObjectNameBuilder.DEFAULT.getJMSTopicObjectName(topicName));
       Topic topic = (Topic)context.lookup(topicJNDIBinding);
       assertNotNull(topic);
-      HornetQConnectionFactory cf = new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      HornetQConnectionFactory cf = new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()));
       Connection connection = cf.createConnection();
       Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
       // create a consumer will create a Core queue bound to the topic address
@@ -373,10 +373,9 @@ public class JMSServerControlTest extends ManagementTestBase
             String params = "\"" + TransportConstants.SERVER_ID_PROP_NAME + "\"=1";
 
             control.createConnectionFactory(cfName,
+                                             false,
                                             InVMConnectorFactory.class.getName(),
-                                            params,
-                                            InVMConnectorFactory.class.getName(),
-                                            params,
+                                             params,
                                             jndiBindings);
          }
       });
@@ -398,8 +397,8 @@ public class JMSServerControlTest extends ManagementTestBase
                                           TransportConstants.SERVER_ID_PROP_NAME,
                                           1);
 
-            control.createConnectionFactory(cfName, InVMConnectorFactory.class.getName() + ", " +
-                                                    InVMConnectorFactory.class.getName(), params, "", "", jndiBindings);
+            control.createConnectionFactory(cfName,false, InVMConnectorFactory.class.getName() + ", " +
+                                                    InVMConnectorFactory.class.getName(), params, jndiBindings);
          }
       });
    }
@@ -414,13 +413,11 @@ public class JMSServerControlTest extends ManagementTestBase
                                              final Object[] bindings) throws Exception
          {
             TransportConfiguration tcLive = new TransportConfiguration(InVMConnectorFactory.class.getName());
-            TransportConfiguration tcBackup = new TransportConfiguration(InVMConnectorFactory.class.getName());
 
             control.createConnectionFactory(cfName,
+                                          false,
                                             new Object[] { tcLive.getFactoryClassName() },
                                             new Object[] { tcLive.getParams() },
-                                            new Object[] { tcBackup.getFactoryClassName() },
-                                            new Object[] { tcBackup.getParams() },
                                             bindings);
          }
       });

@@ -84,7 +84,9 @@ public class DurableQueueTest extends ServiceTestBase
       server.stop();
       server.start();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
 
       session.start();
@@ -111,7 +113,10 @@ public class DurableQueueTest extends ServiceTestBase
       server.stop();
       server.start();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      sf = locator.createSessionFactory();
+
       session = sf.createSession(false, true, true);
 
       ClientProducer producer = session.createProducer(address);

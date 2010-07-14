@@ -68,8 +68,8 @@ public class AckBatchSizeTest extends ServiceTestBase
          server.start();
          ClientSessionFactory cf = createInVMFactory();
          int numMessages = 100;
-         cf.setAckBatchSize(numMessages * getMessageEncodeSize(addressA));
-         cf.setBlockOnAcknowledge(true);
+         cf.getServerLocator().setAckBatchSize(numMessages * getMessageEncodeSize(addressA));
+         cf.getServerLocator().setBlockOnAcknowledge(true);
          ClientSession sendSession = cf.createSession(false, true, true);
 
          ClientSession session = cf.createSession(false, true, true);
@@ -117,8 +117,8 @@ public class AckBatchSizeTest extends ServiceTestBase
       {
          server.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setAckBatchSize(0);
-         cf.setBlockOnAcknowledge(true);
+         cf.getServerLocator().setAckBatchSize(0);
+         cf.getServerLocator().setBlockOnAcknowledge(true);
          ClientSession sendSession = cf.createSession(false, true, true);
          int numMessages = 100;
 

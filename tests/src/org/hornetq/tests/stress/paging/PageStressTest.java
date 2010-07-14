@@ -67,9 +67,9 @@ public class PageStressTest extends ServiceTestBase
       messagingService.start();
 
       ClientSessionFactory factory = createInVMFactory();
-      factory.setBlockOnAcknowledge(true);
-      factory.setBlockOnDurableSend(false);
-      factory.setBlockOnNonDurableSend(false);
+      factory.getServerLocator().setBlockOnAcknowledge(true);
+      factory.getServerLocator().setBlockOnDurableSend(false);
+      factory.getServerLocator().setBlockOnNonDurableSend(false);
       ClientSession session = null;
 
       try

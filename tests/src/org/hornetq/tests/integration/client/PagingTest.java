@@ -114,9 +114,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -253,9 +253,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -393,9 +393,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -526,9 +526,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, false, true, false, 0);
 
@@ -599,9 +599,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, false, false, false, 0);
 
@@ -689,9 +689,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -831,7 +831,7 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
          
-         sf.setAckBatchSize(0);
+         sf.getServerLocator().setAckBatchSize(0);
 
          ClientSession session = sf.createSession();
 
@@ -927,9 +927,9 @@ public class PagingTest extends ServiceTestBase
       {
          ClientSessionFactory sf = createInVMFactory();
 
-         sf.setBlockOnNonDurableSend(true);
-         sf.setBlockOnDurableSend(true);
-         sf.setBlockOnAcknowledge(true);
+         sf.getServerLocator().setBlockOnNonDurableSend(true);
+         sf.getServerLocator().setBlockOnDurableSend(true);
+         sf.getServerLocator().setBlockOnAcknowledge(true);
 
          ClientSession session = sf.createSession(null, null, false, !transacted, true, false, 0);
 

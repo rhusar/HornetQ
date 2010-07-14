@@ -90,19 +90,17 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                           clusterConnectionControl.isForwardWhenNoConsumers());
       Assert.assertEquals(clusterConnectionConfig1.getMaxHops(), clusterConnectionControl.getMaxHops());
 
-      Object[] connectorPairs = clusterConnectionControl.getStaticConnectorNamePairs();
+      Object[] connectorPairs = clusterConnectionControl.getStaticConnectors();
       Assert.assertEquals(1, connectorPairs.length);
       Object[] connectorPairData = (Object[])connectorPairs[0];
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectorNamePairs().get(0).a, connectorPairData[0]);
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectorNamePairs().get(0).b, connectorPairData[1]);
+      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectors().get(0), connectorPairData[0]);
 
-      String jsonString = clusterConnectionControl.getStaticConnectorNamePairsAsJSON();
+      String jsonString = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNotNull(jsonString);
       JSONArray array = new JSONArray(jsonString);
       Assert.assertEquals(1, array.length());
       JSONObject data = array.getJSONObject(0);
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectorNamePairs().get(0).a, data.optString("a"));
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectorNamePairs().get(0).b, data.optString("b", null));
+      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectors().get(0), data.optString("a"));
 
       Assert.assertNull(clusterConnectionControl.getDiscoveryGroupName());
 
@@ -126,10 +124,10 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                           clusterConnectionControl.isForwardWhenNoConsumers());
       Assert.assertEquals(clusterConnectionConfig2.getMaxHops(), clusterConnectionControl.getMaxHops());
 
-      Object[] connectorPairs = clusterConnectionControl.getStaticConnectorNamePairs();
+      Object[] connectorPairs = clusterConnectionControl.getStaticConnectors();
       Assert.assertNull(connectorPairs);
 
-      String jsonPairs = clusterConnectionControl.getStaticConnectorNamePairsAsJSON();
+      String jsonPairs = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNull(jsonPairs);
 
       Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupName(),
@@ -203,22 +201,22 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                               RandomUtil.randomString(),
                                                               null,
                                                               false);
-
-      Pair<String, String> connectorPair = new Pair<String, String>(connectorConfig.getName(), null);
-      List<Pair<String, String>> pairs = new ArrayList<Pair<String, String>>();
-      pairs.add(connectorPair);
+      List<String> connectors = new ArrayList<String>();
+      connectors.add(connectorConfig.getName());
 
       clusterConnectionConfig1 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
+                                                                    connectorConfig.getName(),
                                                                     RandomUtil.randomPositiveLong(),
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomPositiveInt(),
                                                                     RandomUtil.randomPositiveInt(),
-                                                                    pairs);
+                                                                    connectors);
 
       clusterConnectionConfig2 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
+                                                                    connectorConfig.getName(),
                                                                     RandomUtil.randomPositiveLong(),
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomBoolean(),

@@ -66,7 +66,7 @@ public abstract class MultiThreadReattachSupport extends ServiceTestBase
 
    protected abstract void stop() throws Exception;
 
-   protected abstract ClientSessionFactoryInternal createSessionFactory();
+   protected abstract ClientSessionFactoryInternal createSessionFactory() throws Exception;
 
    @Override
    protected void setUp() throws Exception

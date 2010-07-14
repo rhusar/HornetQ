@@ -152,17 +152,17 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
          ClientSessionFactory sf = createInVMFactory();
 
          if (sendingBlocking)
-         {            sf.setBlockOnNonDurableSend(true);
-            sf.setBlockOnDurableSend(true);
-            sf.setBlockOnAcknowledge(true);
+         {            sf.getServerLocator().setBlockOnNonDurableSend(true);
+            sf.getServerLocator().setBlockOnDurableSend(true);
+            sf.getServerLocator().setBlockOnAcknowledge(true);
          }
 
          if (producerWindow > 0)
          {
-            sf.setConfirmationWindowSize(producerWindow);
+            sf.getServerLocator().setConfirmationWindowSize(producerWindow);
          }
 
-         sf.setMinLargeMessageSize(minSize);
+         sf.getServerLocator().setMinLargeMessageSize(minSize);
 
          ClientSession session;
 

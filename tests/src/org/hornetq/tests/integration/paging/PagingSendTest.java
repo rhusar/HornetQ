@@ -97,9 +97,9 @@ public class PagingSendTest extends ServiceTestBase
          // Making it synchronous, just because we want to stop sending messages as soon as the page-store becomes in
          // page mode
          // and we could only guarantee that by setting it to synchronous
-         sf.setBlockOnNonDurableSend(blocking);
-         sf.setBlockOnDurableSend(blocking);
-         sf.setBlockOnAcknowledge(blocking);
+         sf.getServerLocator().setBlockOnNonDurableSend(blocking);
+         sf.getServerLocator().setBlockOnDurableSend(blocking);
+         sf.getServerLocator().setBlockOnAcknowledge(blocking);
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 

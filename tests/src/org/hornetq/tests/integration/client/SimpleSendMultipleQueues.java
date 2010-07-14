@@ -108,7 +108,7 @@ public class SimpleSendMultipleQueues extends ServiceTestBase
       session.start();
    }
 
-   protected ClientSessionFactory createFactory()
+   protected ClientSessionFactory createFactory() throws Exception
    {
       return createNettyFactory();
    }

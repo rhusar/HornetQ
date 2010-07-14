@@ -85,7 +85,7 @@ public class JMSReconnectTest extends UnitTestCase
       
    private void testReconnectOrReattachSameNode(boolean reattach) throws Exception
    {
-      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
       jbcf.setBlockOnDurableSend(true);
       jbcf.setBlockOnNonDurableSend(true);
@@ -185,7 +185,7 @@ public class JMSReconnectTest extends UnitTestCase
    //Test that non durable JMS sub gets recreated in auto reconnect
    private void testReconnectSameNodeServerRestartedWithNonDurableSubOrTempQueue(final boolean nonDurableSub) throws Exception
    {
-      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
       jbcf.setReconnectAttempts(-1);
            
@@ -260,7 +260,7 @@ public class JMSReconnectTest extends UnitTestCase
    //If the server is shutdown after a non durable sub is created, then close on the connection should proceed normally
    public void testNoReconnectCloseAfterFailToReconnectWithTopicConsumer() throws Exception
    {
-      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
       jbcf.setReconnectAttempts(0);
       
@@ -291,7 +291,7 @@ public class JMSReconnectTest extends UnitTestCase
    //If server is shutdown, and then connection is closed, after a temp queue has been created, the close should complete normally
    public void testNoReconnectCloseAfterFailToReconnectWithTempQueue() throws Exception
    {
-      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      HornetQConnectionFactory jbcf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
 
       jbcf.setReconnectAttempts(0);
       

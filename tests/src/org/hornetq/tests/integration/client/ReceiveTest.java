@@ -166,7 +166,7 @@ public class ReceiveTest extends ServiceTestBase
          server.start();
          ClientSessionFactory cf = createInVMFactory();
          // forces perfect round robin
-         cf.setConsumerWindowSize(1);
+         cf.getServerLocator().setConsumerWindowSize(1);
          ClientSession sendSession = cf.createSession(false, true, true);
          ClientProducer cp = sendSession.createProducer(addressA);
          ClientSession session = cf.createSession(false, true, true);

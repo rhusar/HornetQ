@@ -157,7 +157,8 @@ public class JMSBridgeImplTest extends UnitTestCase
 
    private static ConnectionFactory createConnectionFactory()
    {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+
+      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
       // Note! We disable automatic reconnection on the session factory. The bridge needs to do the reconnection
       cf.setReconnectAttempts(0);
       cf.setBlockOnNonDurableSend(true);
@@ -171,7 +172,7 @@ public class JMSBridgeImplTest extends UnitTestCase
 
    public void testStartWithRepeatedFailure() throws Exception
    {
-      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()))
+      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()))
       {
          @Override
          public Connection createConnection() throws JMSException
@@ -212,7 +213,7 @@ public class JMSBridgeImplTest extends UnitTestCase
 
    public void testStartWithFailureThenSuccess() throws Exception
    {
-      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()))
+      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()))
       {
          boolean firstTime = true;
 
@@ -410,7 +411,7 @@ public class JMSBridgeImplTest extends UnitTestCase
    public void testExceptionOnSourceAndRetrySucceeds() throws Exception
    {
       final AtomicReference<Connection> sourceConn = new AtomicReference<Connection>();
-      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()))
+      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()))
       {
          @Override
          public Connection createConnection() throws JMSException
@@ -460,7 +461,7 @@ public class JMSBridgeImplTest extends UnitTestCase
    public void testExceptionOnSourceAndRetryFails() throws Exception
    {
       final AtomicReference<Connection> sourceConn = new AtomicReference<Connection>();
-      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()))
+      HornetQConnectionFactory failingSourceCF = new HornetQConnectionFactory(false, new TransportConfiguration(InVMConnectorFactory.class.getName()))
       {
          boolean firstTime = true;
 

@@ -60,8 +60,8 @@ public class MessageCounterTest extends ServiceTestBase
    {
       ClientSessionFactory sf = createInVMFactory();
 
-      sf.setBlockOnNonDurableSend(true);
-      sf.setBlockOnDurableSend(true);
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
+      sf.getServerLocator().setBlockOnDurableSend(true);
 
       ClientSession session = sf.createSession(null, null, false, false, false, false, 0);
 

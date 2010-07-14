@@ -135,7 +135,7 @@ public class DivertAndACKClientTest extends JMSTestBase
 
    // Inner classes -------------------------------------------------
    @Override
-   protected void createCF(final List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs,
+   protected void createCF(final List<TransportConfiguration> connectorConfigs,
                            final String ... jndiBindings) throws Exception
    {
       int retryInterval = 1000;
@@ -145,6 +145,7 @@ public class DivertAndACKClientTest extends JMSTestBase
       int callTimeout = 30000;
 
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
+                                        false,
                                         connectorConfigs,
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

@@ -33,7 +33,7 @@ public interface HornetQServerControl
     * <br>
     * If this server is not a backup that uses shared nothing HA, it's value is null
     */
-   String getLiveConnectorName();
+   String getLiveConnectorName() throws Exception;
 
    /**
     * Returns this server's version.

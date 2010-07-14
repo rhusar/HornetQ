@@ -83,16 +83,16 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
       final String groupAddress = "230.1.2.3";
       final int port = 7746;
 
-      List<Pair<String, String>> connectorPairs = new ArrayList<Pair<String, String>>();
-      connectorPairs.add(new Pair<String, String>(server1tc.getName(), null));
 
+      ArrayList<String> list = new ArrayList<String>();
+      list.add(server1tc.getName());
       BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
                                                                              null,
                                                                              -1,
                                                                              groupAddress,
                                                                              port,
                                                                              250,
-                                                                             connectorPairs);
+            list);
 
       server0.getConfiguration().getBroadcastGroupConfigurations().add(bcConfig);
 
@@ -102,6 +102,8 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
 
       final String bridgeName = "bridge1";
 
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+      staticConnectors.add("dg1");
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
@@ -114,7 +116,8 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
                                                                         true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        "dg1",
+                                                                        staticConnectors,
+                                                                        false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -135,9 +138,10 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
       server1.start();
       server0.start();
 
-      ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+      ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-      ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+      ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
       ClientSession session0 = sf0.createSession(false, true, true);
 

@@ -23,6 +23,7 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.Queue;
 import org.hornetq.tests.util.ServiceTestBase;
+import org.hornetq.tests.util.UnitTestCase;
 
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
@@ -83,10 +84,11 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    public void testConsumerReceiveImmediateWithSessionStop() throws Exception
    {
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
-      sf.setBlockOnNonDurableSend(true);
-      sf.setBlockOnAcknowledge(true);
-      sf.setAckBatchSize(0);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      sf = locator.createSessionFactory();
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
+      sf.getServerLocator().setBlockOnAcknowledge(true);
+      sf.getServerLocator().setAckBatchSize(0);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -116,10 +118,11 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    private void doConsumerReceiveImmediateWithNoMessages(final boolean browser) throws Exception
    {
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
-      sf.setBlockOnNonDurableSend(true);
-      sf.setBlockOnAcknowledge(true);
-      sf.setAckBatchSize(0);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      sf = locator.createSessionFactory();
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
+      sf.getServerLocator().setBlockOnAcknowledge(true);
+      sf.getServerLocator().setAckBatchSize(0);
 
       ClientSession session = sf.createSession(false, true, false);
 
@@ -138,10 +141,11 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    private void doConsumerReceiveImmediate(final boolean browser) throws Exception
    {
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
-      sf.setBlockOnNonDurableSend(true);
-      sf.setBlockOnAcknowledge(true);
-      sf.setAckBatchSize(0);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      sf = locator.createSessionFactory();
+      sf.getServerLocator().setBlockOnNonDurableSend(true);
+      sf.getServerLocator().setBlockOnAcknowledge(true);
+      sf.getServerLocator().setAckBatchSize(0);
 
       ClientSession session = sf.createSession(false, true, true);
 

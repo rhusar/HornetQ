@@ -107,7 +107,7 @@ public class SessionCloseOnGCTest extends ServiceTestBase
       {
          ClientSessionFactory factory = createInVMFactory();
 
-         factory.setUseGlobalPools(false);
+         factory.getServerLocator().setUseGlobalPools(false);
 
          ClientSession s1 = factory.createSession();
          ClientSession s2 = factory.createSession();

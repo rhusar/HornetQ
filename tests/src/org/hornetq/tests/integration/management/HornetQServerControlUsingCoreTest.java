@@ -18,6 +18,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.HornetQServerControl;
 import org.hornetq.api.core.management.Parameter;
 import org.hornetq.api.core.management.ResourceNames;
@@ -26,6 +27,7 @@ import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.json.JSONObject;
 
 import java.util.Set;
@@ -67,7 +69,8 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
    {
       super.setUp();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
       session.start();
 
@@ -89,7 +92,8 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
       
       super.restartServer();
       
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
       session.start();
 
@@ -525,6 +529,18 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          public String getAddressSettingsAsJSON(@Parameter(desc = "an address match", name = "addressMatch") String addressMatch) throws Exception
          {
             return (String)proxy.invokeOperation("getAddressSettingsAsJSON", addressMatch);
+         }
+
+         public String getLiveConnectorName()
+         {
+            try
+            {
+               return(String)proxy.invokeOperation("getLiveConnectorName");
+            }
+            catch (Exception e)
+            {
+               throw new RuntimeException(e);
+            }
          }
       };
    }

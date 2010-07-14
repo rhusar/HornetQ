@@ -487,7 +487,7 @@ public class SecurityTest extends ServiceTestBase
          securityRepository.addMatch(SecurityTest.addressA, roles);
          securityManager.addRole("auser", "arole");
          ClientSessionFactory cf = createInVMFactory();
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          session.createQueue(SecurityTest.addressA, SecurityTest.queueA, true);
          ClientProducer cp = session.createProducer(SecurityTest.addressA);
@@ -521,7 +521,7 @@ public class SecurityTest extends ServiceTestBase
          securityRepository.addMatch(SecurityTest.addressA, roles);
          securityManager.addRole("auser", "arole");
          ClientSessionFactory cf = createInVMFactory();
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          session.createQueue(SecurityTest.addressA, SecurityTest.queueA, true);
          ClientProducer cp = session.createProducer(SecurityTest.addressA);
@@ -926,7 +926,7 @@ public class SecurityTest extends ServiceTestBase
          securityRepository.addMatch(configuration.getManagementAddress().toString(), roles);
          securityManager.addRole("auser", "arole");
          ClientSessionFactory cf = createInVMFactory();
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          ClientProducer cp = session.createProducer(configuration.getManagementAddress());
          cp.send(session.createMessage(false));
@@ -1155,8 +1155,8 @@ public class SecurityTest extends ServiceTestBase
          ClientSession frankConnection = null;
          ClientSession samConnection = null;
          ClientSessionFactory factory = createInVMFactory();
-         factory.setBlockOnNonDurableSend(true);
-         factory.setBlockOnDurableSend(true);
+         factory.getServerLocator().setBlockOnNonDurableSend(true);
+         factory.getServerLocator().setBlockOnDurableSend(true);
 
          ClientSession adminSession = factory.createSession("all", "all", false, true, true, false, -1);
          String genericQueueName = "genericQueue";
@@ -1293,8 +1293,8 @@ public class SecurityTest extends ServiceTestBase
          ClientSession frankConnection = null;
          ClientSession samConnection = null;
          ClientSessionFactory factory = createInVMFactory();
-         factory.setBlockOnNonDurableSend(true);
-         factory.setBlockOnDurableSend(true);
+         factory.getServerLocator().setBlockOnNonDurableSend(true);
+         factory.getServerLocator().setBlockOnDurableSend(true);
 
          ClientSession adminSession = factory.createSession("all", "all", false, true, true, false, -1);
          String genericQueueName = "genericQueue";

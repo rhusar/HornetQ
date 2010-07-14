@@ -88,10 +88,10 @@ public class OrderReattachTest extends ServiceTestBase
       server.start();
 
       ClientSessionFactory sf = createFactory(isNetty);
-      sf.setReconnectAttempts(-1);
-      sf.setConfirmationWindowSize(100 * 1024 * 1024);
-      sf.setBlockOnNonDurableSend(false);
-      sf.setBlockOnAcknowledge(false);
+      sf.getServerLocator().setReconnectAttempts(-1);
+      sf.getServerLocator().setConfirmationWindowSize(100 * 1024 * 1024);
+      sf.getServerLocator().setBlockOnNonDurableSend(false);
+      sf.getServerLocator().setBlockOnAcknowledge(false);
 
       final ClientSession session = sf.createSession(false, true, true);
 

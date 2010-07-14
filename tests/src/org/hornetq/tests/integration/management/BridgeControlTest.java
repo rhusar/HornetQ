@@ -13,7 +13,9 @@
 
 package org.hornetq.tests.integration.management;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.management.MBeanServer;
@@ -82,9 +84,9 @@ public class BridgeControlTest extends ManagementTestBase
       Assert.assertEquals(bridgeConfig.isFailoverOnServerShutdown(), bridgeControl.isFailoverOnServerShutdown());
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(), bridgeControl.isUseDuplicateDetection());
 
-      String[] connectorPairData = bridgeControl.getConnectorPair();
-      Assert.assertEquals(bridgeConfig.getConnectorPair().a, connectorPairData[0]);
-      Assert.assertEquals(bridgeConfig.getConnectorPair().b, connectorPairData[1]);
+      String[] connectorPairData = bridgeControl.getStaticConnectors();
+      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0), connectorPairData[0]);
+      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(1), connectorPairData[1]);
 
       Assert.assertTrue(bridgeControl.isStarted());
    }
@@ -159,7 +161,7 @@ public class BridgeControlTest extends ManagementTestBase
                                                                     RandomUtil.randomString(),
                                                                     null,
                                                                     false);
-      Pair<String, String> connectorPair = new Pair<String, String>(connectorConfig.getName(), null);
+      List<String> connectors = new ArrayList<String>();
       bridgeConfig = new BridgeConfiguration(RandomUtil.randomString(),
                                              sourceQueueConfig.getName(),
                                              targetQueueConfig.getAddress(),
@@ -172,7 +174,8 @@ public class BridgeControlTest extends ManagementTestBase
                                              RandomUtil.randomBoolean(),
                                              RandomUtil.randomPositiveInt(),
                                              HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                             connectorPair,
+                                             connectors,
+                                             false,
                                              ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                              ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 

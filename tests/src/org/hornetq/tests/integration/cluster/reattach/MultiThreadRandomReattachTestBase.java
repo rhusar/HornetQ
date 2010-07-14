@@ -25,13 +25,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
@@ -1247,13 +1241,14 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
     * @return
     */
    @Override
-   protected ClientSessionFactoryInternal createSessionFactory()
+   protected ClientSessionFactoryInternal createSessionFactory() throws Exception
    {
-      final ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal)HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
-      sf.setReconnectAttempts(-1);
-      sf.setConfirmationWindowSize(1024 * 1024);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
+      final ClientSessionFactory sf = locator.createSessionFactory();
+      sf.getServerLocator().setReconnectAttempts(-1);
+      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
-      return sf;
+      return (ClientSessionFactoryInternal) sf;
    }
 
    @Override

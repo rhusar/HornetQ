@@ -59,7 +59,7 @@ public class AutogroupIdTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createInVMFactory();
-         sf.setAutoGroup(true);
+         sf.getServerLocator().setAutoGroup(true);
          ClientSession session = sf.createSession(false, true, true);
 
          session.createQueue(groupTestQ, groupTestQ, null, false);
@@ -116,7 +116,7 @@ public class AutogroupIdTest extends ServiceTestBase
          server.start();
 
          ClientSessionFactory sf = createInVMFactory();
-         sf.setAutoGroup(true);
+         sf.getServerLocator().setAutoGroup(true);
          ClientSession session = sf.createSession(false, true, true);
 
          session.createQueue(groupTestQ, groupTestQ, null, false);

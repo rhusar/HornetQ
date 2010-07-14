@@ -61,12 +61,12 @@ public class SessionClosedOnRemotingConnectionFailureTest extends JMSTestBase
 
    public void testSessionClosedOnRemotingConnectionFailure() throws Exception
    {
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration(NettyConnectorFactory.class.getName()),
-                                                                                    null));
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
 
       jmsServer.createConnectionFactory("cffoo",
+                                          false,
                                         connectorConfigs,
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

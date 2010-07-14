@@ -33,15 +33,15 @@ public class SessionCreateProducerTest extends ServiceTestBase
       {
          service.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setProducerMaxRate(99);
-         cf.setBlockOnNonDurableSend(true);
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setProducerMaxRate(99);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          ClientProducer producer = clientSession.createProducer();
          Assert.assertNull(producer.getAddress());
-         Assert.assertEquals(cf.getProducerMaxRate(), producer.getMaxRate());
-         Assert.assertEquals(cf.isBlockOnNonDurableSend(), producer.isBlockOnNonDurableSend());
-         Assert.assertEquals(cf.isBlockOnDurableSend(), producer.isBlockOnDurableSend());
+         Assert.assertEquals(cf.getServerLocator().getProducerMaxRate(), producer.getMaxRate());
+         Assert.assertEquals(cf.getServerLocator().isBlockOnNonDurableSend(), producer.isBlockOnNonDurableSend());
+         Assert.assertEquals(cf.getServerLocator().isBlockOnDurableSend(), producer.isBlockOnDurableSend());
          Assert.assertFalse(producer.isClosed());
          clientSession.close();
       }
@@ -58,15 +58,15 @@ public class SessionCreateProducerTest extends ServiceTestBase
       {
          service.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setProducerMaxRate(99);
-         cf.setBlockOnNonDurableSend(true);
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setProducerMaxRate(99);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          ClientProducer producer = clientSession.createProducer("testAddress");
          Assert.assertNotNull(producer.getAddress());
-         Assert.assertEquals(cf.getProducerMaxRate(), producer.getMaxRate());
-         Assert.assertEquals(cf.isBlockOnNonDurableSend(), producer.isBlockOnNonDurableSend());
-         Assert.assertEquals(cf.isBlockOnDurableSend(), producer.isBlockOnDurableSend());
+         Assert.assertEquals(cf.getServerLocator().getProducerMaxRate(), producer.getMaxRate());
+         Assert.assertEquals(cf.getServerLocator().isBlockOnNonDurableSend(), producer.isBlockOnNonDurableSend());
+         Assert.assertEquals(cf.getServerLocator().isBlockOnDurableSend(), producer.isBlockOnDurableSend());
          Assert.assertFalse(producer.isClosed());
          clientSession.close();
       }
@@ -83,9 +83,9 @@ public class SessionCreateProducerTest extends ServiceTestBase
       {
          service.start();
          ClientSessionFactory cf = createInVMFactory();
-         cf.setProducerMaxRate(99);
-         cf.setBlockOnNonDurableSend(true);
-         cf.setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setProducerMaxRate(99);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          clientSession.close();
          try

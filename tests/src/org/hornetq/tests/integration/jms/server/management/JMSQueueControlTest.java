@@ -868,7 +868,7 @@ public class JMSQueueControlTest extends ManagementTestBase
 
    private Connection createConnection() throws JMSException
    {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory)HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      HornetQConnectionFactory cf = (HornetQConnectionFactory)HornetQJMSClient.createConnectionFactoryWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
 
       cf.setBlockOnDurableSend(true);
 

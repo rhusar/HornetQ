@@ -48,8 +48,8 @@ public class CoreClientOverHttpTest extends UnitTestCase
 
       server.start();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY,
-                                                                                        params));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY, params));
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -104,9 +104,9 @@ public class CoreClientOverHttpTest extends UnitTestCase
 
       server.start();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY,
-                                                                                        params));
-      sf.setConnectionTTL(500);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY, params));
+      ClientSessionFactory sf = locator.createSessionFactory();
+      sf.getServerLocator().setConnectionTTL(500);
 
       ClientSession session = sf.createSession(false, true, true);
 

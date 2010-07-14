@@ -20,6 +20,8 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.tests.util.SpawnedVMSupport;
 
@@ -152,10 +154,11 @@ public class ClientCrashTest extends ClientTestBase
    {
       super.setUp();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory"));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
+      ClientSessionFactory sf = locator.createSessionFactory();
 
-      sf.setClientFailureCheckPeriod(ClientCrashTest.PING_PERIOD);
-      sf.setConnectionTTL(ClientCrashTest.CONNECTION_TTL);
+      sf.getServerLocator().setClientFailureCheckPeriod(ClientCrashTest.PING_PERIOD);
+      sf.getServerLocator().setConnectionTTL(ClientCrashTest.CONNECTION_TTL);
    }
 
    @Override

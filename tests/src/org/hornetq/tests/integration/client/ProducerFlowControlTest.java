@@ -201,13 +201,13 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       ClientSessionFactory sf = createFactory(isNetty());
 
-      sf.setProducerWindowSize(producerWindowSize);
-      sf.setConsumerWindowSize(consumerWindowSize);
-      sf.setAckBatchSize(ackBatchSize);
+      sf.getServerLocator().setProducerWindowSize(producerWindowSize);
+      sf.getServerLocator().setConsumerWindowSize(consumerWindowSize);
+      sf.getServerLocator().setAckBatchSize(ackBatchSize);
 
       if (minLargeMessageSize != -1)
       {
-         sf.setMinLargeMessageSize(minLargeMessageSize);
+         sf.getServerLocator().setMinLargeMessageSize(minLargeMessageSize);
       }
 
       ClientSession session = sf.createSession(false, true, true, true);
@@ -349,9 +349,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       ClientSessionFactory sf = createFactory(isNetty());
 
-      sf.setProducerWindowSize(1024);
-      sf.setConsumerWindowSize(1024);
-      sf.setAckBatchSize(1024);
+      sf.getServerLocator().setProducerWindowSize(1024);
+      sf.getServerLocator().setConsumerWindowSize(1024);
+      sf.getServerLocator().setAckBatchSize(1024);
 
       final ClientSession session = sf.createSession(false, true, true, true);
 
@@ -416,9 +416,9 @@ public class ProducerFlowControlTest extends ServiceTestBase
 
       ClientSessionFactory sf = createFactory(isNetty());
 
-      sf.setProducerWindowSize(1024);
-      sf.setConsumerWindowSize(1024);
-      sf.setAckBatchSize(1024);
+      sf.getServerLocator().setProducerWindowSize(1024);
+      sf.getServerLocator().setConsumerWindowSize(1024);
+      sf.getServerLocator().setAckBatchSize(1024);
 
       final ClientSession session = sf.createSession(false, true, true, true);
 

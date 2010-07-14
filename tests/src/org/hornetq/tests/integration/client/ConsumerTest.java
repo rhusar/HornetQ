@@ -279,8 +279,8 @@ public class ConsumerTest extends ServiceTestBase
          }
       });
       ClientSessionFactory sfReceive = createInVMFactory();
-      sfReceive.setConfirmationWindowSize(100);
-      sfReceive.setAckBatchSize(-1);
+      sfReceive.getServerLocator().setConfirmationWindowSize(100);
+      sfReceive.getServerLocator().setAckBatchSize(-1);
       ClientSession sessionRec = sfReceive.createSession(false, true, true);
       ClientConsumer consumer = sessionRec.createConsumer(QUEUE);
       consumer.setMessageHandler(new MessageHandler()
@@ -368,7 +368,7 @@ public class ConsumerTest extends ServiceTestBase
    {
       ClientSessionFactory sf = createInVMFactory();
 
-      sf.setConsumerWindowSize(10000);
+      sf.getServerLocator().setConsumerWindowSize(10000);
 
       ClientSession session = sf.createTransactedSession();
 
@@ -427,8 +427,8 @@ public class ConsumerTest extends ServiceTestBase
    {
       ClientSessionFactory sf = createInVMFactory();
 
-      sf.setConsumerWindowSize(10000);
-      sf.setMinLargeMessageSize(1000);
+      sf.getServerLocator().setConsumerWindowSize(10000);
+      sf.getServerLocator().setMinLargeMessageSize(1000);
 
       ClientSession session = sf.createTransactedSession();
 

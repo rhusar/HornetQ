@@ -79,9 +79,9 @@ public class OrderTest extends ServiceTestBase
 
       ClientSessionFactory sf = createNettyFactory();
 
-      sf.setBlockOnNonDurableSend(false);
-      sf.setBlockOnDurableSend(false);
-      sf.setBlockOnAcknowledge(true);
+      sf.getServerLocator().setBlockOnNonDurableSend(false);
+      sf.getServerLocator().setBlockOnDurableSend(false);
+      sf.getServerLocator().setBlockOnAcknowledge(true);
 
       ClientSession session = sf.createSession(true, true, 0);
 
@@ -171,9 +171,9 @@ public class OrderTest extends ServiceTestBase
 
       ClientSessionFactory sf = createNettyFactory();
 
-      sf.setBlockOnNonDurableSend(false);
-      sf.setBlockOnDurableSend(false);
-      sf.setBlockOnAcknowledge(false);
+      sf.getServerLocator().setBlockOnNonDurableSend(false);
+      sf.getServerLocator().setBlockOnDurableSend(false);
+      sf.getServerLocator().setBlockOnAcknowledge(false);
 
       ClientSession session = sf.createSession(true, true, 0);
 

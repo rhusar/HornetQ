@@ -20,7 +20,9 @@ import junit.framework.Assert;
 
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.config.Configuration;
@@ -30,6 +32,7 @@ import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.ActivateCallback;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
+import org.hornetq.tests.util.UnitTestCase;
 
 /**
  * A FailoverTestBase
@@ -148,7 +151,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config0.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
 
       config0.getConnectorConfigurations().put("toBackup", getConnectorTransportConfiguration(false));
-      config0.setBackupConnectorName("toBackup");
+      //config0.setBackupConnectorName("toBackup");
       config0.setSecurityEnabled(false);
       config0.setSharedStore(false);
       server0Service = super.createServer(true, config0);
@@ -247,9 +250,10 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected abstract TransportConfiguration getConnectorTransportConfiguration(final boolean live);
 
-   protected ClientSessionFactoryInternal getSessionFactory()
+   protected ClientSessionFactoryInternal getSessionFactory() throws Exception
    {
-      return (ClientSessionFactoryInternal) HornetQClient.createClientSessionFactory(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
+      return (ClientSessionFactoryInternal) locator.createSessionFactory();
    }
 
    // Private -------------------------------------------------------
