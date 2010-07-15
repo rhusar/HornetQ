@@ -31,6 +31,8 @@ public class ConnectionFactoryProperties
     */
    private static boolean trace = ConnectionFactoryProperties.log.isTraceEnabled();
 
+   private final static Boolean IS_HA = false;
+
    private boolean hasBeenUpdated = false;
 
    /**
@@ -43,7 +45,7 @@ public class ConnectionFactoryProperties
     */
    private Map<String, Object> connectionParameters;
    
-   private Boolean ha;
+   private Boolean ha = IS_HA;
 
    private String connectionLoadBalancingPolicyClassName;
 

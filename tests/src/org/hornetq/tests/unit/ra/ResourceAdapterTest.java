@@ -84,7 +84,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
@@ -138,7 +138,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
@@ -206,7 +206,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getConsumerWindowSize(), 5);
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(), 6);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(), 7);
       Assert.assertEquals(factory.getDupsOKBatchSize(), 8);
       Assert.assertEquals(factory.getMinLargeMessageSize(), 10);
@@ -270,7 +270,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getConsumerWindowSize(), 5);
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(), 6);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(), 7);
       Assert.assertEquals(factory.getDupsOKBatchSize(), 8);
       Assert.assertEquals(factory.getMinLargeMessageSize(), 10);

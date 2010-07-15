@@ -289,6 +289,101 @@ public class HornetQServerImpl implements HornetQServer
       return new LockFileImpl(fileName, directory);
    }
 
+   private class NoSharedStoreLiveActivation implements Activation
+   {
+      LockFile liveLock;
+
+      public void run()
+      {
+         try
+         {
+            File journalDir = new File(configuration.getJournalDirectory());
+
+            if (!journalDir.exists())
+            {
+               if (configuration.isCreateJournalDir())
+               {
+                  journalDir.mkdirs();
+               }
+               else
+               {
+                  throw new IllegalArgumentException("Directory " + journalDir +
+                                                     " does not exist and will not create it");
+               }
+            }
+
+
+            // We now load the node id file, creating it, if it doesn't exist yet
+            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
+
+            if (!nodeIDFile.exists())
+            {
+               // We use another file lock to prevent a backup reading it before it is complete
+
+               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
+
+               nodeIDLockFile.lock();
+
+               OutputStream os = null;
+
+               try
+               {
+                  os = new BufferedOutputStream(new FileOutputStream(nodeIDFile));
+
+                  uuid = UUIDGenerator.getInstance().generateUUID();
+
+                  nodeID = new SimpleString(uuid.toString());
+
+                  os.write(uuid.asBytes());
+
+                  log.info("Wrote node id, it is " + nodeID);
+               }
+               finally
+               {
+                  if (os != null)
+                  {
+                     os.close();
+                  }
+               }
+
+               nodeIDLockFile.unlock();
+            }
+            else
+            {
+               // Read it
+
+               readNodeID(nodeIDFile);
+            }
+
+            initialisePart1();
+
+            initialisePart2();
+
+            log.info("Server is now live");
+         }
+         catch (Exception e)
+         {
+            log.error("Failure in initialisation", e);
+         }
+      }
+
+      public void close() throws Exception
+      {
+         if (liveLock != null)
+         {
+            // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
+            // started before the live
+
+            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
+
+            liveFile.delete();
+
+            liveLock.unlock();
+
+         }
+      }
+   }
+
    private class SharedStoreLiveActivation implements Activation
    {
       LockFile liveLock;
@@ -628,6 +723,12 @@ public class HornetQServerImpl implements HornetQServer
             activation = new SharedStoreLiveActivation();
 
             // This should block until the lock is got
+
+            activation.run();
+         }
+         else
+         {
+            activation = new NoSharedStoreLiveActivation();
 
             activation.run();
          }
