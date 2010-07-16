@@ -93,7 +93,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
                             .contains("org.hornetq.tests.unit.core.config.impl.TestInterceptor2"));
 
 
-      Assert.assertEquals(3, conf.getConnectorConfigurations().size());
+      Assert.assertEquals(2, conf.getConnectorConfigurations().size());
 
       TransportConfiguration tc = conf.getConnectorConfigurations().get("connector1");
       Assert.assertNotNull(tc);
@@ -108,12 +108,6 @@ public class FileConfigurationTest extends ConfigurationImplTest
       Assert.assertEquals("org.hornetq.tests.unit.core.config.impl.TestConnectorFactory2", tc.getFactoryClassName());
       Assert.assertEquals("w1", tc.getParams().get("b1"));
       Assert.assertEquals("234", tc.getParams().get("b2"));
-
-      tc = conf.getConnectorConfigurations().get("backup-connector");
-      Assert.assertNotNull(tc);
-      Assert.assertEquals("org.hornetq.tests.unit.core.config.impl.TestConnectorFactory3", tc.getFactoryClassName());
-      Assert.assertEquals("x1", tc.getParams().get("c1"));
-      Assert.assertEquals("345", tc.getParams().get("c2"));
 
       Assert.assertEquals(2, conf.getAcceptorConfigurations().size());
       for (TransportConfiguration ac : conf.getAcceptorConfigurations())
@@ -239,7 +233,6 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(false, ccc.isForwardWhenNoConsumers());
             Assert.assertEquals(1, ccc.getMaxHops());
             Assert.assertEquals("connector1", ccc.getStaticConnectors().get(0));
-            Assert.assertEquals("backup-connector", ccc.getStaticConnectors().get(1));
             Assert.assertEquals("connector2", ccc.getStaticConnectors().get(1));
             Assert.assertEquals(null, ccc.getDiscoveryGroupName());
          }

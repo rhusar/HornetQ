@@ -213,7 +213,7 @@
 				</xsd:element>
 				<xsd:element maxOccurs="1" minOccurs="0" ref="broadcast-period">
 				</xsd:element>
-				<xsd:element maxOccurs="unbounded" minOccurs="0" ref="connector-ref">
+				<xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string">
 				</xsd:element>
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:ID" use="required"/>

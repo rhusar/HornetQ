@@ -879,7 +879,7 @@ public class FileConfigurationParser
 
          if (child.getNodeName().equals("connector-ref"))
          {
-            String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
+            String connectorName = XMLConfigurationUtil.getString(e, "connector-ref", null, Validators.NOT_NULL_OR_EMPTY);
 
             connectorNames.add(connectorName);
          }
@@ -977,19 +977,7 @@ public class FileConfigurationParser
          }
          else if (child.getNodeName().equals("static-connectors"))
          {
-            NodeList children2 = child.getChildNodes();
-            
-            for (int k = 0; k < children2.getLength(); k++)
-            {
-               Node child2 = children.item(k);
-               
-               if (child2.getNodeName().equals("connector-ref"))
-               {
-                  String connName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
-
-                  staticConnectorNames.add(connName);
-               }
-            }
+            getStaticConnectors(staticConnectorNames, child);
          }
       }
 
@@ -1115,19 +1103,7 @@ public class FileConfigurationParser
          }
          else if (child.getNodeName().equals("static-connectors"))
          {
-            NodeList children2 = child.getChildNodes();
-            
-            for (int k = 0; k < children2.getLength(); k++)
-            {
-               Node child2 = children.item(k);
-               
-               if (child2.getNodeName().equals("connector-ref"))
-               {
-                  String connectorName = child.getAttributes().getNamedItem("connector-name").getNodeValue();
-
-                  staticConnectorNames.add(connectorName);
-               }
-            }
+            getStaticConnectors(staticConnectorNames, child);
          }
       }
 
@@ -1173,6 +1149,20 @@ public class FileConfigurationParser
       }
 
       mainConfig.getBridgeConfigurations().add(config);
+   }
+
+   private void getStaticConnectors(List<String> staticConnectorNames, Node child)
+   {
+      NodeList children2 = ((Element) child).getElementsByTagName("connector-ref");
+
+      for (int k = 0; k < children2.getLength(); k++)
+      {
+         Element child2 = (Element) children2.item(k);
+
+         String connectorName = child2.getChildNodes().item(0).getNodeValue();
+
+         staticConnectorNames.add(connectorName);
+      }
    }
 
    private void parseDivertConfiguration(final Element e, final Configuration mainConfig)
