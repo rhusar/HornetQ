@@ -356,8 +356,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          synchronized (failoverLock)
          {
             sessions.remove(session);
-
-            checkCloseConnection();
          }
       }
    }
@@ -392,6 +390,26 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       if (closed)
       {
          return;
+      }
+
+      synchronized (createSessionLock)
+      {
+         synchronized (failoverLock)
+         {
+            for (ClientSession session : sessions)
+            {
+               try
+               {
+                  session.close();
+               }
+               catch (HornetQException e)
+               {
+                  log.warn("Unable to close session", e);
+               }
+            }
+
+            checkCloseConnection();
+         }
       }
 
       causeExit();
