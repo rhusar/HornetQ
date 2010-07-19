@@ -1678,7 +1678,7 @@
    <target name="runServer" depends="jar">
       <mkdir dir="logs"/>
    	  <property name="server.config" value="${src.config.trunk.non-clustered.dir}"/>
-      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="false">
+      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="true">
          <jvmarg value="-XX:+UseParallelGC"/>
          <jvmarg value="-Xms512M"/>
          <jvmarg value="-Xmx2048M"/>
