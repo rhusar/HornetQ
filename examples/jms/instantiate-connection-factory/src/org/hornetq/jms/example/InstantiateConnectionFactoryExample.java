@@ -65,7 +65,7 @@ public class InstantiateConnectionFactoryExample extends HornetQExample
                                                                                     connectionParams);
 
          // Step 3 Directly instantiate the JMS ConnectionFactory object using that TransportConfiguration
-         ConnectionFactory cf = HornetQJMSClient.createConnectionFactory(transportConfiguration);
+         ConnectionFactory cf = HornetQJMSClient.createConnectionFactoryWithoutHA(transportConfiguration);
 
          // Step 4.Create a JMS Connection
          connection = cf.createConnection();
