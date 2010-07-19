@@ -1003,15 +1003,15 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          }
          else
          {
+            TransportConfiguration[] connectorConfigs = (TransportConfiguration[])cfConfig.getConnectorConfigs().toArray(new TransportConfiguration[cfConfig.getConnectorConfigs().size()]);
+            
             if (cfConfig.isHA())
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithHA(cfConfig.getConnectorConfigs()
-                                                                           .toArray(new TransportConfiguration[0]));
+               cf = HornetQJMSClient.createConnectionFactoryWithHA(connectorConfigs);
             }
             else
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(cfConfig.getConnectorConfigs()
-                                                                              .toArray(new TransportConfiguration[0]));
+               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(connectorConfigs);
             }
          }
 
