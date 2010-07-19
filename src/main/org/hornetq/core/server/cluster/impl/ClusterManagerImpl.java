@@ -152,8 +152,11 @@ public class ClusterManagerImpl implements ClusterManager
 
       // Now announce presence
 
-      announceNode();
-
+      if (clusterConnections.size() > 0)
+      {
+         announceNode();
+      }
+      
       started = true;
    }
 
@@ -264,7 +267,10 @@ public class ClusterManagerImpl implements ClusterManager
       {
          backup = false;
 
-         announceNode();
+         if (clusterConnections.size() > 0)
+         {
+            announceNode();
+         }
       }
    }
 
