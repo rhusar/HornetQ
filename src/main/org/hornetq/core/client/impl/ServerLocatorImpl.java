@@ -71,7 +71,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private TransportConfiguration[] initialConnectors;
 
-   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology;
+   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
@@ -1093,7 +1093,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       List<DiscoveryEntry> newConnectors = discoveryGroup.getDiscoveryEntries();
 
-      this.initialConnectors = (TransportConfiguration[])Array.newInstance(Pair.class, newConnectors.size());
+      this.initialConnectors = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class, newConnectors.size());
 
       int count = 0;
       for (DiscoveryEntry entry : newConnectors)

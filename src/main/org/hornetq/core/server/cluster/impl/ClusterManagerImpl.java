@@ -224,7 +224,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
-   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology;
+   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
 
    public synchronized void registerTopologyListener(final ClusterTopologyListener listener,
                                                      final boolean clusterConnection)
