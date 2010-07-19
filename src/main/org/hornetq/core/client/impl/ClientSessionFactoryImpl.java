@@ -396,7 +396,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          synchronized (failoverLock)
          {
-            for (ClientSession session : sessions)
+            // work on a copied set. the session will be removed from sessions when session.close() is called
+            for (ClientSession session : new HashSet<ClientSession>(sessions))
             {
                try
                {
