@@ -29,10 +29,11 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientRequestor;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.ResourceNames;
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.tests.util.SpawnedVMSupport;
@@ -55,6 +56,8 @@ public class HornetQAdmin implements Admin
 
    private Process serverProcess;
 
+   private ClientSessionFactory sf;
+
    public HornetQAdmin()
    {
       try
@@ -73,7 +76,8 @@ public class HornetQAdmin implements Admin
 
    public void start() throws Exception
    {
-      ClientSessionFactoryImpl sf = (ClientSessionFactoryImpl) HornetQClient.createClientSessionFactory(new TransportConfiguration(NettyConnectorFactory.class.getName()));
+      ServerLocator serverLocator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
+      sf = serverLocator.createSessionFactory();
       clientSession = sf.createSession(ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                        ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD,
                                        false,
@@ -88,6 +92,11 @@ public class HornetQAdmin implements Admin
    public void stop() throws Exception
    {
       requestor.close();
+      
+      if (sf != null)
+      {
+         sf.close();
+      }
    }
 
    public void createConnectionFactory(final String name)
