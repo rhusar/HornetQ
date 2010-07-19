@@ -18,9 +18,9 @@ import java.util.List;
 
 import javax.naming.InitialContext;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 
 /**
@@ -54,13 +54,12 @@ public class JMSTestCase extends HornetQServerTestCase
       // All jms tests should use a specific cg which has blockOnAcknowledge = true and
       // both np and p messages are sent synchronously
 
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory"),
-                                                                                    null));
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
 
       getJmsServerManager().createConnectionFactory("testsuitecf",
+                                                    false,
                                                     connectorConfigs,
                                                     null,
                                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

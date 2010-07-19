@@ -21,9 +21,9 @@ import javax.jms.DeliveryMode;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 
 /**
@@ -58,13 +58,11 @@ public class CTSMiscellaneousTest extends HornetQServerTestCase
          List<String> bindings = new ArrayList<String>();
          bindings.add("StrictTCKConnectionFactory");
 
-         List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-
-         connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory"),
-                                                                                       null));
-
+         List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+         connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
          getJmsServerManager().createConnectionFactory("StrictTCKConnectionFactory",
+                                                       false,
                                                        connectorConfigs,
                                                        null,
                                                        HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
