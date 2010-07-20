@@ -16,8 +16,10 @@ package org.hornetq.jms;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -106,6 +108,7 @@ public class HornetQAdmin implements Admin
          invokeSyncOperation(ResourceNames.JMS_SERVER,
                              "createConnectionFactory",
                              name,
+                             false,
                              NettyConnectorFactory.class.getName(),
                              new HashMap<String, Object>(),
                              new String[] { name });
