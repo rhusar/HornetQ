@@ -4369,6 +4369,23 @@
       <verbose value="true" />
       <viewClosedWhenNoErrors value="false" />
     </buildFile>
+    <buildFile url="file://$PROJECT_DIR$/examples/jms/static-clustered-queue/build.xml">
+      <antCommandLine value="" />
+      <runInBackground value="true" />
+      <targetFilters>
+        <filter targetName="runExample" isVisible="false" />
+        <filter targetName="clean" isVisible="false" />
+        <filter targetName="compile" isVisible="false" />
+        <filter targetName="clean-all" isVisible="false" />
+        <filter targetName="init" isVisible="false" />
+        <filter targetName="run" isVisible="false" />
+        <filter targetName="all" isVisible="true" />
+        <filter targetName="runRemote" isVisible="false" />
+      </targetFilters>
+      <treeView value="true" />
+      <verbose value="true" />
+      <viewClosedWhenNoErrors value="false" />
+    </buildFile>
     <buildFile url="file://$PROJECT_DIR$/examples/jms/durable-subscription/build.xml">
       <antCommandLine value="" />
       <runInBackground value="true" />
