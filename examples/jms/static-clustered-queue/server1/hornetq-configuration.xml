@@ -3,6 +3,9 @@
             xsi:schemaLocation="urn:hornetq /schema/hornetq-configuration.xsd">
    <clustered>true</clustered>
 
+   <bindings-directory>/Users/jmesnil/Desktop/server1/bindings</bindings-directory>
+   <journal-directory>/Users/jmesnil/Desktop/server1/journal</journal-directory>
+
    <!-- Connectors -->
    <connectors>
       <connector name="netty-connector">
@@ -34,7 +37,7 @@
          <forward-when-no-consumers>true</forward-when-no-consumers>
          <max-hops>1</max-hops>
          <static-connectors>
-            <connector-ref>server1-connector</connector-ref>
+            <connector-ref>server0-connector</connector-ref>
          </static-connectors>
       </cluster-connection>
    </cluster-connections>
