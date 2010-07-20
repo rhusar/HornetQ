@@ -20,12 +20,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
@@ -46,6 +41,8 @@ public class ConsumerTest extends ServiceTestBase
 
    private final SimpleString QUEUE = new SimpleString("ConsumerTestQueue");
 
+   private ServerLocator locator;
+
    @Override
    protected void setUp() throws Exception
    {
@@ -54,11 +51,15 @@ public class ConsumerTest extends ServiceTestBase
       server = createServer(false);
 
       server.start();
+
+      locator = createInVMNonHALocator();
    }
 
    @Override
    protected void tearDown() throws Exception
    {
+      locator.close();
+
       server.stop();
 
       server = null;
@@ -103,7 +104,7 @@ public class ConsumerTest extends ServiceTestBase
 
    public void testConsumerAckImmediateAutoCommitTrue() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -137,7 +138,7 @@ public class ConsumerTest extends ServiceTestBase
    public void testConsumerAckImmediateAutoCommitFalse() throws Exception
    {
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, false, true);
 
@@ -171,7 +172,7 @@ public class ConsumerTest extends ServiceTestBase
    public void testConsumerAckImmediateAckIgnored() throws Exception
    {
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -209,7 +210,7 @@ public class ConsumerTest extends ServiceTestBase
    public void testConsumerAckImmediateCloseSession() throws Exception
    {
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -249,7 +250,7 @@ public class ConsumerTest extends ServiceTestBase
 
    public void testAcksWithSmallSendWindow() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -278,9 +279,10 @@ public class ConsumerTest extends ServiceTestBase
             return true;
          }
       });
-      ClientSessionFactory sfReceive = createInVMFactory();
-      sfReceive.getServerLocator().setConfirmationWindowSize(100);
-      sfReceive.getServerLocator().setAckBatchSize(-1);
+      ServerLocator locator = createInVMNonHALocator();
+      locator.setConfirmationWindowSize(100);
+      locator.setAckBatchSize(-1);
+      ClientSessionFactory sfReceive = locator.createSessionFactory();
       ClientSession sessionRec = sfReceive.createSession(false, true, true);
       ClientConsumer consumer = sessionRec.createConsumer(QUEUE);
       consumer.setMessageHandler(new MessageHandler()
@@ -300,11 +302,12 @@ public class ConsumerTest extends ServiceTestBase
       sessionRec.start();
       Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
       sessionRec.close();
+      locator.close();
    }
 
    public void testClearListener() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -327,7 +330,7 @@ public class ConsumerTest extends ServiceTestBase
 
    public void testNoReceiveWithListener() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -366,9 +369,9 @@ public class ConsumerTest extends ServiceTestBase
    // Test that, on rollback credits are released for messages cleared in the buffer
    public void testConsumerCreditsOnRollback() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      locator.setConsumerWindowSize(10000);
 
-      sf.getServerLocator().setConsumerWindowSize(10000);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createTransactedSession();
 
@@ -425,10 +428,11 @@ public class ConsumerTest extends ServiceTestBase
    // Test that, on rollback credits are released for messages cleared in the buffer
    public void testConsumerCreditsOnRollbackLargeMessages() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
 
-      sf.getServerLocator().setConsumerWindowSize(10000);
-      sf.getServerLocator().setMinLargeMessageSize(1000);
+      locator.setConsumerWindowSize(10000);
+      locator.setMinLargeMessageSize(1000);
+
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createTransactedSession();
 

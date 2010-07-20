@@ -34,6 +34,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
 import org.hornetq.core.remoting.impl.netty.NettyConnector;
@@ -384,8 +385,8 @@ public class ResourceAdapterTest extends ServiceTestBase
       {
 
          server.start();
-
-         ClientSessionFactory factory = createInVMFactory();
+         ServerLocator locator = createInVMNonHALocator();
+         ClientSessionFactory factory = locator.createSessionFactory();
          ClientSession session = factory.createSession(false, false, false);
          HornetQDestination queue = (HornetQDestination) HornetQJMSClient.createQueue("test");
          session.createQueue(queue.getSimpleAddress(), queue.getSimpleAddress(), true);
@@ -421,6 +422,8 @@ public class ResourceAdapterTest extends ServiceTestBase
 
          activation.start();
          activation.stop();
+
+         locator.close();
 
       }
       finally

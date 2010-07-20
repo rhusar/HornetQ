@@ -55,6 +55,8 @@ public class ClientCrashTest extends ClientTestBase
 
    private ClientSessionFactory sf;
 
+   private ServerLocator locator;
+
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
@@ -154,11 +156,11 @@ public class ClientCrashTest extends ClientTestBase
    {
       super.setUp();
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
-      ClientSessionFactory sf = locator.createSessionFactory();
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
-      sf.getServerLocator().setClientFailureCheckPeriod(ClientCrashTest.PING_PERIOD);
-      sf.getServerLocator().setConnectionTTL(ClientCrashTest.CONNECTION_TTL);
+      locator.setClientFailureCheckPeriod(ClientCrashTest.PING_PERIOD);
+      locator.setConnectionTTL(ClientCrashTest.CONNECTION_TTL);
+      sf = locator.createSessionFactory();
    }
 
    @Override
@@ -167,7 +169,7 @@ public class ClientCrashTest extends ClientTestBase
       // sf.close();
 
       sf = null;
-
+      locator.close();
       super.tearDown();
    }
 

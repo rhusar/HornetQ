@@ -23,11 +23,7 @@ import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
@@ -1265,8 +1261,8 @@ public class BasicXaRecoveryTest extends ServiceTestBase
 
    private void createClients(final boolean createQueue, final boolean commitACKs) throws Exception
    {
-
-      sessionFactory = createInVMFactory();
+      ServerLocator locator = createInVMNonHALocator();
+      ClientSessionFactory sf = locator.createSessionFactory();
       clientSession = sessionFactory.createSession(true, false, commitACKs);
       if (createQueue)
       {

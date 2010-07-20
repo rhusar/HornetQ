@@ -15,6 +15,7 @@ package org.hornetq.tests.integration.ra;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.client.HornetQMessage;
@@ -47,6 +48,8 @@ public class HornetQMessageHandlerTest  extends ServiceTestBase
 
    private HornetQServer server;
 
+   private ServerLocator locator;
+
    @Override
    protected void setUp() throws Exception
    {
@@ -56,11 +59,14 @@ public class HornetQMessageHandlerTest  extends ServiceTestBase
       configuration.setSecurityEnabled(false);
       server = createServer(true, configuration);
       server.start();
+
+      locator = createFactory(false);
    }
 
    @Override
    protected void tearDown() throws Exception
    {
+      locator.close();
       if (server != null)
       {
          try
@@ -95,7 +101,7 @@ public class HornetQMessageHandlerTest  extends ServiceTestBase
       DummyMessageEndpoint endpoint = new DummyMessageEndpoint(latch);
       DummyMessageEndpointFactory endpointFactory = new DummyMessageEndpointFactory(endpoint);
       qResourceAdapter.endpointActivation(endpointFactory, spec);
-      ClientSession session = createFactory(false).createSession();
+      ClientSession session = locator.createSessionFactory().createSession();
       ClientProducer clientProducer = session.createProducer("jms.topic.mdbTopic");
       ClientMessage message = session.createMessage(true);
       message.getBodyBuffer().writeString("1");
@@ -150,7 +156,7 @@ public class HornetQMessageHandlerTest  extends ServiceTestBase
       DummyMessageEndpoint endpoint = new DummyMessageEndpoint(latch);
       DummyMessageEndpointFactory endpointFactory = new DummyMessageEndpointFactory(endpoint);
       qResourceAdapter.endpointActivation(endpointFactory, spec);
-      ClientSession session = createFactory(false).createSession();
+      ClientSession session = locator.createSessionFactory().createSession();
       ClientProducer clientProducer = session.createProducer("jms.topic.mdbTopic");
       ClientMessage message = session.createMessage(true);
       message.getBodyBuffer().writeString("1");

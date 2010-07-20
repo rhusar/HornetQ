@@ -17,6 +17,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionInternal;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -26,16 +27,34 @@ import org.hornetq.tests.util.ServiceTestBase;
  */
 public class SessionCreateProducerTest extends ServiceTestBase
 {
+   private ServerLocator locator;
+
+   @Override
+   protected void setUp() throws Exception
+   {
+      locator = createInVMNonHALocator();
+      
+      super.setUp();  
+   }
+
+   @Override
+   protected void tearDown() throws Exception
+   {
+      locator.close();
+      
+      super.tearDown();
+   }
+
    public void testCreateAnonProducer() throws Exception
    {
       HornetQServer service = createServer(false);
       try
       {
          service.start();
-         ClientSessionFactory cf = createInVMFactory();
-         cf.getServerLocator().setProducerMaxRate(99);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         locator.setProducerMaxRate(99);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnNonDurableSend(true);
+         ClientSessionFactory cf = locator.createSessionFactory();
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          ClientProducer producer = clientSession.createProducer();
          Assert.assertNull(producer.getAddress());
@@ -57,10 +76,10 @@ public class SessionCreateProducerTest extends ServiceTestBase
       try
       {
          service.start();
-         ClientSessionFactory cf = createInVMFactory();
-         cf.getServerLocator().setProducerMaxRate(99);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         locator.setProducerMaxRate(99);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnNonDurableSend(true);
+         ClientSessionFactory cf = locator.createSessionFactory();
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          ClientProducer producer = clientSession.createProducer("testAddress");
          Assert.assertNotNull(producer.getAddress());
@@ -82,10 +101,10 @@ public class SessionCreateProducerTest extends ServiceTestBase
       try
       {
          service.start();
-         ClientSessionFactory cf = createInVMFactory();
-         cf.getServerLocator().setProducerMaxRate(99);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
+         locator.setProducerMaxRate(99);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnNonDurableSend(true);
+         ClientSessionFactory cf = locator.createSessionFactory();
          ClientSessionInternal clientSession = (ClientSessionInternal)cf.createSession(false, true, true);
          clientSession.close();
          try

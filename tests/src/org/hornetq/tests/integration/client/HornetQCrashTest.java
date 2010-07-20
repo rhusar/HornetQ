@@ -48,11 +48,12 @@ public class HornetQCrashTest extends TestCase
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
-      ClientSessionFactory clientSessionFactory = locator.createSessionFactory();
 
 
       // Force an ack at once - this means the send call will block
-      clientSessionFactory.getServerLocator().setConfirmationWindowSize(1);
+      locator.setConfirmationWindowSize(1);
+
+      ClientSessionFactory clientSessionFactory = locator.createSessionFactory();
 
       ClientSession session = clientSessionFactory.createSession();
 

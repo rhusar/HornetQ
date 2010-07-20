@@ -312,9 +312,9 @@ public class ExpiryAddressTest extends UnitTestCase
       // then we create a client as normal
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
+      locator.setBlockOnAcknowledge(true); 
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
-
-      sessionFactory.getServerLocator().setBlockOnAcknowledge(true); // There are assertions over sizes that needs to be done after the ACK
+// There are assertions over sizes that needs to be done after the ACK
       // was received on server
       clientSession = sessionFactory.createSession(null, null, false, true, true, false, 0);
    }

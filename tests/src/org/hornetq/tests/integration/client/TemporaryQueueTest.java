@@ -231,8 +231,8 @@ public class TemporaryQueueTest extends ServiceTestBase
       });
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL);
       sf = locator.createSessionFactory();
-      sf.getServerLocator().setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL);
       session = sf.createSession(false, true, true);
 
       session.createTemporaryQueue(address, queue);
@@ -297,8 +297,8 @@ public class TemporaryQueueTest extends ServiceTestBase
       server.start();
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL);
       sf = locator.createSessionFactory();
-      sf.getServerLocator().setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL);
       session = sf.createSession(false, true, true);
    }
 

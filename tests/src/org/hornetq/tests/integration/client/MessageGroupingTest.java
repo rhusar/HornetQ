@@ -263,8 +263,8 @@ public class MessageGroupingTest extends UnitTestCase
    private void doTestMultipleGroupingTXRollback() throws Exception
    {
       log.info("*** starting test");ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setBlockOnAcknowledge(true);
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
-      sessionFactory.getServerLocator().setBlockOnAcknowledge(true);
       ClientSession clientSession = sessionFactory.createSession(false, false, false);
       ClientProducer clientProducer = this.clientSession.createProducer(qName);
       ClientConsumer consumer = clientSession.createConsumer(qName);
@@ -397,8 +397,8 @@ public class MessageGroupingTest extends UnitTestCase
    private void doTestMultipleGroupingXARollback() throws Exception
    {
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setBlockOnAcknowledge(true);
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
-      sessionFactory.getServerLocator().setBlockOnAcknowledge(true);
       ClientSession clientSession = sessionFactory.createSession(true, false, false);
       ClientProducer clientProducer = this.clientSession.createProducer(qName);
       clientSession.start();

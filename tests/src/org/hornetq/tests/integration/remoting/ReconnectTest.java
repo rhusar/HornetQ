@@ -21,6 +21,7 @@ import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.ClientSessionInternal;
 import org.hornetq.core.logging.Logger;
@@ -71,8 +72,8 @@ public class ReconnectTest extends ServiceTestBase
 
       try
       {
-
-         ClientSessionFactory factory = createFactory(isNetty);
+         ServerLocator locator = createFactory(isNetty);
+         ClientSessionFactory factory = locator.createSessionFactory();
 
          factory.getServerLocator().setClientFailureCheckPeriod(pingPeriod); // Using a smaller timeout
          factory.getServerLocator().setRetryInterval(500);
@@ -101,6 +102,7 @@ public class ReconnectTest extends ServiceTestBase
 
          });
 
+         locator.close();
          server.stop();
 
          Thread.sleep((pingPeriod * 2));

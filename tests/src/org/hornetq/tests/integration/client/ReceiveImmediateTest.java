@@ -39,6 +39,8 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    private final SimpleString ADDRESS = new SimpleString("ReceiveImmediateTest.address");
 
+   private ServerLocator locator;
+
    @Override
    protected void setUp() throws Exception
    {
@@ -48,11 +50,15 @@ public class ReceiveImmediateTest extends ServiceTestBase
       server = HornetQServers.newHornetQServer(config, false);
 
       server.start();
+
+      locator = createInVMNonHALocator();
    }
 
    @Override
    protected void tearDown() throws Exception
    {
+      locator.close();
+
       server.stop();
 
       server = null;
@@ -84,12 +90,11 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    public void testConsumerReceiveImmediateWithSessionStop() throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      sf = locator.createSessionFactory();
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      sf.getServerLocator().setAckBatchSize(0);
 
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setAckBatchSize(0);
+      sf = locator.createSessionFactory();
       ClientSession session = sf.createSession(false, true, true);
 
       session.createQueue(ADDRESS, QUEUE, null, false);
@@ -118,11 +123,10 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    private void doConsumerReceiveImmediateWithNoMessages(final boolean browser) throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setAckBatchSize(0);
       sf = locator.createSessionFactory();
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      sf.getServerLocator().setAckBatchSize(0);
 
       ClientSession session = sf.createSession(false, true, false);
 
@@ -141,12 +145,11 @@ public class ReceiveImmediateTest extends ServiceTestBase
 
    private void doConsumerReceiveImmediate(final boolean browser) throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      sf = locator.createSessionFactory();
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      sf.getServerLocator().setAckBatchSize(0);
 
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setAckBatchSize(0);
+      sf = locator.createSessionFactory();
       ClientSession session = sf.createSession(false, true, true);
 
       session.createQueue(ADDRESS, QUEUE, null, false);

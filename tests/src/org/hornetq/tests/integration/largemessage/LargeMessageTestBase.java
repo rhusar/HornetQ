@@ -31,12 +31,7 @@ import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
@@ -147,22 +142,25 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
       server = createServer(realFiles);
       server.start();
 
+      ServerLocator locator = createInVMNonHALocator();
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
          if (sendingBlocking)
-         {            sf.getServerLocator().setBlockOnNonDurableSend(true);
-            sf.getServerLocator().setBlockOnDurableSend(true);
-            sf.getServerLocator().setBlockOnAcknowledge(true);
+         {            
+            locator.setBlockOnNonDurableSend(true);
+            locator.setBlockOnDurableSend(true);
+            locator.setBlockOnAcknowledge(true);
          }
 
          if (producerWindow > 0)
          {
-            sf.getServerLocator().setConfirmationWindowSize(producerWindow);
+            locator.setConfirmationWindowSize(producerWindow);
          }
 
-         sf.getServerLocator().setMinLargeMessageSize(minSize);
+         locator.setMinLargeMessageSize(minSize);
+         
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session;
 
@@ -256,7 +254,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
             server = createServer(realFiles);
             server.start();
 
-            sf = createInVMFactory();
+            sf = locator.createSessionFactory();
          }
 
          session = sf.createSession(null, null, isXA, false, false, preAck, 0);
@@ -531,6 +529,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
       }
       finally
       {
+         locator.close();
          try
          {
             server.stop();

@@ -327,26 +327,26 @@ public abstract class ServiceTestBase extends UnitTestCase
       return configuration;
    }
 
-   protected ClientSessionFactoryImpl createFactory(final boolean isNetty) throws Exception
+   protected ServerLocator createFactory(final boolean isNetty) throws Exception
    {
       if (isNetty)
       {
-         return createNettyFactory();
+         return createNettyNonHALocator();
       }
       else
       {
-         return createInVMFactory();
+         return createInVMNonHALocator();
       }
    }
 
-   protected ClientSessionFactoryImpl createInVMFactory() throws Exception
+   protected ServerLocator createInVMNonHALocator()
    {
-      return createFactory(INVM_CONNECTOR_FACTORY);
+      return HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(INVM_CONNECTOR_FACTORY));
    }
 
-   protected ClientSessionFactoryImpl createNettyFactory() throws Exception
+   protected ServerLocator createNettyNonHALocator()
    {
-      return createFactory(NETTY_CONNECTOR_FACTORY);
+      return HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NETTY_CONNECTOR_FACTORY));
    }
 
    protected ClientSessionFactoryImpl createFactory(final String connectorClass) throws Exception

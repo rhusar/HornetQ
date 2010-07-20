@@ -45,7 +45,7 @@ public class CrashClient
          CrashClient.log.debug("args = " + Arrays.asList(args));
 
          ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
-      ClientSessionFactory sf = locator.createSessionFactory();
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          sf.getServerLocator().setClientFailureCheckPeriod(ClientCrashTest.PING_PERIOD);
          sf.getServerLocator().setConnectionTTL(ClientCrashTest.CONNECTION_TTL);

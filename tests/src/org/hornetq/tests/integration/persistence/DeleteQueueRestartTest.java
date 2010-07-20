@@ -19,10 +19,7 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
 
@@ -68,7 +65,8 @@ public class DeleteQueueRestartTest extends ServiceTestBase
 
       server.start();
 
-      ClientSessionFactory factory = createInVMFactory();
+      ServerLocator locator = createInVMNonHALocator();
+      ClientSessionFactory factory = locator.createSessionFactory();
 
       factory.getServerLocator().setBlockOnDurableSend(true);
       factory.getServerLocator().setBlockOnNonDurableSend(true);

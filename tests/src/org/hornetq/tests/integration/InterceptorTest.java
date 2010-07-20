@@ -18,11 +18,7 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
@@ -49,6 +45,8 @@ public class InterceptorTest extends ServiceTestBase
 
    private final SimpleString QUEUE = new SimpleString("InterceptorTestQueue");
 
+   private ServerLocator locator;
+
    @Override
    protected void setUp() throws Exception
    {
@@ -57,11 +55,15 @@ public class InterceptorTest extends ServiceTestBase
       server = createServer(false);
 
       server.start();
+
+      locator = createInVMNonHALocator();
    }
 
    @Override
    protected void tearDown() throws Exception
    {
+      locator.close();
+      
       server.stop();
 
       server = null;
@@ -247,7 +249,7 @@ public class InterceptorTest extends ServiceTestBase
 
       server.getRemotingService().addInterceptor(interceptor);
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -304,9 +306,10 @@ public class InterceptorTest extends ServiceTestBase
 
       server.getRemotingService().addInterceptor(interceptor);
 
-      ClientSessionFactory sf = createInVMFactory();
 
-      sf.getServerLocator().setBlockOnNonDurableSend(false);
+      locator.setBlockOnNonDurableSend(false);
+
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -336,7 +339,7 @@ public class InterceptorTest extends ServiceTestBase
 
    public void testClientInterceptorChangeProperty() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       MyInterceptor3 interceptor = new MyInterceptor3();
 
@@ -393,7 +396,7 @@ public class InterceptorTest extends ServiceTestBase
 
    public void testClientInterceptorRejectPacket() throws Exception
    {
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       MyInterceptor4 interceptor = new MyInterceptor4();
 
@@ -437,7 +440,7 @@ public class InterceptorTest extends ServiceTestBase
       server.getRemotingService().addInterceptor(interceptor3);
       server.getRemotingService().addInterceptor(interceptor4);
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true, true);
 
@@ -521,7 +524,7 @@ public class InterceptorTest extends ServiceTestBase
       MyInterceptor6 interceptor3 = new MyInterceptor6("c", 3);
       MyInterceptor6 interceptor4 = new MyInterceptor6("d", 4);
 
-      ClientSessionFactory sf = createInVMFactory();
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       sf.getServerLocator().addInterceptor(interceptor1);
       sf.getServerLocator().addInterceptor(interceptor2);

@@ -1103,11 +1103,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
          serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
       }
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
-      ClientSessionFactory sf = locator.createSessionFactory();
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
 
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnDurableSend(true);
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       sfs[node] = sf;
    }
@@ -1467,13 +1467,15 @@ public abstract class ClusterTestBase extends ServiceTestBase
       Map<String, TransportConfiguration> connectors = serverFrom.getConfiguration().getConnectorConfigurations();
 
       List<String> pairs = new ArrayList<String>();
+      TransportConfiguration configuration = serverFrom.getConfiguration().getAcceptorConfigurations().iterator().next();
+      String connectorName = configuration.getName();
+      connectors.put(connectorName, configuration);
 
       for (int element : nodesTo)
       {
          Map<String, Object> params = generateParams(element, netty);
 
          TransportConfiguration serverTotc;
-
          if (netty)
          {
             serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
@@ -1482,7 +1484,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
          }
-
+         
          connectors.put(serverTotc.getName(), serverTotc);
 
          pairs.add(serverTotc.getName());
@@ -1490,7 +1492,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
-                                                                                      name,
+                                                                                      connectorName,
                                                                                       250,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,

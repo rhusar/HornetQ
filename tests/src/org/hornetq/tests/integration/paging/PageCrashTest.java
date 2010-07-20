@@ -24,11 +24,7 @@ import java.util.concurrent.Executors;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
@@ -109,7 +105,9 @@ public class PageCrashTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
+         ServerLocator locator = createInVMNonHALocator();
+
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -119,7 +117,7 @@ public class PageCrashTest extends ServiceTestBase
 
          Assert.assertNull(consumer.receiveImmediate());
 
-         session.close();
+         locator.close();
       }
       finally
       {
@@ -148,7 +146,8 @@ public class PageCrashTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
+         ServerLocator locator = createInVMNonHALocator();
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          // Making it synchronous, just because we want to stop sending messages as soon as the page-store becomes in
          // page mode
@@ -207,6 +206,8 @@ public class PageCrashTest extends ServiceTestBase
          consumer.close();
 
          session.close();
+
+         locator.close();
       }
       finally
       {

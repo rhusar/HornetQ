@@ -23,12 +23,7 @@ import junit.framework.AssertionFailedError;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
@@ -51,6 +46,7 @@ import org.hornetq.utils.DataConstants;
  */
 public class PagingTest extends ServiceTestBase
 {
+   private ServerLocator locator;
 
    public PagingTest(final String name)
    {
@@ -80,6 +76,21 @@ public class PagingTest extends ServiceTestBase
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
+
+   @Override
+   protected void setUp() throws Exception
+   {
+      super.setUp();
+      locator = createInVMNonHALocator();
+   }
+
+   @Override
+   protected void tearDown() throws Exception
+   {
+      locator.close();
+
+      super.tearDown();
+   }
 
    public void testSendReceivePagingPersistent() throws Exception
    {
@@ -112,12 +123,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -163,7 +174,7 @@ public class PagingTest extends ServiceTestBase
             server.start();
          }
 
-         sf = createInVMFactory();
+         sf = locator.createSessionFactory();
 
          session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -251,11 +262,10 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
-
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -391,12 +401,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -447,7 +457,7 @@ public class PagingTest extends ServiceTestBase
                                   new HashMap<String, AddressSettings>());
             server.start();
 
-            sf = createInVMFactory();
+            sf = locator.createSessionFactory();
 
             session = sf.createSession(null, null, false, true, true, false, 0);
          }
@@ -524,12 +534,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, false, true, false, 0);
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -597,12 +607,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, false, false, false, 0);
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -687,12 +697,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -829,10 +839,10 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
          
-         sf.getServerLocator().setAckBatchSize(0);
+         locator.setAckBatchSize(0);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession();
 
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
@@ -925,12 +935,12 @@ public class PagingTest extends ServiceTestBase
 
       try
       {
-         ClientSessionFactory sf = createInVMFactory();
 
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
 
+         ClientSessionFactory sf = locator.createSessionFactory();
          ClientSession session = sf.createSession(null, null, false, !transacted, true, false, 0);
 
          for (int i = 0; i < NUMBER_OF_BINDINGS; i++)
@@ -968,7 +978,7 @@ public class PagingTest extends ServiceTestBase
                                new HashMap<String, AddressSettings>());
          server.start();
 
-         sf = createInVMFactory();
+         sf = locator.createSessionFactory();
 
          session = sf.createSession(null, null, false, true, true, false, 0);
 
@@ -1041,7 +1051,7 @@ public class PagingTest extends ServiceTestBase
       {
          server.start();
 
-         ClientSessionFactory sf = createInVMFactory();
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session = sf.createSession(false, true, false);
 
@@ -1150,7 +1160,7 @@ public class PagingTest extends ServiceTestBase
       {
          server.start();
 
-         ClientSessionFactory sf = createInVMFactory();
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session = sf.createSession(false, true, false);
 

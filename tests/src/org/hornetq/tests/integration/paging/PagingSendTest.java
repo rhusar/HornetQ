@@ -16,11 +16,7 @@ package org.hornetq.tests.integration.paging;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -83,24 +79,18 @@ public class PagingSendTest extends ServiceTestBase
 
       try
       {
+         ServerLocator locator = createFactory(isNetty());
          ClientSessionFactory sf;
 
-         if (isNetty())
-         {
-            sf = createNettyFactory();
-         }
-         else
-         {
-            sf = createInVMFactory();
-         }
+
 
          // Making it synchronous, just because we want to stop sending messages as soon as the page-store becomes in
          // page mode
          // and we could only guarantee that by setting it to synchronous
-         sf.getServerLocator().setBlockOnNonDurableSend(blocking);
-         sf.getServerLocator().setBlockOnDurableSend(blocking);
-         sf.getServerLocator().setBlockOnAcknowledge(blocking);
-
+         locator.setBlockOnNonDurableSend(blocking);
+         locator.setBlockOnDurableSend(blocking);
+         locator.setBlockOnAcknowledge(blocking);
+         sf = locator.createSessionFactory() ;
          ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
 
          session.createQueue(PagingSendTest.ADDRESS, PagingSendTest.ADDRESS, null, true);
@@ -142,6 +132,8 @@ public class PagingSendTest extends ServiceTestBase
          consumer.close();
 
          session.close();
+
+         locator.close();
       }
       finally
       {

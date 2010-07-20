@@ -107,9 +107,10 @@ public class BridgeTest extends ServiceTestBase
          TransportConfiguration server0tc = new TransportConfiguration(getConnector(), server0Params);
 
          TransportConfiguration server1tc = new TransportConfiguration(getConnector(), server1Params);
-         //connectors.put(server1tc.getName(), server1tc);
 
-        // server0.getConfiguration().setConnectorConfigurations(connectors);
+         HashMap<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
+         connectors.put(server1tc.getName(), server1tc);
+         server0.getConfiguration().setConnectorConfigurations(connectors);
 
 
          final int messageSize = 1024;
@@ -117,7 +118,7 @@ public class BridgeTest extends ServiceTestBase
          final int numMessages = 10;
 
          ArrayList<String> connectorConfig = new ArrayList<String>();
-         connectorConfig.add(getConnector());
+         connectorConfig.add(server1tc.getName());
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
