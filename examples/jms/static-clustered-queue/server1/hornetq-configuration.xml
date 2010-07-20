@@ -25,23 +25,6 @@
    </acceptors>
    
    <!-- Clustering configuration -->
-   <broadcast-groups>
-      <broadcast-group name="my-broadcast-group">
-         <group-address>231.7.7.7</group-address>
-         <group-port>9876</group-port>
-         <broadcast-period>100</broadcast-period>
-         <connector-ref>netty-connector</connector-ref>
-      </broadcast-group>
-   </broadcast-groups>
-   
-   <discovery-groups>
-      <discovery-group name="my-discovery-group">
-         <group-address>231.7.7.7</group-address>
-         <group-port>9876</group-port>
-         <refresh-timeout>10000</refresh-timeout>
-      </discovery-group>
-   </discovery-groups>
-   
    <cluster-connections>
       <cluster-connection name="my-cluster">
          <address>jms</address>
