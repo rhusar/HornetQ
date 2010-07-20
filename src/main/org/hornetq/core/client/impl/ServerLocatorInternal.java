@@ -27,7 +27,12 @@ import org.hornetq.api.core.client.ServerLocator;
  */
 public interface ServerLocatorInternal extends ServerLocator, ClusterTopologyListener
 {
+   void start() throws Exception;
+   
    void factoryClosed(final ClientSessionFactory factory);
 
    TransportConfiguration getBackup( TransportConfiguration live);
+
+   void setNodeID(String nodeID);
+
 }

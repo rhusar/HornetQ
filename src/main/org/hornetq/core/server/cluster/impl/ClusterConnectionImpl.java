@@ -27,9 +27,9 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClusterTopologyListener;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
@@ -96,11 +96,11 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topology;
 
-   private final ServerLocator serverLocator;
+   private final ServerLocatorInternal serverLocator;
    
    private final TransportConfiguration connector;
 
-   public ClusterConnectionImpl(final ServerLocator serverLocator,
+   public ClusterConnectionImpl(final ServerLocatorInternal serverLocator,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
                                 final SimpleString address,
@@ -165,7 +165,8 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       }
 
       serverLocator.registerTopologyListener(this);
-
+      serverLocator.start();
+      
       started = true;
 
       if (managementService != null)

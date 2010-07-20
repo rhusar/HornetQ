@@ -31,6 +31,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
@@ -574,13 +575,13 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
 
-      ServerLocator serverLocator;
+      ServerLocatorInternal serverLocator;
 
       if (config.getStaticConnectors() != null)
       {
          TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
 
-         serverLocator = HornetQClient.createServerLocatorWithHA(tcConfigs);
+         serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(tcConfigs);
       }
       else
       {
@@ -593,9 +594,10 @@ public class ClusterManagerImpl implements ClusterManager
                                         "'. The cluster connection will not be deployed.");
          }
 
-         serverLocator = HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
+         serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
       }
 
+      serverLocator.setNodeID(nodeUUID.toString());
       ClusterConnection clusterConnection = new ClusterConnectionImpl(serverLocator,
                                                                       connector,
                                                                       new SimpleString(config.getName()),

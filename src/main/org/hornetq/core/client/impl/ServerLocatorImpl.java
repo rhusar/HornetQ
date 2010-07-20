@@ -18,6 +18,7 @@ import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -161,6 +162,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private String groupID;
 
+   private String nodeID;
+
    private static synchronized ExecutorService getGlobalThreadPool()
    {
       if (globalThreadPool == null)
@@ -283,7 +286,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                lbAddress = null;
             }
 
-            discoveryGroup = new DiscoveryGroupImpl(UUIDGenerator.getInstance().generateStringUUID(),
+            discoveryGroup = new DiscoveryGroupImpl(nodeID,
                                                     discoveryAddress,
                                                     lbAddress,
                                                     groupAddress,
@@ -312,6 +315,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       this.initialConnectors = transportConfigs;
 
+      this.nodeID = UUIDGenerator.getInstance().generateStringUUID();
+      
       discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
 
       clientFailureCheckPeriod = HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
@@ -412,6 +417,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
+   public void start() throws Exception
+   {
+      initialise();
+   }
+   
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
    {
       if (closed)
@@ -514,7 +524,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                {
                   attempts++;
 
-                  if (attempts == topologyArray.length)
+                  if (topologyArray != null && attempts == topologyArray.length)
                   {
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
                                                 "Cannot connect to server(s). Tried with all available servers.");
@@ -944,6 +954,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
+   public void setNodeID(String nodeID)
+   {
+      this.nodeID = nodeID;
+   }
+
    @Override
    protected void finalize() throws Throwable
    {
@@ -1100,6 +1115,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          this.initialConnectors[count++] = entry.getConnector();
       }
+      
+      System.out.println(">>>>>>>> Initial connectors = " + Arrays.asList(initialConnectors));
    }
 
    public synchronized void factoryClosed(final ClientSessionFactory factory)

@@ -266,7 +266,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
             log.warn("There are more than one servers on the network broadcasting the same node id. " + "You will see this message exactly once (per node) if a node is restarted, in which case it can be safely "
                      + "ignored. But if it is logged continuously it means you really do have more than one node on the same network "
                      + "active concurrently with the same node id. This could occur if you have a backup node active at the same time as "
-                     + "its live node.");
+                     + "its live node. nodeID=" + originatingNodeID);
             uniqueIDMap.put(originatingNodeID, uniqueID);
          }
       }
