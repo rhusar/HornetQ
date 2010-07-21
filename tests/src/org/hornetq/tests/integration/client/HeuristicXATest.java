@@ -385,7 +385,8 @@ public class HeuristicXATest extends ServiceTestBase
          server.stop();
 
          server.start();
-
+         //we need to recreate the locator and session factory
+         sf = locator.createSessionFactory();
          jmxServer = ManagementControlHelper.createHornetQServerControl(mbeanServer);
          if (heuristicCommit)
          {
@@ -493,7 +494,8 @@ public class HeuristicXATest extends ServiceTestBase
          server.stop();
 
          server.start();
-
+         //we need to recreate the sf
+         sf = locator.createSessionFactory();
          session = sf.createSession(true, false, false);
          Xid[] recoveredXids = session.recover(XAResource.TMSTARTRSCAN);
          Assert.assertEquals(0, recoveredXids.length);

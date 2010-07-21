@@ -192,6 +192,7 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
                {
                   server.stop();
                   server.start();
+                  sf = locator.createSessionFactory();
                }
 
                session = sf.createSession(null, null, isXA, false, false, preAck, 0);
@@ -226,6 +227,8 @@ public abstract class LargeMessageTestBase extends ServiceTestBase
             {
                server.stop();
                server.start();
+               //we need to recreate sf's
+               sf = locator.createSessionFactory();
             }
 
             session = sf.createSession(null, null, isXA, false, false, preAck, 0);

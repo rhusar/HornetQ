@@ -2082,7 +2082,7 @@ public class LargeMessageTest extends LargeMessageTestBase
             session.close();
             server.stop();
             server.start();
-
+            sf = locator.createSessionFactory();
             session = sf.createSession(isXA, false, false);
 
             session.rollback(xid);
