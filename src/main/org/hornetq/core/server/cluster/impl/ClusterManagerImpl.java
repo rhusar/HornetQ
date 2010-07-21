@@ -325,7 +325,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    }
 
-   public synchronized void nodeDown(final String nodeID)
+   public synchronized void notifyNodeDown(final String nodeID)
    {
       topology.remove(nodeID);
 
@@ -335,7 +335,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   public synchronized void nodeUP(final String nodeID,
+   public synchronized void notifyNodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {

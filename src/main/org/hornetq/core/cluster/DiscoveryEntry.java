@@ -24,15 +24,21 @@ import org.hornetq.api.core.TransportConfiguration;
  */
 public class DiscoveryEntry
 {
+   private final String nodeID;
    private final TransportConfiguration connector;
-
    private final long lastUpdate;
 
-   public DiscoveryEntry(final TransportConfiguration connector, final long lastUpdate)
+
+   public DiscoveryEntry(final String nodeID, final TransportConfiguration connector, final long lastUpdate)
    {
+      this.nodeID = nodeID;
       this.connector = connector;
-      
       this.lastUpdate = lastUpdate;
+   }
+
+   public String getNodeID()
+   {
+      return nodeID;
    }
 
    public TransportConfiguration getConnector()

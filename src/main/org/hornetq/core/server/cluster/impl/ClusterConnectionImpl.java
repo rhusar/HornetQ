@@ -265,8 +265,6 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
 
    public synchronized void nodeDown(final String nodeID)
    {
-      server.getClusterManager().nodeDown(nodeID);
-
       //Remove the flow record for that node
       
       MessageFlowRecord record = records.remove(nodeID);
@@ -290,8 +288,6 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
    {
       try
       {
-         server.getClusterManager().nodeUP(nodeID, connectorPair, false);
-
          MessageFlowRecord record = records.get(nodeID);
 
          if (record == null)
@@ -307,25 +303,23 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
             if (queueBinding != null)
             {
                queue = (Queue)queueBinding.getBindable();
-
-               createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
             }
             else
             {
                // Add binding in storage so the queue will get reloaded on startup and we can find it - it's never
                // actually routed to at that address though
-
                queue = server.createQueue(queueName, queueName, null, true, false);
-
-               createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
             }
+            
+            createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
          }
          else
          {
-            if (!connectorPair.a.equals(record.getBridge().getForwardingConnection().getTransportConnection()))
-            {
-               // New live node - close it and recreate it - TODO - CAN THIS EVER HAPPEN?
-            }
+            // FIXME apple and orange comparison. I don't understand it...
+            //if (!connectorPair.a.equals(record.getBridge().getForwardingConnection().getTransportConnection()))
+            // {
+            //   // New live node - close it and recreate it - TODO - CAN THIS EVER HAPPEN?
+            //}
          }
       }
       catch (Exception e)
@@ -340,6 +334,7 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
                                 final Queue queue,
                                 final boolean start) throws Exception
    {
+      System.out.println("ClusterConnectionImpl.createNewRecord() " + connector);
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(queue);
 
       Bridge bridge = new ClusterConnectionBridge(serverLocator,

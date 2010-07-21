@@ -1156,11 +1156,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             
             if (topMessage.isExit())
             {
-               serverLocator.nodeDown(topMessage.getNodeID());
+               serverLocator.notifyNodeDown(topMessage.getNodeID());
             }
             else
             {
-               serverLocator.nodeUP(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
+               serverLocator.notifyNodeUP(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
             }
          }
       }

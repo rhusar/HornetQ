@@ -297,6 +297,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
             discoveryGroup.start();
          }
+         
+         if (initialConnectors != null)
+         {
+            System.out.println(">>>>>>>> Static initial connectors = " + Arrays.asList(initialConnectors));
+            for (int i = 0; i < initialConnectors.length; i++)
+            {
+            	// FIXME and now what do I do?
+               TransportConfiguration connector = initialConnectors[i];
+            }
+         }
 
          readOnly = true;
       }
@@ -1031,7 +1041,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       closed = true;
    }
 
-   public synchronized void nodeDown(final String nodeID)
+   public synchronized void notifyNodeDown(final String nodeID)
    {
       if (!ha)
       {
@@ -1059,7 +1069,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public synchronized void nodeUP(final String nodeID,
+   public synchronized void notifyNodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
@@ -1114,9 +1124,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       for (DiscoveryEntry entry : newConnectors)
       {
          this.initialConnectors[count++] = entry.getConnector();
+
+         notifyNodeUP(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true);
       }
       
-      System.out.println(">>>>>>>> Initial connectors = " + Arrays.asList(initialConnectors));
+      System.out.println(">>>>>>>> Discovered initial connectors= " + Arrays.asList(initialConnectors));
    }
 
    public synchronized void factoryClosed(final ClientSessionFactory factory)

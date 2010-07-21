@@ -490,7 +490,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          try
          {      
             csf = createSessionFactory();
-
             // Session is pre-acknowledge
             session = (ClientSessionInternal)csf.createSession(user, password, false, true, true, true, 1);
 
@@ -501,9 +500,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             }
 
             producer = session.createProducer();
-
             session.addFailureListener(BridgeImpl.this);
-
             session.setSendAcknowledgementHandler(BridgeImpl.this);
 
             afterConnect();
@@ -511,7 +508,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             active = true;
 
             queue.addConsumer(BridgeImpl.this);
-
             queue.deliverAsync();
 
             BridgeImpl.log.info("Bridge " + name + " is connected to its destination");

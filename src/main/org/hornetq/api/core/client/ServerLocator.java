@@ -15,6 +15,7 @@ package org.hornetq.api.core.client;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.ConnectionLoadBalancingPolicy;
 
@@ -660,5 +661,9 @@ public interface ServerLocator
    
    void unregisterTopologyListener(ClusterTopologyListener listener);
    
+   void notifyNodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last);
+   
+   void notifyNodeDown(String nodeID);
+
    boolean isHA();
 }

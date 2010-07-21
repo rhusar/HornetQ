@@ -15,7 +15,6 @@ package org.hornetq.core.client.impl;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.ServerLocator;
 
 /**
@@ -25,7 +24,7 @@ import org.hornetq.api.core.client.ServerLocator;
  *
  *
  */
-public interface ServerLocatorInternal extends ServerLocator, ClusterTopologyListener
+public interface ServerLocatorInternal extends ServerLocator
 {
    void start() throws Exception;
    

@@ -330,7 +330,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
 
                   connector.decode(buffer);
                  
-                  DiscoveryEntry entry = new DiscoveryEntry(connector, System.currentTimeMillis());
+                  DiscoveryEntry entry = new DiscoveryEntry(originatingNodeID, connector, System.currentTimeMillis());
 
                   DiscoveryEntry oldVal = connectors.put(originatingNodeID, entry);
 
