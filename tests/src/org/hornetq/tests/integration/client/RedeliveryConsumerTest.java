@@ -136,6 +136,7 @@ public class RedeliveryConsumerTest extends ServiceTestBase
          session.close();
          server.stop();
          server.start();
+         factory = locator.createSessionFactory();
          session = factory.createSession(false, false, false);
          session.start();
          consumer = session.createConsumer(ADDRESS);
@@ -158,6 +159,7 @@ public class RedeliveryConsumerTest extends ServiceTestBase
                session.close();
                server.stop();
                server.start();
+               factory = locator.createSessionFactory();
                session = factory.createSession(false, false, false);
                session.start();
                consumer = session.createConsumer(ADDRESS);

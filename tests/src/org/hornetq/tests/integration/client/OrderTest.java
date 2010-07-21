@@ -112,6 +112,7 @@ public class OrderTest extends ServiceTestBase
                started = true;
                server.stop();
                server.start();
+               sf = locator.createSessionFactory();
             }
 
             session = sf.createSession(true, true);
