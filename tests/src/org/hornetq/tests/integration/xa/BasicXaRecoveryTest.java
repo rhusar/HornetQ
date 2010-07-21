@@ -59,6 +59,8 @@ public class BasicXaRecoveryTest extends ServiceTestBase
 
    private final SimpleString atestq = new SimpleString("atestq");
 
+   private ServerLocator locator;
+
    @Override
    protected void setUp() throws Exception
    {
@@ -1261,8 +1263,8 @@ public class BasicXaRecoveryTest extends ServiceTestBase
 
    private void createClients(final boolean createQueue, final boolean commitACKs) throws Exception
    {
-      ServerLocator locator = createInVMNonHALocator();
-      ClientSessionFactory sf = locator.createSessionFactory();
+      locator = createInVMNonHALocator();
+      sessionFactory = locator.createSessionFactory();
       clientSession = sessionFactory.createSession(true, false, commitACKs);
       if (createQueue)
       {
