@@ -3,9 +3,6 @@
             xsi:schemaLocation="urn:hornetq /schema/hornetq-configuration.xsd">
    <clustered>true</clustered>
 
-   <bindings-directory>/Users/jmesnil/Desktop/server1/bindings</bindings-directory>
-   <journal-directory>/Users/jmesnil/Desktop/server1/journal</journal-directory>
-
    <!-- Connectors -->
    <connectors>
       <connector name="netty-connector">
