@@ -63,7 +63,7 @@ public class ClientCrashTest extends ClientTestBase
 
    public void testCrashClient() throws Exception
    {
-      assertActiveConnections(0);
+      assertActiveConnections(1);
 
       // spawn a JVM that creates a Core client, which sends a message
       Process p = SpawnedVMSupport.spawnVM(CrashClient.class.getName());
@@ -76,7 +76,7 @@ public class ClientCrashTest extends ClientTestBase
       session.start();
 
       // receive a message from the queue
-      Message messageFromClient = consumer.receive(5000);
+      Message messageFromClient = consumer.receive(500000);
       Assert.assertNotNull("no message received", messageFromClient);
       Assert.assertEquals(ClientCrashTest.MESSAGE_TEXT_FROM_CLIENT, messageFromClient.getBodyBuffer().readString());
 
@@ -109,14 +109,14 @@ public class ClientCrashTest extends ClientTestBase
       Thread.sleep(2 * ClientCrashTest.CONNECTION_TTL);
 
       // the crash must have been detected and the resources cleaned up
-      assertActiveConnections(0);
+      assertActiveConnections(1);
       // FIXME https://jira.jboss.org/jira/browse/JBMESSAGING-1421
       assertActiveSession(0);
    }
    
    public void testCrashClient2() throws Exception
    {     
-      assertActiveConnections(0);
+      assertActiveConnections(1);
 
       ClientSession session = sf.createSession(false, true, true);
            
