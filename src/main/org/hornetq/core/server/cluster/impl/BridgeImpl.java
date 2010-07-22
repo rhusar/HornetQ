@@ -485,7 +485,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       do
       {
-         BridgeImpl.log.info("Connecting bridge " + name + " to its destination");
+         BridgeImpl.log.info("Connecting bridge " + name + " to its destination [" + nodeUUID.toString() + "]");
 
          try
          {      
@@ -510,7 +510,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             queue.addConsumer(BridgeImpl.this);
             queue.deliverAsync();
 
-            BridgeImpl.log.info("Bridge " + name + " is connected to its destination");
+            BridgeImpl.log.info("Bridge " + name + " is connected [" + nodeUUID + "-> " +  name +"]");
 
             return true;
          }

@@ -30,7 +30,6 @@ import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.ServerSessionPacketHandler;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
-import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
 import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
 import org.hornetq.core.remoting.CloseListener;
@@ -123,13 +122,13 @@ public class CoreProtocolManager implements ProtocolManager
                
                final boolean isCC = msg.isClusterConnection();
                
-               server.getClusterManager().registerTopologyListener(listener, isCC);
+               server.getClusterManager().addClusterTopologyListener(listener, isCC);
                
                rc.addCloseListener(new CloseListener()
                {
                   public void connectionClosed()
                   {
-                     server.getClusterManager().unregisterTopologyListener(listener, isCC);
+                     server.getClusterManager().removeClusterTopologyListener(listener, isCC);
                   }
                });
             }

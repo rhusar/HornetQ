@@ -16,9 +16,7 @@ package org.hornetq.core.server.cluster;
 import java.util.Map;
 import java.util.Set;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.core.server.HornetQComponent;
 
@@ -40,13 +38,9 @@ public interface ClusterManager extends HornetQComponent
 
    Set<BroadcastGroup> getBroadcastGroups();
 
-   void notifyNodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last);
+   void addClusterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
-   void notifyNodeDown(String nodeID);
-
-   void registerTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
-   
-   void unregisterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
+   void removeClusterTopologyListener(ClusterTopologyListener listener, boolean clusterConnection);
    
    void activate();
 }

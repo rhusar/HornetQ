@@ -53,4 +53,7 @@ public interface ClusterConnection extends HornetQComponent
    Pair<TransportConfiguration, TransportConfiguration>[] getTopology();
    
    TransportConfiguration getConnector();
+
+   // for debug
+   String description();
 }

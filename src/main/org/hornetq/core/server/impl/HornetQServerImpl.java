@@ -146,7 +146,7 @@ public class HornetQServerImpl implements HornetQServer
    private volatile SimpleString nodeID;
 
    private volatile UUID uuid;
-
+   
    private final Version version;
 
    private final HornetQSecurityManager securityManager;
@@ -736,7 +736,7 @@ public class HornetQServerImpl implements HornetQServer
 
       started = true;
 
-      HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " started");
+      HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]Êstarted");
 
       if (configuration.isBackup())
       {
@@ -909,7 +909,7 @@ public class HornetQServerImpl implements HornetQServer
             backupActivationThread.join();
          }
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " stopped");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]Êstopped");
 
          Logger.reset();
       }
@@ -1586,12 +1586,11 @@ public class HornetQServerImpl implements HornetQServer
       // when the cluster manager is started, it will form a cluster -> other nodes will then create bridges
       // to connect to this server. If the remoting service is not started before, the connection will fail
       // and the cluster will not be formed...
+      initialised = true;
+
       remotingService.start();
 
       clusterManager.start();
-
-      initialised = true;
-
    }
 
    /**

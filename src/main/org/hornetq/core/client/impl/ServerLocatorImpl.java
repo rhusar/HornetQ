@@ -297,16 +297,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
             discoveryGroup.start();
          }
-         
-         if (initialConnectors != null)
-         {
-            System.out.println(">>>>>>>> Static initial connectors = " + Arrays.asList(initialConnectors));
-            for (int i = 0; i < initialConnectors.length; i++)
-            {
-            	// FIXME and now what do I do?
-               TransportConfiguration connector = initialConnectors[i];
-            }
-         }
 
          readOnly = true;
       }
@@ -430,6 +420,36 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public void start() throws Exception
    {
       initialise();
+   }
+   
+   public void connect()
+   {
+      if (initialConnectors != null)
+      {
+         for (TransportConfiguration connector : initialConnectors)
+         {
+            ClientSessionFactory sf = null;
+            do
+            {
+               try
+               {
+                  sf = createSessionFactory(connector);
+               }
+               catch (HornetQException e)
+               {
+                  if (e.getCode() == HornetQException.NOT_CONNECTED)
+                  {
+                     continue;
+                  }
+               }
+               catch (Exception e)
+               {
+                  break;
+               }
+            }
+            while (sf == null);
+         }
+      }
    }
    
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
@@ -1069,7 +1089,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public synchronized void notifyNodeUP(final String nodeID,
+   public synchronized void notifyNodeUp(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
@@ -1125,7 +1145,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          this.initialConnectors[count++] = entry.getConnector();
 
-         notifyNodeUP(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true);
+         notifyNodeUp(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true);
       }
       
       System.out.println(">>>>>>>> Discovered initial connectors= " + Arrays.asList(initialConnectors));
@@ -1146,12 +1166,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public void registerTopologyListener(final ClusterTopologyListener listener)
+   public void addClusterTopologyListener(final ClusterTopologyListener listener)
    {
       topologyListeners.add(listener);
    }
 
-   public void unregisterTopologyListener(final ClusterTopologyListener listener)
+   public void removeClusterTopologyListener(final ClusterTopologyListener listener)
    {
       topologyListeners.remove(listener);
    }

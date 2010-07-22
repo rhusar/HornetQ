@@ -91,6 +91,13 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final boolean clustered;
 
+   // FIXME why do we distinguish between client listeners and cluster connection listeners?
+   // They are both notified at the same time...
+   private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+
+   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
+
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
                              final PostOffice postOffice,
@@ -221,13 +228,7 @@ public class ClusterManagerImpl implements ClusterManager
       return clusterConnections.get(name.toString());
    }
 
-   private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
-
-   private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
-
-   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
-
-   public synchronized void registerTopologyListener(final ClusterTopologyListener listener,
+   public synchronized void addClusterTopologyListener(final ClusterTopologyListener listener,
                                                      final boolean clusterConnection)
    {
       if (clusterConnection)
@@ -248,7 +249,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   public synchronized void unregisterTopologyListener(final ClusterTopologyListener listener,
+   public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                        final boolean clusterConnection)
    {
       if (clusterConnection)
@@ -323,28 +324,6 @@ public class ClusterManagerImpl implements ClusterManager
          listener.nodeUP(nodeID, pair, false);
       }
 
-   }
-
-   public synchronized void notifyNodeDown(final String nodeID)
-   {
-      topology.remove(nodeID);
-
-      for (ClusterTopologyListener listener : clientListeners)
-      {
-         listener.nodeDown(nodeID);
-      }
-   }
-
-   public synchronized void notifyNodeUP(final String nodeID,
-                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
-                                   final boolean last)
-   {
-      topology.put(nodeID, connectorPair);
-
-      for (ClusterTopologyListener listener : clientListeners)
-      {
-         listener.nodeUP(nodeID, connectorPair, false);
-      }
    }
 
    private synchronized void deployBroadcastGroup(final BroadcastGroupConfiguration config) throws Exception

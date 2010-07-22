@@ -164,8 +164,17 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
          return;
       }
 
-      serverLocator.registerTopologyListener(this);
+      serverLocator.addClusterTopologyListener(this);
       serverLocator.start();
+      
+      // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
+      server.getExecutorFactory().getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            serverLocator.connect();
+         }
+      });
       
       started = true;
 
@@ -187,7 +196,7 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
          return;
       }
 
-      serverLocator.unregisterTopologyListener(this);
+      serverLocator.removeClusterTopologyListener(this);
 
       for (MessageFlowRecord record : records.values())
       {
@@ -334,7 +343,6 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
                                 final Queue queue,
                                 final boolean start) throws Exception
    {
-      System.out.println("ClusterConnectionImpl.createNewRecord() " + connector);
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(queue);
 
       Bridge bridge = new ClusterConnectionBridge(serverLocator,
@@ -800,5 +808,19 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
    public Map<String, MessageFlowRecord> getRecords()
    {
       return records;
+   }
+   
+   public String description()
+   {
+      String out = name + " connected to\n";
+      for (Entry<String, MessageFlowRecord> messageFlow : records.entrySet())
+      {
+         String nodeID = messageFlow.getKey();
+         Bridge bridge = messageFlow.getValue().getBridge();
+         
+         out += "\t" + nodeID + " -- " + bridge.isStarted() + "\n";
+      }
+      
+      return out;
    }
 }
