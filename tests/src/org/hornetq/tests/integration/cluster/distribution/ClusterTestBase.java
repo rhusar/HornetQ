@@ -14,6 +14,7 @@
 package org.hornetq.tests.integration.cluster.distribution;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,11 +41,15 @@ import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
+import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
+import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.cluster.ClusterConnection;
+import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
@@ -737,6 +742,26 @@ public abstract class ClusterTestBase extends ServiceTestBase
          }
       }
    }
+   
+   protected String clusterDescription(HornetQServer server)
+   {
+      String br = "-------------------------\n";
+      String out = br;
+      out += "HornetQ server " + server.getNodeID() + "\n";
+      ClusterManager clusterManager = server.getClusterManager();
+      if (clusterManager == null)
+      {
+         out += "N/A";
+      }
+      else
+      {
+         for (ClusterConnection cc : clusterManager.getClusterConnections())
+         {
+            out += cc.description() + "\n";
+         }
+      }
+      return out + br;
+   }
 
    protected void verifyReceiveAll(final boolean ack, final int numMessages, final int... consumerIDs) throws Exception
    {
@@ -1377,6 +1402,34 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       return params;
    }
+   
+   protected static TransportConfiguration createTransportConfiguration(boolean netty, boolean acceptor, Map<String, Object> params)
+   {
+      String className;
+      if (netty)
+      {
+         if (acceptor)
+         {
+            className = NettyAcceptorFactory.class.getName();
+         }
+         else
+         {
+            className = NettyConnectorFactory.class.getName();
+         }
+      } else
+      {
+         if (acceptor)
+         {
+            className = InVMAcceptorFactory.class.getName();
+         }
+         else
+         {
+            className = InVMConnectorFactory.class.getName();
+         }
+      }
+      return new TransportConfiguration(className, params);
+   }
+
 
    protected void clearServer(final int... nodes)
    {
@@ -1413,26 +1466,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          throw new IllegalStateException("No server at node " + nodeFrom);
       }
+      
+      TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
+      serverFrom.getConfiguration().getConnectorConfigurations().put(name, connectorFrom);
 
-      // Map<String, TransportConfiguration> connectors = serviceFrom
-      // .getConfiguration()
-      // .getConnectorConfigurations();
-
-      Map<String, Object> params = generateParams(nodeTo, netty);
-
-      TransportConfiguration serverTotc;
-
-      if (netty)
-      {
-         serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
-      }
-      else
-      {
-         serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
-      }
-
+      TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(nodeTo, netty));
       serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
-
 
       List<String> pairs = new ArrayList<String>();
       pairs.add(serverTotc.getName());
@@ -1449,6 +1488,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
    }
 
+
    protected void setupClusterConnection(final String name,
                                          final String address,
                                          final boolean forwardWhenNoConsumers,
@@ -1464,35 +1504,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalStateException("No server at node " + nodeFrom);
       }
 
-      Map<String, TransportConfiguration> connectors = serverFrom.getConfiguration().getConnectorConfigurations();
-
+      TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
+      serverFrom.getConfiguration().getConnectorConfigurations().put(connectorFrom.getName(), connectorFrom);
+      
       List<String> pairs = new ArrayList<String>();
-      TransportConfiguration configuration = serverFrom.getConfiguration().getAcceptorConfigurations().iterator().next();
-      String connectorName = configuration.getName();
-      connectors.put(connectorName, configuration);
-
       for (int element : nodesTo)
       {
-         Map<String, Object> params = generateParams(element, netty);
-
-         TransportConfiguration serverTotc;
-         if (netty)
-         {
-            serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
-         }
-         else
-         {
-            serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
-         }
-         
-         connectors.put(serverTotc.getName(), serverTotc);
-
+         TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(element, netty));
+         serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
          pairs.add(serverTotc.getName());
       }
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
-                                                                                      connectorName,
+                                                                                      connectorFrom.getName(),
                                                                                       250,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
@@ -1588,6 +1613,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalStateException("No server at node " + node);
       }
 
+      TransportConfiguration connectorConfig = createTransportConfiguration(netty, false, generateParams(node, netty));
+      server.getConfiguration().getConnectorConfigurations().put(name, connectorConfig);
+      
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       name,
