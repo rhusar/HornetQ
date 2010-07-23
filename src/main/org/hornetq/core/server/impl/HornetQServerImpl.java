@@ -736,7 +736,7 @@ public class HornetQServerImpl implements HornetQServer
 
       started = true;
 
-      HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]Êstarted");
+      HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
 
       if (configuration.isBackup())
       {
@@ -909,7 +909,7 @@ public class HornetQServerImpl implements HornetQServer
             backupActivationThread.join();
          }
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]Êstopped");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]ï¿½stopped");
 
          Logger.reset();
       }
