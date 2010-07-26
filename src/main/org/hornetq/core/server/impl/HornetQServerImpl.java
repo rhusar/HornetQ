@@ -909,7 +909,7 @@ public class HornetQServerImpl implements HornetQServer
             backupActivationThread.join();
          }
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "]�stopped");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] stopped");
 
          Logger.reset();
       }
