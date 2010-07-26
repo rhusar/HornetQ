@@ -61,6 +61,8 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       super(PacketImpl.CLUSTER_TOPOLOGY);
       
       this.exit = true;
+      
+      this.nodeID = nodeID;
    }
 
    public ClusterTopologyChangeMessage()
