@@ -896,7 +896,8 @@ public class HornetQServerImpl implements HornetQServer
 
          started = false;
          initialised = false;
-         // uuid = null;
+         // to display in the log message
+         SimpleString tempNodeID = nodeID;
          nodeID = null;
 
          if (activation != null)
@@ -909,7 +910,7 @@ public class HornetQServerImpl implements HornetQServer
             backupActivationThread.join();
          }
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] stopped");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + tempNodeID + "] stopped");
 
          Logger.reset();
       }
