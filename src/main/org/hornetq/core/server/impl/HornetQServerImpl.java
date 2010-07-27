@@ -1582,16 +1582,11 @@ public class HornetQServerImpl implements HornetQServer
 
       // We do this at the end - we don't want things like MDBs or other connections connecting to a backup server until
       // it is activated
+      clusterManager.start();
 
-      // FIXME -- I inverted the order to start the remoting service before the cluster manager.
-      // when the cluster manager is started, it will form a cluster -> other nodes will then create bridges
-      // to connect to this server. If the remoting service is not started before, the connection will fail
-      // and the cluster will not be formed...
       initialised = true;
 
       remotingService.start();
-
-      clusterManager.start();
    }
 
    /**
