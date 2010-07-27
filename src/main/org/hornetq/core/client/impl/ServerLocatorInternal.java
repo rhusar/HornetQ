@@ -45,4 +45,8 @@ public interface ServerLocatorInternal extends ServerLocator
    void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last);
    
    void notifyNodeDown(String nodeID);
+
+   void setClusterConnection(boolean clusterConnection);
+
+   boolean isClusterConnection();
 }

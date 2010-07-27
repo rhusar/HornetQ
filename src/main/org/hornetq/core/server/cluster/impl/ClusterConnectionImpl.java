@@ -119,8 +119,18 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
                                 final String clusterUser,
                                 final String clusterPassword) throws Exception
    {
-      this.serverLocator = serverLocator;
+
+      if (nodeUUID == null)
+      {
+         throw new IllegalArgumentException("node id is null");
+      }
+
+      this.nodeUUID = nodeUUID;
       
+      this.serverLocator = serverLocator;
+
+      this.serverLocator.setClusterConnection(true);
+
       this.connector = connector;
 
       this.name = name;
@@ -142,13 +152,6 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       this.scheduledExecutor = scheduledExecutor;
 
       this.maxHops = maxHops;
-
-      if (nodeUUID == null)
-      {
-         throw new IllegalArgumentException("node id is null");
-      }
-
-      this.nodeUUID = nodeUUID;
 
       this.backup = backup;
 

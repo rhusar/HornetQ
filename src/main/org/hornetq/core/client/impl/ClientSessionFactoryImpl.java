@@ -1064,7 +1064,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          
          if (serverLocator.isHA())
          {
-            channel0.send(new SubscribeClusterTopologyUpdatesMessage(false));
+            channel0.send(new SubscribeClusterTopologyUpdatesMessage(serverLocator.isClusterConnection()));
          }
       }
 

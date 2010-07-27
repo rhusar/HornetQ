@@ -62,6 +62,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private final boolean ha;
 
+   private boolean clusterConnection;
+   
    private final String discoveryAddress;
 
    private final int discoveryPort;
@@ -376,6 +378,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       initialMessagePacketSize = HornetQClient.DEFAULT_INITIAL_MESSAGE_PACKET_SIZE;
 
       cacheLargeMessagesClient = HornetQClient.DEFAULT_CACHE_LARGE_MESSAGE_CLIENT;
+      
+      clusterConnection = false;
    }
 
    /**
@@ -987,6 +991,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public void setNodeID(String nodeID)
    {
       this.nodeID = nodeID;
+   }
+
+   public void setClusterConnection(boolean clusterConnection)
+   {
+      this.clusterConnection = clusterConnection;
+   }
+   
+   public boolean isClusterConnection()
+   {
+      return clusterConnection;
    }
 
    @Override
