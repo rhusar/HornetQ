@@ -297,21 +297,7 @@ public class HornetQServerImpl implements HornetQServer
       {
          try
          {
-            File journalDir = new File(configuration.getJournalDirectory());
-
-            if (!journalDir.exists())
-            {
-               if (configuration.isCreateJournalDir())
-               {
-                  journalDir.mkdirs();
-               }
-               else
-               {
-                  throw new IllegalArgumentException("Directory " + journalDir +
-                                                     " does not exist and will not create it");
-               }
-            }
-
+            checkJournalDirectory();
 
             // We now load the node id file, creating it, if it doesn't exist yet
             File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
@@ -394,20 +380,7 @@ public class HornetQServerImpl implements HornetQServer
          {
             log.info("Waiting to obtain live lock");
 
-            File journalDir = new File(configuration.getJournalDirectory());
-
-            if (!journalDir.exists())
-            {
-               if (configuration.isCreateJournalDir())
-               {
-                  journalDir.mkdirs();
-               }
-               else
-               {
-                  throw new IllegalArgumentException("Directory " + journalDir +
-                                                     " does not exist and will not create it");
-               }
-            }
+            checkJournalDirectory();
 
             liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
 
@@ -536,6 +509,8 @@ public class HornetQServerImpl implements HornetQServer
       {
          try
          {
+            checkJournalDirectory();
+
             backupLock = createLockFile("backup.lock", configuration.getJournalDirectory());
 
             log.info("Waiting to become backup node");
@@ -1582,11 +1557,14 @@ public class HornetQServerImpl implements HornetQServer
 
       // We do this at the end - we don't want things like MDBs or other connections connecting to a backup server until
       // it is activated
+
+      remotingService.start();
+
+      System.out.println("remoting service is started");
       clusterManager.start();
 
       initialised = true;
 
-      remotingService.start();
    }
 
    /**
@@ -1892,6 +1870,27 @@ public class HornetQServerImpl implements HornetQServer
          }
       });
 
+   }
+   
+   /**
+    * Check if journal directory exists or create it (if configured to do so)
+    */
+   private void checkJournalDirectory()
+   {
+      File journalDir = new File(configuration.getJournalDirectory());
+
+      if (!journalDir.exists())
+      {
+         if (configuration.isCreateJournalDir())
+         {
+            journalDir.mkdirs();
+         }
+         else
+         {
+            throw new IllegalArgumentException("Directory " + journalDir +
+            " does not exist and will not be created");
+         }
+      }
    }
 
    // Inner classes
