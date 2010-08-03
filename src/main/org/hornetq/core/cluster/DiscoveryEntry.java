@@ -50,4 +50,10 @@ public class DiscoveryEntry
    {
       return lastUpdate;
    }
+   
+   @Override
+   public String toString()
+   {
+      return "DiscoveryEntry[nodeID=" + nodeID + ", connector=" + connector + ", lastUpdate=" + lastUpdate + "]";
+   }
 }
