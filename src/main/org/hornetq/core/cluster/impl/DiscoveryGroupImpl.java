@@ -314,6 +314,11 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
 
             if (nodeID.equals(originatingNodeID))
             {
+               if (checkExpiration())
+               {
+                  callListeners();
+               }
+               
                // Ignore traffic from own node
                continue;
             }
@@ -340,23 +345,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
                   }
                }
 
-               long now = System.currentTimeMillis();
-
-               Iterator<Map.Entry<String, DiscoveryEntry>> iter = connectors.entrySet().iterator();
-
-               // Weed out any expired connectors
-
-               while (iter.hasNext())
-               {
-                  Map.Entry<String, DiscoveryEntry> entry = iter.next();
-
-                  if (entry.getValue().getLastUpdate() + timeout <= now)
-                  {
-                     iter.remove();
-
-                     changed = true;
-                  }
-               }
+               changed = changed || checkExpiration();
             }
 
             if (changed)
@@ -409,4 +398,28 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       }
    }
 
+   private boolean checkExpiration()
+   {
+      boolean changed = false;
+      long now = System.currentTimeMillis();
+
+      Iterator<Map.Entry<String, DiscoveryEntry>> iter = connectors.entrySet().iterator();
+
+      // Weed out any expired connectors
+
+      while (iter.hasNext())
+      {
+         Map.Entry<String, DiscoveryEntry> entry = iter.next();
+
+         if (entry.getValue().getLastUpdate() + timeout <= now)
+         {
+            System.out.println("remove " + entry);
+            iter.remove();
+
+            changed = true;
+         }
+      }
+      
+      return changed;
+   }
 }
