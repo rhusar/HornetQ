@@ -234,18 +234,6 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
    
-   public void announceNode(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair)
-   {
-      /*
-      System.out.println("node " + server.getNodeID() + " announces " + nodeID + " to its cluster connections " + clusterConnections.keySet());
-      for (ClusterConnection clusterConnection : clusterConnections.values())
-      {
-         clusterConnection.announce(nodeID, pair, false);
-      }
-      */
-      
-   }
-   
    public boolean isStarted()
    {
       return started;

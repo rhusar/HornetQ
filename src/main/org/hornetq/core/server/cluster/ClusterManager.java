@@ -49,6 +49,4 @@ public interface ClusterManager extends HornetQComponent
    void notifyClientsNodeDown(String nodeID);
 
    void notifyClientsNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean b);
-
-   void announceNode(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair);
 }
