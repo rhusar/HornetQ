@@ -1560,7 +1560,6 @@ public class HornetQServerImpl implements HornetQServer
 
       remotingService.start();
 
-      System.out.println("remoting service is started");
       clusterManager.start();
 
       initialised = true;
