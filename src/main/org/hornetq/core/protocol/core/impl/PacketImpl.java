@@ -185,7 +185,9 @@ public class PacketImpl implements Packet
    // HA
    
    public static final byte CLUSTER_TOPOLOGY = 110;
-   
+
+   public static final byte NODE_ANNOUNCE = 111;
+
    public static final byte SUBSCRIBE_TOPOLOGY = 112;
 
    // Static --------------------------------------------------------

@@ -30,7 +30,6 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
@@ -69,8 +68,6 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final Map<String, Bridge> bridges = new HashMap<String, Bridge>();
 
-   private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
-
    private final ExecutorFactory executorFactory;
 
    private final HornetQServer server;
@@ -91,11 +88,23 @@ public class ClusterManagerImpl implements ClusterManager
 
    private final boolean clustered;
 
-   // FIXME why do we distinguish between client listeners and cluster connection listeners?
-   // They are both notified at the same time...
+   // the cluster connections which links this node to other cluster nodes
+   private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
+
+   // regular client listeners to be notified of cluster topology changes.
+   // they correspond to regular clients using a HA ServerLocator
    private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   
+   // cluster connections listeners to be notified of cluster topology changes
+   // they correspond to cluster connections on *other nodes connected to this one*
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
+   /*
+    * topology describes the other cluster nodes that this server knows about:
+    * 
+    * keys are node IDs
+    * values are a pair of live/backup transport configurations
+    */
    private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
 
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
@@ -203,6 +212,40 @@ public class ClusterManagerImpl implements ClusterManager
       started = false;
    }
 
+   public void notifyClientsNodeDown(String nodeID)
+   {
+      topology.remove(nodeID);
+
+      for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeDown(nodeID);
+      }
+   }
+
+   public void notifyClientsNodeUp(String nodeID,
+                                   Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                                   boolean last)
+   {
+      topology.put(nodeID, connectorPair);
+
+      for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeUP(nodeID, connectorPair, last);
+      }
+   }
+   
+   public void announceNode(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair)
+   {
+      /*
+      System.out.println("node " + server.getNodeID() + " announces " + nodeID + " to its cluster connections " + clusterConnections.keySet());
+      for (ClusterConnection clusterConnection : clusterConnections.values())
+      {
+         clusterConnection.announce(nodeID, pair, false);
+      }
+      */
+      
+   }
+   
    public boolean isStarted()
    {
       return started;
@@ -231,6 +274,7 @@ public class ClusterManagerImpl implements ClusterManager
    public synchronized void addClusterTopologyListener(final ClusterTopologyListener listener,
                                                      final boolean clusterConnection)
    {
+      System.out.println("ClusterManagerImpl.addClusterTopologyListener() on " + nodeUUID + " " + clusterConnection + " " + listener);
       if (clusterConnection)
       {
          this.clusterConnectionListeners.add(listener);
@@ -241,10 +285,10 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       // We now need to send the current topology to the client
-
       int count = 0;
       for (Map.Entry<String, Pair<TransportConfiguration, TransportConfiguration>> entry : topology.entrySet())
       {
+         System.out.println("ClusterManagerImpl.addClusterTopologyListener() on " + nodeUUID + " -- " + entry);
          listener.nodeUP(entry.getKey(), entry.getValue(), ++count == topology.size());
       }
    }
@@ -318,7 +362,7 @@ public class ClusterManagerImpl implements ClusterManager
       {
          listener.nodeUP(nodeID, pair, false);
       }
-
+      
       for (ClusterTopologyListener listener : clusterConnectionListeners)
       {
          listener.nodeUP(nodeID, pair, false);
@@ -454,7 +498,7 @@ public class ClusterManagerImpl implements ClusterManager
 
       Queue queue = (Queue)binding.getBindable();
 
-      ServerLocator serverLocator;
+      ServerLocatorInternal serverLocator;
 
       if (config.getDiscoveryGroupName() != null)
       {
@@ -470,12 +514,12 @@ public class ClusterManagerImpl implements ClusterManager
 
          if (config.isHA())
          {
-            serverLocator = HornetQClient.createServerLocatorWithHA(discoveryGroupConfiguration.getGroupAddress(),
+            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(discoveryGroupConfiguration.getGroupAddress(),
                                                                     discoveryGroupConfiguration.getGroupPort());
          }
          else
          {
-            serverLocator = HornetQClient.createServerLocatorWithoutHA(discoveryGroupConfiguration.getGroupAddress(),
+            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(discoveryGroupConfiguration.getGroupAddress(),
                                                                        discoveryGroupConfiguration.getGroupPort());
          }
 
@@ -491,11 +535,11 @@ public class ClusterManagerImpl implements ClusterManager
 
          if (config.isHA())
          {
-            serverLocator = HornetQClient.createServerLocatorWithHA(tcConfigs);
+            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(tcConfigs);
          }
          else
          {
-            serverLocator = HornetQClient.createServerLocatorWithoutHA(tcConfigs);
+            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(tcConfigs);
          }
 
       }
@@ -561,8 +605,9 @@ public class ClusterManagerImpl implements ClusterManager
          TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
 
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(tcConfigs);
+         serverLocator.setNodeID(nodeUUID.toString());
       }
-      else
+      else if (config.getDiscoveryGroupName() != null)
       {
          DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations()
                                                        .get(config.getDiscoveryGroupName());
@@ -574,9 +619,15 @@ public class ClusterManagerImpl implements ClusterManager
          }
 
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
+         serverLocator.setNodeID(nodeUUID.toString());
+      }
+      else
+      {
+         // no connector or discovery group are defined. The cluster connection will only be a target and will
+         // no connect to other nodes in the cluster
+         serverLocator = null;
       }
 
-      serverLocator.setNodeID(nodeUUID.toString());
       ClusterConnection clusterConnection = new ClusterConnectionImpl(serverLocator,
                                                                       connector,
                                                                       new SimpleString(config.getName()),

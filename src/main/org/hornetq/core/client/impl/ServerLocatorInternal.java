@@ -35,8 +35,8 @@ public interface ServerLocatorInternal extends ServerLocator
    TransportConfiguration getBackup( TransportConfiguration live);
 
    void setNodeID(String nodeID);
-
-   void connect();
+   
+   void connect(boolean backup, TransportConfiguration transportConfig);
    
    void addClusterTopologyListener(ClusterTopologyListener listener);
    

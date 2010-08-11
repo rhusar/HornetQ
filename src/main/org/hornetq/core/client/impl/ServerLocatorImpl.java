@@ -44,6 +44,7 @@ import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -426,7 +427,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       initialise();
    }
    
-   public void connect()
+   public void connect(boolean backup, TransportConfiguration transportConfig)
    {
       if (initialConnectors != null)
       {
@@ -438,6 +439,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                try
                {
                   sf = createSessionFactory(connector);
+                  if (sf != null)
+                  {
+                     ClientSessionFactoryInternal internalSF = (ClientSessionFactoryInternal)sf;
+                     internalSF.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeID, backup, transportConfig));
+                  }
                }
                catch (HornetQException e)
                {

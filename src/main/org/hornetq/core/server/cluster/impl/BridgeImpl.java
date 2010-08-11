@@ -29,6 +29,7 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ClientSessionInternal;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
 import org.hornetq.core.logging.Logger;
@@ -65,7 +66,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    // Attributes ----------------------------------------------------
 
-   protected final ServerLocator serverLocator;
+   protected final ServerLocatorInternal serverLocator;
    
    private final UUID nodeUUID;
 
@@ -109,7 +110,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    // Public --------------------------------------------------------
 
-   public BridgeImpl(final ServerLocator serverLocator,
+   public BridgeImpl(final ServerLocatorInternal serverLocator,
                      final UUID nodeUUID,
                      final SimpleString name,
                      final Queue queue,
@@ -589,6 +590,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             {
                queue.deliverAsync();
             }
+            
+            log.info("stopped bridge " + name);
          }
          catch (Exception e)
          {

@@ -26,7 +26,6 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
@@ -58,7 +57,7 @@ import org.hornetq.utils.UUID;
  *
  *
  */
-public class ClusterConnectionImpl implements ClusterConnection, ClusterTopologyListener
+public class ClusterConnectionImpl implements ClusterConnection
 {
    private static final Logger log = Logger.getLogger(ClusterConnectionImpl.class);
 
@@ -129,7 +128,10 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       
       this.serverLocator = serverLocator;
 
-      this.serverLocator.setClusterConnection(true);
+      if (this.serverLocator != null)
+      {
+         this.serverLocator.setClusterConnection(true);
+      }
 
       this.connector = connector;
 
@@ -167,17 +169,20 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
          return;
       }
 
-      serverLocator.addClusterTopologyListener(this);
-      serverLocator.start();
-      
-      // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
-      server.getExecutorFactory().getExecutor().execute(new Runnable()
+      if (serverLocator != null)
       {
-         public void run()
+         serverLocator.addClusterTopologyListener(this);
+         serverLocator.start();
+
+         // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
+         server.getExecutorFactory().getExecutor().execute(new Runnable()
          {
-            serverLocator.connect();
-         }
-      });
+            public void run()
+            {
+               serverLocator.connect(server.getConfiguration().isBackup(), connector);
+            }
+         });
+      }
       
       started = true;
 
@@ -198,8 +203,11 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       {
          return;
       }
-
-      serverLocator.removeClusterTopologyListener(this);
+      
+      if (serverLocator != null)
+      {
+         serverLocator.removeClusterTopologyListener(this);
+      }
 
       for (MessageFlowRecord record : records.values())
       {
@@ -211,6 +219,12 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
          {
          }
       }
+
+      if (serverLocator != null)
+      {
+         serverLocator.close();
+      }
+
 
       if (managementService != null)
       {
@@ -277,6 +291,13 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
 
    public synchronized void nodeDown(final String nodeID)
    {
+      if (nodeID.equals(nodeUUID.toString()))
+      {
+         return;
+      }
+      
+      server.getClusterManager().notifyClientsNodeDown(nodeID);
+      
       //Remove the flow record for that node
       
       MessageFlowRecord record = records.remove(nodeID);
@@ -285,6 +306,7 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
       {
          try
          {
+            record.reset();
             record.close();
          }
          catch (Exception e)
@@ -298,6 +320,13 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
+      if (nodeID.equals(nodeUUID.toString()))
+      {
+         return;
+      }
+      
+      server.getClusterManager().notifyClientsNodeUp(nodeID, connectorPair, false);
+      
       try
       {
          MessageFlowRecord record = records.get(nodeID);
@@ -339,6 +368,21 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
          log.error("Failed to update topology", e);
       }
    }
+   
+   public void announce(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair, boolean b)
+   {
+      TransportConfiguration connector = (backup) ? pair.b : pair.a;
+      if (serverLocator!= null && serverLocator.getStaticTransportConfigurations() != null)
+      {
+         for (TransportConfiguration staticConnector : serverLocator.getStaticTransportConfigurations())
+         {
+            if (connector.equals(staticConnector))
+            {
+               nodeUP(nodeID, pair, false);
+            }
+         }
+      }
+   }
 
    private void createNewRecord(final String nodeID,
                                 final TransportConfiguration connector,
@@ -350,6 +394,7 @@ public class ClusterConnectionImpl implements ClusterConnection, ClusterTopology
 
       Bridge bridge = new ClusterConnectionBridge(serverLocator,
                                                   nodeUUID,
+                                                  nodeID,
                                                   queueName,
                                                   queue,
                                                   executorFactory.getExecutor(),

@@ -30,6 +30,7 @@ import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.ServerSessionPacketHandler;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
 import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
 import org.hornetq.core.remoting.CloseListener;
@@ -118,6 +119,11 @@ public class CoreProtocolManager implements ProtocolManager
                   {
                      channel0.send(new ClusterTopologyChangeMessage(nodeID));
                   }
+                  
+                  public String toString()
+                  {
+                     return "ClusterTopologyListener[address=" + connection.getRemoteAddress() + "]";
+                  };
                };
                
                final boolean isCC = msg.isClusterConnection();
@@ -131,6 +137,22 @@ public class CoreProtocolManager implements ProtocolManager
                      server.getClusterManager().removeClusterTopologyListener(listener, isCC);
                   }
                });
+            }
+            else if (packet.getType() == PacketImpl.NODE_ANNOUNCE)
+            {
+               NodeAnnounceMessage msg = (NodeAnnounceMessage)packet;
+               TransportConfiguration connector = msg.getConnector();
+               boolean backup = msg.isBackup();
+               Pair<TransportConfiguration, TransportConfiguration> pair;
+               if (backup)
+               {
+                  pair = new Pair<TransportConfiguration, TransportConfiguration>(null, connector);
+               }
+               else
+               {
+                  pair = new Pair<TransportConfiguration, TransportConfiguration>(connector, null);
+               }
+               server.getClusterManager().announceNode(msg.getNodeID(), pair);
             }
          }
       });

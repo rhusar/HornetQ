@@ -29,6 +29,7 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.ResourceNames;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -63,8 +64,11 @@ public class ClusterConnectionBridge extends BridgeImpl
    
    private final TransportConfiguration connector;
 
-   public ClusterConnectionBridge(final ServerLocator serverLocator,
+   private final String targetNodeID;
+
+   public ClusterConnectionBridge(final ServerLocatorInternal serverLocator,
                                   final UUID nodeUUID,
+                                  final String targetNodeID,
                                   final SimpleString name,
                                   final Queue queue,
                                   final Executor executor,
@@ -99,6 +103,7 @@ public class ClusterConnectionBridge extends BridgeImpl
 
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
 
+      this.targetNodeID = targetNodeID;
       this.managementAddress = managementAddress;
       this.managementNotificationAddress = managementNotificationAddress;
       this.flowRecord = flowRecord;
@@ -222,6 +227,22 @@ public class ClusterConnectionBridge extends BridgeImpl
       //We create the session factory using the specified connector
       
       return serverLocator.createSessionFactory(connector);      
+   }
+
+   @Override
+   public void connectionFailed(HornetQException me)
+   {
+      try
+      {
+         session.cleanUp();
+      }
+      catch (Exception e)
+      {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+      serverLocator.notifyNodeDown(targetNodeID);
+      super.connectionFailed(me);
    }
 
 }
