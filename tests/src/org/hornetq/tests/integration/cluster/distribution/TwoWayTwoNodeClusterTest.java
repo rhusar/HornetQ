@@ -33,9 +33,20 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
    {
       super.setUp();
 
+      setupServers();
+      setupClusters();
+   }
+   
+   protected void setupServers()
+   {
       setupServer(0, isFileStorage(), isNetty());
+      setupServer(1, isFileStorage(), isNetty());      
+   }
 
-      setupServer(1, isFileStorage(), isNetty());
+   protected void setupClusters()
+   {
+      setupClusterConnection("cluster0", 0, 1, "queues", false, 1, isNetty());
+      setupClusterConnection("cluster1", 1, 0, "queues", false, 1, isNetty());
    }
 
    @Override
@@ -57,16 +68,85 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
    public void testStartStop() throws Exception
    {
-      setupClusterConnection("cluster0", 0, 1, "queues", false, 1, isNetty());
-
-      setupClusterConnection("cluster1", 1, 0, "queues", false, 1, isNetty());
 
       startServers(0, 1);
 
-      // Give it a little time for the bridge to try to start
-      Thread.sleep(2000);
+      setupSessionFactory(0, isNetty());
+      setupSessionFactory(1, isNetty());
+
+      createQueue(0, "queues", "queue0", null, false);
+      createQueue(1, "queues", "queue0", null, false);
+
+      addConsumer(0, 0, "queue0", null);
+      addConsumer(1, 1, "queue0", null);
+
+      waitForBindings(0, "queues", 1, 1, true);
+      waitForBindings(1, "queues", 1, 1, true);
+
+      waitForBindings(0, "queues", 1, 1, false);
+      waitForBindings(1, "queues", 1, 1, false);
+
+      send(0, "queues", 10, false, null);
+      verifyReceiveRoundRobin(10, 0, 1);
+      verifyNotReceive(0, 1);
 
       stopServers(0, 1);
    }
 
+   public void testStopStart() throws Exception
+   {
+      startServers(0, 1);
+
+      setupSessionFactory(0, isNetty());
+      setupSessionFactory(1, isNetty());
+
+      createQueue(0, "queues", "queue0", null, false);
+      createQueue(1, "queues", "queue0", null, false);
+
+      addConsumer(0, 0, "queue0", null);
+      addConsumer(1, 1, "queue0", null);
+
+      waitForBindings(0, "queues", 1, 1, true);
+      waitForBindings(1, "queues", 1, 1, true);
+
+      waitForBindings(0, "queues", 1, 1, false);
+      waitForBindings(1, "queues", 1, 1, false);
+
+      send(0, "queues", 10, false, null);
+      verifyReceiveRoundRobin(10, 0, 1);
+      verifyNotReceive(0, 1);
+
+      removeConsumer(1);
+      
+      closeSessionFactory(1);
+      
+      stopServers(1);
+      
+      Thread.sleep(12000);
+
+      System.out.println(clusterDescription(servers[0]));
+
+      startServers(1);
+
+      setupSessionFactory(1, isNetty());
+
+      createQueue(1, "queues", "queue0", null, false);
+
+      addConsumer(1, 1, "queue0", null);
+
+      waitForBindings(0, "queues", 1, 1, true);
+      waitForBindings(1, "queues", 1, 1, true);
+
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
+      
+      waitForBindings(1, "queues", 1, 1, false);
+      waitForBindings(0, "queues", 1, 1, false);
+
+      send(0, "queues", 10, false, null);
+      verifyReceiveRoundRobin(10, 0, 1);
+      verifyNotReceive(0, 1);
+
+       stopServers(0, 1);
+   }
 }

@@ -1251,20 +1251,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setBackup(backup);
 
       configuration.getAcceptorConfigurations().clear();
-
-      Map<String, Object> params = generateParams(node, netty);
-
-      if (netty)
-      {
-         TransportConfiguration nettytc = new TransportConfiguration(ServiceTestBase.NETTY_ACCEPTOR_FACTORY, params);
-         configuration.getAcceptorConfigurations().add(nettytc);
-      }
-      else
-      {
-         TransportConfiguration invmtc = new TransportConfiguration(ServiceTestBase.INVM_ACCEPTOR_FACTORY, params);
-         configuration.getAcceptorConfigurations().add(invmtc);
-      }
-
+      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node, netty)));
+      
       HornetQServer server;
 
       if (fileStorage)
@@ -1470,11 +1458,15 @@ public abstract class ClusterTestBase extends ServiceTestBase
       TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
       serverFrom.getConfiguration().getConnectorConfigurations().put(name, connectorFrom);
 
-      TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(nodeTo, netty));
-      serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
-
-      List<String> pairs = new ArrayList<String>();
-      pairs.add(serverTotc.getName());
+      List<String> pairs = null;
+      
+      if (nodeTo != -1)
+      {
+         TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(nodeTo, netty));
+         serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
+         pairs = new ArrayList<String>();
+         pairs.add(serverTotc.getName());
+      }
 
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
@@ -1544,44 +1536,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalStateException("No server at node " + nodeFrom);
       }
 
-      Map<String, TransportConfiguration> connectors = serverFrom.getConfiguration().getConnectorConfigurations();
+      TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
+      serverFrom.getConfiguration().getConnectorConfigurations().put(name, connectorFrom);
 
       List<String> pairs = new ArrayList<String>();
-
-      for (int i = 0; i < nodesTo.length; i++)
+      for (int element : nodesTo)
       {
-         Map<String, Object> params = generateParams(nodesTo[i], netty);
-
-         TransportConfiguration serverTotc;
-
-         if (netty)
-         {
-            serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
-         }
-         else
-         {
-            serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
-         }
-
-         connectors.put(serverTotc.getName(), serverTotc);
-
-         /*Map<String, Object> backupParams = generateParams(backupsTo[i], netty);
-
-         TransportConfiguration serverBackupTotc;
-
-         if (netty)
-         {
-            serverBackupTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, backupParams);
-         }
-         else
-         {
-            serverBackupTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, backupParams);
-         }
-
-         connectors.put(serverBackupTotc.getName(), serverBackupTotc);
-
-         Pair<String, String> connectorPair = new Pair<String, String>(serverTotc.getName(), serverBackupTotc.getName());*/
-
+         TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(element, netty));
+         serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
          pairs.add(serverTotc.getName());
       }
 

@@ -63,6 +63,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -78,6 +79,14 @@ public class OneWayChainClusterTest extends ClusterTestBase
       addConsumer(1, 4, "queue0", null);
 
       waitForBindings(0, "queues.testaddress", 1, 1, true);
+      
+      Thread.sleep(2000);
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
+      System.out.println(clusterDescription(servers[2]));
+      System.out.println(clusterDescription(servers[3]));
+      System.out.println(clusterDescription(servers[4]));
+      
       waitForBindings(0, "queues.testaddress", 1, 1, false);
 
       send(0, "queues.testaddress", 10, false, null);
@@ -91,6 +100,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -123,6 +133,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", true, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", true, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", true, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -153,6 +164,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -178,6 +190,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -210,6 +223,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -242,6 +256,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 3, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 3, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 3, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -269,6 +284,7 @@ public class OneWayChainClusterTest extends ClusterTestBase
       setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
       setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
       setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
 
       startServers(0, 1, 2, 3, 4);
 
@@ -290,12 +306,31 @@ public class OneWayChainClusterTest extends ClusterTestBase
       verifyReceiveRoundRobin(10, 0, 1);
       verifyNotReceive(0, 1);
 
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
+      System.out.println(clusterDescription(servers[2]));
+      System.out.println(clusterDescription(servers[3]));
+      System.out.println(clusterDescription(servers[4]));
+
       stopServers(2);
+
+      Thread.sleep(2000);
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
+      System.out.println(clusterDescription(servers[3]));
+      System.out.println(clusterDescription(servers[4]));
 
       startServers(2);
 
       Thread.sleep(2000);
 
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
+      System.out.println(clusterDescription(servers[2]));
+      System.out.println(clusterDescription(servers[3]));
+      System.out.println(clusterDescription(servers[4]));
+
+      
       send(0, "queues.testaddress", 10, false, null);
 
       verifyReceiveRoundRobin(10, 0, 1);
