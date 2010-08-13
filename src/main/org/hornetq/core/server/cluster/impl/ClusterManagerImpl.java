@@ -192,13 +192,16 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterBroadcastGroup(group.getName());
          }
 
+         broadcastGroups.clear();
+
          for (ClusterConnection clusterConnection : clusterConnections.values())
          {
             clusterConnection.stop();
             managementService.unregisterCluster(clusterConnection.getName().toString());
          }
+         
+         clusterConnections.clear();
 
-         broadcastGroups.clear();
       }
 
       for (Bridge bridge : bridges.values())
