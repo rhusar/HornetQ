@@ -173,13 +173,19 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          serverLocator.addClusterTopologyListener(this);
          serverLocator.start();
-
          // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
          server.getExecutorFactory().getExecutor().execute(new Runnable()
          {
             public void run()
             {
-               serverLocator.connect(server.getConfiguration().isBackup(), connector);
+               try
+               {
+                  serverLocator.connect();
+               }
+               catch (Exception e)
+               {
+                  e.printStackTrace();
+               }
             }
          });
       }

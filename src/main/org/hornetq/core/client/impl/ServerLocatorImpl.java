@@ -426,9 +426,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       initialise();
    }
    
-   public void connect(boolean backup, TransportConfiguration transportConfig)
+   public void connect()
    {
-      if (initialConnectors != null)
+      // static list of initial connectors
+      if (initialConnectors != null && discoveryGroup == null)
       {
          for (TransportConfiguration connector : initialConnectors)
          {
@@ -452,6 +453,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                }
             }
             while (sf == null);
+         }
+      }
+      // wait for discovery group to get the list of initial connectors
+      else
+      {
+         try
+         {
+            ClientSessionFactory sf = createSessionFactory();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();
          }
       }
    }
@@ -1123,6 +1136,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       for (ClusterTopologyListener listener : topologyListeners)
       {
+         System.out.println(this.nodeID + " notified that " + nodeID + " is UP");
          listener.nodeUP(nodeID, connectorPair, last);
       }
 
@@ -1158,8 +1172,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       for (DiscoveryEntry entry : newConnectors)
       {
          this.initialConnectors[count++] = entry.getConnector();
-
-         notifyNodeUp(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true);
       }
       
       System.out.println(">>>>>>>> Discovered initial connectors= " + Arrays.asList(initialConnectors));
