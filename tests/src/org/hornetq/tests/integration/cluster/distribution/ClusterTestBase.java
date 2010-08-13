@@ -1313,39 +1313,17 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setClustered(true);
       configuration.setBackup(backup);
 
-      TransportConfiguration nettyBackuptc = null;
-
       configuration.getAcceptorConfigurations().clear();
 
       Map<String, Object> params = generateParams(node, netty);
 
-      if (netty)
-      {
-         TransportConfiguration nettytc = new TransportConfiguration(ServiceTestBase.NETTY_ACCEPTOR_FACTORY, params);
-         configuration.getAcceptorConfigurations().add(nettytc);
-      }
-      else
-      {
-         TransportConfiguration invmtc = new TransportConfiguration(ServiceTestBase.INVM_ACCEPTOR_FACTORY, params);
-         configuration.getAcceptorConfigurations().add(invmtc);
-      }
+      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, params));
+
+      TransportConfiguration connector = createTransportConfiguration(netty, false, params);
+      configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
       List<String> connectorPairs = new ArrayList<String>();
-
-      if (netty)
-      {
-         TransportConfiguration nettytc_c = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
-         configuration.getConnectorConfigurations().put(nettytc_c.getName(), nettytc_c);
-
-         connectorPairs.add(nettytc_c.getName());
-      }
-      else
-      {
-         TransportConfiguration invmtc_c = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
-         configuration.getConnectorConfigurations().put(invmtc_c.getName(), invmtc_c);
-
-         connectorPairs.add(invmtc_c.getName());
-      }
+      connectorPairs.add(connector.getName());
 
       BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
                                                                              null,
