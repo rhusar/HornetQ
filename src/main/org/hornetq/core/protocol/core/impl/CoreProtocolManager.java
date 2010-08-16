@@ -109,9 +109,9 @@ public class CoreProtocolManager implements ProtocolManager
                
                final ClusterTopologyListener listener = new ClusterTopologyListener()
                {
-                  public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last)
+                  public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
                   {
-                     channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last));
+                     channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last, distance + 1));
                   }
                   
                   public void nodeDown(String nodeID)

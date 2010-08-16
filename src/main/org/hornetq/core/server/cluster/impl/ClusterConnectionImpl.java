@@ -324,14 +324,16 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    public synchronized void nodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
-                                   final boolean last)
+                                   final boolean last,
+                                   final int distance)
    {
-      if (nodeID.equals(nodeUUID.toString()))
+      //we only create a bridge it it isnt ourselves and the node is 1hop away
+      if (nodeID.equals(nodeUUID.toString()) || distance > 1)
       {
          return;
       }
       
-      server.getClusterManager().notifyClientsNodeUp(nodeID, connectorPair, false);
+      server.getClusterManager().notifyClientsNodeUp(nodeID, connectorPair, false, distance);
       
       try
       {
@@ -384,7 +386,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             if (connector.equals(staticConnector))
             {
-               nodeUP(nodeID, pair, false);
+               nodeUP(nodeID, pair, false, 0);
             }
          }
       }

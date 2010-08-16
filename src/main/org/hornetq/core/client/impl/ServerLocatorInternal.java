@@ -42,7 +42,7 @@ public interface ServerLocatorInternal extends ServerLocator
    
    void removeClusterTopologyListener(ClusterTopologyListener listener);
    
-   void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last);
+   void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance);
    
    void notifyNodeDown(String nodeID);
 

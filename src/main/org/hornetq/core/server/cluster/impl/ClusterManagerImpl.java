@@ -99,13 +99,7 @@ public class ClusterManagerImpl implements ClusterManager
    // they correspond to cluster connections on *other nodes connected to this one*
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
-   /*
-    * topology describes the other cluster nodes that this server knows about:
-    * 
-    * keys are node IDs
-    * values are a pair of live/backup transport configurations
-    */
-   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
+   private Topology topology = new Topology();
 
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
@@ -217,7 +211,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public void notifyClientsNodeDown(String nodeID)
    {
-      topology.remove(nodeID);
+      topology.removeMember(nodeID);
 
       for (ClusterTopologyListener listener : clientListeners)
       {
@@ -227,13 +221,14 @@ public class ClusterManagerImpl implements ClusterManager
 
    public void notifyClientsNodeUp(String nodeID,
                                    Pair<TransportConfiguration, TransportConfiguration> connectorPair,
-                                   boolean last)
+                                   boolean last,
+                                   int distance)
    {
-      topology.put(nodeID, connectorPair);
+      topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
 
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, connectorPair, last);
+         listener.nodeUP(nodeID, connectorPair, last, distance);
       }
    }
    
@@ -276,12 +271,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       // We now need to send the current topology to the client
-      int count = 0;
-      for (Map.Entry<String, Pair<TransportConfiguration, TransportConfiguration>> entry : topology.entrySet())
-      {
-         System.out.println("ClusterManagerImpl.addClusterTopologyListener() on " + nodeUUID + " -- " + entry);
-         listener.nodeUP(entry.getKey(), entry.getValue(), ++count == topology.size());
-      }
+      topology.fireListeners(listener);
    }
 
    public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
@@ -320,30 +310,30 @@ public class ClusterManagerImpl implements ClusterManager
 
       String nodeID = server.getNodeID().toString();
 
-      Pair<TransportConfiguration, TransportConfiguration> pair = topology.get(nodeID);
+      TopologyMember member = topology.getMember(nodeID);
 
-      if (pair == null)
+      if (member == null)
       {
          if (backup)
          {
-            pair = new Pair<TransportConfiguration, TransportConfiguration>(null, cc.getConnector());
+            member = new TopologyMember(new Pair<TransportConfiguration, TransportConfiguration>(null, cc.getConnector()), 0);
          }
          else
          {
-            pair = new Pair<TransportConfiguration, TransportConfiguration>(cc.getConnector(), null);
+            member = new TopologyMember(new Pair<TransportConfiguration, TransportConfiguration>(cc.getConnector(), null), 0);
          }
 
-         topology.put(nodeID, pair);
+         topology.addMember(nodeID, member);
       }
       else
       {
          if (backup)
          {
-            pair.b = cc.getConnector();
+           // pair.b = cc.getConnector();
          }
          else
          {
-            pair.a = cc.getConnector();
+           // pair.a = cc.getConnector();
          }
       }
 
@@ -351,12 +341,12 @@ public class ClusterManagerImpl implements ClusterManager
 
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, pair, false);
+         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
       }
       
       for (ClusterTopologyListener listener : clusterConnectionListeners)
       {
-         listener.nodeUP(nodeID, pair, false);
+         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
       }
 
    }
@@ -665,5 +655,4 @@ public class ClusterManagerImpl implements ClusterManager
       }
       return transformer;
    }
-
 }

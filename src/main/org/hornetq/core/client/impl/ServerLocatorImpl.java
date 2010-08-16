@@ -44,6 +44,9 @@ import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.server.cluster.impl.Topology;
+import org.hornetq.core.server.cluster.impl.TopologyMember;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -51,8 +54,6 @@ import org.hornetq.utils.UUIDGenerator;
  * A ServerLocatorImpl
  *
  * @author Tim Fox
- *
- *
  */
 public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListener, Serializable
 {
@@ -63,7 +64,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private final boolean ha;
 
    private boolean clusterConnection;
-   
+
    private final String discoveryAddress;
 
    private final int discoveryPort;
@@ -74,7 +75,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private TransportConfiguration[] initialConnectors;
 
-   private Map<String, Pair<TransportConfiguration, TransportConfiguration>> topology = new HashMap<String, Pair<TransportConfiguration,TransportConfiguration>>();
+   private Topology topology = new Topology();
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
@@ -188,7 +189,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          globalScheduledThreadPool = Executors.newScheduledThreadPool(HornetQClient.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE,
 
-                                                                      factory);
+               factory);
       }
 
       return globalScheduledThreadPool;
@@ -205,8 +206,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       else
       {
          ThreadFactory factory = new HornetQThreadFactory("HornetQ-client-factory-threads-" + System.identityHashCode(this),
-                                                          true,
-                                                          getThisClassLoader());
+               true,
+               getThisClassLoader());
 
          if (threadPoolMaxSize == -1)
          {
@@ -218,8 +219,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
 
          factory = new HornetQThreadFactory("HornetQ-client-factory-pinger-threads-" + System.identityHashCode(this),
-                                            true,
-                                            getThisClassLoader());
+               true,
+               getThisClassLoader());
 
          scheduledThreadPool = Executors.newScheduledThreadPool(scheduledThreadPoolMaxSize, factory);
       }
@@ -252,14 +253,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             try
             {
                Class<?> clazz = loader.loadClass(connectionLoadBalancingPolicyClassName);
-               loadBalancingPolicy = (ConnectionLoadBalancingPolicy)clazz.newInstance();
+               loadBalancingPolicy = (ConnectionLoadBalancingPolicy) clazz.newInstance();
                return null;
             }
             catch (Exception e)
             {
                throw new IllegalArgumentException("Unable to instantiate load balancing policy \"" + connectionLoadBalancingPolicyClassName +
-                                                           "\"",
-                                                  e);
+                     "\"",
+                     e);
             }
          }
       });
@@ -289,11 +290,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
 
             discoveryGroup = new DiscoveryGroupImpl(nodeID,
-                                                    discoveryAddress,
-                                                    lbAddress,
-                                                    groupAddress,
-                                                    discoveryPort,
-                                                    discoveryRefreshTimeout);
+                  discoveryAddress,
+                  lbAddress,
+                  groupAddress,
+                  discoveryPort,
+                  discoveryRefreshTimeout);
 
             discoveryGroup.registerListener(this);
 
@@ -318,7 +319,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       this.initialConnectors = transportConfigs;
 
       this.nodeID = UUIDGenerator.getInstance().generateStringUUID();
-      
+
       discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
 
       clientFailureCheckPeriod = HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
@@ -378,12 +379,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       initialMessagePacketSize = HornetQClient.DEFAULT_INITIAL_MESSAGE_PACKET_SIZE;
 
       cacheLargeMessagesClient = HornetQClient.DEFAULT_CACHE_LARGE_MESSAGE_CLIENT;
-      
+
       clusterConnection = false;
    }
 
    /**
     * Create a ServerLocatorImpl using UDP discovery to lookup cluster
+    *
     * @param discoveryAddress
     * @param discoveryPort
     */
@@ -394,6 +396,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    /**
     * Create a ServerLocatorImpl using a static list of live servers
+    *
     * @param transportConfigs
     */
    public ServerLocatorImpl(final boolean useHA, final TransportConfiguration... transportConfigs)
@@ -468,7 +471,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
       }
    }
-   
+
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
    {
       if (closed)
@@ -486,19 +489,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
 
       ClientSessionFactory factory = new ClientSessionFactoryImpl(this,
-                                                                  transportConfiguration,
-                                                                  failoverOnServerShutdown,
-                                                                  callTimeout,
-                                                                  clientFailureCheckPeriod,
-                                                                  connectionTTL,
-                                                                  retryInterval,
-                                                                  retryIntervalMultiplier,
-                                                                  maxRetryInterval,
-                                                                  reconnectAttempts,
-                                                                  failoverOnInitialConnection,
-                                                                  threadPool,
-                                                                  scheduledThreadPool,
-                                                                  interceptors);
+            transportConfiguration,
+            failoverOnServerShutdown,
+            callTimeout,
+            clientFailureCheckPeriod,
+            connectionTTL,
+            retryInterval,
+            retryIntervalMultiplier,
+            maxRetryInterval,
+            reconnectAttempts,
+            failoverOnInitialConnection,
+            threadPool,
+            scheduledThreadPool,
+            interceptors);
 
       factories.add(factory);
 
@@ -530,7 +533,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          if (!ok)
          {
             throw new HornetQException(HornetQException.CONNECTION_TIMEDOUT,
-                                       "Timed out waiting to receive initial broadcast from cluster");
+                  "Timed out waiting to receive initial broadcast from cluster");
          }
       }
 
@@ -551,19 +554,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             try
             {
                factory = new ClientSessionFactoryImpl(this,
-                                                      tc,
-                                                      failoverOnServerShutdown,
-                                                      callTimeout,
-                                                      clientFailureCheckPeriod,
-                                                      connectionTTL,
-                                                      retryInterval,
-                                                      retryIntervalMultiplier,
-                                                      maxRetryInterval,
-                                                      reconnectAttempts,
-                                                      failoverOnInitialConnection,
-                                                      threadPool,
-                                                      scheduledThreadPool,
-                                                      interceptors);
+                     tc,
+                     failoverOnServerShutdown,
+                     callTimeout,
+                     clientFailureCheckPeriod,
+                     connectionTTL,
+                     retryInterval,
+                     retryIntervalMultiplier,
+                     maxRetryInterval,
+                     reconnectAttempts,
+                     failoverOnInitialConnection,
+                     threadPool,
+                     scheduledThreadPool,
+                     interceptors);
             }
             catch (HornetQException e)
             {
@@ -574,7 +577,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   if (topologyArray != null && attempts == topologyArray.length)
                   {
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
-                                                "Cannot connect to server(s). Tried with all available servers.");
+                           "Cannot connect to server(s). Tried with all available servers.");
                   }
 
                   retry = true;
@@ -613,7 +616,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             if (toWait <= 0)
             {
                throw new HornetQException(HornetQException.CONNECTION_TIMEDOUT,
-                                          "Timed out waiting to receive cluster topology");
+                     "Timed out waiting to receive cluster topology");
             }
          }
 
@@ -1010,7 +1013,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       this.clusterConnection = clusterConnection;
    }
-   
+
    public boolean isClusterConnection()
    {
       return clusterConnection;
@@ -1095,7 +1098,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          return;
       }
 
-      topology.remove(nodeID);
+      topology.removeMember(nodeID);
 
       if (!topology.isEmpty())
       {
@@ -1117,15 +1120,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    }
 
    public synchronized void notifyNodeUp(final String nodeID,
-                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
-                                   final boolean last)
+                                         final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                                         final boolean last,
+                                         final int distance)
    {
       if (!ha)
       {
          return;
       }
 
-      topology.put(nodeID, connectorPair);
+      topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
 
       updateArraysAndPairs();
 
@@ -1136,8 +1140,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       for (ClusterTopologyListener listener : topologyListeners)
       {
-         System.out.println(this.nodeID + " notified that " + nodeID + " is UP");
-         listener.nodeUP(nodeID, connectorPair, last);
+         listener.nodeUP(nodeID, connectorPair, last, distance);
       }
 
       // Notify if waiting on getting topology
@@ -1147,18 +1150,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private void updateArraysAndPairs()
    {
-      topologyArray = (Pair<TransportConfiguration, TransportConfiguration>[])Array.newInstance(Pair.class,
-                                                                                                topology.size());
+      topologyArray = (Pair<TransportConfiguration, TransportConfiguration>[]) Array.newInstance(Pair.class,
+            topology.size());
 
       int count = 0;
-      for (Pair<TransportConfiguration, TransportConfiguration> pair : topology.values())
+      for (TopologyMember pair : topology.getMembers())
       {
-         if (pair.b != null)
+         if (pair.getConnector().b != null)
          {
-            pairs.put(pair.a, pair.b);
+            pairs.put(pair.getConnector().a, pair.getConnector().b);
          }
 
-         topologyArray[count++] = pair;
+         topologyArray[count++] = pair.getConnector();
       }
    }
 
@@ -1166,14 +1169,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       List<DiscoveryEntry> newConnectors = discoveryGroup.getDiscoveryEntries();
 
-      this.initialConnectors = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class, newConnectors.size());
+      this.initialConnectors = (TransportConfiguration[]) Array.newInstance(TransportConfiguration.class, newConnectors.size());
 
       int count = 0;
       for (DiscoveryEntry entry : newConnectors)
       {
          this.initialConnectors[count++] = entry.getConnector();
+
+         notifyNodeUp(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true, 1);
       }
-      
+
       System.out.println(">>>>>>>> Discovered initial connectors= " + Arrays.asList(initialConnectors));
    }
 

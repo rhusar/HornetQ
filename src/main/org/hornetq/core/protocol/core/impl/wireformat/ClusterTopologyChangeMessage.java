@@ -39,11 +39,13 @@ public class ClusterTopologyChangeMessage extends PacketImpl
    
    private boolean last;
 
+   private int distance;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public ClusterTopologyChangeMessage(final String nodeID, final Pair<TransportConfiguration, TransportConfiguration> pair, final boolean last)
+   public ClusterTopologyChangeMessage(final String nodeID, final Pair<TransportConfiguration, TransportConfiguration> pair, final boolean last, int distance)
    {
       super(PacketImpl.CLUSTER_TOPOLOGY);
 
@@ -54,6 +56,8 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       this.last = last;
       
       this.exit = false;
+
+      this.distance = distance;
    }
    
    public ClusterTopologyChangeMessage(final String nodeID)
@@ -91,7 +95,17 @@ public class ClusterTopologyChangeMessage extends PacketImpl
    {
       return exit;
    }
-  
+
+   public int getDistance()
+   {
+      return distance;
+   }
+
+   public void setDistance(int distance)
+   {
+      this.distance = distance;
+   }
+
    @Override
    public void encodeRest(final HornetQBuffer buffer)
    {
@@ -110,6 +124,7 @@ public class ClusterTopologyChangeMessage extends PacketImpl
             buffer.writeBoolean(false);
          }
          buffer.writeBoolean(last);
+         buffer.writeInt(distance);
       }
    }
 
@@ -135,6 +150,7 @@ public class ClusterTopologyChangeMessage extends PacketImpl
          }
          pair = new Pair<TransportConfiguration, TransportConfiguration>(a, b);
          last = buffer.readBoolean();
+         distance = buffer.readInt();
       }
    }
 

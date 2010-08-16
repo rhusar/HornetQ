@@ -14,6 +14,12 @@
 package org.hornetq.tests.integration.cluster.distribution;
 
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.server.cluster.ClusterConnection;
+import org.hornetq.core.server.cluster.MessageFlowRecord;
+import org.hornetq.core.server.cluster.impl.ClusterConnectionImpl;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A OneWayChainClusterTest
@@ -337,4 +343,57 @@ public class OneWayChainClusterTest extends ClusterTestBase
       verifyNotReceive(0, 1);
    }
 
+   public void testChainClusterConnections() throws Exception
+   {
+      setupClusterConnection("cluster0-1", 0, 1, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster1-2", 1, 2, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster2-3", 2, 3, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster3-4", 3, 4, "queues", false, 4, isNetty());
+      setupClusterConnection("cluster4-X", 4, -1, "queues", false, 4, isNetty());
+
+      startServers(0, 1, 2, 3, 4);
+      Thread.sleep(2000);
+      Set<ClusterConnection> connectionSet = getServer(0).getClusterManager().getClusterConnections();
+      assertNotNull(connectionSet);
+      assertEquals(1, connectionSet.size());
+      ClusterConnectionImpl ccon = (ClusterConnectionImpl) connectionSet.iterator().next();
+
+      Map<String, MessageFlowRecord> records =  ccon.getRecords();
+      assertNotNull(records);
+      assertEquals(records.size(), 1);
+      getServer(1).getClusterManager().getClusterConnections();
+      assertNotNull(connectionSet);
+      assertEquals(1, connectionSet.size());
+      ccon = (ClusterConnectionImpl) connectionSet.iterator().next();
+
+      records =  ccon.getRecords();
+      assertNotNull(records);
+      assertEquals(records.size(), 1);
+      getServer(2).getClusterManager().getClusterConnections();
+      assertNotNull(connectionSet);
+      assertEquals(1, connectionSet.size());
+      ccon = (ClusterConnectionImpl) connectionSet.iterator().next();
+
+      records =  ccon.getRecords();
+      assertNotNull(records);
+      assertEquals(records.size(), 1);
+      getServer(3).getClusterManager().getClusterConnections();
+      assertNotNull(connectionSet);
+      assertEquals(1, connectionSet.size());
+      ccon = (ClusterConnectionImpl) connectionSet.iterator().next();
+
+      records =  ccon.getRecords();
+      assertNotNull(records);
+      assertEquals(records.size(), 1);
+
+      getServer(4).getClusterManager().getClusterConnections();
+      assertNotNull(connectionSet);
+      assertEquals(1, connectionSet.size());
+      ccon = (ClusterConnectionImpl) connectionSet.iterator().next();
+
+      records =  ccon.getRecords();
+      assertNotNull(records);
+      assertEquals(records.size(), 1);
+      System.out.println("OneWayChainClusterTest.testChainClusterConnections");
+   }
 }
