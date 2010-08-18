@@ -838,10 +838,15 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          ClientSessionImpl.log.trace("Failed to close session", e);
       }
 
-      doCleanup();
+      doCleanup(false);
    }
 
    public synchronized void cleanUp() throws Exception
+   {
+      cleanUp(false);
+   }
+
+   public synchronized void cleanUp(boolean failingOver) throws Exception
    {
       if (closed)
       {
@@ -852,7 +857,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       cleanUpChildren();
 
-      doCleanup();
+      doCleanup(failingOver);
    }
 
    public void setSendAcknowledgementHandler(final SendAcknowledgementHandler handler)
@@ -1661,7 +1666,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       }
    }
 
-   private void doCleanup()
+   private void doCleanup(boolean failingOver)
    {
       remotingConnection.removeFailureListener(this);
 
@@ -1672,7 +1677,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          channel.close();
       }
 
-      sessionFactory.removeSession(this);
+      sessionFactory.removeSession(this, failingOver);
    }
 
    private void cleanUpChildren() throws Exception

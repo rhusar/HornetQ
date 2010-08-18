@@ -100,11 +100,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final Object exitLock = new Object();
 
-   private final Object createSessionLock = new Object();
+   private final Object createSessionLock = new CreateSessionLock();
 
    private boolean inCreateSession;
 
-   private final Object failoverLock = new Object();
+   private final Object failoverLock = new FailoverLock();
 
    private final ExecutorFactory orderedExecutorFactory;
 
@@ -349,14 +349,21 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    // Must be synchronized to prevent it happening concurrently with failover which can lead to
    // inconsistencies
-   public void removeSession(final ClientSessionInternal session)
+   public void removeSession(final ClientSessionInternal session, boolean failingOver)
    {
-      synchronized (createSessionLock)
+      if (!failingOver)
       {
-         synchronized (failoverLock)
+         synchronized (createSessionLock)
          {
-            sessions.remove(session);
+            synchronized (failoverLock)
+            {
+               sessions.remove(session);
+            }
          }
+      }
+      else
+      {
+         sessions.remove(session);
       }
    }
 
@@ -610,7 +617,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             try
             {
-               session.cleanUp();
+               session.cleanUp(true);
             }
             catch (Exception e)
             {
@@ -1275,5 +1282,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          cancelled = true;
       }
+   }
+
+   class CreateSessionLock
+   {
+
+   }
+
+   class FailoverLock
+   {
+
    }
 }

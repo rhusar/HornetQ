@@ -139,6 +139,11 @@ public class DelegatingSession implements ClientSessionInternal
       session.cleanUp();
    }
 
+   public void cleanUp(boolean failingOver) throws Exception
+   {
+      session.cleanUp(failingOver);
+   }
+
    public void close() throws HornetQException
    {
       closed = true;
