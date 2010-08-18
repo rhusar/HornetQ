@@ -100,11 +100,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final Object exitLock = new Object();
 
-   private final Object createSessionLock = new CreateSessionLock();
+   private final Object createSessionLock = new Object();
 
    private boolean inCreateSession;
 
-   private final Object failoverLock = new FailoverLock();
+   private final Object failoverLock = new Object();
 
    private final ExecutorFactory orderedExecutorFactory;
 
@@ -1282,15 +1282,5 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          cancelled = true;
       }
-   }
-
-   class CreateSessionLock
-   {
-
-   }
-
-   class FailoverLock
-   {
-
    }
 }

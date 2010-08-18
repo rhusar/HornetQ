@@ -841,11 +841,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       doCleanup(false);
    }
 
-   public synchronized void cleanUp() throws Exception
-   {
-      cleanUp(false);
-   }
-
    public synchronized void cleanUp(boolean failingOver) throws Exception
    {
       if (closed)
@@ -1489,7 +1484,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    {
       try
       {
-         cleanUp();
+         cleanUp(false);
       }
       catch (Exception e)
       {

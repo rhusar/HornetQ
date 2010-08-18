@@ -234,7 +234,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    {
       try
       {
-         session.cleanUp();
+         session.cleanUp(false);
       }
       catch (Exception e)
       {

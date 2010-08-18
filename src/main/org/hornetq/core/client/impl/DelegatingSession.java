@@ -134,10 +134,6 @@ public class DelegatingSession implements ClientSessionInternal
       session.forceDelivery(consumerID, sequence);
    }
 
-   public void cleanUp() throws Exception
-   {
-      session.cleanUp();
-   }
 
    public void cleanUp(boolean failingOver) throws Exception
    {
