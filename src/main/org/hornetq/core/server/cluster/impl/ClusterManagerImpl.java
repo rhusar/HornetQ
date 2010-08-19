@@ -25,12 +25,16 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
+import apple.awt.CList;
+
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.client.impl.Topology;
+import org.hornetq.core.client.impl.TopologyMember;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
@@ -194,7 +198,10 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterCluster(clusterConnection.getName().toString());
          }
          
+         clusterConnectionListeners.clear();
+         clientListeners.clear();
          clusterConnections.clear();
+         topology.clear();
 
       }
 
@@ -209,24 +216,53 @@ public class ClusterManagerImpl implements ClusterManager
       started = false;
    }
 
-   public void notifyClientsNodeDown(String nodeID)
+   public void notifyNodeDown(String nodeID)
    {
-      topology.removeMember(nodeID);
-
-      for (ClusterTopologyListener listener : clientListeners)
+      if (nodeID.equals(nodeUUID.toString()))
       {
-         listener.nodeDown(nodeID);
+         return;
+      }
+
+      boolean removed = topology.removeMember(nodeID);
+      
+      if (removed)
+      {
+
+         for (ClusterTopologyListener listener : clientListeners)
+         {
+            listener.nodeDown(nodeID);
+         }
+
+         for (ClusterTopologyListener listener : clusterConnectionListeners)
+         {
+            listener.nodeDown(nodeID);
+         }
       }
    }
 
-   public void notifyClientsNodeUp(String nodeID,
+   public void notifyNodeUp(String nodeID,
                                    Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    boolean last,
                                    int distance)
    {
-      topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
+      if (nodeID.equals(nodeUUID.toString()))
+      {
+         return;
+      }
+      
+      boolean updated = topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
 
+      if (distance >= topology.size() || updated)
+      {
+         return;
+      }
+      
       for (ClusterTopologyListener listener : clientListeners)
+      {
+         listener.nodeUP(nodeID, connectorPair, last, distance);
+      }
+
+      for (ClusterTopologyListener listener : clusterConnectionListeners)
       {
          listener.nodeUP(nodeID, connectorPair, last, distance);
       }
@@ -260,7 +296,6 @@ public class ClusterManagerImpl implements ClusterManager
    public synchronized void addClusterTopologyListener(final ClusterTopologyListener listener,
                                                      final boolean clusterConnection)
    {
-      System.out.println("ClusterManagerImpl.addClusterTopologyListener() on " + nodeUUID + " " + clusterConnection + " " + listener);
       if (clusterConnection)
       {
          this.clusterConnectionListeners.add(listener);
@@ -287,6 +322,11 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
+   public Topology getTopology()
+   {
+      return topology;
+   }
+   
    // backup node becomes live
    public synchronized void activate()
    {
@@ -609,7 +649,7 @@ public class ClusterManagerImpl implements ClusterManager
          serverLocator = null;
       }
 
-      ClusterConnection clusterConnection = new ClusterConnectionImpl(serverLocator,
+      ClusterConnectionImpl clusterConnection = new ClusterConnectionImpl(serverLocator,
                                                                       connector,
                                                                       new SimpleString(config.getName()),
                                                                       new SimpleString(config.getAddress()),

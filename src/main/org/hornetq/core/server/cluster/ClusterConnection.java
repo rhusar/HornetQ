@@ -15,7 +15,6 @@ package org.hornetq.core.server.cluster;
 
 import java.util.Map;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
@@ -51,12 +50,8 @@ public interface ClusterConnection extends HornetQComponent, ClusterTopologyList
 
    void activate();
    
-   Pair<TransportConfiguration, TransportConfiguration>[] getTopology();
-   
    TransportConfiguration getConnector();
 
    // for debug
    String description();
-
-   void announce(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair, boolean b);
 }

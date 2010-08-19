@@ -413,7 +413,6 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
 
          if (entry.getValue().getLastUpdate() + timeout <= now)
          {
-            System.out.println("remove " + entry);
             iter.remove();
 
             changed = true;

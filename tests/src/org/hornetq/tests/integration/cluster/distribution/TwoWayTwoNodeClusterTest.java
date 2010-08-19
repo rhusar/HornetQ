@@ -92,6 +92,38 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
       stopServers(0, 1);
    }
+   
+   public void testStartPauseStartOther() throws Exception
+   {
+
+      startServers(0);
+
+      setupSessionFactory(0, isNetty());
+      createQueue(0, "queues", "queue0", null, false);
+      addConsumer(0, 0, "queue0", null);
+      
+      // we let the discovery initial timeout expire, 
+      // #0 will be alone in the cluster
+      Thread.sleep(12000);
+      
+      startServers(1);
+      setupSessionFactory(1, isNetty());
+      createQueue(1, "queues", "queue0", null, false);
+
+      addConsumer(1, 1, "queue0", null);
+
+      waitForBindings(0, "queues", 1, 1, true);
+      waitForBindings(1, "queues", 1, 1, true);
+
+      waitForBindings(0, "queues", 1, 1, false);
+      waitForBindings(1, "queues", 1, 1, false);
+
+      send(0, "queues", 10, false, null);
+      verifyReceiveRoundRobin(10, 0, 1);
+      verifyNotReceive(0, 1);
+
+      stopServers(0, 1);
+   }
 
    public void testStopStart() throws Exception
    {
@@ -127,6 +159,11 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       System.out.println(clusterDescription(servers[0]));
 
       startServers(1);
+      
+      Thread.sleep(3000);
+
+      System.out.println(clusterDescription(servers[0]));
+      System.out.println(clusterDescription(servers[1]));
 
       setupSessionFactory(1, isNetty());
 
@@ -137,9 +174,6 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       waitForBindings(0, "queues", 1, 1, true);
       waitForBindings(1, "queues", 1, 1, true);
 
-      System.out.println(clusterDescription(servers[0]));
-      System.out.println(clusterDescription(servers[1]));
-      
       waitForBindings(1, "queues", 1, 1, false);
       waitForBindings(0, "queues", 1, 1, false);
 

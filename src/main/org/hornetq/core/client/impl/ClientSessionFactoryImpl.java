@@ -43,6 +43,7 @@ import org.hornetq.core.protocol.core.impl.RemotingConnectionImpl;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
 import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
 import org.hornetq.core.remoting.FailureListener;
@@ -1072,6 +1073,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          if (serverLocator.isHA())
          {
             channel0.send(new SubscribeClusterTopologyUpdatesMessage(serverLocator.isClusterConnection()));
+            if (serverLocator.isClusterConnection())
+            {
+               TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
+               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
+            }
          }
       }
 

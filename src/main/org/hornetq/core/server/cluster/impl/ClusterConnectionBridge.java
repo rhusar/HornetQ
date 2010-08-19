@@ -25,7 +25,6 @@ import org.hornetq.api.core.client.ClientConsumer;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.ResourceNames;
@@ -238,8 +237,7 @@ public class ClusterConnectionBridge extends BridgeImpl
       }
       catch (Exception e)
       {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
+    	  log.warn("Unable to clean up the session after a connection failure", e);
       }
       serverLocator.notifyNodeDown(targetNodeID);
       super.connectionFailed(me);

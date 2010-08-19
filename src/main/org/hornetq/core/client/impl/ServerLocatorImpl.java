@@ -18,7 +18,6 @@ import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,9 +43,6 @@ import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.server.cluster.impl.Topology;
-import org.hornetq.core.server.cluster.impl.TopologyMember;
-import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -166,6 +162,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private String groupID;
 
    private String nodeID;
+   
+   private TransportConfiguration clusterTransportConfiguration;
+   
+   private boolean backup;
 
    private static synchronized ExecutorService getGlobalThreadPool()
    {
@@ -504,7 +504,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             interceptors);
 
       factories.add(factory);
-
+      
       return factory;
    }
 
@@ -1008,6 +1008,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       this.nodeID = nodeID;
    }
+   
+   public String getNodeID()
+   {
+      return nodeID;
+   }
 
    public void setClusterConnection(boolean clusterConnection)
    {
@@ -1017,6 +1022,26 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public boolean isClusterConnection()
    {
       return clusterConnection;
+   }
+   
+   public TransportConfiguration getClusterTransportConfiguration()
+   {
+      return clusterTransportConfiguration;
+   }
+   
+   public void setClusterTransportConfiguration(TransportConfiguration tc)
+   {
+      this.clusterTransportConfiguration = tc;
+   }
+
+   public boolean isBackup()
+   {
+      return backup;
+   }
+   
+   public void setBackup(boolean backup)
+   {
+      this.backup = backup;
    }
 
    @Override
@@ -1091,31 +1116,43 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       closed = true;
    }
 
-   public synchronized void notifyNodeDown(final String nodeID)
+   public void notifyNodeDown(final String nodeID)
    {
-      if (!ha)
+      boolean removed = false;
+      synchronized (this)
       {
-         return;
+         if (!ha)
+         {
+            return;
+         }
+
+         removed = topology.removeMember(nodeID);
+         
+         if (!topology.isEmpty())
+         {
+            updateArraysAndPairs();
+            
+            if (topology.size() == 1 && topology.getMember(nodeID) != null)
+            {
+               receivedTopology = false;
+            }
+         }
+         else
+         {
+            pairs.clear();
+
+            topologyArray = null;
+
+            receivedTopology = false;
+         }
       }
 
-      topology.removeMember(nodeID);
-
-      if (!topology.isEmpty())
+      if (removed)
       {
-         updateArraysAndPairs();
-      }
-      else
-      {
-         pairs.clear();
-
-         topologyArray = null;
-
-         receivedTopology = false;
-      }
-
-      for (ClusterTopologyListener listener : topologyListeners)
-      {
-         listener.nodeDown(nodeID);
+         for (ClusterTopologyListener listener : topologyListeners)
+         {
+            listener.nodeDown(nodeID);
+         }
       }
    }
 
@@ -1144,7 +1181,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
 
       // Notify if waiting on getting topology
-
       notify();
    }
 
@@ -1175,11 +1211,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       for (DiscoveryEntry entry : newConnectors)
       {
          this.initialConnectors[count++] = entry.getConnector();
-
-         notifyNodeUp(entry.getNodeID(), new Pair<TransportConfiguration, TransportConfiguration>(entry.getConnector(), null), true, 1);
       }
-
-      System.out.println(">>>>>>>> Discovered initial connectors= " + Arrays.asList(initialConnectors));
+      
+      if (clusterConnection && !receivedTopology)
+      {
+         // FIXME the node is alone in the cluster. We create a connection to the new node
+         // to trigger the node notification to form the cluster.
+         connect();
+      }
    }
 
    public synchronized void factoryClosed(final ClientSessionFactory factory)

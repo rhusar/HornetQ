@@ -760,6 +760,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
             out += cc.description() + "\n";
          }
       }
+      out += "\n\nfull topology:";
+      out += clusterManager.getTopology().describe();
       return out + br;
    }
 

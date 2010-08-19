@@ -21,6 +21,7 @@ import static org.hornetq.core.protocol.core.impl.PacketImpl.CREATE_REPLICATION;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.DELETE_QUEUE;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.DISCONNECT;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.EXCEPTION;
+import static org.hornetq.core.protocol.core.impl.PacketImpl.NODE_ANNOUNCE;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.NULL_RESPONSE;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.PACKETS_CONFIRMED;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.PING;
@@ -90,6 +91,7 @@ import org.hornetq.core.protocol.core.impl.wireformat.CreateReplicationSessionMe
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.HornetQExceptionMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.PacketsConfirmedMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
@@ -493,6 +495,11 @@ public class PacketDecoder
          case CLUSTER_TOPOLOGY:
          {
             packet = new ClusterTopologyChangeMessage();
+            break;
+         }
+         case NODE_ANNOUNCE:
+         {
+            packet = new NodeAnnounceMessage();
             break;
          }
          case SUBSCRIBE_TOPOLOGY:

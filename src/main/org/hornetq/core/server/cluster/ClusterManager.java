@@ -20,6 +20,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
+import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.server.HornetQComponent;
 
 /**
@@ -46,7 +47,9 @@ public interface ClusterManager extends HornetQComponent
    
    void activate();
 
-   void notifyClientsNodeDown(String nodeID);
+   void notifyNodeDown(String nodeID);
 
-   void notifyClientsNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean b, int distance);
+   void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean backup, int distance);
+
+   Topology getTopology();
 }

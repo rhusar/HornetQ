@@ -93,12 +93,12 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    private final String clusterPassword;
 
-   private Pair<TransportConfiguration, TransportConfiguration>[] topology;
-
    private final ServerLocatorInternal serverLocator;
    
    private final TransportConfiguration connector;
 
+   private final boolean allowsDirectConnectionsOnly;
+   
    public ClusterConnectionImpl(final ServerLocatorInternal serverLocator,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
@@ -131,6 +131,15 @@ public class ClusterConnectionImpl implements ClusterConnection
       if (this.serverLocator != null)
       {
          this.serverLocator.setClusterConnection(true);
+         this.serverLocator.setClusterTransportConfiguration(connector);
+         this.serverLocator.setBackup(server.getConfiguration().isBackup());
+         
+         // a cluster connection will connect to other nodes only if they are directly connected
+         // through a static list of connectors 
+         allowsDirectConnectionsOnly = (serverLocator.getStaticTransportConfigurations() != null);
+      } else
+      {
+         allowsDirectConnectionsOnly = false;
       }
 
       this.connector = connector;
@@ -245,11 +254,6 @@ public class ClusterConnectionImpl implements ClusterConnection
       started = false;
    }
 
-   public Pair<TransportConfiguration, TransportConfiguration>[] getTopology()
-   {
-      return topology;
-   }
-
    public boolean isStarted()
    {
       return started;
@@ -302,8 +306,6 @@ public class ClusterConnectionImpl implements ClusterConnection
          return;
       }
       
-      server.getClusterManager().notifyClientsNodeDown(nodeID);
-      
       //Remove the flow record for that node
       
       MessageFlowRecord record = records.remove(nodeID);
@@ -313,13 +315,15 @@ public class ClusterConnectionImpl implements ClusterConnection
          try
          {
             record.reset();
-            record.close();
+            //record.close();
          }
          catch (Exception e)
          {
             log.error("Failed to close flow record", e);
          }
       }
+      
+      server.getClusterManager().notifyNodeDown(nodeID);
    }
 
    public synchronized void nodeUP(final String nodeID,
@@ -327,14 +331,28 @@ public class ClusterConnectionImpl implements ClusterConnection
                                    final boolean last,
                                    final int distance)
    {
-      //we only create a bridge it it isnt ourselves and the node is 1hop away
-      if (nodeID.equals(nodeUUID.toString()) || distance > 1)
+      // discard notifications about ourselves
+      if (nodeID.equals(nodeUUID.toString()))
       {
          return;
       }
-      
-      server.getClusterManager().notifyClientsNodeUp(nodeID, connectorPair, false, distance);
-      
+
+      // we propagate the node notifications to all cluster topology listeners
+      server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, distance);
+
+      // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
+      if (allowsDirectConnectionsOnly && distance > 1)
+      {
+         return;
+      }
+
+      // FIXME required to prevent cluster connections w/o discovery group 
+      // and empty static connectors to create bridges... ulgy!
+      if (serverLocator == null)
+      {
+         return;
+      }
+
       try
       {
          MessageFlowRecord record = records.get(nodeID);
@@ -377,21 +395,6 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
    }
    
-   public void announce(String nodeID, Pair<TransportConfiguration, TransportConfiguration> pair, boolean b)
-   {
-      TransportConfiguration connector = (backup) ? pair.b : pair.a;
-      if (serverLocator!= null && serverLocator.getStaticTransportConfigurations() != null)
-      {
-         for (TransportConfiguration staticConnector : serverLocator.getStaticTransportConfigurations())
-         {
-            if (connector.equals(staticConnector))
-            {
-               nodeUP(nodeID, pair, false, 0);
-            }
-         }
-      }
-   }
-
    private void createNewRecord(final String nodeID,
                                 final TransportConfiguration connector,
                                 final SimpleString queueName,

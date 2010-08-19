@@ -10,7 +10,7 @@
  *  implied.  See the License for the specific language governing
  *  permissions and limitations under the License.
  */
-package org.hornetq.core.server.cluster.impl;
+package org.hornetq.core.client.impl;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
@@ -23,20 +23,27 @@ public class TopologyMember
 {
    private final Pair<TransportConfiguration, TransportConfiguration> connector;
 
-      private final int distance;
-      public TopologyMember(Pair<TransportConfiguration, TransportConfiguration> connector, int distance)
-      {
-         this.connector = connector;
-         this.distance = distance;
-      }
+   private final int distance;
 
-      public Pair<TransportConfiguration, TransportConfiguration> getConnector()
-      {
-         return connector;
-      }
+   public TopologyMember(Pair<TransportConfiguration, TransportConfiguration> connector, int distance)
+   {
+      this.connector = connector;
+      this.distance = distance;
+   }
 
-      public int getDistance()
-      {
-         return distance;
-      }
+   public Pair<TransportConfiguration, TransportConfiguration> getConnector()
+   {
+      return connector;
+   }
+
+   public int getDistance()
+   {
+      return distance;
+   }
+   
+   @Override
+   public String toString()
+   {
+      return "TopologyMember[distance=" + distance + ", connector=" + connector + "]";
+   }
 }

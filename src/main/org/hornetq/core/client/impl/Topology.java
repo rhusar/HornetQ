@@ -10,16 +10,14 @@
  *  implied.  See the License for the specific language governing
  *  permissions and limitations under the License.
  */
-package org.hornetq.core.server.cluster.impl;
+package org.hornetq.core.client.impl;
 
-import org.hornetq.api.core.Pair;
-import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClusterTopologyListener;
-
-import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import org.hornetq.api.core.client.ClusterTopologyListener;
 
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
@@ -35,14 +33,17 @@ public class Topology
     */
    private Map<String, TopologyMember> topology = new HashMap<String, TopologyMember>();
 
-   public synchronized void addMember(String nodeId, TopologyMember member)
+   public synchronized boolean addMember(String nodeId, TopologyMember member)
    {
+      boolean replaced = topology.containsKey(nodeId);
       topology.put(nodeId, member);
+      return replaced;
    }
 
-   public synchronized void removeMember(String nodeId)
+   public synchronized boolean removeMember(String nodeId)
    {
-      topology.remove(nodeId);
+      TopologyMember member = topology.remove(nodeId);
+      return (member != null);
    }
 
    public synchronized void fireListeners(ClusterTopologyListener listener)
@@ -72,5 +73,21 @@ public class Topology
    public int size()
    {
       return topology.size();
+   }
+
+   public String describe()
+   {
+
+      String desc = "";
+      for (Entry<String, TopologyMember> entry : new HashMap<String, TopologyMember>(topology).entrySet())
+      {
+         desc += "\t" + entry.getKey() + " => " + entry.getValue() + "\n";
+      }
+      return desc;
+   }
+
+   public void clear()
+   {
+      topology.clear();
    }
 }
