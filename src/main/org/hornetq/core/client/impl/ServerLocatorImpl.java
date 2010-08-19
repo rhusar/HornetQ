@@ -1116,35 +1116,67 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       closed = true;
    }
 
-   public void notifyNodeDown(final String nodeID)
+   public synchronized void notifyNodeDown(final String nodeID)
    {
       boolean removed = false;
-      synchronized (this)
+
+      if (!ha)
       {
-         if (!ha)
-         {
-            return;
-         }
+         return;
+      }
 
-         removed = topology.removeMember(nodeID);
-         
-         if (!topology.isEmpty())
-         {
-            updateArraysAndPairs();
-            
-            if (topology.size() == 1 && topology.getMember(nodeID) != null)
-            {
-               receivedTopology = false;
-            }
-         }
-         else
-         {
-            pairs.clear();
+      final TopologyMember member = topology.getMember(nodeID);
+      removed = topology.removeMember(nodeID);
 
-            topologyArray = null;
+      if (!topology.isEmpty())
+      {
+         updateArraysAndPairs();
 
+         if (topology.size() == 1 && topology.getMember(nodeID) != null)
+         {
             receivedTopology = false;
          }
+      }
+      else
+      {
+         pairs.clear();
+
+         topologyArray = null;
+
+         receivedTopology = false;
+      }
+
+      if (ha && discoveryAddress == null && removed)
+      {
+         threadPool.execute(new Runnable()
+         {
+            public void run()
+            {
+               System.out.println(ServerLocatorImpl.this.nodeID + " will try to connect to " + nodeID);
+               ClientSessionFactory sf = null;
+               do
+               {
+                  try
+                  {
+                     Pair<TransportConfiguration,TransportConfiguration> pair = member.getConnector();
+                     TransportConfiguration tc = (pair.a != null) ? pair.a : pair.b;
+                     sf = createSessionFactory(tc);
+                  }
+                  catch (HornetQException e)
+                  {
+                     if (e.getCode() == HornetQException.NOT_CONNECTED)
+                     {
+                        continue;
+                     }
+                  }
+                  catch (Exception e)
+                  {
+                     break;
+                  }
+               }
+               while (sf == null);
+            }
+         });
       }
 
       if (removed)
@@ -1213,7 +1245,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          this.initialConnectors[count++] = entry.getConnector();
       }
       
-      if (clusterConnection && !receivedTopology)
+      if (ha && clusterConnection && !receivedTopology)
       {
          // FIXME the node is alone in the cluster. We create a connection to the new node
          // to trigger the node notification to form the cluster.
