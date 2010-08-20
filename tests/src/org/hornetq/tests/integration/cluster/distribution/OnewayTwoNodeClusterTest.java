@@ -1142,8 +1142,8 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
 
    public void testMultipleClusterConnections() throws Exception
    {
-      setupClusterConnection("cluster2", 0, 1, "queues2", false, 1, isNetty());
-      setupClusterConnection("cluster3", 0, 1, "queues3", false, 1, isNetty());
+      setupClusterConnection("cluster2", 0, 1, "q2", false, 1, isNetty());
+      setupClusterConnection("cluster3", 0, 1, "q3", false, 1, isNetty());
 
       startServers(1, 0);
 
@@ -1154,17 +1154,17 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
 
       createQueue(0, "queues.testaddress", "queue0", null, false);
       createQueue(0, "queues.testaddress", "queue1", null, false);
-      createQueue(0, "queues2.testaddress", "queue2", null, false);
-      createQueue(0, "queues2.testaddress", "queue3", null, false);
-      createQueue(0, "queues3.testaddress", "queue4", null, false);
-      createQueue(0, "queues3.testaddress", "queue5", null, false);
+      createQueue(0, "q2.testaddress", "queue2", null, false);
+      createQueue(0, "q2.testaddress", "queue3", null, false);
+      createQueue(0, "q3.testaddress", "queue4", null, false);
+      createQueue(0, "q3.testaddress", "queue5", null, false);
 
       createQueue(1, "queues.testaddress", "queue6", null, false);
       createQueue(1, "queues.testaddress", "queue7", null, false);
-      createQueue(1, "queues2.testaddress", "queue8", null, false);
-      createQueue(1, "queues2.testaddress", "queue9", null, false);
-      createQueue(1, "queues3.testaddress", "queue10", null, false);
-      createQueue(1, "queues3.testaddress", "queue11", null, false);
+      createQueue(1, "q2.testaddress", "queue8", null, false);
+      createQueue(1, "q2.testaddress", "queue9", null, false);
+      createQueue(1, "q3.testaddress", "queue10", null, false);
+      createQueue(1, "q3.testaddress", "queue11", null, false);
 
       addConsumer(0, 0, "queue0", null);
       addConsumer(1, 0, "queue1", null);
@@ -1183,11 +1183,11 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
       waitForBindings(0, "queues.testaddress", 2, 2, true);
       waitForBindings(0, "queues.testaddress", 2, 2, false);
 
-      waitForBindings(0, "queues2.testaddress", 2, 2, true);
-      waitForBindings(0, "queues2.testaddress", 2, 2, false);
+      waitForBindings(0, "q2.testaddress", 2, 2, true);
+      waitForBindings(0, "q2.testaddress", 2, 2, false);
 
-      waitForBindings(0, "queues3.testaddress", 2, 2, true);
-      waitForBindings(0, "queues3.testaddress", 2, 2, false);
+      waitForBindings(0, "q3.testaddress", 2, 2, true);
+      waitForBindings(0, "q3.testaddress", 2, 2, false);
 
       send(0, "queues.testaddress", 10, false, null);
 
@@ -1195,13 +1195,13 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
 
       verifyNotReceive(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
 
-      send(0, "queues2.testaddress", 10, false, null);
+      send(0, "q2.testaddress", 10, false, null);
 
       verifyReceiveAll(10, 2, 3, 8, 9);
 
       verifyNotReceive(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
 
-      send(0, "queues3.testaddress", 10, false, null);
+      send(0, "q3.testaddress", 10, false, null);
 
       verifyReceiveAll(10, 4, 5, 10, 11);
 
