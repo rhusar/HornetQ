@@ -231,15 +231,48 @@ public class ClusterConnectionBridge extends BridgeImpl
    @Override
    public void connectionFailed(HornetQException me)
    {
-      try
+      if (!session.isClosed())
       {
-         session.cleanUp(false);
+         try
+         {
+            session.cleanUp(false);
+         }
+         catch (Exception e)
+         {
+            log.warn("Unable to clean up the session after a connection failure", e);
+         }
+         serverLocator.notifyNodeDown(targetNodeID);
+         if (serverLocator.getDiscoveryAddress() == null)
+         {
+            executor.execute(new Runnable()
+            {
+               
+               public void run()
+               {
+                  ClientSessionFactory sf = null;
+                  do
+                  {
+                     try
+                     {
+                        sf = serverLocator.createSessionFactory(connector);
+                     }
+                     catch (HornetQException e)
+                     {
+                        if (e.getCode() == HornetQException.NOT_CONNECTED)
+                        {
+                           continue;
+                        }
+                     }
+                     catch (Exception e)
+                     {
+                        break;
+                     }
+                  }
+                  while (sf == null);
+               }
+            });
+         }
       }
-      catch (Exception e)
-      {
-    	  log.warn("Unable to clean up the session after a connection failure", e);
-      }
-      serverLocator.notifyNodeDown(targetNodeID);
       super.connectionFailed(me);
    }
 

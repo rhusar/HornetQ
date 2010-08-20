@@ -74,7 +74,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private Queue queue;
 
-   private final Executor executor;
+   protected final Executor executor;
 
    private final Filter filter;
 
