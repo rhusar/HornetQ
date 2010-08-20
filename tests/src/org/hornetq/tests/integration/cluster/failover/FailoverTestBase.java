@@ -79,7 +79,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
    protected void setUp() throws Exception
    {
       super.setUp();
-
+      clearData();
       createConfigs();
 
       if (server1Service != null)
@@ -109,6 +109,11 @@ public abstract class FailoverTestBase extends ServiceTestBase
          public void preActivate()
          {
             // To avoid two servers messing up with the same journal at any single point
+
+         }
+         
+         public void activated()
+         {
             try
             {
                server0Service.getStorageManager().stop();
@@ -116,10 +121,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
             catch (Exception ignored)
             {
             }
-         }
-         
-         public void activated()
-         {
          }
       });
 
