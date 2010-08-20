@@ -42,6 +42,7 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
+import org.hornetq.spi.core.security.HornetQSecurityManagerImpl;
 
 import static org.hornetq.tests.util.ServiceTestBase.*;
 
@@ -159,6 +160,47 @@ public abstract class ServiceTestBase extends UnitTestCase
    protected HornetQServer createServer(final boolean realFiles, final Configuration configuration)
    {
       return createServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>());
+   }
+
+   protected HornetQServer createFakeLockServer(final boolean realFiles)
+   {
+      return createFakeLockServer(realFiles, false);
+   }
+
+   protected HornetQServer createFakeLockServer(final boolean realFiles, final boolean netty)
+   {
+      return createFakeLockServer(realFiles, createDefaultConfig(netty), -1, -1, new HashMap<String, AddressSettings>());
+   }
+
+   protected HornetQServer createFakeLockServer(final boolean realFiles, final Configuration configuration)
+   {
+      return createFakeLockServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>());
+   }
+
+   protected HornetQServer createFakeLockServer(final boolean realFiles,
+                                           final Configuration configuration,
+                                           final int pageSize,
+                                           final int maxAddressSize,
+                                           final Map<String, AddressSettings> settings)
+   {
+      HornetQServer server;
+      HornetQSecurityManager securityManager = new HornetQSecurityManagerImpl();
+      configuration.setPersistenceEnabled(realFiles);
+      server = new FakeLockHornetQServer(configuration,ManagementFactory.getPlatformMBeanServer(),securityManager);
+
+
+      for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
+      {
+         server.getAddressSettingsRepository().addMatch(setting.getKey(), setting.getValue());
+      }
+
+      AddressSettings defaultSetting = new AddressSettings();
+      defaultSetting.setPageSizeBytes(pageSize);
+      defaultSetting.setMaxSizeBytes(maxAddressSize);
+
+      server.getAddressSettingsRepository().addMatch("#", defaultSetting);
+
+      return server;
    }
 
    protected HornetQServer createServer(final boolean realFiles,

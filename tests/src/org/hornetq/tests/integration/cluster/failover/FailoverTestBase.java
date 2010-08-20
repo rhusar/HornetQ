@@ -101,7 +101,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config1.setSecurityEnabled(false);
       config1.setSharedStore(true);
       config1.setBackup(true);
-      server1Service = createServer(true, config1);
+      server1Service = createFakeLockServer(true, config1);
       
       server1Service.registerActivateCallback(new ActivateCallback()
       {
@@ -128,7 +128,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config0.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
-      server0Service = createServer(true, config0);
+      server0Service = createFakeLockServer(true, config0);
 
    }
 
