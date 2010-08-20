@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-import apple.awt.CList;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
