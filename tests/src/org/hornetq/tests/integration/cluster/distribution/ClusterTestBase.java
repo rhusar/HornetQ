@@ -1197,10 +1197,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       setupServer(node, fileStorage, netty, backup, -1);
    }
+   
+   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final boolean backup, final boolean useFakeLock)
+   {
+      setupServer(node, fileStorage, netty, backup, -1);
+   }
 
    protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final int backupNode)
    {
-      setupServer(node, fileStorage, netty, false, backupNode);
+      setupServer(node, fileStorage, netty, false, backupNode, false);
+   }
+
+   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final int backupNode, final boolean useFakeLock)
+   {
+      setupServer(node, fileStorage, netty, false, backupNode, useFakeLock);
    }
 
    protected void setupServer(final int node,
@@ -1209,7 +1219,17 @@ public abstract class ClusterTestBase extends ServiceTestBase
                               final boolean backup,
                               final int backupNode)
    {
-      setupServer(node, fileStorage, true, netty, backup, backupNode);
+      setupServer(node, fileStorage, netty, backup, backupNode, false);
+   }
+   
+   protected void setupServer(final int node,
+                              final boolean fileStorage,
+                              final boolean netty,
+                              final boolean backup,
+                              final int backupNode,
+                              final boolean useFakeLock)
+   {
+      setupServer(node, fileStorage, true, netty, backup, backupNode, useFakeLock);
    }
 
    protected void setupServer(final int node,
@@ -1217,7 +1237,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
                               final boolean sharedStorage,
                               final boolean netty,
                               final boolean backup,
-                              final int backupNode)
+                              final int backupNode,
+                              final boolean useFakeLock)
    {
       if (servers[node] != null)
       {
@@ -1259,11 +1280,25 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       if (fileStorage)
       {
-         server = HornetQServers.newHornetQServer(configuration);
+         if (useFakeLock)
+         {
+            server = createFakeLockServer(true, configuration);
+         }  
+         else
+         {
+            server = HornetQServers.newHornetQServer(configuration);
+         }
       }
       else
       {
-         server = HornetQServers.newHornetQServer(configuration, false);
+         if (useFakeLock)
+         {
+            server = createFakeLockServer(false, configuration);
+         }
+         else
+         {
+            server = HornetQServers.newHornetQServer(configuration, false);
+         }
       }
       servers[node] = server;
    }

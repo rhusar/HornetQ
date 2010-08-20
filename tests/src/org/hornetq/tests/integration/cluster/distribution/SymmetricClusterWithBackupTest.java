@@ -562,18 +562,18 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
    protected void setupServers() throws Exception
    {
       // The backups
-      setupServer(5, isFileStorage(), isNetty(), true);
-      setupServer(6, isFileStorage(), isNetty(), true);
-      setupServer(7, isFileStorage(), isNetty(), true);
-      setupServer(8, isFileStorage(), isNetty(), true);
-      setupServer(9, isFileStorage(), isNetty(), true);
+      setupServer(5, isFileStorage(), isNetty(), true, true);
+      setupServer(6, isFileStorage(), isNetty(), true, true);
+      setupServer(7, isFileStorage(), isNetty(), true, true);
+      setupServer(8, isFileStorage(), isNetty(), true, true);
+      setupServer(9, isFileStorage(), isNetty(), true, true);
 
       // The lives
-      setupServer(0, isFileStorage(), isNetty(), 5);
-      setupServer(1, isFileStorage(), isNetty(), 6);
-      setupServer(2, isFileStorage(), isNetty(), 7);
-      setupServer(3, isFileStorage(), isNetty(), 8);
-      setupServer(4, isFileStorage(), isNetty(), 9);
+      setupServer(0, isFileStorage(), isNetty(), 5, true);
+      setupServer(1, isFileStorage(), isNetty(), 6, true);
+      setupServer(2, isFileStorage(), isNetty(), 7, true);
+      setupServer(3, isFileStorage(), isNetty(), 8, true);
+      setupServer(4, isFileStorage(), isNetty(), 9, true);
    }
 
    @Override
