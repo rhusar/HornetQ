@@ -254,6 +254,11 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                                 "min-large-message-size",
                                                                 HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
                                                                 Validators.GT_ZERO);
+      
+      boolean compressLargeMessages = XMLConfigurationUtil.getBoolean(e,
+                                                                "compress-large-messages",
+                                                                HornetQClient.DEFAULT_COMPRESS_LARGE_MESSAGES);
+      
       boolean blockOnAcknowledge = XMLConfigurationUtil.getBoolean(e,
                                                                    "block-on-acknowledge",
                                                                    HornetQClient.DEFAULT_BLOCK_ON_ACKNOWLEDGE);
@@ -387,6 +392,7 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
       cfConfig.setCallTimeout(callTimeout);
       cfConfig.setCacheLargeMessagesClient(cacheLargeMessagesClient);
       cfConfig.setMinLargeMessageSize(minLargeMessageSize);
+      cfConfig.setCompressLargeMessages(compressLargeMessages);
       cfConfig.setConsumerWindowSize(consumerWindowSize);
       cfConfig.setConsumerMaxRate(consumerMaxRate);
       cfConfig.setConfirmationWindowSize(confirmationWindowSize);

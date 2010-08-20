@@ -297,8 +297,13 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
       handleConnectionFailure(connectionID, me);
    }
 
-   // ConnectionManager implementation ------------------------------------------------------------------
+   // FailoverManager implementation ------------------------------------------------------------------
 
+   public Executor getThreadPool()
+   {
+      return threadPool;
+   }
+   
    public ClientSession createSession(final String username,
                                       final String password,
                                       final boolean xa,
@@ -308,6 +313,7 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
                                       final int ackBatchSize,
                                       final boolean cacheLargeMessageClient,
                                       final int minLargeMessageSize,
+                                      final boolean compressLargeMessages,
                                       final boolean blockOnAcknowledge,
                                       final boolean autoGroup,
                                       final int confWindowSize,
@@ -457,6 +463,7 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
                                                                      blockOnDurableSend,
                                                                      cacheLargeMessageClient,
                                                                      minLargeMessageSize,
+                                                                     compressLargeMessages,
                                                                      initialMessagePacketSize,
                                                                      groupID,
                                                                      theConnection,

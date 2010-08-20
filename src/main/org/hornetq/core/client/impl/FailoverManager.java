@@ -13,6 +13,8 @@
 
 package org.hornetq.core.client.impl;
 
+import java.util.concurrent.Executor;
+
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
@@ -38,6 +40,7 @@ public interface FailoverManager
                                final int ackBatchSize,
                                final boolean cacheLargeMessageClient,
                                final int minLargeMessageSize,
+                               final boolean compressLargeMessages,
                                final boolean blockOnAcknowledge,
                                final boolean autoGroup,
                                final int confirmationWindowSize,
@@ -63,4 +66,6 @@ public interface FailoverManager
    boolean removeFailureListener(SessionFailureListener listener);
 
    void causeExit();
+   
+   Executor getThreadPool();
 }

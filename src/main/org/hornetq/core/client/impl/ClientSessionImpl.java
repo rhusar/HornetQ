@@ -154,6 +154,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    private final boolean blockOnDurableSend;
 
    private final int minLargeMessageSize;
+   
+   private final boolean compressLargeMessages;
 
    private volatile int initialMessagePacketSize;
 
@@ -204,6 +206,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
                             final boolean blockOnDurableSend,
                             final boolean cacheLargeMessageClient,
                             final int minLargeMessageSize,
+                            final boolean compressLargeMessages,
                             final int initialMessagePacketSize,
                             final String groupID,
                             final CoreRemotingConnection remotingConnection,
@@ -256,6 +259,8 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       this.cacheLargeMessageClient = cacheLargeMessageClient;
 
       this.minLargeMessageSize = minLargeMessageSize;
+      
+      this.compressLargeMessages = compressLargeMessages;
 
       this.initialMessagePacketSize = initialMessagePacketSize;
 
@@ -267,6 +272,15 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    // ClientSession implementation
    // -----------------------------------------------------------------
 
+   /**
+    * This will be used for instance when compressin large messages.
+    * the compression has to be done through a PipedOutputStream, and that needs to be done on a different thread
+    */
+   public Executor getThreadPool()
+   {
+      return failoverManager.getThreadPool();
+   }
+   
    public void createQueue(final SimpleString address, final SimpleString queueName) throws HornetQException
    {
       internalCreateQueue(address, queueName, null, false, false);
@@ -663,6 +677,11 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    public int getMinLargeMessageSize()
    {
       return minLargeMessageSize;
+   }
+   
+   public boolean isCompressLargeMessages()
+   {
+      return compressLargeMessages;
    }
 
    /**

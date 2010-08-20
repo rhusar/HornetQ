@@ -105,6 +105,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
    private long callTimeout;
 
    private int minLargeMessageSize;
+   
+   private boolean compressLargeMessages;
 
    private int consumerWindowSize;
 
@@ -308,6 +310,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
       minLargeMessageSize = other.getMinLargeMessageSize();
 
+      compressLargeMessages = other.isCompressLargeMessages();
+
       consumerWindowSize = other.getConsumerWindowSize();
 
       consumerMaxRate = other.getConsumerMaxRate();
@@ -370,6 +374,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       callTimeout = HornetQClient.DEFAULT_CALL_TIMEOUT;
 
       minLargeMessageSize = HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE;
+      
+      compressLargeMessages = HornetQClient.DEFAULT_COMPRESS_LARGE_MESSAGES;      
 
       consumerWindowSize = HornetQClient.DEFAULT_CONSUMER_WINDOW_SIZE;
 
@@ -465,16 +471,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
 
    // ClientSessionFactory implementation------------------------------------------------------------
 
-   public synchronized boolean isCacheLargeMessagesClient()
-   {
-      return cacheLargeMessagesClient;
-   }
-
-   public synchronized void setCacheLargeMessagesClient(final boolean cached)
-   {
-      cacheLargeMessagesClient = cached;
-   }
-
    public synchronized List<Pair<TransportConfiguration, TransportConfiguration>> getStaticConnectors()
    {
       return staticConnectors;
@@ -531,9 +527,30 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
       this.minLargeMessageSize = minLargeMessageSize;
    }
 
+   public synchronized boolean isCacheLargeMessagesClient()
+   {
+      checkWrite();
+      return cacheLargeMessagesClient;
+   }
+
+   public synchronized void setCacheLargeMessagesClient(final boolean cached)
+   {
+      cacheLargeMessagesClient = cached;
+   }
+
    public synchronized int getConsumerWindowSize()
    {
       return consumerWindowSize;
+   }
+   
+   public synchronized void setCompressLargeMessages(final boolean compress)
+   {
+      this.compressLargeMessages = compress;
+   }
+   
+   public synchronized boolean isCompressLargeMessages()
+   {
+      return compressLargeMessages;
    }
 
    public synchronized void setConsumerWindowSize(final int consumerWindowSize)
@@ -1129,6 +1146,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
                                                                ackBatchSize,
                                                                cacheLargeMessagesClient,
                                                                minLargeMessageSize,
+                                                               compressLargeMessages,
                                                                blockOnAcknowledge,
                                                                autoGroup,
                                                                confirmationWindowSize,

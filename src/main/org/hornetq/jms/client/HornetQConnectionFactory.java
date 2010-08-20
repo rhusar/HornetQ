@@ -648,6 +648,13 @@ public class HornetQConnectionFactory implements ConnectionFactory, QueueConnect
       }
    }
 
+   /**
+    * @param compressLargeMessages
+    */
+   public void setCompressLargeMessages(boolean compressLargeMessages)
+   {
+   }
+
    // Inner classes --------------------------------------------------------------------------------
 
 }

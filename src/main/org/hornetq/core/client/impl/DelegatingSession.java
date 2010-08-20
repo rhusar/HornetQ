@@ -14,6 +14,7 @@
 package org.hornetq.core.client.impl;
 
 import java.util.Set;
+import java.util.concurrent.Executor;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
@@ -554,5 +555,21 @@ public class DelegatingSession implements ClientSessionInternal
    public void setPacketSize(int packetSize)
    {
       session.setPacketSize(packetSize);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.client.impl.ClientSessionInternal#isCompressLargeMessages()
+    */
+   public boolean isCompressLargeMessages()
+   {
+      return session.isCompressLargeMessages();
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.client.impl.ClientSessionInternal#getThreadPool()
+    */
+   public Executor getThreadPool()
+   {
+      return session.getThreadPool();
    }
 }

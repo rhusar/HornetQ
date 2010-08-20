@@ -13,8 +13,16 @@
 
 package org.hornetq.core.client.impl;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.util.concurrent.Executor;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
@@ -28,6 +36,8 @@ import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendContinuationMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendLargeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendMessage;
+import org.hornetq.utils.GZipUtil;
+import org.hornetq.utils.HornetQBufferInputStream;
 import org.hornetq.utils.TokenBucketLimiter;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -150,7 +160,7 @@ public class ClientProducerImpl implements ClientProducerInternal
       {
          return;
       }
-            
+
       doCleanup();
    }
 
@@ -190,7 +200,7 @@ public class ClientProducerImpl implements ClientProducerInternal
    {
       return credits;
    }
-   
+
    // Protected ------------------------------------------------------------------------------------
 
    // Package Private ------------------------------------------------------------------------------
@@ -203,7 +213,7 @@ public class ClientProducerImpl implements ClientProducerInternal
       {
          session.returnCredits(address);
       }
-      
+
       session.removeProducer(this);
 
       closed = true;
@@ -212,12 +222,13 @@ public class ClientProducerImpl implements ClientProducerInternal
    private void doSend(final SimpleString address, final Message msg) throws HornetQException
    {
       MessageInternal msgI = (MessageInternal)msg;
-      
+
       ClientProducerCredits theCredits;
-      
+
       boolean isLarge;
 
-      if (msgI.getBodyInputStream() != null || msgI.isLargeMessage() || msgI.getBodyBuffer().writerIndex() > minLargeMessageSize)
+      if (msgI.getBodyInputStream() != null || msgI.isLargeMessage() ||
+          msgI.getBodyBuffer().writerIndex() > minLargeMessageSize)
       {
          isLarge = true;
       }
@@ -236,7 +247,7 @@ public class ClientProducerImpl implements ClientProducerInternal
          {
             msg.setAddress(address);
          }
-         
+
          // Anonymous
          theCredits = session.getCredits(address, true);
       }
@@ -250,7 +261,7 @@ public class ClientProducerImpl implements ClientProducerInternal
          {
             msg.setAddress(this.address);
          }
-         
+
          theCredits = credits;
       }
 
@@ -269,8 +280,6 @@ public class ClientProducerImpl implements ClientProducerInternal
       boolean sendBlocking = msgI.isDurable() ? blockOnDurableSend : blockOnNonDurableSend;
 
       session.workDone();
-
-      
 
       if (isLarge)
       {
@@ -322,8 +331,16 @@ public class ClientProducerImpl implements ClientProducerInternal
     * @param msgI
     * @throws HornetQException
     */
-   private void largeMessageSend(final boolean sendBlocking, final MessageInternal msgI, final ClientProducerCredits credits) throws HornetQException
+   private void largeMessageSend(final boolean sendBlocking,
+                                 final MessageInternal msgI,
+                                 final ClientProducerCredits credits) throws HornetQException
    {
+
+      if (session.isCompressLargeMessages())
+      {
+         msgI.putBooleanProperty(Message.HDR_LARGE_COMPRESSED, true);
+      }
+
       int headerSize = msgI.getHeadersAndPropertiesEncodeSize();
 
       if (headerSize >= minLargeMessageSize)
@@ -341,7 +358,6 @@ public class ClientProducerImpl implements ClientProducerInternal
       HornetQBuffer headerBuffer = HornetQBuffers.fixedBuffer(headerSize);
 
       msgI.encodeHeadersAndProperties(headerBuffer);
-
       SessionSendLargeMessage initialChunk = new SessionSendLargeMessage(headerBuffer.toByteBuffer().array());
 
       channel.send(initialChunk);
@@ -358,7 +374,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
       if (input != null)
       {
-         largeMessageSendStreamed(sendBlocking, input, credits);
+         largeMessageSendStreamed(sendBlocking, msgI, input, credits);
       }
       else
       {
@@ -375,71 +391,28 @@ public class ClientProducerImpl implements ClientProducerInternal
                                          final MessageInternal msgI,
                                          final ClientProducerCredits credits) throws HornetQException
    {
-      BodyEncoder context = msgI.getBodyEncoder();
-
-      final long bodySize = context.getLargeBodySize();
-
-      context.open();
-      try
-      {
-
-         for (int pos = 0; pos < bodySize;)
-         {
-            final boolean lastChunk;
-
-            final int chunkLength = Math.min((int)(bodySize - pos), minLargeMessageSize);
-
-            final HornetQBuffer bodyBuffer = HornetQBuffers.fixedBuffer(chunkLength);
-
-            context.encode(bodyBuffer, chunkLength);
-
-            pos += chunkLength;
-
-            lastChunk = pos >= bodySize;
-
-            final SessionSendContinuationMessage chunk = new SessionSendContinuationMessage(bodyBuffer.toByteBuffer()
-                                                                                                      .array(),
-                                                                                            !lastChunk,
-                                                                                            lastChunk && sendBlocking);
-
-            if (sendBlocking && lastChunk)
-            {
-               // When sending it blocking, only the last chunk will be blocking.
-               channel.sendBlocking(chunk);
-            }
-            else
-            {
-               channel.send(chunk);
-            }
-
-            try
-            {
-               credits.acquireCredits(chunk.getPacketSize());
-            }
-            catch (InterruptedException e)
-            {
-            }
-         }
-      }
-      finally
-      {
-         context.close();
-      }
+      msgI.getBodyBuffer().readerIndex(0);
+      largeMessageSendStreamed(sendBlocking, msgI, new HornetQBufferInputStream(msgI.getBodyBuffer()), credits);
    }
 
    /**
-    * TODO: This method could be eliminated and 
-    *       combined with {@link ClientProducerImpl#largeMessageSendBuffered(boolean, Message, ClientProducerCredits)}. 
-    *       All that's needed for this is ClientMessage returning the proper BodyEncoder for streamed
     * @param sendBlocking
     * @param input
     * @throws HornetQException
     */
    private void largeMessageSendStreamed(final boolean sendBlocking,
-                                         final InputStream input,
+                                         final MessageInternal msgI,
+                                         final InputStream inputStreamParameter,
                                          final ClientProducerCredits credits) throws HornetQException
    {
       boolean lastPacket = false;
+
+      InputStream input = inputStreamParameter;
+
+      if (session.isCompressLargeMessages())
+      {
+         input = GZipUtil.pipeGZip(inputStreamParameter, true, session.getThreadPool());
+      }
 
       while (!lastPacket)
       {

@@ -711,6 +711,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                     final long callTimeout,
                                                     final boolean cacheLargeMessagesClient,
                                                     final int minLargeMessageSize,
+                                                    final boolean compressLargeMessage,
                                                     final int consumerWindowSize,
                                                     final int consumerMaxRate,
                                                     final int confirmationWindowSize,
@@ -747,6 +748,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setCallTimeout(callTimeout);
          configuration.setCacheLargeMessagesClient(cacheLargeMessagesClient);
          configuration.setMinLargeMessageSize(minLargeMessageSize);
+         configuration.setCompressLargeMessages(compressLargeMessage);
          configuration.setConsumerWindowSize(consumerWindowSize);
          configuration.setConsumerMaxRate(consumerMaxRate);
          configuration.setConfirmationWindowSize(confirmationWindowSize);
@@ -786,6 +788,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                     final long callTimeout,
                                                     final boolean cacheLargeMessagesClient,
                                                     final int minLargeMessageSize,
+                                                    final boolean compressLargeMessages,
                                                     final int consumerWindowSize,
                                                     final int consumerMaxRate,
                                                     final int confirmationWindowSize,
@@ -827,6 +830,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setCallTimeout(callTimeout);
          configuration.setCacheLargeMessagesClient(cacheLargeMessagesClient);
          configuration.setMinLargeMessageSize(minLargeMessageSize);
+         configuration.setCompressLargeMessages(compressLargeMessages);
          configuration.setConsumerWindowSize(consumerWindowSize);
          configuration.setConsumerMaxRate(consumerMaxRate);
          configuration.setConfirmationWindowSize(confirmationWindowSize);
@@ -926,6 +930,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                                     final long callTimeout,
                                                                     final boolean cacheLargeMessagesClient,
                                                                     final int minLargeMessageSize,
+                                                                    final boolean compressLargeMessages,
                                                                     final int consumerWindowSize,
                                                                     final int consumerMaxRate,
                                                                     final int confirmationWindowSize,
@@ -964,6 +969,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          cf.setCallTimeout(callTimeout);
          cf.setCacheLargeMessagesClient(cacheLargeMessagesClient);
          cf.setMinLargeMessageSize(minLargeMessageSize);
+         cf.setCompressLargeMessages(compressLargeMessages);
          cf.setConsumerWindowSize(consumerWindowSize);
          cf.setConsumerMaxRate(consumerMaxRate);
          cf.setConfirmationWindowSize(confirmationWindowSize);
@@ -999,6 +1005,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                                     final long callTimeout,
                                                                     final boolean cacheLargeMessagesClient,
                                                                     final int minLargeMessageSize,
+                                                                    final boolean compressLargeMessages,
                                                                     final int consumerWindowSize,
                                                                     final int consumerMaxRate,
                                                                     final int confirmationWindowSize,
@@ -1034,6 +1041,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          cf.setCallTimeout(callTimeout);
          cf.setCacheLargeMessagesClient(cacheLargeMessagesClient);
          cf.setMinLargeMessageSize(minLargeMessageSize);
+         cf.setCompressLargeMessages(compressLargeMessages);
          cf.setConsumerWindowSize(consumerWindowSize);
          cf.setConsumerMaxRate(consumerMaxRate);
          cf.setConfirmationWindowSize(confirmationWindowSize);
@@ -1169,6 +1177,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                               cfConfig.getCallTimeout(),
                                               cfConfig.isCacheLargeMessagesClient(),
                                               cfConfig.getMinLargeMessageSize(),
+                                              cfConfig.isCompressLargeMessages(),
                                               cfConfig.getConsumerWindowSize(),
                                               cfConfig.getConsumerMaxRate(),
                                               cfConfig.getConfirmationWindowSize(),
@@ -1203,6 +1212,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                               cfConfig.getCallTimeout(),
                                               cfConfig.isCacheLargeMessagesClient(),
                                               cfConfig.getMinLargeMessageSize(),
+                                              cfConfig.isCompressLargeMessages(),
                                               cfConfig.getConsumerWindowSize(),
                                               cfConfig.getConsumerMaxRate(),
                                               cfConfig.getConfirmationWindowSize(),

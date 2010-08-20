@@ -151,7 +151,7 @@ public class LargeMessageTest extends LargeMessageTestBase
    public void doTestLargeBuffer(boolean transacted) throws Exception
    {
       final int journalsize = 100 * 1024;
-      final int messageSize = 3 * journalsize;
+      final int messageSize = 3 * journalsize + 5;
       // final int messageSize = 5 * 1024;
 
       ClientSession session = null;
@@ -169,6 +169,8 @@ public class LargeMessageTest extends LargeMessageTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
+         
+         sf.setCompressLargeMessages(true);
 
          session = sf.createSession(!transacted, !transacted, 0);
 

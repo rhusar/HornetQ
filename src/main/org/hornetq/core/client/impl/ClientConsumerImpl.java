@@ -30,6 +30,7 @@ import org.hornetq.core.protocol.core.impl.wireformat.SessionConsumerFlowCreditM
 import org.hornetq.core.protocol.core.impl.wireformat.SessionQueueQueryResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveContinuationMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveLargeMessage;
+import org.hornetq.utils.DecompressedLargeMessageBuffer;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.PriorityLinkedList;
 import org.hornetq.utils.PriorityLinkedListImpl;
@@ -444,6 +445,11 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    // ClientConsumerInternal implementation
    // --------------------------------------------------------------
 
+   public ClientSessionInternal getSession()
+   {
+      return session;
+   }
+   
    public SessionQueueQueryResponseMessage getQueueInfo()
    {
       return queueInfo;
@@ -544,7 +550,14 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
       currentLargeMessageBuffer = new LargeMessageBufferImpl(this, packet.getLargeMessageSize(), 60, largeMessageCache);
 
-      currentChunkMessage.setBuffer(currentLargeMessageBuffer);
+      if (currentChunkMessage.isCompressed())
+      {
+         currentChunkMessage.setBuffer(new DecompressedLargeMessageBuffer(currentLargeMessageBuffer, session.getThreadPool()));
+      }
+      else
+      {
+         currentChunkMessage.setBuffer(currentLargeMessageBuffer);
+      }
 
       currentChunkMessage.setFlowControlSize(0);
 

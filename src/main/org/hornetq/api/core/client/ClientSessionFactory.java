@@ -252,6 +252,27 @@ public interface ClientSessionFactory
     * @param minLargeMessageSize large message size threshold in bytes
     */
    void setMinLargeMessageSize(int minLargeMessageSize);
+   
+   
+   /** 
+    * If this attribute is set to true, the message body will be compressed when sent as large message.
+    * 
+    * the compression will be done using the GZIP protocol.
+    * 
+    * 
+    * @param compressLargeMessage
+    */
+   void setCompressLargeMessages(boolean compressLargeMessage);
+   
+   /** 
+    * If this attribute is set to true, the message body will be compressed when sent as large message.
+    * 
+    * the compression will be done using the GZIP protocol.
+    * 
+    * 
+    * @param compressLargeMessage
+    */
+   boolean isCompressLargeMessages();
 
    /**
     * Returns the window size for flow control of the consumers created through this factory.

@@ -13,6 +13,8 @@
 
 package org.hornetq.core.client.impl;
 
+import java.util.concurrent.Executor;
+
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
@@ -39,6 +41,8 @@ public interface ClientSessionInternal extends ClientSession
    boolean isCacheLargeMessageClient();
 
    int getMinLargeMessageSize();
+   
+   boolean isCompressLargeMessages();
 
    void expire(long consumerID, long messageID) throws HornetQException;
 
@@ -85,4 +89,6 @@ public interface ClientSessionInternal extends ClientSession
    void setAddress(Message message, SimpleString address);
    
    void setPacketSize(int packetSize);
+   
+   Executor getThreadPool();
 }
