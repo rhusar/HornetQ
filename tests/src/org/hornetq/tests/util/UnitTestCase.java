@@ -47,6 +47,7 @@ import junit.framework.TestSuite;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
@@ -296,6 +297,15 @@ public class UnitTestCase extends TestCase
       for (int i = 0; i < expected.length; i++)
       {
          Assert.assertEquals("byte at index " + i, expected[i], actual[i]);
+      }
+   }
+   
+   public static void assertEqualsTransportConfigurations(final TransportConfiguration[] expected, final TransportConfiguration[] actual)
+   {
+      assertEquals(expected.length, actual.length);
+      for (int i = 0; i < expected.length; i++)
+      {
+         Assert.assertEquals("TransportConfiguration at index " + i, expected[i], actual[i]);
       }
    }
 

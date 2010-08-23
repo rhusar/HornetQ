@@ -12,6 +12,8 @@
  */
 package org.hornetq.core.client.impl;
 
+import java.io.Serializable;
+
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 
@@ -19,8 +21,10 @@ import org.hornetq.api.core.TransportConfiguration;
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  *         Created Aug 16, 2010
  */
-public class TopologyMember
+public class TopologyMember implements Serializable
 {
+   private static final long serialVersionUID = 1123652191795626133L;
+
    private final Pair<TransportConfiguration, TransportConfiguration> connector;
 
    private final int distance;

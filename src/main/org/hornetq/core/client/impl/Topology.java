@@ -12,6 +12,7 @@
  */
 package org.hornetq.core.client.impl;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,8 +24,12 @@ import org.hornetq.api.core.client.ClusterTopologyListener;
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  *         Created Aug 16, 2010
  */
-public class Topology
+public class Topology implements Serializable
 {
+   /**
+    * 
+    */
+   private static final long serialVersionUID = -9037171688692471371L;
    /*
     * topology describes the other cluster nodes that this server knows about:
     *
