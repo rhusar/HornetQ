@@ -15,6 +15,10 @@ package org.hornetq.tests.integration.discovery;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +26,6 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
@@ -98,16 +101,7 @@ public class DiscoveryTest extends UnitTestCase
       Assert.assertTrue(ok);
 
       List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       bg.stop();
 
@@ -193,16 +187,7 @@ public class DiscoveryTest extends UnitTestCase
       Assert.assertTrue(ok);
 
       List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       bg.stop();
 
@@ -249,16 +234,7 @@ public class DiscoveryTest extends UnitTestCase
       Assert.assertTrue(ok);
 
       List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       bg.stop();
 
@@ -275,17 +251,7 @@ public class DiscoveryTest extends UnitTestCase
       Assert.assertTrue(ok);
 
       entries = dg.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
-
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
    }
 
    public void testIgnoreTrafficFromOwnNode() throws Exception
@@ -325,13 +291,7 @@ public class DiscoveryTest extends UnitTestCase
 
       Assert.assertNotNull(entries);
 
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      Assert.assertEquals(0, entries.size());
 
       bg.stop();
 
@@ -555,44 +515,17 @@ public class DiscoveryTest extends UnitTestCase
       boolean ok = dg1.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       List<DiscoveryEntry> entries = dg1.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       ok = dg2.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg2.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live2, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live2), entries);
 
       ok = dg3.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg3.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live3, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live3), entries);
 
       bg1.stop();
       bg2.stop();
@@ -734,16 +667,7 @@ public class DiscoveryTest extends UnitTestCase
       boolean ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       List<DiscoveryEntry> entries = dg.getDiscoveryEntries();
-
-      Assert.assertNotNull(entries);
-
-      Assert.assertEquals(1, entries.size());
-
-      DiscoveryEntry entry = entries.get(0);
-
-      Assert.assertNotNull(entry);
-
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -753,14 +677,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      DiscoveryEntry entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      DiscoveryEntry entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2), entries);
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -770,17 +687,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
-      DiscoveryEntry entry3 = entries.get(2);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2, live3), entries);
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -790,17 +697,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
-      entry3 = entries.get(2);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2, live3), entries);
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -810,17 +707,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
-      entry3 = entries.get(2);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2, live3), entries);
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -830,17 +717,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
-      entry3 = entries.get(2);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2, live3), entries);
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -854,18 +731,7 @@ public class DiscoveryTest extends UnitTestCase
       // Connector2 should still be there since not timed out yet
 
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry2 = entries.get(1);
-      Assert.assertNotNull(entry2);
-      Assert.assertEquals(live2, entry2.getConnector());
-      entry3 = entries.get(2);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
-
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live2, live3), entries);
       Assert.assertFalse(listener1.called);
       Assert.assertFalse(listener2.called);
       listener1.called = false;
@@ -881,15 +747,7 @@ public class DiscoveryTest extends UnitTestCase
       ok = dg.waitForBroadcast(1000);
 
       entries = dg.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(2, entries.size());
-      entry1 = entries.get(0);
-      Assert.assertNotNull(entry1);
-      Assert.assertEquals(live1, entry1.getConnector());
-      entry3 = entries.get(1);
-      Assert.assertNotNull(entry3);
-      Assert.assertEquals(live3, entry3.getConnector());
-
+      assertEqualsDiscoveryEntries(Arrays.asList(live1, live3), entries);
       Assert.assertTrue(listener1.called);
       Assert.assertTrue(listener2.called);
       listener1.called = false;
@@ -987,29 +845,17 @@ public class DiscoveryTest extends UnitTestCase
       boolean ok = dg1.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       List<DiscoveryEntry> entries = dg1.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(1, entries.size());
-      DiscoveryEntry entry = entries.get(0);
-      Assert.assertNotNull(entry);
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       ok = dg2.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg2.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(1, entries.size());
-      entry = entries.get(0);
-      Assert.assertNotNull(entry);
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       ok = dg3.waitForBroadcast(1000);
       Assert.assertTrue(ok);
       entries = dg3.getDiscoveryEntries();
-      Assert.assertNotNull(entries);
-      Assert.assertEquals(1, entries.size());
-      entry = entries.get(0);
-      Assert.assertNotNull(entry);
-      Assert.assertEquals(live1, entry.getConnector());
+      assertEqualsDiscoveryEntries(Arrays.asList(live1), entries);
 
       bg.stop();
 
@@ -1115,6 +961,36 @@ public class DiscoveryTest extends UnitTestCase
       public void connectorsChanged()
       {
          called = true;
+      }
+   }
+   
+   
+   private static void assertEqualsDiscoveryEntries(List<TransportConfiguration> expected, List<DiscoveryEntry> actual)
+   {
+      assertNotNull(actual);
+      
+      List<TransportConfiguration> sortedExpected = new ArrayList<TransportConfiguration>(expected);
+      Collections.sort(sortedExpected, new Comparator<TransportConfiguration>()
+      {
+
+         public int compare(TransportConfiguration o1, TransportConfiguration o2)
+         {
+            return o2.toString().compareTo(o1.toString());
+         }
+      });
+      List<DiscoveryEntry> sortedActual = new ArrayList<DiscoveryEntry>(actual);
+      Collections.sort(sortedActual, new Comparator<DiscoveryEntry>()
+      {
+         public int compare(DiscoveryEntry o1, DiscoveryEntry o2)
+         {
+            return o2.getConnector().toString().compareTo(o1.getConnector().toString());
+         }
+      });
+      
+      assertEquals(sortedExpected.size(), sortedActual.size());
+      for (int i = 0; i < sortedExpected.size(); i++)
+      {
+         assertEquals(sortedExpected.get(i), sortedActual.get(i).getConnector());
       }
    }
 
