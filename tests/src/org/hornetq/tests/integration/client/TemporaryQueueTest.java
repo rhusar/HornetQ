@@ -60,6 +60,8 @@ public class TemporaryQueueTest extends ServiceTestBase
 
    private ClientSessionFactory sf;
 
+   private ServerLocator locator;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -161,9 +163,12 @@ public class TemporaryQueueTest extends ServiceTestBase
          }
       });
       session.close();
+      sf.close();
       // wait for the closing listeners to be fired
       Assert.assertTrue("connection close listeners not fired", latch.await(2 * TemporaryQueueTest.CONNECTION_TTL,
                                                                             TimeUnit.MILLISECONDS));
+      
+      sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
       session.start();
 
@@ -210,7 +215,8 @@ public class TemporaryQueueTest extends ServiceTestBase
    public void testDeleteTemporaryQueueWhenClientCrash() throws Exception
    {
       session.close();
-
+      sf.close();
+      
       final SimpleString queue = RandomUtil.randomSimpleString();
       SimpleString address = RandomUtil.randomSimpleString();
 
@@ -296,7 +302,7 @@ public class TemporaryQueueTest extends ServiceTestBase
       server = createServer(false, configuration);
       server.start();
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
       locator.setConnectionTTL(TemporaryQueueTest.CONNECTION_TTL);
       sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
