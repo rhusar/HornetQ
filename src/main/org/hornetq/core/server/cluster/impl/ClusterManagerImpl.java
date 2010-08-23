@@ -577,7 +577,7 @@ public class ClusterManagerImpl implements ClusterManager
                                      queue,
                                      executorFactory.getExecutor(),
                                      SimpleString.toSimpleString(config.getFilterString()),
-                                     new SimpleString(config.getForwardingAddress()),
+                                     SimpleString.toSimpleString(config.getForwardingAddress()),
                                      scheduledExecutor,
                                      transformer,
                                      config.isUseDuplicateDetection(),
