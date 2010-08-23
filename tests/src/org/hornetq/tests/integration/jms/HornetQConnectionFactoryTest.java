@@ -23,19 +23,16 @@ import javax.jms.Session;
 
 import junit.framework.Assert;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
+import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
 
@@ -57,8 +54,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    private HornetQServer liveService;
 
-   private HornetQServer backupService;
-
    private TransportConfiguration liveTC;
 
    public void testDefaultConstructor() throws Exception
@@ -67,7 +62,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       assertFactoryParams(cf,
                           null,
                           null,
-                          0,
+                          -1,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                           null,
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -126,7 +121,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       assertFactoryParams(cf,
                           new TransportConfiguration[]{liveTC},
                           null,
-                          0,
+                          -1,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                           null,
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -211,50 +206,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       assertFactoryParams(cf,
                           new TransportConfiguration[]{liveTC},
                           null,
-                          0,
-                          HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
-                          null,
-                          HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                          HornetQClient.DEFAULT_CONNECTION_TTL,
-                          HornetQClient.DEFAULT_CALL_TIMEOUT,
-                          HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE,
-                          HornetQClient.DEFAULT_CONSUMER_WINDOW_SIZE,
-                          HornetQClient.DEFAULT_CONSUMER_MAX_RATE,
-                          HornetQClient.DEFAULT_CONFIRMATION_WINDOW_SIZE,
-                          HornetQClient.DEFAULT_PRODUCER_MAX_RATE,
-                          HornetQClient.DEFAULT_BLOCK_ON_ACKNOWLEDGE,
-                          HornetQClient.DEFAULT_BLOCK_ON_DURABLE_SEND,
-                          HornetQClient.DEFAULT_BLOCK_ON_NON_DURABLE_SEND,
-                          HornetQClient.DEFAULT_AUTO_GROUP,
-                          HornetQClient.DEFAULT_PRE_ACKNOWLEDGE,
-                          HornetQClient.DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME,
-                          HornetQClient.DEFAULT_ACK_BATCH_SIZE,
-                          HornetQClient.DEFAULT_ACK_BATCH_SIZE,
-                          HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
-                          HornetQClient.DEFAULT_USE_GLOBAL_POOLS,
-                          HornetQClient.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE,
-                          HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
-                          HornetQClient.DEFAULT_RETRY_INTERVAL,
-                          HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
-      Connection conn = cf.createConnection();
-
-      Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-      testSettersThrowException(cf);
-
-      conn.close();
-
-   }
-
-   public void testStaticConnectorLiveAndBackupConstructor() throws Exception
-   {
-      HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
-      assertFactoryParams(cf,
-                          new TransportConfiguration[]{liveTC},
-                          null,
-                          0,
+                          -1,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                           null,
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -297,7 +249,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       assertFactoryParams(cf,
                           new TransportConfiguration[]{liveTC},
                           null,
-                          0,
+                          -1,
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT,
                           null,
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -337,8 +289,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
    {
       HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(liveTC);
 
-      String discoveryAddress = RandomUtil.randomString();
-      int discoveryPort = RandomUtil.randomPositiveInt();
       long discoveryRefreshTimeout = RandomUtil.randomPositiveLong();
       long clientFailureCheckPeriod = RandomUtil.randomPositiveLong();
       long connectionTTL = RandomUtil.randomPositiveLong();
@@ -387,8 +337,8 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       cf.setReconnectAttempts(reconnectAttempts);
       cf.setFailoverOnServerShutdown(failoverOnServerShutdown);
 
-      Assert.assertEquals(discoveryAddress, cf.getDiscoveryAddress());
-      Assert.assertEquals(discoveryPort, cf.getDiscoveryPort());
+      Assert.assertEquals(null, cf.getDiscoveryAddress());
+      Assert.assertEquals(-1, cf.getDiscoveryPort());
       Assert.assertEquals(discoveryRefreshTimeout, cf.getDiscoveryRefreshTimeout());
       Assert.assertEquals(clientFailureCheckPeriod, cf.getClientFailureCheckPeriod());
       Assert.assertEquals(connectionTTL, cf.getConnectionTTL());
@@ -795,49 +745,26 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
    {
       super.setUp();
 
-      startLiveAndBackup();
+      startServer();
    }
 
    @Override
    protected void tearDown() throws Exception
    {
-      stopLiveAndBackup();
+      if (liveService.isStarted())
+      {
+         liveService.stop();
+      }
 
       liveService = null;
-
-      backupService = null;
 
       liveTC = null;
 
       super.tearDown();
    }
 
-   private void stopLiveAndBackup() throws Exception
+   private void startServer() throws Exception
    {
-      if (liveService.isStarted())
-      {
-         liveService.stop();
-      }
-      if (backupService.isStarted())
-      {
-         backupService.stop();
-      }
-   }
-
-   private void startLiveAndBackup() throws Exception
-   {
-      Map<String, Object> backupParams = new HashMap<String, Object>();
-      Configuration backupConf = new ConfigurationImpl();
-      backupConf.setSecurityEnabled(false);
-      backupConf.setClustered(true);
-      backupParams.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-      backupConf.getAcceptorConfigurations()
-                .add(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory", backupParams));
-      backupConf.setBackup(true);
-      backupConf.setSharedStore(true);
-      backupService = HornetQServers.newHornetQServer(backupConf, false);
-      backupService.start();
-
       Configuration liveConf = new ConfigurationImpl();
       liveConf.setSecurityEnabled(false);
       liveTC = new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
