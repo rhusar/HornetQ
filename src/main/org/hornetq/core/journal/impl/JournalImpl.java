@@ -1667,7 +1667,6 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
                else
                {
                   log.warn("Couldn't find tx=" + newTransaction.getId() + " to merge after compacting");
-                  System.exit(-1);
                }
             }
          }
