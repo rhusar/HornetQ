@@ -106,11 +106,11 @@ public class PersistentDivertTest extends ServiceTestBase
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
 
-      ClientSessionFactory sf = locator.createSessionFactory();
+      locator.setBlockOnAcknowledge(true);
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
 
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnDurableSend(true);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(true, true, 0);
 
@@ -310,11 +310,11 @@ public class PersistentDivertTest extends ServiceTestBase
       messagingService.start();
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      ClientSessionFactory sf = locator.createSessionFactory();
+      locator.setBlockOnAcknowledge(true);
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
 
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnDurableSend(true);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(true, true, 0);
 
@@ -363,10 +363,9 @@ public class PersistentDivertTest extends ServiceTestBase
       messagingService.start();
 
       ServerLocator locator2 = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator2.setBlockOnDurableSend(true);
+
       sf = locator2.createSessionFactory();
-
-      sf.getServerLocator().setBlockOnDurableSend(true);
-
       session = sf.createSession(false, true, true);
 
       session.start();
@@ -460,10 +459,9 @@ public class PersistentDivertTest extends ServiceTestBase
       messagingService.start();
 
       ServerLocator locator3 = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator3.setBlockOnDurableSend(true);
 
       sf = locator3.createSessionFactory();
-
-      sf.getServerLocator().setBlockOnDurableSend(true);
 
       session = sf.createSession(false, true, true);
 
