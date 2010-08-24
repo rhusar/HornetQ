@@ -66,11 +66,12 @@ public class DeleteQueueRestartTest extends ServiceTestBase
       server.start();
 
       ServerLocator locator = createInVMNonHALocator();
-      ClientSessionFactory factory = locator.createSessionFactory();
 
-      factory.getServerLocator().setBlockOnDurableSend(true);
-      factory.getServerLocator().setBlockOnNonDurableSend(true);
-      factory.getServerLocator().setMinLargeMessageSize(1024 * 1024);
+      locator.setBlockOnDurableSend(true);
+      locator.setBlockOnNonDurableSend(true);
+      locator.setMinLargeMessageSize(1024 * 1024);
+
+      ClientSessionFactory factory = locator.createSessionFactory();
 
       final ClientSession session = factory.createSession(false, true, true);
 

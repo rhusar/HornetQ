@@ -114,8 +114,8 @@ public class CoreClientOverSSLTest extends UnitTestCase
       tc.getParams().put(TransportConstants.SSL_ENABLED_PROP_NAME, false);
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(tc);
+      locator.setCallTimeout(2000);
       ClientSessionFactory sf = locator.createSessionFactory();
-      sf.getServerLocator().setCallTimeout(2000);
       try
       {
          sf.createSession(false, true, true);

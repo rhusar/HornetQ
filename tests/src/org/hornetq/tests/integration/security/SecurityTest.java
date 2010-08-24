@@ -501,8 +501,8 @@ public class SecurityTest extends ServiceTestBase
          roles.add(role);
          securityRepository.addMatch(SecurityTest.addressA, roles);
          securityManager.addRole("auser", "arole");
+         locator.setBlockOnNonDurableSend(true);
          ClientSessionFactory cf = locator.createSessionFactory();
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          session.createQueue(SecurityTest.addressA, SecurityTest.queueA, true);
          ClientProducer cp = session.createProducer(SecurityTest.addressA);
@@ -535,8 +535,8 @@ public class SecurityTest extends ServiceTestBase
          roles.add(role);
          securityRepository.addMatch(SecurityTest.addressA, roles);
          securityManager.addRole("auser", "arole");
+         locator.setBlockOnNonDurableSend(true);
          ClientSessionFactory cf = locator.createSessionFactory();
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          session.createQueue(SecurityTest.addressA, SecurityTest.queueA, true);
          ClientProducer cp = session.createProducer(SecurityTest.addressA);
@@ -940,8 +940,8 @@ public class SecurityTest extends ServiceTestBase
          roles.add(role);
          securityRepository.addMatch(configuration.getManagementAddress().toString(), roles);
          securityManager.addRole("auser", "arole");
+         locator.setBlockOnNonDurableSend(true);
          ClientSessionFactory cf = locator.createSessionFactory();
-         cf.getServerLocator().setBlockOnNonDurableSend(true);
          ClientSession session = cf.createSession("auser", "pass", false, true, true, false, -1);
          ClientProducer cp = session.createProducer(configuration.getManagementAddress());
          cp.send(session.createMessage(false));
@@ -1169,9 +1169,9 @@ public class SecurityTest extends ServiceTestBase
          ClientSession andrewConnection = null;
          ClientSession frankConnection = null;
          ClientSession samConnection = null;
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
          ClientSessionFactory factory = locator.createSessionFactory();
-         factory.getServerLocator().setBlockOnNonDurableSend(true);
-         factory.getServerLocator().setBlockOnDurableSend(true);
 
          ClientSession adminSession = factory.createSession("all", "all", false, true, true, false, -1);
          String genericQueueName = "genericQueue";

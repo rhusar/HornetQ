@@ -147,14 +147,15 @@ public class PageCrashTest extends ServiceTestBase
       try
       {
          ServerLocator locator = createInVMNonHALocator();
-         ClientSessionFactory sf = locator.createSessionFactory();
 
          // Making it synchronous, just because we want to stop sending messages as soon as the page-store becomes in
          // page mode
          // and we could only guarantee that by setting it to synchronous
-         sf.getServerLocator().setBlockOnNonDurableSend(true);
-         sf.getServerLocator().setBlockOnDurableSend(true);
-         sf.getServerLocator().setBlockOnAcknowledge(true);
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
+
+         ClientSessionFactory sf = locator.createSessionFactory();
 
          ClientSession session = sf.createSession(null, null, false, !transacted, !transacted, false, 0);
 

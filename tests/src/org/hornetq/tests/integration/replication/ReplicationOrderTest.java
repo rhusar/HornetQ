@@ -63,9 +63,9 @@ public class ReplicationOrderTest extends FailoverTestBase
       String address = RandomUtil.randomString();
       String queue = RandomUtil.randomString();
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(getConnectorTransportConfiguration(true));
+      locator.setBlockOnNonDurableSend(false);
+      locator.setBlockOnDurableSend(false);
       ClientSessionFactory csf = locator.createSessionFactory();
-      csf.getServerLocator().setBlockOnNonDurableSend(false);
-      csf.getServerLocator().setBlockOnDurableSend(false);
       ClientSession session = null;
       if (transactional)
       {

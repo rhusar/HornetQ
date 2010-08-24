@@ -582,9 +582,9 @@ public class LVQTest extends UnitTestCase
       server.getAddressSettingsRepository().addMatch(address.toString(), qs);
       // then we create a client as normalServer
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator.setBlockOnAcknowledge(true);
+      locator.setAckBatchSize(0);
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
-      sessionFactory.getServerLocator().setBlockOnAcknowledge(true);
-      sessionFactory.getServerLocator().setAckBatchSize(0);
       clientSession = sessionFactory.createSession(false, true, true);
       clientSessionTxReceives = sessionFactory.createSession(false, true, false);
       clientSessionTxSends = sessionFactory.createSession(false, false, true);
