@@ -99,18 +99,15 @@ public class BroadcastGroupControlTest extends ManagementTestBase
 
       Object[] connectorPairs = broadcastGroupControl.getConnectorPairs();
       Assert.assertEquals(1, connectorPairs.length);
-      Object[] connectorPairData = (Object[])connectorPairs[0];
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), connectorPairData[0]);
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(1), connectorPairData[1]);
-      fail("fix^^");
+      System.out.println(connectorPairs);
+      String connectorPairData = (String)connectorPairs[0];
+      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), connectorPairData);
       String jsonString = broadcastGroupControl.getConnectorPairsAsJSON();
       Assert.assertNotNull(jsonString);
       JSONArray array = new JSONArray(jsonString);
       Assert.assertEquals(1, array.length());
-      JSONObject data = array.getJSONObject(0);
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), data.optString("a"));
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(1), data.optString("b", null));
-
+      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), array.getString(0));
+      
       Assert.assertTrue(broadcastGroupControl.isStarted());
    }
 

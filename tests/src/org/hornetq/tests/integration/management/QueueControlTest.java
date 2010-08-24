@@ -1282,9 +1282,9 @@ public class QueueControlTest extends ManagementTestBase
       server.start();
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnNonDurableSend(true);
       ClientSessionFactory sf = locator.createSessionFactory();
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
       session = sf.createSession(false, true, false);
       session.start();
    }
