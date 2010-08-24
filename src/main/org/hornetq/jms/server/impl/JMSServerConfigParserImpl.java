@@ -417,6 +417,7 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                            strbindings);
          cfConfig.setLocalBindAddress(discoveryGroupConfiguration.getLocalBindAddress());
          cfConfig.setInitialWaitTimeout(discoveryInitialWaitTimeout);
+         cfConfig.setDiscoveryRefreshTimeout(discoveryGroupConfiguration.getRefreshTimeout());
       }
       else
       {
