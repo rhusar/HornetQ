@@ -279,11 +279,11 @@ public class ImportJournal
 
    protected static RecordInfo parseRecord(Properties properties) throws Exception
    {
-      int id = parseInt("id", properties);
+      long id = parseLong("id", properties);
       byte userRecordType = parseByte("userRecordType", properties);
       boolean isUpdate = parseBoolean("isUpdate", properties);
       byte[] data = parseEncoding("data", properties);
-      return new RecordInfo(id, userRecordType, data, isUpdate);
+      return new RecordInfo(id, userRecordType, data, isUpdate, (short)0);
    }
 
    private static byte[] parseEncoding(String name, Properties properties) throws Exception
