@@ -1161,15 +1161,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      locator.setFailoverOnServerShutdown(false);
+      locator.setRetryInterval(100);
+      locator.setRetryIntervalMultiplier(1d);
+      locator.setReconnectAttempts(-1);
+      locator.setBlockOnNonDurableSend(blocking);
+      locator.setBlockOnDurableSend(blocking);
+
       ClientSessionFactory sf = locator.createSessionFactory();
-
-      sf.getServerLocator().setFailoverOnServerShutdown(false);
-      sf.getServerLocator().setRetryInterval(100);
-      sf.getServerLocator().setRetryIntervalMultiplier(1d);
-      sf.getServerLocator().setReconnectAttempts(-1);
-      sf.getServerLocator().setBlockOnNonDurableSend(blocking);
-      sf.getServerLocator().setBlockOnDurableSend(blocking);
-
       sfs[node] = sf;
    }
 
