@@ -38,16 +38,57 @@ public class Topology implements Serializable
     */
    private Map<String, TopologyMember> topology = new HashMap<String, TopologyMember>();
 
+   int nodes = 0;
+
    public synchronized boolean addMember(String nodeId, TopologyMember member)
    {
-      boolean replaced = topology.containsKey(nodeId);
-      topology.put(nodeId, member);
+      boolean replaced = false;
+      TopologyMember currentMember = topology.get(nodeId);
+      if(currentMember == null)
+      {
+         topology.put(nodeId, member);
+         replaced = true;
+         if(member.getConnector().a != null)
+         {
+            nodes++;
+         }
+         if(member.getConnector().b != null)
+         {
+            nodes++;
+         }
+      }
+      else
+      {
+         if(currentMember.getConnector().a == null && member.getConnector().a != null)
+         {
+            currentMember.getConnector().a =  member.getConnector().a;
+            replaced = true;
+            nodes++;
+         }
+         if(currentMember.getConnector().b == null && member.getConnector().b != null)
+         {
+            currentMember.getConnector().b =  member.getConnector().b;
+            replaced = true;
+            nodes++;
+         }
+      }
       return replaced;
    }
 
    public synchronized boolean removeMember(String nodeId)
    {
       TopologyMember member = topology.remove(nodeId);
+      if(member != null)
+      {
+         if(member.getConnector().a != null)
+         {
+            nodes--;
+         }
+         if(member.getConnector().b != null)
+         {
+            nodes--;
+         }
+      }
       return (member != null);
    }
 
@@ -77,7 +118,7 @@ public class Topology implements Serializable
 
    public int size()
    {
-      return topology.size();
+      return nodes;
    }
 
    public String describe()
@@ -94,5 +135,6 @@ public class Topology implements Serializable
    public void clear()
    {
       topology.clear();
+      nodes = 0;
    }
 }

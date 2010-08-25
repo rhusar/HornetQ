@@ -557,7 +557,6 @@ public class HornetQServerImpl implements HornetQServer
             initialisePart1();
             
             //TODO TODO at this point the clustermanager needs to announce it's presence so the cluster can know about the backup
-            
             // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
             // for that
             
@@ -574,17 +573,20 @@ public class HornetQServerImpl implements HornetQServer
 
                liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
 
+
+              clusterManager.start();
+
                log.info("Live server is up - waiting for failover");
 
                liveLock.lock();
-
+               //todo check if we need this or not
                // We need to test if the file exists again, since the live might have shutdown
-               if (!liveLockFile.exists())
-               {
-                  liveLock.unlock();
+              // if (!liveLockFile.exists())
+              // {
+              //    liveLock.unlock();
 
-                  continue;
-               }
+              //    continue;
+             //  }
 
                log.info("Obtained live lock");
                
@@ -600,13 +602,13 @@ public class HornetQServerImpl implements HornetQServer
 
             initialisePart2();
 
-            log.info("Server is now live");
+            log.info("Back Up Server is now live");
 
             backupLock.unlock();
          }
          catch (InterruptedException e)
          {
-            // This can occur when closing if the thread is blocked - it's ok
+            System.out.println("HornetQServerImpl$SharedStoreBackupActivation.run");
          }
          catch (Exception e)
          {

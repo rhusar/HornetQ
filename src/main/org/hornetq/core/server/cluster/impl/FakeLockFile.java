@@ -13,9 +13,12 @@
 
 package org.hornetq.core.server.cluster.impl;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -40,10 +43,9 @@ public class FakeLockFile implements LockFile
 
    private final String directory;
    
-   private static Map<String, Lock> locks = new WeakHashMap<String, Lock>();
-   
-   private Lock lock;
-   
+   private final static Map<String, Semaphore> locks = new WeakHashMap<String, Semaphore>();
+
+   private Semaphore semaphore;
    /**
     * @param fileName
     * @param directory
@@ -56,15 +58,32 @@ public class FakeLockFile implements LockFile
       
       synchronized (locks)
       {
-         String key = directory + fileName;
+         String key = directory + "/" + fileName;
          
-         lock = locks.get(key);
+         semaphore = locks.get(key);
          
-         if (lock == null)
+         if (semaphore == null)
          {
-            lock = new ReentrantLock(true);
+            semaphore = new Semaphore(1, true);
             
-            locks.put(key, lock);
+            locks.put(key, semaphore);
+
+            File f = new File(directory, fileName);
+
+            try
+            {
+               f.createNewFile();
+            }
+            catch (IOException e)
+            {
+               e.printStackTrace();
+               throw new IllegalStateException(e);
+            }
+
+            if(!f.exists())
+            {
+               throw new IllegalStateException("unable to create " + directory + fileName);
+            }
          }
       }
    }
@@ -81,13 +100,38 @@ public class FakeLockFile implements LockFile
 
    public void lock() throws IOException
    {
-      lock.lock();
+      try
+      {
+         semaphore.acquire();
+      }
+      catch (InterruptedException e)
+      {
+         throw new IOException(e);
+      }
    }
 
    public boolean unlock() throws IOException
    {
-      lock.unlock();
+      semaphore.release();
       
       return true;
+   }
+
+   public static void unlock(final String fileName, final String directory)
+   {
+      String key = directory + "/" + fileName;
+
+      Semaphore semaphore = locks.get(key);
+
+      semaphore.release();
+   }
+
+   public static void clearLocks()
+   {
+      for (Semaphore semaphore : locks.values())
+      {
+         semaphore.drainPermits();
+      }
+      locks.clear();
    }
 }

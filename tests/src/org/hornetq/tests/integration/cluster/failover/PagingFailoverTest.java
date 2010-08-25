@@ -22,11 +22,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientConsumer;
-import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.SessionFailureListener;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ClientSessionInternal;
 import org.hornetq.core.config.Configuration;
@@ -79,10 +75,15 @@ public class PagingFailoverTest extends FailoverTestBase
 
    public void internalTestPage(final boolean transacted, final boolean failBeforeConsume) throws Exception
    {
-      ClientSessionFactoryInternal factory = getSessionFactory();
-      factory.getServerLocator().setBlockOnDurableSend(true);
-      factory.getServerLocator().setBlockOnAcknowledge(true);
-      ClientSession session = factory.createSession(!transacted, !transacted, 0);
+      ServerLocator locator = getServerLocator();
+
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+
+      //waitForTopology(locator, 1, 1);
+
+      ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
+      ClientSession session = sf.createSession(!transacted, !transacted, 0);
 
       try
       {
@@ -170,7 +171,7 @@ public class PagingFailoverTest extends FailoverTestBase
 
          session.close();
 
-         session = factory.createSession(true, true, 0);
+         session = sf.createSession(true, true, 0);
 
          cons = session.createConsumer(PagingFailoverTest.ADDRESS);
 

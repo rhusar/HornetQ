@@ -244,26 +244,22 @@ public class ClusterManagerImpl implements ClusterManager
                                    boolean last,
                                    int distance)
    {
-      if (nodeID.equals(nodeUUID.toString()))
-      {
-         return;
-      }
-      
       boolean updated = topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
-
-      if (distance >= topology.size() || updated)
+      if(!updated)
       {
          return;
       }
-      
       for (ClusterTopologyListener listener : clientListeners)
       {
          listener.nodeUP(nodeID, connectorPair, last, distance);
       }
 
-      for (ClusterTopologyListener listener : clusterConnectionListeners)
+      if (distance < topology.size())
       {
-         listener.nodeUP(nodeID, connectorPair, last, distance);
+         for (ClusterTopologyListener listener : clusterConnectionListeners)
+         {
+            listener.nodeUP(nodeID, connectorPair, last, distance);
+         }
       }
    }
    

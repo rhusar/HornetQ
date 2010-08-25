@@ -13,24 +13,33 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.server.ActivateCallback;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.tests.util.UnitTestCase;
 
@@ -80,6 +89,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
    {
       super.setUp();
       clearData();
+      FakeLockFile.clearLocks();
       createConfigs();
 
       if (server1Service != null)
@@ -101,6 +111,16 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config1.setSecurityEnabled(false);
       config1.setSharedStore(true);
       config1.setBackup(true);
+      config1.setClustered(true);
+      TransportConfiguration liveConnector = getConnectorTransportConfiguration(true);
+      TransportConfiguration backupConnector = getConnectorTransportConfiguration(false);
+      List<String> staticConnectors = new ArrayList<String>();
+      staticConnectors.add(liveConnector.getName());
+       ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
+               staticConnectors);
+      config1.getClusterConfigurations().add(ccc1);
+      config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
+      config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
       server1Service = createFakeLockServer(true, config1);
       
       server1Service.registerActivateCallback(new ActivateCallback()
@@ -129,6 +149,12 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config0.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
+      config0.setClustered(true);
+       List<String> pairs = null;
+      ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1", "jms", liveConnector.getName(), -1, false, false, 1, 1,
+               pairs);
+      config0.getClusterConfigurations().add(ccc0);
+      config0.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       server0Service = createFakeLockServer(true, config0);
 
    }
@@ -178,6 +204,20 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
       super.tearDown();
    }
+
+   protected ClientSessionFactoryInternal createSessionFactoryAndWaitForTopology(ServerLocator locator, int topologyMembers)
+           throws Exception
+     {
+        ClientSessionFactoryInternal sf;
+        CountDownLatch countDownLatch = new CountDownLatch(topologyMembers);
+
+        locator.addClusterTopologyListener(new LatchClusterTopologyListener(countDownLatch));
+
+        sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
+
+        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+        return sf;
+     }
 
    protected TransportConfiguration getInVMConnectorTransportConfiguration(final boolean live)
    {
@@ -251,14 +291,45 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected abstract TransportConfiguration getConnectorTransportConfiguration(final boolean live);
 
-   protected ClientSessionFactoryInternal getSessionFactory() throws Exception
+   protected ServerLocatorInternal getServerLocator() throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
-      return (ClientSessionFactoryInternal) locator.createSessionFactory();
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true));
+      return (ServerLocatorInternal) locator;
    }
 
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+   class LatchClusterTopologyListener implements ClusterTopologyListener
+   {
+      final CountDownLatch latch;
+      int liveNodes = 0;
+      int backUpNodes = 0;
+      List<String> liveNode = new ArrayList<String>();
+      List<String> backupNode = new ArrayList<String>();
 
+      public LatchClusterTopologyListener(CountDownLatch latch)
+      {
+         this.latch = latch;
+      }
+
+      public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
+      {
+         if(connectorPair.a != null && !liveNode.contains(connectorPair.a.getName()))
+         {
+            liveNode.add(connectorPair.a.getName());
+            latch.countDown();
+         }
+         if(connectorPair.b != null && !backupNode.contains(connectorPair.b.getName()))
+         {
+            backupNode.add(connectorPair.b.getName());
+            latch.countDown();
+         }
+      }
+
+      public void nodeDown(String nodeID)
+      {
+         //To change body of implemented methods use File | Settings | File Templates.
+      }
+   }
 }

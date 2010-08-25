@@ -657,4 +657,8 @@ public interface ServerLocator
    void close();
 
    boolean isHA();
+
+   void addClusterTopologyListener(ClusterTopologyListener listener);
+
+   void removeClusterTopologyListener(ClusterTopologyListener listener);
 }

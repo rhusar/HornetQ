@@ -113,7 +113,15 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       buffer.writeString(nodeID);
       if (!exit)
       {         
-         pair.a.encode(buffer);
+         if (pair.a != null)
+         {
+            buffer.writeBoolean(true);
+            pair.a.encode(buffer);
+         }
+         else
+         {
+            buffer.writeBoolean(false);
+         }
          if (pair.b != null)
          {
             buffer.writeBoolean(true);
@@ -134,9 +142,18 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       exit = buffer.readBoolean();
       nodeID = buffer.readString();
       if (!exit)
-      {         
-         TransportConfiguration a = new TransportConfiguration();
-         a.decode(buffer);
+      {
+         boolean hasLive = buffer.readBoolean();
+         TransportConfiguration a;
+         if(hasLive)
+         {
+            a = new TransportConfiguration();
+            a.decode(buffer);
+         }
+         else
+         {
+            a = null;
+         }
          boolean hasBackup = buffer.readBoolean();
          TransportConfiguration b;
          if (hasBackup)
