@@ -1131,7 +1131,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          updateArraysAndPairs();
 
-         if (topology.size() == 1 && topology.getMember(this.nodeID) != null)
+         if (topology.nodes() == 1 && topology.getMember(this.nodeID) != null)
          {
             receivedTopology = false;
          }
@@ -1185,7 +1185,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private void updateArraysAndPairs()
    {
       topologyArray = (Pair<TransportConfiguration, TransportConfiguration>[]) Array.newInstance(Pair.class,
-            topology.size());
+            topology.members());
 
       int count = 0;
       for (TopologyMember pair : topology.getMembers())

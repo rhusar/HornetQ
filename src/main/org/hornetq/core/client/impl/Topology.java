@@ -116,7 +116,7 @@ public class Topology implements Serializable
       return topology.values();
    }
 
-   public int size()
+   public int nodes()
    {
       return nodes;
    }
@@ -136,5 +136,10 @@ public class Topology implements Serializable
    {
       topology.clear();
       nodes = 0;
+   }
+
+   public int members()
+   {
+      return topology.size();
    }
 }

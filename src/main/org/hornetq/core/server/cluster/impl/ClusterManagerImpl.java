@@ -254,7 +254,7 @@ public class ClusterManagerImpl implements ClusterManager
          listener.nodeUP(nodeID, connectorPair, last, distance);
       }
 
-      if (distance < topology.size())
+      if (distance < topology.nodes())
       {
          for (ClusterTopologyListener listener : clusterConnectionListeners)
          {
