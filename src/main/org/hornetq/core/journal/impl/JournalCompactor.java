@@ -144,10 +144,11 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
 
    public JournalCompactor(final SequentialFileFactory fileFactory,
                            final JournalImpl journal,
+                           final FilesRepository filesRepository,
                            final Set<Long> recordsSnapshot,
                            final long firstFileID)
    {
-      super(fileFactory, journal, recordsSnapshot, firstFileID);
+      super(fileFactory, journal, filesRepository, recordsSnapshot, firstFileID);
    }
 
    /** This methods informs the Compactor about the existence of a pending (non committed) transaction */
@@ -531,7 +532,14 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
       void execute() throws Exception
       {
          JournalRecord deleteRecord = journal.getRecords().remove(id);
-         deleteRecord.delete(usedFile);
+         if (deleteRecord == null)
+         {
+            log.warn("Can't find record " + id + " during compact replay");
+         }
+         else
+         {
+            deleteRecord.delete(usedFile);
+         }
       }
    }
 
