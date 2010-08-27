@@ -36,19 +36,19 @@ import org.hornetq.core.logging.Logger;
  *
  *
  */
-public class FilesRepository
+public class JournalFilesRepository
 {
 
-   private static final Logger log = Logger.getLogger(FilesRepository.class);
+   private static final Logger log = Logger.getLogger(JournalFilesRepository.class);
 
-   private static final boolean trace = FilesRepository.log.isTraceEnabled();
+   private static final boolean trace = JournalFilesRepository.log.isTraceEnabled();
 
    // This method exists just to make debug easier.
    // I could replace log.trace by log.info temporarily while I was debugging
    // Journal
    private static final void trace(final String message)
    {
-      FilesRepository.log.trace(message);
+      JournalFilesRepository.log.trace(message);
    }
 
    // Constants -----------------------------------------------------
@@ -85,7 +85,7 @@ public class FilesRepository
 
    // Constructors --------------------------------------------------
 
-   public FilesRepository(final SequentialFileFactory fileFactory,
+   public JournalFilesRepository(final SequentialFileFactory fileFactory,
                           final String filePrefix,
                           final String fileExtension,
                           final int userVersion,
@@ -125,7 +125,7 @@ public class FilesRepository
          }
          catch (Exception e)
          {
-            FilesRepository.log.warn(e.getMessage(), e);
+            JournalFilesRepository.log.warn(e.getMessage(), e);
          }
       }
       openedFiles.clear();
@@ -230,7 +230,7 @@ public class FilesRepository
    {
       if (!dataFiles.remove(file))
       {
-         FilesRepository.log.warn("Could not remove file " + file + " from the list of data files");
+         JournalFilesRepository.log.warn("Could not remove file " + file + " from the list of data files");
       }
    }
 
@@ -283,7 +283,7 @@ public class FilesRepository
    {
       if (file.getFile().size() != fileSize)
       {
-         FilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size",
+         JournalFilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size",
                                   new Exception("trace"));
          file.getFile().delete();
       }
@@ -293,9 +293,9 @@ public class FilesRepository
       {
          // Re-initialise it
 
-         if (FilesRepository.trace)
+         if (JournalFilesRepository.trace)
          {
-            FilesRepository.trace("Adding free file " + file);
+            JournalFilesRepository.trace("Adding free file " + file);
          }
 
          JournalFile jf = reinitializeFile(file);
@@ -342,7 +342,7 @@ public class FilesRepository
       }
       catch (Exception e)
       {
-         FilesRepository.log.warn(e.getMessage(), e);
+         JournalFilesRepository.log.warn(e.getMessage(), e);
       }
 
    }
@@ -354,9 +354,9 @@ public class FilesRepository
     * */
    public JournalFile openFile() throws InterruptedException
    {
-      if (FilesRepository.trace)
+      if (JournalFilesRepository.trace)
       {
-         FilesRepository.trace("enqueueOpenFile with openedFiles.size=" + openedFiles.size());
+         JournalFilesRepository.trace("enqueueOpenFile with openedFiles.size=" + openedFiles.size());
       }
 
       Runnable run = new Runnable()
@@ -369,7 +369,7 @@ public class FilesRepository
             }
             catch (Exception e)
             {
-               FilesRepository.log.error(e.getMessage(), e);
+               JournalFilesRepository.log.error(e.getMessage(), e);
             }
          }
       };
@@ -390,14 +390,14 @@ public class FilesRepository
          nextFile = openedFiles.poll(5, TimeUnit.SECONDS);
          if (nextFile == null)
          {
-            FilesRepository.log.warn("Couldn't open a file in 60 Seconds",
+            JournalFilesRepository.log.warn("Couldn't open a file in 60 Seconds",
                                      new Exception("Warning: Couldn't open a file in 60 Seconds"));
          }
       }
 
-      if (FilesRepository.trace)
+      if (JournalFilesRepository.trace)
       {
-         FilesRepository.trace("Returning file " + nextFile);
+         JournalFilesRepository.trace("Returning file " + nextFile);
       }
 
       return nextFile;
@@ -411,9 +411,9 @@ public class FilesRepository
    {
       JournalFile nextOpenedFile = takeFile(true, true, true, false);
 
-      if (FilesRepository.trace)
+      if (JournalFilesRepository.trace)
       {
-         FilesRepository.trace("pushing openFile " + nextOpenedFile);
+         JournalFilesRepository.trace("pushing openFile " + nextOpenedFile);
       }
 
       openedFiles.offer(nextOpenedFile);
@@ -501,9 +501,9 @@ public class FilesRepository
 
       fileName = createFileName(tmpCompact, fileID);
 
-      if (FilesRepository.trace)
+      if (JournalFilesRepository.trace)
       {
-         FilesRepository.trace("Creating file " + fileName);
+         JournalFilesRepository.trace("Creating file " + fileName);
       }
 
       String tmpFileName = fileName + ".tmp";
@@ -523,9 +523,9 @@ public class FilesRepository
 
       sequentialFile.close();
 
-      if (FilesRepository.trace)
+      if (JournalFilesRepository.trace)
       {
-         FilesRepository.trace("Renaming file " + tmpFileName + " as " + fileName);
+         JournalFilesRepository.trace("Renaming file " + tmpFileName + " as " + fileName);
       }
 
       sequentialFile.renameTo(fileName);
@@ -579,7 +579,7 @@ public class FilesRepository
       }
       catch (Throwable e)
       {
-         FilesRepository.log.warn("Impossible to get the ID part of the file name " + fileName, e);
+         JournalFilesRepository.log.warn("Impossible to get the ID part of the file name " + fileName, e);
          return 0;
       }
    }

@@ -144,7 +144,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
 
    public JournalCompactor(final SequentialFileFactory fileFactory,
                            final JournalImpl journal,
-                           final FilesRepository filesRepository,
+                           final JournalFilesRepository filesRepository,
                            final Set<Long> recordsSnapshot,
                            final long firstFileID)
    {

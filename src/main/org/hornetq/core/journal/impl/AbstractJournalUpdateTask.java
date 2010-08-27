@@ -55,7 +55,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
 
    protected SequentialFile sequentialFile;
    
-   protected final FilesRepository filesRepository;
+   protected final JournalFilesRepository filesRepository;
 
    protected long nextOrderingID;
 
@@ -71,7 +71,7 @@ public abstract class AbstractJournalUpdateTask implements JournalReaderCallback
 
    protected AbstractJournalUpdateTask(final SequentialFileFactory fileFactory,
                                        final JournalImpl journal,
-                                       final FilesRepository filesRepository,
+                                       final JournalFilesRepository filesRepository,
                                        final Set<Long> recordsSnapshot,
                                        final long nextOrderingID)
    {
