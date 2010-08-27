@@ -140,7 +140,7 @@ public class NIOSequentialFile extends AbstractSequentialFile
    @Override
    public synchronized void close() throws Exception
    {
-      super.close();
+       super.close();
 
       if (maxIOSemaphore != null)
       {

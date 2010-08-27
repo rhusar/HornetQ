@@ -2459,11 +2459,11 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
          filesRepository.drainClosedFiles();
 
+         filesRepository.clear();
+
          fileFactory.stop();
 
          currentFile = null;
-
-         filesRepository.clear();
       }
       finally
       {

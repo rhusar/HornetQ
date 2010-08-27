@@ -114,10 +114,21 @@ public class FilesRepository
    {
       dataFiles.clear();
 
-      pendingCloseFiles.clear();
+      drainClosedFiles();
 
       freeFiles.clear();
 
+      for (JournalFile file : openedFiles)
+      {
+         try
+         {
+            file.getFile().close();
+         }
+         catch (Exception e)
+         {
+            log.warn(e.getMessage(), e);
+         }
+      }
       openedFiles.clear();
    }
 
