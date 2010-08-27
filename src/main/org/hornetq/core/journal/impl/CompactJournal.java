@@ -13,19 +13,9 @@
 
 package org.hornetq.core.journal.impl;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.util.List;
-
-import org.hornetq.core.journal.RecordInfo;
-import org.hornetq.core.journal.SequentialFileFactory;
-import org.hornetq.utils.Base64;
-
 /**
  * This is an undocumented class, that will open a journal and force compacting on it.
- * It may be used under special cases, but it shouldn't be needed under regular circunstances as the system should detect 
+ * It may be used under special cases, but it shouldn't be needed under regular circumstances as the system should detect 
  * the need for compacting.
  * 
  * The regular use is to configure min-compact parameters.
@@ -37,7 +27,7 @@ import org.hornetq.utils.Base64;
 public class CompactJournal
 {
 
-   public static void main(String arg[])
+   public static void main(final String arg[])
    {
       if (arg.length != 4)
       {
@@ -47,7 +37,7 @@ public class CompactJournal
 
       try
       {
-         compactJournal(arg[0], arg[1], arg[2], 2, Integer.parseInt(arg[3]));
+         CompactJournal.compactJournal(arg[0], arg[1], arg[2], 2, Integer.parseInt(arg[3]));
       }
       catch (Exception e)
       {
@@ -56,22 +46,22 @@ public class CompactJournal
 
    }
 
-   public static void compactJournal(String directory,
-                                    String journalPrefix,
-                                    String journalSuffix,
-                                    int minFiles,
-                                    int fileSize) throws Exception
+   public static void compactJournal(final String directory,
+                                     final String journalPrefix,
+                                     final String journalSuffix,
+                                     final int minFiles,
+                                     final int fileSize) throws Exception
    {
       NIOSequentialFileFactory nio = new NIOSequentialFileFactory(directory);
 
       JournalImpl journal = new JournalImpl(fileSize, minFiles, 0, 0, nio, journalPrefix, journalSuffix, 1);
 
       journal.start();
-      
+
       journal.loadInternalOnly();
-      
+
       journal.compact();
-      
+
       journal.stop();
    }
 

@@ -439,28 +439,28 @@ public class JournalFilesRepository
                                final boolean initFile,
                                final boolean tmpCompactExtension) throws Exception
    {
-      JournalFile nextOpenedFile = null;
+      JournalFile nextFile = null;
 
-      nextOpenedFile = freeFiles.poll();
+      nextFile = freeFiles.poll();
 
-      if (nextOpenedFile == null)
+      if (nextFile == null)
       {
-         nextOpenedFile = createFile(keepOpened, multiAIO, initFile, tmpCompactExtension);
+         nextFile = createFile(keepOpened, multiAIO, initFile, tmpCompactExtension);
       }
       else
       {
          if (tmpCompactExtension)
          {
-            SequentialFile sequentialFile = nextOpenedFile.getFile();
+            SequentialFile sequentialFile = nextFile.getFile();
             sequentialFile.renameTo(sequentialFile.getFileName() + ".cmp");
          }
 
          if (keepOpened)
          {
-            openFile(nextOpenedFile, multiAIO);
+            openFile(nextFile, multiAIO);
          }
       }
-      return nextOpenedFile;
+      return nextFile;
    }
 
    // Package protected ---------------------------------------------
