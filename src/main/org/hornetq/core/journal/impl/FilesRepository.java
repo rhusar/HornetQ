@@ -41,14 +41,14 @@ public class FilesRepository
 
    private static final Logger log = Logger.getLogger(FilesRepository.class);
 
-   private static final boolean trace = log.isTraceEnabled();
+   private static final boolean trace = FilesRepository.log.isTraceEnabled();
 
    // This method exists just to make debug easier.
    // I could replace log.trace by log.info temporarily while I was debugging
    // Journal
    private static final void trace(final String message)
    {
-      log.trace(message);
+      FilesRepository.log.trace(message);
    }
 
    // Constants -----------------------------------------------------
@@ -78,7 +78,7 @@ public class FilesRepository
    private final String fileExtension;
 
    private final int userVersion;
-   
+
    private Executor filesExecutor;
 
    // Static --------------------------------------------------------
@@ -104,12 +104,11 @@ public class FilesRepository
 
    // Public --------------------------------------------------------
 
-   
-   public void setExecutor(Executor executor)
+   public void setExecutor(final Executor executor)
    {
-      this.filesExecutor = executor;
+      filesExecutor = executor;
    }
-   
+
    public void clear()
    {
       dataFiles.clear();
@@ -126,7 +125,7 @@ public class FilesRepository
          }
          catch (Exception e)
          {
-            log.warn(e.getMessage(), e);
+            FilesRepository.log.warn(e.getMessage(), e);
          }
       }
       openedFiles.clear();
@@ -147,7 +146,7 @@ public class FilesRepository
       return filePrefix;
    }
 
-   public void calculateNextfileID(List<JournalFile> files)
+   public void calculateNextfileID(final List<JournalFile> files)
    {
 
       for (JournalFile file : files)
@@ -204,7 +203,7 @@ public class FilesRepository
 
    public JournalFile[] getDataFilesArray()
    {
-      return (JournalFile[])dataFiles.toArray(new JournalFile[dataFiles.size()]);
+      return dataFiles.toArray(new JournalFile[dataFiles.size()]);
    }
 
    public JournalFile pollLastDataFile()
@@ -227,11 +226,11 @@ public class FilesRepository
       return dataFiles.pollLast();
    }
 
-   public void removeDataFile(JournalFile file)
+   public void removeDataFile(final JournalFile file)
    {
       if (!dataFiles.remove(file))
       {
-         log.warn("Could not remove file " + file + " from the list of data files");
+         FilesRepository.log.warn("Could not remove file " + file + " from the list of data files");
       }
    }
 
@@ -250,12 +249,12 @@ public class FilesRepository
       dataFiles.clear();
    }
 
-   public void addDataFileOnTop(JournalFile file)
+   public void addDataFileOnTop(final JournalFile file)
    {
       dataFiles.addFirst(file);
    }
 
-   public void addDataFileOnBottom(JournalFile file)
+   public void addDataFileOnBottom(final JournalFile file)
    {
       dataFiles.add(file);
    }
@@ -271,7 +270,7 @@ public class FilesRepository
     * Add directly to the freeFiles structure without reinitializing the file.
     * used on load() only
     */
-   public void addFreeFileNoInit(JournalFile file)
+   public void addFreeFileNoInit(final JournalFile file)
    {
       freeFiles.add(file);
    }
@@ -284,7 +283,8 @@ public class FilesRepository
    {
       if (file.getFile().size() != fileSize)
       {
-         log.warn("Deleting " + file + ".. as it doesn't have the configured size", new Exception("trace"));
+         FilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size",
+                                  new Exception("trace"));
          file.getFile().delete();
       }
       else
@@ -293,9 +293,9 @@ public class FilesRepository
       {
          // Re-initialise it
 
-         if (trace)
+         if (FilesRepository.trace)
          {
-            trace("Adding free file " + file);
+            FilesRepository.trace("Adding free file " + file);
          }
 
          JournalFile jf = reinitializeFile(file);
@@ -342,7 +342,7 @@ public class FilesRepository
       }
       catch (Exception e)
       {
-         log.warn(e.getMessage(), e);
+         FilesRepository.log.warn(e.getMessage(), e);
       }
 
    }
@@ -354,9 +354,9 @@ public class FilesRepository
     * */
    public JournalFile openFile() throws InterruptedException
    {
-      if (trace)
+      if (FilesRepository.trace)
       {
-         trace("enqueueOpenFile with openedFiles.size=" + openedFiles.size());
+         FilesRepository.trace("enqueueOpenFile with openedFiles.size=" + openedFiles.size());
       }
 
       Runnable run = new Runnable()
@@ -369,7 +369,7 @@ public class FilesRepository
             }
             catch (Exception e)
             {
-               log.error(e.getMessage(), e);
+               FilesRepository.log.error(e.getMessage(), e);
             }
          }
       };
@@ -390,18 +390,19 @@ public class FilesRepository
          nextFile = openedFiles.poll(5, TimeUnit.SECONDS);
          if (nextFile == null)
          {
-            log.warn("Couldn't open a file in 60 Seconds", new Exception("Warning: Couldn't open a file in 60 Seconds"));
+            FilesRepository.log.warn("Couldn't open a file in 60 Seconds",
+                                     new Exception("Warning: Couldn't open a file in 60 Seconds"));
          }
       }
 
-      if (trace)
+      if (FilesRepository.trace)
       {
-         trace("Returning file " + nextFile);
+         FilesRepository.trace("Returning file " + nextFile);
       }
 
       return nextFile;
    }
-   
+
    /** 
     * 
     * Open a file and place it into the openedFiles queue
@@ -410,15 +411,14 @@ public class FilesRepository
    {
       JournalFile nextOpenedFile = takeFile(true, true, true, false);
 
-      if (trace)
+      if (FilesRepository.trace)
       {
-         trace("pushing openFile " + nextOpenedFile);
+         FilesRepository.trace("pushing openFile " + nextOpenedFile);
       }
 
       openedFiles.offer(nextOpenedFile);
    }
 
-   
    public void closeFile(final JournalFile file)
    {
       fileFactory.deactivateBuffer();
@@ -443,17 +443,16 @@ public class FilesRepository
       }
 
    }
-   
-   
+
    /**
     * This will get a File from freeFile without initializing it
     * @return
     * @throws Exception
     */
    public JournalFile takeFile(final boolean keepOpened,
-                       final boolean multiAIO,
-                       final boolean initFile,
-                       final boolean tmpCompactExtension) throws Exception
+                               final boolean multiAIO,
+                               final boolean initFile,
+                               final boolean tmpCompactExtension) throws Exception
    {
       JournalFile nextOpenedFile = null;
 
@@ -479,9 +478,6 @@ public class FilesRepository
       return nextOpenedFile;
    }
 
-   
-   
-
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
@@ -505,9 +501,9 @@ public class FilesRepository
 
       fileName = createFileName(tmpCompact, fileID);
 
-      if (trace)
+      if (FilesRepository.trace)
       {
-         trace("Creating file " + fileName);
+         FilesRepository.trace("Creating file " + fileName);
       }
 
       String tmpFileName = fileName + ".tmp";
@@ -520,16 +516,16 @@ public class FilesRepository
       {
          sequentialFile.fill(0, fileSize, JournalImpl.FILL_CHARACTER);
 
-         JournalImpl.initFileHeader(this.fileFactory, sequentialFile, userVersion, fileID);
+         JournalImpl.initFileHeader(fileFactory, sequentialFile, userVersion, fileID);
       }
 
       long position = sequentialFile.position();
 
       sequentialFile.close();
 
-      if (trace)
+      if (FilesRepository.trace)
       {
-         trace("Renaming file " + tmpFileName + " as " + fileName);
+         FilesRepository.trace("Renaming file " + tmpFileName + " as " + fileName);
       }
 
       sequentialFile.renameTo(fileName);
@@ -555,7 +551,7 @@ public class FilesRepository
     * @param fileID
     * @return
     */
-   private String createFileName(final boolean tmpCompact, long fileID)
+   private String createFileName(final boolean tmpCompact, final long fileID)
    {
       String fileName;
       if (tmpCompact)
@@ -583,7 +579,7 @@ public class FilesRepository
       }
       catch (Throwable e)
       {
-         log.warn("Impossible to get the ID part of the file name " + fileName, e);
+         FilesRepository.log.warn("Impossible to get the ID part of the file name " + fileName, e);
          return 0;
       }
    }
@@ -597,7 +593,7 @@ public class FilesRepository
 
       sf.open(1, false);
 
-      int position = JournalImpl.initFileHeader(this.fileFactory, sf, userVersion, newFileID);
+      int position = JournalImpl.initFileHeader(fileFactory, sf, userVersion, newFileID);
 
       JournalFile jf = new JournalFileImpl(sf, newFileID, JournalImpl.FORMAT_VERSION);
 
