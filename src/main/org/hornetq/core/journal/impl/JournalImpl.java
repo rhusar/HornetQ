@@ -1857,7 +1857,7 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
                   // just leaving some updates in this file
 
                   posFiles.addUpdateFile(file, info.data.length + JournalImpl.SIZE_ADD_RECORD + 1); // +1 = compact
-                                                                                                    // count
+                  // count
                }
             }
 
@@ -1908,7 +1908,7 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
                }
 
                tnp.addPositive(file, info.id, info.data.length + JournalImpl.SIZE_ADD_RECORD_TX + 1); // +1 = compact
-                                                                                                      // count
+               // count
             }
 
             public void onReadDeleteRecordTX(final long transactionID, final RecordInfo info) throws Exception

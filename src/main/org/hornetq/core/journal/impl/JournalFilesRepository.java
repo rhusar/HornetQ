@@ -86,12 +86,12 @@ public class JournalFilesRepository
    // Constructors --------------------------------------------------
 
    public JournalFilesRepository(final SequentialFileFactory fileFactory,
-                          final String filePrefix,
-                          final String fileExtension,
-                          final int userVersion,
-                          final int maxAIO,
-                          final int fileSize,
-                          final int minFiles)
+                                 final String filePrefix,
+                                 final String fileExtension,
+                                 final int userVersion,
+                                 final int maxAIO,
+                                 final int fileSize,
+                                 final int minFiles)
    {
       this.fileFactory = fileFactory;
       this.maxAIO = maxAIO;
@@ -269,7 +269,7 @@ public class JournalFilesRepository
       if (file.getFile().size() != fileSize)
       {
          JournalFilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size",
-                                  new Exception("trace"));
+                                         new Exception("trace"));
          file.getFile().delete();
       }
       else
@@ -376,7 +376,7 @@ public class JournalFilesRepository
          if (nextFile == null)
          {
             JournalFilesRepository.log.warn("Couldn't open a file in 60 Seconds",
-                                     new Exception("Warning: Couldn't open a file in 60 Seconds"));
+                                            new Exception("Warning: Couldn't open a file in 60 Seconds"));
          }
       }
 

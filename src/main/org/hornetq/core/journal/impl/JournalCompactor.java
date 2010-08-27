@@ -47,10 +47,10 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
 {
 
    private static final Logger log = Logger.getLogger(JournalCompactor.class);
-   
+
    // We try to separate old record from new ones when doing the compacting
    // this is a split line
-   // We will force a moveNextFiles when the compactCount is bellow than COMPACT_SPLIT_LINE 
+   // We will force a moveNextFiles when the compactCount is bellow than COMPACT_SPLIT_LINE
    private final short COMPACT_SPLIT_LINE = 2;
 
    // Snapshot of transactions that were pending when the compactor started
@@ -217,7 +217,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
    {
       checkSize(size, -1);
    }
-   
+
    private void checkSize(final int size, final int compactCount) throws Exception
    {
       if (getWritingChannel() == null)
@@ -239,17 +239,19 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
                return;
             }
          }
-         
+
          if (getWritingChannel().writerIndex() + size > getWritingChannel().capacity())
          {
             openFile();
          }
       }
    }
-   
+
    int currentCount;
+
    // This means we will need to split when the compactCount is bellow the watermark
    boolean willNeedToSplit = false;
+
    boolean splitted = false;
 
    private boolean checkCompact(final int compactCount) throws Exception
@@ -258,7 +260,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
       {
          willNeedToSplit = true;
       }
-      
+
       if (willNeedToSplit && compactCount < COMPACT_SPLIT_LINE)
       {
          willNeedToSplit = false;
@@ -271,8 +273,6 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
          return false;
       }
    }
-   
-   
 
    /**
     * Replay pending counts that happened during compacting
@@ -305,7 +305,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
                                                                 info.getUserRecordType(),
                                                                 new ByteArrayEncoding(info.data));
          addRecord.setCompactCount((short)(info.compactCount + 1));
-         
+
          checkSize(addRecord.getEncodeSize(), info.compactCount);
 
          writeEncoder(addRecord);
@@ -327,7 +327,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
                                                                new ByteArrayEncoding(info.data));
 
          record.setCompactCount((short)(info.compactCount + 1));
-         
+
          checkSize(record.getEncodeSize(), info.compactCount);
 
          newTransaction.addPositive(currentFile, info.id, record.getEncodeSize());
@@ -347,15 +347,15 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
       }
       else
       {
-         JournalTransaction newTransaction =  newTransactions.remove(transactionID);
+         JournalTransaction newTransaction = newTransactions.remove(transactionID);
          if (newTransaction != null)
          {
             JournalInternalRecord commitRecord = new JournalCompleteRecordTX(true, transactionID, null);
-   
+
             checkSize(commitRecord.getEncodeSize());
-   
+
             writeEncoder(commitRecord, newTransaction.getCounter(currentFile));
-   
+
             newTransaction.commit(currentFile);
          }
       }
@@ -366,7 +366,8 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
       if (newRecords.get(recordID) != null)
       {
          // Sanity check, it should never happen
-         throw new IllegalStateException("Inconsistency during compacting: Delete record being read on an existent record (id=" + recordID + ")");
+         throw new IllegalStateException("Inconsistency during compacting: Delete record being read on an existent record (id=" + recordID +
+                                         ")");
       }
 
    }
@@ -428,16 +429,16 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
          JournalTransaction newTransaction = newTransactions.remove(transactionID);
          if (newTransaction != null)
          {
-            
+
             JournalInternalRecord rollbackRecord = new JournalRollbackRecordTX(transactionID);
-            
+
             checkSize(rollbackRecord.getEncodeSize());
 
             writeEncoder(rollbackRecord);
-            
+
             newTransaction.rollback(currentFile);
          }
-         
+
       }
    }
 
@@ -451,7 +452,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
                                                                    new ByteArrayEncoding(info.data));
 
          updateRecord.setCompactCount((short)(info.compactCount + 1));
-         
+
          checkSize(updateRecord.getEncodeSize(), info.compactCount);
 
          JournalRecord newRecord = newRecords.get(info.id);
@@ -483,7 +484,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
                                                                        new ByteArrayEncoding(info.data));
 
          updateRecordTX.setCompactCount((short)(info.compactCount + 1));
-         
+
          checkSize(updateRecordTX.getEncodeSize(), info.compactCount);
 
          writeEncoder(updateRecordTX);
@@ -534,7 +535,7 @@ public class JournalCompactor extends AbstractJournalUpdateTask implements Journ
          JournalRecord deleteRecord = journal.getRecords().remove(id);
          if (deleteRecord == null)
          {
-            log.warn("Can't find record " + id + " during compact replay");
+            JournalCompactor.log.warn("Can't find record " + id + " during compact replay");
          }
          else
          {
