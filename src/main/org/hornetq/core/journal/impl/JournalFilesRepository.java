@@ -208,21 +208,6 @@ public class JournalFilesRepository
 
    public JournalFile pollLastDataFile()
    {
-      /*java.util.Iterator<JournalFile> iter = dataFiles.iterator();
-
-      JournalFile currentFile = null;
-      while (iter.hasNext())
-      {
-         currentFile = iter.next();
-
-         if (!iter.hasNext())
-         {
-            iter.remove();
-         }
-      } 
-      
-      return currentFile; */
-
       return dataFiles.pollLast();
    }
 
