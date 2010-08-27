@@ -39,9 +39,9 @@ import org.hornetq.core.logging.Logger;
 public class FilesRepository
 {
 
-   private static final Logger log = Logger.getLogger(JournalImpl.class);
+   private static final Logger log = Logger.getLogger(FilesRepository.class);
 
-   private static final boolean trace = false;
+   private static final boolean trace = log.isTraceEnabled();
 
    // This method exists just to make debug easier.
    // I could replace log.trace by log.info temporarily while I was debugging

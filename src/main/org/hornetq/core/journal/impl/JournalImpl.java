@@ -2356,10 +2356,6 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
          try
          {
             moveNextFile(false);
-            if (autoReclaim)
-            {
-               checkReclaimStatus();
-            }
             debugWait();
          }
          finally
