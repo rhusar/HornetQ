@@ -58,9 +58,9 @@ import org.hornetq.core.server.management.NotificationListener;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
-import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
+import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUIDGenerator;
@@ -1242,7 +1242,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                      store.sync();
                   }
 
-                  storageManager.storePageTransaction(tx.getID(), pageTransaction);
+                  pageTransaction.store(storageManager, tx);
                }
             }
          }

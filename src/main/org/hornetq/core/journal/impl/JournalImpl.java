@@ -108,7 +108,7 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
    private static final void traceRecord(final String message)
    {
-      System.out.println(message);
+      JournalImpl.log.trace(message);
    }
 
    // The sizes of primitive types
@@ -838,7 +838,11 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
             if (JournalImpl.TRACE_RECORDS)
             {
-               JournalImpl.traceRecord("appendAddRecord::id=" + id + ", usedFile = " + usedFile);
+               JournalImpl.traceRecord("appendAddRecord::id=" + id +
+                                       ", userRecordType=" +
+                                       recordType +
+                                       ", usedFile = " +
+                                       usedFile);
             }
 
             records.put(id, new JournalRecord(usedFile, addRecord.getEncodeSize()));
@@ -919,7 +923,11 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
             if (JournalImpl.TRACE_RECORDS)
             {
-               JournalImpl.traceRecord("appendUpdateRecord::id=" + id + ", usedFile = " + usedFile);
+               JournalImpl.traceRecord("appendUpdateRecord::id=" + id +
+                                       ", userRecordType=" +
+                                       recordType +
+                                       ", usedFile = " +
+                                       usedFile);
             }
 
             // record== null here could only mean there is a compactor, and computing the delete should be done after
@@ -1060,6 +1068,8 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
                JournalImpl.traceRecord("appendAddRecordTransactional:txID=" + txID +
                                        ",id=" +
                                        id +
+                                       ", userRecordType=" +
+                                       recordType +
                                        ", usedFile = " +
                                        usedFile);
             }
@@ -1113,6 +1123,8 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
                JournalImpl.traceRecord("appendUpdateRecordTransactional::txID=" + txID +
                                        ",id=" +
                                        id +
+                                       ", userRecordType=" +
+                                       recordType +
                                        ", usedFile = " +
                                        usedFile);
             }
@@ -2105,6 +2117,8 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
       filesRepository.pushOpenedFile();
 
+      state = JournalImpl.STATE_LOADED;
+
       for (TransactionHolder transaction : loadTransactions.values())
       {
          if (!transaction.prepared || transaction.invalid)
@@ -2112,18 +2126,8 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
             JournalImpl.log.warn("Uncommitted transaction with id " + transaction.transactionID +
                                  " found and discarded");
 
-            JournalTransaction transactionInfo = transactions.get(transaction.transactionID);
-
-            if (transactionInfo == null)
-            {
-               throw new IllegalStateException("Cannot find tx " + transaction.transactionID);
-            }
-
-            // Reverse the refs
-            transactionInfo.forget();
-
-            // Remove the transactionInfo
-            transactions.remove(transaction.transactionID);
+            // I append a rollback record here, because otherwise compacting will be throwing messages because of unknown transactions
+            this.appendRollbackRecord(transaction.transactionID, false);
 
             loadManager.failedTransaction(transaction.transactionID,
                                           transaction.recordInfos,
@@ -2148,8 +2152,6 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
             loadManager.addPreparedTransaction(info);
          }
       }
-
-      state = JournalImpl.STATE_LOADED;
 
       checkReclaimStatus();
 
