@@ -143,7 +143,14 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
+         if (configuration.getStaticConnectors() == null)
+         {
+            return null;
+         }
+         else
+         {
          return configuration.getStaticConnectors().toArray(new String[0]);                 
+         }
       }
       finally
       {

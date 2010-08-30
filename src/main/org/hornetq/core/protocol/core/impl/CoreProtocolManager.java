@@ -68,7 +68,8 @@ public class CoreProtocolManager implements ProtocolManager
                                                                    interceptors,
                                                                    config.isAsyncConnectionExecutionEnabled() ? server.getExecutorFactory()
                                                                                                                       .getExecutor()
-                                                                                                             : null);
+                                                                                                             : null,
+                                                                                                             server.getNodeID());
 
       Channel channel1 = rc.getChannel(1, -1);
 
