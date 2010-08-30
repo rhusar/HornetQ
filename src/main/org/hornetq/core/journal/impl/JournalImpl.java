@@ -2233,7 +2233,7 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
          return;
       }
 
-      if (needsCompact())
+      if (!compactorRunning.get() && needsCompact())
       {
          scheduleCompact();
       }
