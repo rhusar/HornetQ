@@ -193,7 +193,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                }
                catch (Exception e)
                {
-                  e.printStackTrace();
+                  log.warn("did not connect the cluster connection to other nodes", e);
                }
             }
          });
