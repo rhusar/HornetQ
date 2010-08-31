@@ -7,3 +7,5 @@ Detailed list of merges that happened at this branch.
 
 - 24-aug-2010 - clebert        - merge from trunk -r9588:9590
   There was also a manual copy of JournalImpl.java on this merge, since there was a minor change before that needed to be applied
+
+- 30-aug-2010 - clebert        - merge from trunk -r9590:9598

@@ -1087,7 +1087,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, D
                                                final boolean autoCommitSends,
                                                final boolean autoCommitAcks,
                                                final boolean preAcknowledge,
-                                               final int ackBatchSize) throws HornetQException
+                                               final int ackBatchSize_xx) throws HornetQException
    {
       if (closed)
       {
