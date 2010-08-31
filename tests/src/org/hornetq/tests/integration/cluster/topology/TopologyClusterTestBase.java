@@ -246,6 +246,8 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
 
       sf.close();
       
+      locator.close();
+      
       stopServers(0);
    }
 
@@ -319,6 +321,8 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
       checkContains(new int[] {}, nodeIDs, nodes);
 
       sf.close();
+      
+      locator.close();
    }
 
    public void testStopNodes() throws Throwable
@@ -399,9 +403,70 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
       {
 
       }
+      
+      locator.close();
    }
 
-   
+   public void testMultipleClientSessionFactories() throws Throwable
+   {
+      startServers(0, 1, 2, 3, 4);
+      String[] nodeIDs = getNodeIDs(0, 1, 2, 3, 4);
+
+      ServerLocator locator = createHAServerLocator();
+
+      final List<String> nodes = new ArrayList<String>();
+      final CountDownLatch upLatch = new CountDownLatch(5);
+
+      locator.addClusterTopologyListener(new ClusterTopologyListener()
+      {
+         public void nodeUP(String nodeID,
+                            Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                            boolean last,
+                            int distance)
+         {
+            if (!nodes.contains(nodeID))
+            {
+               nodes.add(nodeID);
+               upLatch.countDown();
+            }
+         }
+
+         public void nodeDown(String nodeID)
+         {
+            if (nodes.contains(nodeID))
+            {
+               nodes.remove(nodeID);
+            }
+         }
+      });
+
+      ClientSessionFactory[] sfs = new ClientSessionFactory[] {
+                                                               locator.createSessionFactory(),
+                                                               locator.createSessionFactory(),
+                                                               locator.createSessionFactory(),
+                                                               locator.createSessionFactory(),
+                                                               locator.createSessionFactory() };
+      assertTrue("Was not notified that all servers are UP", upLatch.await(10, SECONDS));
+      checkContains(new int[] { 0, 1, 2, 3, 4 }, nodeIDs, nodes);
+
+      waitForClusterConnections(0, 4);
+      waitForClusterConnections(1, 4);
+      waitForClusterConnections(2, 4);
+      waitForClusterConnections(3, 4);
+      waitForClusterConnections(4, 4);
+
+      stopServers(0, 4, 2, 3, 1);
+      checkContains(new int[] { }, nodeIDs, nodes);
+      
+      for (int i = 0; i < sfs.length; i++)
+      {
+         ClientSessionFactory sf = sfs[i];
+         sf.close();
+      }
+      
+      locator.close();
+   }
+
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
