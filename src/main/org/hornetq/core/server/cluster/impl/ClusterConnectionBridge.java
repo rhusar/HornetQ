@@ -227,4 +227,52 @@ public class ClusterConnectionBridge extends BridgeImpl
       
       return serverLocator.createSessionFactory(connector);      
    }
+   
+   @Override
+   public void connectionFailed(HornetQException me)
+   {
+      if (!session.isClosed())
+      {
+         try
+         {
+            session.cleanUp(false);
+         }
+         catch (Exception e)
+         {
+            log.warn("Unable to clean up the session after a connection failure", e);
+         }
+         serverLocator.notifyNodeDown(targetNodeID);
+         if (serverLocator.getDiscoveryAddress() == null)
+         {
+            executor.execute(new Runnable()
+            {
+               
+               public void run()
+               {
+                  ClientSessionFactory sf = null;
+                  do
+                  {
+                     try
+                     {
+                        sf = serverLocator.createSessionFactory(connector);
+                     }
+                     catch (HornetQException e)
+                     {
+                        if (e.getCode() == HornetQException.NOT_CONNECTED)
+                        {
+                           continue;
+                        }
+                     }
+                     catch (Exception e)
+                     {
+                        break;
+                     }
+                  }
+                  while (sf == null);
+               }
+            });
+         }
+      }
+      super.connectionFailed(me);
+   }
 }

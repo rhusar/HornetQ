@@ -31,6 +31,7 @@ import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.DisconnectMessage;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.spi.core.remoting.BufferHandler;
@@ -307,11 +308,8 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
          channel.flushConfirmations();
       }
 
-      if (nodeID != null)
-      {
-         channel0.send(new ClusterTopologyChangeMessage(nodeID.toString()));
-      }
-      channel0.sendAndFlush(new PacketImpl(PacketImpl.DISCONNECT));
+      Packet disconnect = new DisconnectMessage(nodeID);
+      channel0.sendAndFlush(disconnect);
    }
 
    public long generateChannelID()

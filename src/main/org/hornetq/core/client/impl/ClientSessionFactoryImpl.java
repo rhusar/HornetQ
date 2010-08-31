@@ -43,6 +43,7 @@ import org.hornetq.core.protocol.core.impl.RemotingConnectionImpl;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.DisconnectMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
 import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
@@ -1152,6 +1153,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          if (type == PacketImpl.DISCONNECT)
          {
+            final DisconnectMessage msg = (DisconnectMessage)packet;
             closeExecutor.execute(new Runnable()
             {
                // Must be executed on new thread since cannot block the netty thread for a long time and fail can
@@ -1160,6 +1162,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                {
                   conn.fail(new HornetQException(HornetQException.DISCONNECTED,
                                                  "The connection was disconnected because of server shutdown"));
+                  if (msg.getNodeID() != null)
+                  {
+                     serverLocator.notifyNodeDown(msg.getNodeID().toString());
+                  }
                }
             });
          }
