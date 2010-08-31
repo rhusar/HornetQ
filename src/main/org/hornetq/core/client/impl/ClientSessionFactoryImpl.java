@@ -160,6 +160,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                    final double retryIntervalMultiplier,
                                    final long maxRetryInterval,
                                    final int reconnectAttempts,
+                                   final int initialConnectAttempts,
                                    final boolean failoverOnInitialConnection,
                                    final ExecutorService threadPool,
                                    final ScheduledExecutorService scheduledThreadPool,
@@ -203,7 +204,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       // Get the connection
 
-      getConnectionWithRetry(reconnectAttempts);
+      getConnectionWithRetry(initialConnectAttempts);
 
       if (connection == null && failoverOnInitialConnection)
       {
@@ -221,7 +222,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             transportParams = connectorConfig.getParams();
 
-            getConnectionWithRetry(reconnectAttempts);
+            getConnectionWithRetry(initialConnectAttempts);
          }
       }
 

@@ -163,6 +163,8 @@ public class JournalStorageManager implements StorageManager
    private final String journalDir;
 
    private final String largeMessagesDirectory;
+
+   private boolean journalLoaded = false;
    
    
    // Persisted core configuration
@@ -978,7 +980,7 @@ public class JournalStorageManager implements StorageManager
       {
          messageJournal.runDirectJournalBlast();
       }
-
+      journalLoaded = true;
       return info;
    }
 
@@ -1114,12 +1116,17 @@ public class JournalStorageManager implements StorageManager
          return;
       }
 
-      // Must call close to make sure last id is persisted
-      idGenerator.close();      
+      if (journalLoaded)
+      {
+         // Must call close to make sure last id is persisted
+         idGenerator.close();
+      }
 
       bindingsJournal.stop();
 
       messageJournal.stop();
+
+      journalLoaded = false;
 
       started = false;
    }

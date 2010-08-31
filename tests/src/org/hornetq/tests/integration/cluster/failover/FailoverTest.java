@@ -13,10 +13,7 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -96,18 +93,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -123,7 +108,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session, latch);
+      fail(session);
 
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
 
@@ -171,18 +156,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 10;
@@ -215,7 +188,7 @@ public class FailoverTest extends FailoverTestBase
 
          if (i == 5)
          {
-            fail(session, latch);
+            fail(session);
          }
       }
 
@@ -260,7 +233,7 @@ public class FailoverTest extends FailoverTestBase
 
    /** It doesn't fail, but it restart both servers, live and backup, and the data should be received after the restart,
     *  and the servers should be able to connect without any problems. */
-   public void testRestartServers() throws Exception
+   public void _testRestartServers() throws Exception
    {
       ServerLocator locator = getServerLocator();
 
@@ -392,21 +365,26 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertEquals(0, sf.numConnections());
    }
 
-   /**
-    * @param session
-    * @param latch
-    * @throws InterruptedException
-    */
-   private void fail(final ClientSession session, final CountDownLatch latch) throws Exception
+
+    private void fail(final ClientSession... sessions) throws Exception
    {
+      final CountDownLatch latch = new CountDownLatch(sessions.length);
 
-      //RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
+      class MyListener extends BaseListener
+      {
+         public void connectionFailed(final HornetQException me)
+         {
+            latch.countDown();
+         }
 
-      // Simulate failure on connection
-      //conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
+      }
+      for (ClientSession session : sessions)
+      {
+         session.addFailureListener(new MyListener());
+      }
       server0Service.stop();
-      // Wait to be informed of failure
 
+      // Wait to be informed of failure
       boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
 
       Assert.assertTrue(ok);
@@ -427,19 +405,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -455,7 +420,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session, latch);
+      fail(session);
 
       Assert.assertTrue(session.isRollbackOnly());
 
@@ -506,19 +471,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -534,7 +486,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session, latch);
+      fail(session);
 
       Assert.assertTrue(session.isRollbackOnly());
 
@@ -593,18 +545,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -622,7 +562,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.commit();
 
-      fail(session, latch);
+      fail(session);
 
       // committing again should work since didn't send anything since last commit
 
@@ -680,18 +620,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       // create a consumer and start the session before failover
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
 
@@ -717,7 +645,7 @@ public class FailoverTest extends FailoverTestBase
 
       Assert.assertFalse(session.isRollbackOnly());
 
-      fail(session, latch);
+      fail(session);
 
       session.commit();
 
@@ -775,18 +703,6 @@ public class FailoverTest extends FailoverTestBase
 
       session1.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session1.addFailureListener(new MyListener());
-
       ClientProducer producer = session1.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -823,7 +739,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session2, latch);
+      fail(session2);
 
       Assert.assertTrue(session2.isRollbackOnly());
 
@@ -863,18 +779,6 @@ public class FailoverTest extends FailoverTestBase
       ClientSession session1 = sf.createSession(false, false);
 
       session1.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session1.addFailureListener(new MyListener());
 
       ClientProducer producer = session1.createProducer(FailoverTestBase.ADDRESS);
 
@@ -916,7 +820,7 @@ public class FailoverTest extends FailoverTestBase
 
       consumer.close();
 
-      fail(session2, latch);
+      fail(session2);
 
       Assert.assertFalse(session2.isRollbackOnly());
 
@@ -967,18 +871,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -996,7 +888,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session, latch);
+      fail(session);
 
       try
       {
@@ -1043,18 +935,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1074,7 +954,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.end(xid, XAResource.TMSUCCESS);
 
-      fail(session, latch);
+      fail(session);
 
       try
       {
@@ -1122,18 +1002,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1155,7 +1023,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.prepare(xid);
 
-      fail(session, latch);
+      fail(session);
 
       try
       {
@@ -1202,18 +1070,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1237,7 +1093,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.commit(xid, false);
 
-      fail(session, latch);
+      fail(session);
 
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
 
@@ -1295,18 +1151,6 @@ public class FailoverTest extends FailoverTestBase
 
       session1.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session1.addFailureListener(new MyListener());
-
       ClientProducer producer = session1.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1347,7 +1191,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session2, latch);
+      fail(session2);
 
       try
       {
@@ -1385,18 +1229,6 @@ public class FailoverTest extends FailoverTestBase
       ClientSession session1 = sf.createSession(false, false);
 
       session1.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session1.addFailureListener(new MyListener());
 
       ClientProducer producer = session1.createProducer(FailoverTestBase.ADDRESS);
 
@@ -1440,16 +1272,7 @@ public class FailoverTest extends FailoverTestBase
 
       session2.end(xid, XAResource.TMSUCCESS);
 
-      RemotingConnection conn = ((ClientSessionInternal)session2).getConnection();
-
-      // Simulate failure on connection
-      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
-
-      // Wait to be informed of failure
-
-      boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
-
-      Assert.assertTrue(ok);
+      fail(session2);
 
       try
       {
@@ -1487,18 +1310,6 @@ public class FailoverTest extends FailoverTestBase
       ClientSession session1 = sf.createSession(false, false);
 
       session1.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session1.addFailureListener(new MyListener());
 
       ClientProducer producer = session1.createProducer(FailoverTestBase.ADDRESS);
 
@@ -1544,7 +1355,7 @@ public class FailoverTest extends FailoverTestBase
 
       session2.prepare(xid);
 
-      fail(session2, latch);
+      fail(session2);
 
       try
       {
@@ -1572,38 +1383,22 @@ public class FailoverTest extends FailoverTestBase
    {
       ServerLocator locator = getServerLocator();
 
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      locator.setFailoverOnServerShutdown(true);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
       ClientSession session = sendAndConsume(sf, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      RemotingConnection conn = ((ClientSessionInternal)session).getConnection();
-
-      conn.addFailureListener(new MyListener());
-
-      // Simulate failure on connection
-      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
-
-      // Wait to be informed of failure
-
-      boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
-
-      Assert.assertTrue(ok);
+      fail(session);
 
       session.close();
 
+      waitForBackup(5);
+
       sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
-      session = sendAndConsume(sf, false);
+      session = sendAndConsume(sf, true);
 
       session.close();
 
@@ -1630,18 +1425,6 @@ public class FailoverTest extends FailoverTestBase
       final int numConsumersPerSession = 5;
 
       Map<ClientSession, List<ClientConsumer>> sessionConsumerMap = new HashMap<ClientSession, List<ClientConsumer>>();
-
-      class MyListener extends BaseListener
-      {
-         CountDownLatch latch = new CountDownLatch(1);
-
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      List<MyListener> listeners = new ArrayList<MyListener>();
 
       for (int i = 0; i < numSessions; i++)
       {
@@ -1680,18 +1463,11 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      RemotingConnection conn = ((ClientSessionInternal)sendSession).getConnection();
+      Set<ClientSession> sessionSet = sessionConsumerMap.keySet();
+      ClientSession[] sessions = new ClientSession[sessionSet.size()];
+      sessionSet.toArray(sessions);
+      fail(sessions);
 
-      conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
-
-      // Wait to be informed of failure
-
-      for (MyListener listener : listeners)
-      {
-         boolean ok = listener.latch.await(1000, TimeUnit.MILLISECONDS);
-
-         Assert.assertTrue(ok);
-      }
 
       for (ClientSession session : sessionConsumerMap.keySet())
       {
@@ -1748,18 +1524,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1790,7 +1554,7 @@ public class FailoverTest extends FailoverTestBase
          Assert.assertEquals(i, message.getIntProperty("counter").intValue());
       }
 
-      fail(session, latch);
+      fail(session);
 
       for (int i = 0; i < numMessages; i++)
       {
@@ -1834,18 +1598,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
       final int numMessages = 100;
@@ -1876,7 +1628,7 @@ public class FailoverTest extends FailoverTestBase
          Assert.assertEquals(i, message.getIntProperty("counter").intValue());
       }
 
-      fail(session, latch);
+      fail(session);
 
       // Should get the same ones after failover since we didn't ack
 
@@ -1914,23 +1666,13 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
+      locator.setFailoverOnServerShutdown(true);
+      locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
       ClientSession session = sf.createSession(true, true, 0);
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
@@ -1964,7 +1706,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session, latch);
+      fail(session);
 
       // Send some more
 
@@ -2045,17 +1787,6 @@ public class FailoverTest extends FailoverTestBase
          session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, durable);
       }
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
@@ -2065,7 +1796,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.start();
 
-      fail(session, latch);
+      fail(session);
 
       for (int i = 0; i < numMessages; i++)
       {
@@ -2103,34 +1834,22 @@ public class FailoverTest extends FailoverTestBase
    public void testForceBlockingReturn() throws Exception
    {
       ServerLocator locator = getServerLocator();
-
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setFailoverOnServerShutdown(true);
+      locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
       // Add an interceptor to delay the send method so we can get time to cause failover before it returns
 
       server0Service.getRemotingService().addInterceptor(new DelayInterceptor());
 
-      sf.getServerLocator().setBlockOnNonDurableSend(true);
-      sf.getServerLocator().setBlockOnDurableSend(true);
-      sf.getServerLocator().setBlockOnAcknowledge(true);
-      locator.setFailoverOnServerShutdown(true);
-      locator.setReconnectAttempts(-1);
+
 
       final ClientSession session = sf.createSession(true, true, 0);
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
 
       final ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
@@ -2162,7 +1881,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session, latch);
+      fail(session);
 
       sender.join();
 
@@ -2194,18 +1913,6 @@ public class FailoverTest extends FailoverTestBase
       final ClientSession session = sf.createSession(false, false);
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
 
       final int numMessages = 100;
 
@@ -2281,7 +1988,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session, latch);
+      fail(session);
 
       committer.join();
 
@@ -2360,18 +2067,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
-
       final int numMessages = 100;
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
@@ -2430,7 +2125,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session, latch);
+      fail(session);
 
       committer.join();
 

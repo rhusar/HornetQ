@@ -219,6 +219,32 @@ public abstract class FailoverTestBase extends ServiceTestBase
         return sf;
      }
 
+   protected void waitForBackup(long seconds)
+   {
+      long time = System.currentTimeMillis();
+      long toWait = seconds * 1000;
+      while(!server1Service.isInitialised())
+      {
+         try
+         {
+            Thread.sleep(100);
+         }
+         catch (InterruptedException e)
+         {
+            //ignore
+         }
+         if(server1Service.isInitialised())
+         {
+            break;
+         }
+         else if(System.currentTimeMillis() > (time + toWait))
+         {
+            fail("backup server never started");
+         }
+      }
+      System.out.println("FailoverTestBase.waitForBackup");
+   }
+
    protected TransportConfiguration getInVMConnectorTransportConfiguration(final boolean live)
    {
       if (live)
@@ -293,7 +319,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected ServerLocatorInternal getServerLocator() throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true));
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
       return (ServerLocatorInternal) locator;
    }
 

@@ -599,7 +599,8 @@ public class HornetQServerImpl implements HornetQServer
             configuration.setBackup(false);
             
             clusterManager.activate();
-
+            //todo fix this problem with the journal
+            Thread.sleep(200);
             initialisePart2();
 
             log.info("Back Up Server is now live");

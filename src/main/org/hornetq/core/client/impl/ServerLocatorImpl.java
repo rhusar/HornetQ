@@ -145,6 +145,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private int reconnectAttempts;
 
+   private int initialConnectAttempts;
+
    private boolean failoverOnInitialConnection;
 
    private int initialMessagePacketSize;
@@ -370,6 +372,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       reconnectAttempts = HornetQClient.DEFAULT_RECONNECT_ATTEMPTS;
 
+      initialConnectAttempts = HornetQClient.INITIAL_CONNECT_ATTEMPTS;
+
       failoverOnInitialConnection = HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION;
 
       failoverOnServerShutdown = HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
@@ -498,6 +502,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             retryIntervalMultiplier,
             maxRetryInterval,
             reconnectAttempts,
+            initialConnectAttempts,
             failoverOnInitialConnection,
             threadPool,
             scheduledThreadPool,
@@ -563,6 +568,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                      retryIntervalMultiplier,
                      maxRetryInterval,
                      reconnectAttempts,
+                     initialConnectAttempts,
                      failoverOnInitialConnection,
                      threadPool,
                      scheduledThreadPool,
@@ -898,6 +904,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       checkWrite();
       this.reconnectAttempts = reconnectAttempts;
+   }
+
+   public void setInitialConnectAttempts(int initialConnectAttempts)
+   {
+      checkWrite();
+      this.initialConnectAttempts = initialConnectAttempts;
    }
 
    public synchronized boolean isFailoverOnInitialConnection()
