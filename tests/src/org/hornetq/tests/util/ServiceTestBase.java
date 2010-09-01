@@ -68,6 +68,50 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    protected static final String NETTY_CONNECTOR_FACTORY = NettyConnectorFactory.class.getCanonicalName();
 
+   protected static Map<String, Object> generateParams(final int node, final boolean netty)
+   {
+      Map<String, Object> params = new HashMap<String, Object>();
+   
+      if (netty)
+      {
+         params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
+                    org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + node);
+      }
+      else
+      {
+         params.put(org.hornetq.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, node);
+      }
+   
+      return params;
+   }
+
+   protected static TransportConfiguration createTransportConfiguration(boolean netty, boolean acceptor, Map<String, Object> params)
+   {
+      String className;
+      if (netty)
+      {
+         if (acceptor)
+         {
+            className = NettyAcceptorFactory.class.getName();
+         }
+         else
+         {
+            className = NettyConnectorFactory.class.getName();
+         }
+      } else
+      {
+         if (acceptor)
+         {
+            className = InVMAcceptorFactory.class.getName();
+         }
+         else
+         {
+            className = InVMConnectorFactory.class.getName();
+         }
+      }
+      return new TransportConfiguration(className, params);
+   }
+
    // Static --------------------------------------------------------
    private final Logger log = Logger.getLogger(this.getClass());
 

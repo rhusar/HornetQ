@@ -41,10 +41,6 @@ import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.postoffice.impl.LocalQueueBinding;
-import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
-import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
-import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
-import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
@@ -1387,51 +1383,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       servers[node] = server;
    }
-
-   protected static Map<String, Object> generateParams(final int node, final boolean netty)
-   {
-      Map<String, Object> params = new HashMap<String, Object>();
-
-      if (netty)
-      {
-         params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
-                    org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + node);
-      }
-      else
-      {
-         params.put(org.hornetq.core.remoting.impl.invm.TransportConstants.SERVER_ID_PROP_NAME, node);
-      }
-
-      return params;
-   }
-   
-   protected static TransportConfiguration createTransportConfiguration(boolean netty, boolean acceptor, Map<String, Object> params)
-   {
-      String className;
-      if (netty)
-      {
-         if (acceptor)
-         {
-            className = NettyAcceptorFactory.class.getName();
-         }
-         else
-         {
-            className = NettyConnectorFactory.class.getName();
-         }
-      } else
-      {
-         if (acceptor)
-         {
-            className = InVMAcceptorFactory.class.getName();
-         }
-         else
-         {
-            className = InVMConnectorFactory.class.getName();
-         }
-      }
-      return new TransportConfiguration(className, params);
-   }
-
 
    protected void clearServer(final int... nodes)
    {
