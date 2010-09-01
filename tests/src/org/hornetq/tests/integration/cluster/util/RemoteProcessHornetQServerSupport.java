@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover.remote;
+package org.hornetq.tests.integration.cluster.util;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -22,13 +22,13 @@ import org.hornetq.core.server.HornetQServers;
 import org.hornetq.tests.util.SpawnedVMSupport;
 
 /**
- * A RemoteHornetQServer
+ * A RemoteProcessHornetQServerSupport
  *
  * @author jmesnil
  *
  *
  */
-public class RemoteHornetQServer
+public class RemoteProcessHornetQServerSupport
 {
 
    // Constants -----------------------------------------------------
@@ -44,7 +44,7 @@ public class RemoteHornetQServer
          String serverClass = args[0];
          System.out.println("Instantiate " + serverClass);
          RemoteServerConfiguration spawnedServer = (RemoteServerConfiguration)Class.forName(serverClass).newInstance();
-         
+         System.out.println(spawnedServer);
          HornetQServer server = HornetQServers.newHornetQServer(spawnedServer.getConfiguration());
          server.start();
 
@@ -93,7 +93,7 @@ public class RemoteHornetQServer
    public static Process start(String serverClassName) throws Exception
    {
       String[] vmArgs = new String[] { "-Dorg.hornetq.logger-delegate-factory-class-name=org.hornetq.jms.SysoutLoggerDelegateFactory" };
-      Process serverProcess = SpawnedVMSupport.spawnVM(RemoteHornetQServer.class.getName(), vmArgs, false, serverClassName);
+      Process serverProcess = SpawnedVMSupport.spawnVM(RemoteProcessHornetQServerSupport.class.getName(), vmArgs, false, serverClassName);
       InputStreamReader isr = new InputStreamReader(serverProcess.getInputStream());
 
       final BufferedReader br = new BufferedReader(isr);

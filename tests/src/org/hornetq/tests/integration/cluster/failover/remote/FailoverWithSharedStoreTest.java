@@ -16,6 +16,7 @@ package org.hornetq.tests.integration.cluster.failover.remote;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientConsumer;
 import org.hornetq.api.core.client.ClientMessage;
@@ -30,6 +31,9 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.tests.integration.cluster.distribution.ClusterTestBase;
+import org.hornetq.tests.integration.cluster.util.RemoteProcessHornetQServer;
+import org.hornetq.tests.integration.cluster.util.RemoteServerConfiguration;
+import org.hornetq.tests.integration.cluster.util.TestableServer;
 
 /**
  * A ServerTest
@@ -51,7 +55,7 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
 
    // Public --------------------------------------------------------
 
-   static class SharedLiveServerConfiguration extends RemoteServerConfiguration
+   public static class SharedLiveServerConfiguration extends RemoteServerConfiguration
    {
 
       @Override
@@ -79,7 +83,7 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
 
    }
 
-   static class SharedBackupServerConfiguration extends RemoteServerConfiguration
+   public static class SharedBackupServerConfiguration extends RemoteServerConfiguration
    {
 
       @Override
@@ -113,15 +117,26 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
 
    }
 
+   protected TestableServer createLiveServer() {
+      return new RemoteProcessHornetQServer(SharedLiveServerConfiguration.class.getName());
+   }
+   
+   protected TestableServer createBackupServer() {
+      return new RemoteProcessHornetQServer(SharedBackupServerConfiguration.class.getName());
+   }
+   
    public void testCrashLiveServer() throws Exception
    {
-      Process liveServer = null;
-      Process backupServer = null;
+      TestableServer liveServer = null;
+      TestableServer backupServer = null;
       try
       {
-         liveServer = RemoteHornetQServer.start(SharedLiveServerConfiguration.class.getName());
-         backupServer = RemoteHornetQServer.start(SharedBackupServerConfiguration.class.getName());
-
+         liveServer = createLiveServer();
+         backupServer = createBackupServer();
+         
+         liveServer.start();
+         backupServer.start();
+         
          ServerLocator locator = HornetQClient.createServerLocatorWithHA(createTransportConfiguration(true,
                                                                                                       false,
                                                                                                       generateParams(0,
@@ -138,11 +153,10 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
          prodSession.commit();
          prodSession.close();
 
-         RemoteHornetQServer.crash(liveServer);
-         assertTrue(liveServer.exitValue() == 1);
+         liveServer.crash();
          liveServer = null;
          Thread.sleep(5000);
-         
+
          sf = locator.createSessionFactory();
          ClientSession consSession = sf.createSession();
          consSession.start();
@@ -161,23 +175,30 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
       {
          if (liveServer != null)
          {
-            RemoteHornetQServer.stop(liveServer);
-
+            liveServer.stop();
          }
          if (backupServer != null)
          {
-            RemoteHornetQServer.stop(backupServer);
-
+            backupServer.stop();
          }
       }
 
    }
 
-   public void _testNoConnection() throws Exception
+   public void testNoConnection() throws Exception
    {
       ServerLocator locator = HornetQClient.createServerLocatorWithHA(new TransportConfiguration(NettyConnectorFactory.class.getName()));
-      locator.createSessionFactory();
+      try
+      {
+         locator.createSessionFactory();
+         fail();
+      }
+      catch (HornetQException e)
+      {
+         assertEquals(HornetQException.NOT_CONNECTED, e.getCode());
+      }
    }
+
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

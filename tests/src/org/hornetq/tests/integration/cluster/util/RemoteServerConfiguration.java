@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.cluster.failover.remote;
+package org.hornetq.tests.integration.cluster.util;
 
 import org.hornetq.core.config.Configuration;
 
