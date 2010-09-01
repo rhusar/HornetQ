@@ -62,7 +62,7 @@ public class RemoteHornetQServer
          {
             if ("STOP".equals(line.trim()))
             {
-               //server.stop();
+               server.stop();
                System.out.println("Server stopped");
                System.exit(0);
             }
