@@ -220,7 +220,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             
             connectorFactory = instantiateConnectorFactory(connectorConfig.getFactoryClassName());
 
-            transportParams = connectorConfig.getParams();
+            transportParams = this.connectorConfig.getParams();
 
             getConnectionWithRetry(initialConnectAttempts);
          }
