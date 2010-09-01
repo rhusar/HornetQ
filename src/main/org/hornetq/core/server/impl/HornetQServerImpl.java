@@ -386,7 +386,7 @@ public class HornetQServerImpl implements HornetQServer
 
             liveLock.lock();
 
-            log.info("Obtained live lock");
+            log.info("Live Server Obtained live lock");
 
             // We now load the node id file, creating it, if it doesn't exist yet
             File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
@@ -448,12 +448,13 @@ public class HornetQServerImpl implements HornetQServer
          {
             // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
             // started before the live
-
+            log.info("Live Server about to delete Live Lock file");
             File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
-
+            log.info("Live Server deleting Live Lock file");
             liveFile.delete();
 
             liveLock.unlock();
+            log.info("Live server unlocking live lock");
 
          }
       }
@@ -535,16 +536,16 @@ public class HornetQServerImpl implements HornetQServer
                LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
 
                nodeIDLockFile.lock();
-
+               log.info("Backup server waiting for node id file creation");
                if (!nodeIDFile.exists())
                {
                   nodeIDLockFile.unlock();
 
                   Thread.sleep(2000);
-
+                  log.info("Backup server still waiting for node id file creation");
                   continue;
                }
-
+               log.info("Backup server waited for node id file creation");
                nodeIDLockFile.unlock();
 
                break;
@@ -563,13 +564,14 @@ public class HornetQServerImpl implements HornetQServer
             while (true)
             {
                File liveLockFile = new File(configuration.getJournalDirectory(), "live.lock");
-
+               log.info("Backup server waiting for live lock file creation");
                while (!liveLockFile.exists())
                {
                   log.info("Waiting for server live lock file. Live server is not started");
 
                   Thread.sleep(2000);
                }
+               log.info("Backup server waited for live lock file creation");
 
                liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
 
@@ -588,7 +590,7 @@ public class HornetQServerImpl implements HornetQServer
               //    continue;
              //  }
 
-               log.info("Obtained live lock");
+               log.info("Backup server obtained live lock");
                
                // Announce presence of live node to cluster
                
@@ -599,8 +601,7 @@ public class HornetQServerImpl implements HornetQServer
             configuration.setBackup(false);
             
             clusterManager.activate();
-            //todo fix this problem with the journal
-            Thread.sleep(200);
+            
             initialisePart2();
 
             log.info("Back Up Server is now live");

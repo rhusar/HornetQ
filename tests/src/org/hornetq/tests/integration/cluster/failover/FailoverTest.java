@@ -233,7 +233,7 @@ public class FailoverTest extends FailoverTestBase
 
    /** It doesn't fail, but it restart both servers, live and backup, and the data should be received after the restart,
     *  and the servers should be able to connect without any problems. */
-   public void _testRestartServers() throws Exception
+   public void testRestartServers() throws Exception
    {
       ServerLocator locator = getServerLocator();
 
