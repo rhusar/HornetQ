@@ -1388,7 +1388,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       servers[node] = server;
    }
 
-   protected Map<String, Object> generateParams(final int node, final boolean netty)
+   protected static Map<String, Object> generateParams(final int node, final boolean netty)
    {
       Map<String, Object> params = new HashMap<String, Object>();
 
