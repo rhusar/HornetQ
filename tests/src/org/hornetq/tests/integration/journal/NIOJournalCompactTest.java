@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.journal.EncodingSupport;
 import org.hornetq.core.journal.PreparedTransactionInfo;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.SequentialFile;
@@ -230,6 +231,119 @@ public class NIOJournalCompactTest extends JournalImplTestBase
 
       assertEquals(1, records.size());
 
+   }
+
+   public void testCompactPrepareRestart() throws Exception
+   {
+      setup(2, 60 * 1024, false);
+
+      createJournal();
+      
+      startJournal();
+      
+      load();
+
+      startCompact();
+      
+      addTx(1, 2);
+      
+      prepare(1, new SimpleEncoding(10, (byte)0));
+      
+      finishCompact();
+      
+      stopJournal();
+      
+      createJournal();
+      
+      startJournal();
+      
+      loadAndCheck();
+      
+      startCompact();
+      
+      commit(1);
+      
+      finishCompact();
+      
+      journal.compact();
+      
+      stopJournal();
+      
+      createJournal();
+
+      startJournal();
+      
+      loadAndCheck();
+   }
+
+   public void testCompactPrepareRestart2() throws Exception
+   {
+      setup(2, 60 * 1024, false);
+
+      createJournal();
+      
+      startJournal();
+      
+      load();
+
+      addTx(1, 2);
+      
+      prepare(1, new SimpleEncoding(10, (byte)0));
+      
+      stopJournal();
+      
+      createJournal();
+      
+      startJournal();
+      
+      loadAndCheck();
+      
+      startCompact();
+      
+      commit(1);
+      
+      finishCompact();
+      
+      journal.compact();
+      
+      stopJournal();
+      
+      createJournal();
+
+      startJournal();
+      
+      loadAndCheck();
+   }
+
+   public void testCompactPrepareRestart3() throws Exception
+   {
+      setup(2, 60 * 1024, false);
+
+      createJournal();
+      
+      startJournal();
+      
+      load();
+
+      addTx(1, 2, 3);
+      
+      prepare(1, new SimpleEncoding(10, (byte)0));
+      
+      startCompact();
+      
+      commit(1);
+      
+      finishCompact();
+      
+      journal.compact();
+      
+      stopJournal();
+      
+      createJournal();
+
+      startJournal();
+      
+      loadAndCheck();
    }
 
    public void testOnRollback() throws Exception
