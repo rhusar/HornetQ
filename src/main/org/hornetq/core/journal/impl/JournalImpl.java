@@ -1914,7 +1914,7 @@ public class JournalImpl implements TestableJournal, JournalRecordProvider
 
                if (tnp == null)
                {
-                  tnp = new JournalTransaction(info.id, JournalImpl.this);
+                  tnp = new JournalTransaction(transactionID, JournalImpl.this);
 
                   transactions.put(transactionID, tnp);
                }
