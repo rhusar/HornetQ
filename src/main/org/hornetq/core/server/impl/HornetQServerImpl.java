@@ -578,7 +578,7 @@ public class HornetQServerImpl implements HornetQServer
 
               clusterManager.start();
 
-               log.info("Live server is up - waiting for failover");
+               log.info("Backup server is up - waiting for failover");
 
                liveLock.lock();
                //todo check if we need this or not
@@ -604,7 +604,7 @@ public class HornetQServerImpl implements HornetQServer
             
             initialisePart2();
 
-            log.info("Back Up Server is now live");
+            log.info("Backup Server is now live");
 
             backupLock.unlock();
          }
