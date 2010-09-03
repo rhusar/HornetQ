@@ -153,7 +153,7 @@ public class Receiver extends ClientAbstract
       sem.release(pendingMsgs2);
       try
       {
-         max.acquire(pendingMsgs2);
+         max.tryAcquire(pendingMsgs2, 5, TimeUnit.SECONDS);
       }
       catch (InterruptedException e)
       {
