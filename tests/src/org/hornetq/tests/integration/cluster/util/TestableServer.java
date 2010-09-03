@@ -13,6 +13,8 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
+import org.hornetq.api.core.client.ClientSession;
+
 /**
  * A TestServer
  *
@@ -26,5 +28,7 @@ public interface TestableServer
    
    public void stop() throws Exception;
    
-   public void crash() throws Exception;
+   public void crash(ClientSession... sessions) throws Exception;
+
+   public boolean isInitialised();
 }

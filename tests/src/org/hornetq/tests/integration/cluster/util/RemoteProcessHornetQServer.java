@@ -13,6 +13,7 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
+import org.hornetq.api.core.client.ClientSession;
 
 /**
  * A RemoteProcessHornetQServer
@@ -31,20 +32,36 @@ public class RemoteProcessHornetQServer implements TestableServer
    {
       this.configurationClassName = configurationClassName;
    }
+   
+   public boolean isInitialised()
+   {
+      return (serverProcess != null);
+   }
 
    public void start() throws Exception
    {
       serverProcess = RemoteProcessHornetQServerSupport.start(configurationClassName);
+      Thread.sleep(2000);
    }
 
    public void stop() throws Exception
    {
-      RemoteProcessHornetQServerSupport.stop(serverProcess);
+      if (serverProcess != null)
+      {
+         RemoteProcessHornetQServerSupport.stop(serverProcess);
+         serverProcess = null;
+         Thread.sleep(2000);
+      }
    }
 
-   public void crash() throws Exception
+   public void crash(ClientSession... sessions) throws Exception
    {
-      RemoteProcessHornetQServerSupport.crash(serverProcess);
+      if (serverProcess != null)
+      {
+         RemoteProcessHornetQServerSupport.crash(serverProcess);
+         serverProcess = null;
+         Thread.sleep(2000);
+      }
    }
 
    // Constants -----------------------------------------------------

@@ -13,6 +13,14 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import junit.framework.Assert;
+
+import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.server.HornetQServer;
 
 /**
@@ -32,6 +40,11 @@ public class SameProcessHornetQServer implements TestableServer
       this.server = server;
    }
 
+   public boolean isInitialised()
+   {
+      return server.isInitialised();
+   }
+   
    public void start() throws Exception
    {
       server.start();
@@ -40,11 +53,34 @@ public class SameProcessHornetQServer implements TestableServer
    public void stop() throws Exception
    {
       server.stop();
+      Thread.sleep(2000);
    }
 
-   public void crash()
+   public void crash(ClientSession... sessions) throws Exception
    {
-      // FIXME...
+      final CountDownLatch latch = new CountDownLatch(sessions.length);
+
+      class MyListener implements SessionFailureListener
+      {
+         public void connectionFailed(final HornetQException me)
+         {
+            latch.countDown();
+         }
+
+         public void beforeReconnect(HornetQException exception)
+         {
+         }
+      }
+      for (ClientSession session : sessions)
+      {
+         session.addFailureListener(new MyListener());
+      }
+      server.stop();
+
+      // Wait to be informed of failure
+      boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
+
+      Assert.assertTrue(ok);
    }
 
    // Constants -----------------------------------------------------
