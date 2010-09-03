@@ -384,7 +384,7 @@ public abstract class ServiceTestBase extends UnitTestCase
       return configuration;
    }
 
-   protected Configuration createDefaultConfig(final Map<String, Object> params, final String... acceptors)
+   protected static Configuration createDefaultConfig(final Map<String, Object> params, final String... acceptors)
    {
       Configuration configuration = new ConfigurationImpl();
       configuration.setSecurityEnabled(false);

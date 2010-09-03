@@ -95,7 +95,7 @@ public class UnitTestCase extends TestCase
 
    // Attributes ----------------------------------------------------
 
-   private final String testDir = System.getProperty("java.io.tmpdir", "/tmp") + "/hornetq-unit-test";
+   private static final String testDir = System.getProperty("java.io.tmpdir", "/tmp") + "/hornetq-unit-test";
 
    // Static --------------------------------------------------------
 
@@ -433,22 +433,24 @@ public class UnitTestCase extends TestCase
       recreateDirectory(getLargeMessagesDir(testDir));
       recreateDirectory(getClientLargeMessagesDir(testDir));
       recreateDirectory(getTemporaryDir(testDir));
+      
+      System.out.println("deleted " + testDir);
    }
 
    /**
     * @return the journalDir
     */
-   protected String getJournalDir()
+   protected static String getJournalDir()
    {
       return getJournalDir(testDir);
    }
 
-   protected String getJournalDir(final String testDir)
+   protected static String getJournalDir(final String testDir)
    {
       return testDir + "/journal";
    }
 
-   protected String getJournalDir(final int index, final boolean backup)
+   protected static String getJournalDir(final int index, final boolean backup)
    {
       String dir = getJournalDir(testDir) + index + "-" + (backup ? "B" : "L");
 
@@ -458,7 +460,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the bindingsDir
     */
-   protected String getBindingsDir()
+   protected static String getBindingsDir()
    {
       return getBindingsDir(testDir);
    }
@@ -466,7 +468,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the bindingsDir
     */
-   protected String getBindingsDir(final String testDir)
+   protected static String getBindingsDir(final String testDir)
    {
       return testDir + "/bindings";
    }
@@ -482,7 +484,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the pageDir
     */
-   protected String getPageDir()
+   protected static String getPageDir()
    {
       return getPageDir(testDir);
    }
@@ -490,7 +492,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the pageDir
     */
-   protected String getPageDir(final String testDir)
+   protected static String getPageDir(final String testDir)
    {
       return testDir + "/page";
    }
@@ -503,7 +505,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the largeMessagesDir
     */
-   protected String getLargeMessagesDir()
+   protected static String getLargeMessagesDir()
    {
       return getLargeMessagesDir(testDir);
    }
@@ -511,12 +513,12 @@ public class UnitTestCase extends TestCase
    /**
     * @return the largeMessagesDir
     */
-   protected String getLargeMessagesDir(final String testDir)
+   protected static String getLargeMessagesDir(final String testDir)
    {
       return testDir + "/large-msg";
    }
 
-   protected String getLargeMessagesDir(final int index, final boolean backup)
+   protected static String getLargeMessagesDir(final int index, final boolean backup)
    {
       return getLargeMessagesDir(testDir) + index + "-" + (backup ? "B" : "L");
    }
