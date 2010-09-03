@@ -38,6 +38,8 @@ public class Receiver extends ClientAbstract
    
    private final Semaphore sem = new Semaphore(0);
    
+   private final Semaphore max = new Semaphore(10000);
+   
    private final String queueJNDI;
    
    protected volatile long msgs = 0;
@@ -75,6 +77,7 @@ public class Receiver extends ClientAbstract
                {
                   break;
                }
+               max.release();
                Message msg = cons.receive(5000);
                if (msg == null)
                {
@@ -148,6 +151,14 @@ public class Receiver extends ClientAbstract
    public void messageProduced(int pendingMsgs2)
    {
       sem.release(pendingMsgs2);
+      try
+      {
+         max.acquire(pendingMsgs2);
+      }
+      catch (InterruptedException e)
+      {
+         e.printStackTrace();
+      }
    }
 
    // Package protected ---------------------------------------------
