@@ -13,6 +13,9 @@
 
 package org.hornetq.jms.example;
 
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
@@ -32,6 +35,8 @@ public class Receiver extends ClientAbstract
    // Attributes ----------------------------------------------------
    
    private Queue queue;
+   
+   private final Semaphore sem = new Semaphore(0);
    
    private final String queueJNDI;
    
@@ -66,6 +71,10 @@ public class Receiver extends ClientAbstract
             
             for (int i = 0 ; i < 1000; i++)
             {
+               if (!sem.tryAcquire(1, 5, TimeUnit.SECONDS))
+               {
+                  break;
+               }
                Message msg = cons.receive(5000);
                if (msg == null)
                {
@@ -131,6 +140,14 @@ public class Receiver extends ClientAbstract
    public String toString()
    {
       return "Receiver::" + this.queueJNDI + ", msgs=" + msgs + ", pending=" + pendingMsgs;
+   }
+
+   /**
+    * @param pendingMsgs2
+    */
+   public void messageProduced(int pendingMsgs2)
+   {
+      sem.release(pendingMsgs2);
    }
 
    // Package protected ---------------------------------------------

@@ -37,7 +37,9 @@ public class Sender extends ClientAbstract
    protected Queue queue;
    
    protected long msgs = TXRestartSoak.MIN_MESSAGES_ON_QUEUE;
-   protected long pendingMsgs = 0;
+   protected int pendingMsgs = 0;
+   
+   protected final Receiver[] receivers;
    
    
    // Static --------------------------------------------------------
@@ -46,8 +48,9 @@ public class Sender extends ClientAbstract
 
    // Public --------------------------------------------------------
    
-   public Sender()
+   public Sender(final Receiver[] receivers)
    {
+      this.receivers = receivers;
    }
 
    @Override
@@ -90,6 +93,11 @@ public class Sender extends ClientAbstract
    protected void onCommit()
    {
       this.msgs += pendingMsgs;
+      for (Receiver rec : receivers)
+      {
+         rec.messageProduced(pendingMsgs);
+      }
+      
       pendingMsgs = 0;
       System.out.println("commit on sender msgs = " + msgs );
    }

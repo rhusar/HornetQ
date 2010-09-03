@@ -104,13 +104,13 @@ public class TXRestartSoak extends HornetQExample
          
          session.commit();
          
-         Sender send = new Sender();
+         Receiver rec1 = new Receiver("/queue/diverted1");
+         Receiver rec2 = new Receiver("/queue/diverted2");
+         
+         Sender send = new Sender(new Receiver[]{rec1, rec2});
          
          send.start();
-         
-         Receiver rec1 = new Receiver("/queue/diverted1");
          rec1.start();
-         Receiver rec2 = new Receiver("/queue/diverted2");
          rec2.start();
          
          
