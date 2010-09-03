@@ -23,13 +23,7 @@ import java.util.Set;
 
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.core.config.BridgeConfiguration;
-import org.hornetq.core.config.BroadcastGroupConfiguration;
-import org.hornetq.core.config.ClusterConnectionConfiguration;
-import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.DiscoveryGroupConfiguration;
-import org.hornetq.core.config.DivertConfiguration;
-import org.hornetq.core.config.CoreQueueConfiguration;
+import org.hornetq.core.config.*;
 import org.hornetq.core.logging.impl.JULLogDelegateFactory;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.JournalType;
@@ -236,6 +230,8 @@ public class ConfigurationImpl implements Configuration
    protected List<CoreQueueConfiguration> queueConfigurations = new ArrayList<CoreQueueConfiguration>();
 
    protected List<BroadcastGroupConfiguration> broadcastGroupConfigurations = new ArrayList<BroadcastGroupConfiguration>();
+
+   protected BackupConnectorConfiguration backupConnectorConfiguration;
 
    protected Map<String, DiscoveryGroupConfiguration> discoveryGroupConfigurations = new LinkedHashMap<String, DiscoveryGroupConfiguration>();
 
@@ -470,6 +466,16 @@ public class ConfigurationImpl implements Configuration
    public Map<String, TransportConfiguration> getConnectorConfigurations()
    {
       return connectorConfigs;
+   }
+
+   public void setBackupConnectorConfiguration(BackupConnectorConfiguration backupConnectorConfiguration)
+   {
+      this.backupConnectorConfiguration = backupConnectorConfiguration;
+   }
+
+   public BackupConnectorConfiguration getBackupConnectorConfiguration()
+   {
+      return backupConnectorConfiguration;
    }
 
    public void setConnectorConfigurations(final Map<String, TransportConfiguration> infos)

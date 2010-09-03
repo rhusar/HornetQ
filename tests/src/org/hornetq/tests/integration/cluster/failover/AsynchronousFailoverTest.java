@@ -168,10 +168,12 @@ public class AsynchronousFailoverTest extends FailoverTestBase
          {
             AsynchronousFailoverTest.log.info("Iteration " + i);
             ServerLocator locator = getServerLocator();
-            sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
+            locator.setBlockOnNonDurableSend(true);
+            locator.setBlockOnDurableSend(true);
+            locator.setFailoverOnServerShutdown(true);
+            locator.setReconnectAttempts(-1);
+            sf = (ClientSessionFactoryInternal) createSessionFactoryAndWaitForTopology(locator, 2);
 
-            sf.getServerLocator().setBlockOnNonDurableSend(true);
-            sf.getServerLocator().setBlockOnDurableSend(true);
 
             ClientSession createSession = sf.createSession(true, true);
 
@@ -198,15 +200,15 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             // Simulate failure on connection
             synchronized (lockFail)
             {
-               conn.fail(new HornetQException(HornetQException.NOT_CONNECTED));
+               fail((ClientSession) createSession);
             }
 
-            if (listener != null)
+            /*if (listener != null)
             {
                boolean ok = listener.latch.await(10000, TimeUnit.MILLISECONDS);
 
                Assert.assertTrue(ok);
-            }
+            }*/
 
             runnable.setFailed();
 
@@ -280,6 +282,10 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                catch (HornetQException e)
                {
                   AsynchronousFailoverTest.log.info("exception when sending message with counter " + i);
+                  if(e.getCode() != HornetQException.UNBLOCKED)
+                  {
+                     e.printStackTrace();
+                  }
                   Assert.assertEquals(e.getCode(), HornetQException.UNBLOCKED);
 
                   retry = true;

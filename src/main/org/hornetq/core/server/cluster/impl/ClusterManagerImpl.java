@@ -29,19 +29,19 @@ import java.util.concurrent.ScheduledFuture;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.client.impl.TopologyMember;
-import org.hornetq.core.config.BridgeConfiguration;
-import org.hornetq.core.config.BroadcastGroupConfiguration;
-import org.hornetq.core.config.ClusterConnectionConfiguration;
-import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.DiscoveryGroupConfiguration;
+import org.hornetq.core.config.*;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.PostOffice;
+import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.cluster.Bridge;
@@ -103,6 +103,7 @@ public class ClusterManagerImpl implements ClusterManager
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
    private Topology topology = new Topology();
+   private ClientSessionFactory backupSessionFactory;
 
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
@@ -147,6 +148,11 @@ public class ClusterManagerImpl implements ClusterManager
 
       if (clustered)
       {
+         BackupConnectorConfiguration connectorConfiguration = configuration.getBackupConnectorConfiguration();
+         if(connectorConfiguration != null)
+         {
+            deployBackupListener(connectorConfiguration);
+         }
          for (BroadcastGroupConfiguration config : configuration.getBroadcastGroupConfigurations())
          {
             deployBroadcastGroup(config);
@@ -172,6 +178,47 @@ public class ClusterManagerImpl implements ClusterManager
       }
       
       started = true;
+   }
+
+   private void deployBackupListener(BackupConnectorConfiguration connectorConfiguration)
+         throws Exception
+   {
+      ServerLocator locator;
+      if (connectorConfiguration.getDiscoveryGroupName() != null)
+      {
+         DiscoveryGroupConfiguration groupConfiguration = configuration.getDiscoveryGroupConfigurations().get(connectorConfiguration.getDiscoveryGroupName());
+         if (groupConfiguration == null)
+         {
+            ClusterManagerImpl.log.warn("There is no discovery group deployed with name " + connectorConfiguration.getDiscoveryGroupName() +
+                                        " deployed. This one will not be deployed.");
+
+            return;
+         }
+         locator = new ServerLocatorImpl(true, groupConfiguration.getGroupAddress(), groupConfiguration.getGroupPort());
+      }
+      else
+      {
+         TransportConfiguration[] configs = new TransportConfiguration[connectorConfiguration.getStaticConnectors().size()];
+         for (int i = 0, configsLength = configs.length; i < configsLength; i++)
+         {
+            configs[i] = configuration.getConnectorConfigurations().get(connectorConfiguration.getStaticConnectors().get(i));
+         }
+         locator = new ServerLocatorImpl(true, configs);
+      }
+      locator.addClusterTopologyListener(new ClusterTopologyListener()
+      {
+         public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
+         {
+            //todo update the topology
+         }
+
+         public void nodeDown(String nodeID)
+         {
+            //todo update the topology
+         }
+      });
+      backupSessionFactory = locator.createSessionFactory();
+      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
    }
 
    public synchronized void stop() throws Exception

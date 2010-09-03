@@ -44,6 +44,7 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
+import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.CoreQueueConfiguration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -560,7 +561,7 @@ public class HornetQServerImpl implements HornetQServer
             //TODO TODO at this point the clustermanager needs to announce it's presence so the cluster can know about the backup
             // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
             // for that
-            
+
             while (true)
             {
                File liveLockFile = new File(configuration.getJournalDirectory(), "live.lock");

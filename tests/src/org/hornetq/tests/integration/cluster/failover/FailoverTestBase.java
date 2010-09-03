@@ -22,16 +22,15 @@ import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.ClusterTopologyListener;
-import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.api.core.client.*;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
@@ -114,13 +113,11 @@ public abstract class FailoverTestBase extends ServiceTestBase
       config1.setClustered(true);
       TransportConfiguration liveConnector = getConnectorTransportConfiguration(true);
       TransportConfiguration backupConnector = getConnectorTransportConfiguration(false);
-      List<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(liveConnector.getName());
-       ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
-               staticConnectors);
-      config1.getClusterConfigurations().add(ccc1);
       config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+      staticConnectors.add(liveConnector.getName());
+      config1.setBackupConnectorConfiguration(new BackupConnectorConfiguration(staticConnectors, backupConnector.getName()));
       server1Service = createFakeLockServer(true, config1);
       
       server1Service.registerActivateCallback(new ActivateCallback()
@@ -323,9 +320,40 @@ public abstract class FailoverTestBase extends ServiceTestBase
       return (ServerLocatorInternal) locator;
    }
 
+   protected void fail(final ClientSession... sessions) throws Exception
+   {
+      final CountDownLatch latch = new CountDownLatch(sessions.length);
+
+      class MyListener extends BaseListener
+      {
+         public void connectionFailed(final HornetQException me)
+         {
+            latch.countDown();
+         }
+
+      }
+      for (ClientSession session : sessions)
+      {
+         session.addFailureListener(new MyListener());
+      }
+      server0Service.stop();
+
+      // Wait to be informed of failure
+      boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
+
+      Assert.assertTrue(ok);
+   }
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+
+   abstract class BaseListener implements SessionFailureListener
+   {
+      public void beforeReconnect(final HornetQException me)
+      {
+      }
+   }
+   
    class LatchClusterTopologyListener implements ClusterTopologyListener
    {
       final CountDownLatch latch;

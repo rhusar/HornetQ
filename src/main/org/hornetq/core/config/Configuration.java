@@ -252,6 +252,17 @@ public interface Configuration extends Serializable
     */
    Map<String, TransportConfiguration> getConnectorConfigurations();
 
+
+  /**
+   * sets the connectors used to get topology info from for the backup server when shared store is used.
+   */
+   void setBackupConnectorConfiguration(BackupConnectorConfiguration backupConnectorConfiguration);
+
+   /**
+    * Returns the connectors used to get topology info from for the backup server when shared store is used.
+    */
+   BackupConnectorConfiguration getBackupConnectorConfiguration();
+
    /**
     * Sets the connectors configured for this server.
     */

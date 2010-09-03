@@ -1062,6 +1062,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       this.backup = backup;
    }
 
+   public void announceBackup()
+   {
+      connect();
+   }
+
    @Override
    protected void finalize() throws Throwable
    {

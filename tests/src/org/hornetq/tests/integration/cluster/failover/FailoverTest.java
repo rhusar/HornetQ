@@ -366,29 +366,7 @@ public class FailoverTest extends FailoverTestBase
    }
 
 
-    private void fail(final ClientSession... sessions) throws Exception
-   {
-      final CountDownLatch latch = new CountDownLatch(sessions.length);
 
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me)
-         {
-            latch.countDown();
-         }
-
-      }
-      for (ClientSession session : sessions)
-      {
-         session.addFailureListener(new MyListener());
-      }
-      server0Service.stop();
-
-      // Wait to be informed of failure
-      boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
-
-      Assert.assertTrue(ok);
-   }
 
    public void testTransactedMessagesSentSoRollback() throws Exception
    {

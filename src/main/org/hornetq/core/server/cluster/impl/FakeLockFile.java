@@ -43,7 +43,7 @@ public class FakeLockFile implements LockFile
 
    private final String directory;
    
-   private final static Map<String, Semaphore> locks = new WeakHashMap<String, Semaphore>();
+   private final static Map<String, Semaphore> locks = new HashMap<String, Semaphore>();
 
    private Semaphore semaphore;
    /**
