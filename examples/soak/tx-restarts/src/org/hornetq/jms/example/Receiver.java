@@ -15,10 +15,13 @@ package org.hornetq.jms.example;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
+
+import org.hornetq.utils.ReusableLatch;
 
 /**
  * A Receiver
@@ -36,15 +39,23 @@ public class Receiver extends ClientAbstract
    
    private Queue queue;
    
-   private final Semaphore sem = new Semaphore(0);
+   // We should leave some messages on paging. We don't want to consume all for this test
+   private final Semaphore minConsume = new Semaphore(0);
    
-   private final Semaphore max = new Semaphore(10000);
+   private final ReusableLatch latchMax = new ReusableLatch(0);
+   
+   private static final int MAX_DIFF = 10000;
+   
+   // The difference between producer and consuming
+   private final AtomicInteger currentDiff = new AtomicInteger(0);
    
    private final String queueJNDI;
    
-   protected volatile long msgs = 0;
+   protected long msgs = 0;
    
-   protected volatile long pendingMsgs = 0;
+   protected int pendingMsgs = 0;
+   
+   protected int pendingSemaphores = 0;
    
    protected MessageConsumer cons;
 
@@ -73,11 +84,6 @@ public class Receiver extends ClientAbstract
             
             for (int i = 0 ; i < 1000; i++)
             {
-               if (!sem.tryAcquire(1, 5, TimeUnit.SECONDS))
-               {
-                  break;
-               }
-               max.release();
                Message msg = cons.receive(5000);
                if (msg == null)
                {
@@ -91,6 +97,10 @@ public class Receiver extends ClientAbstract
                }
                
                pendingMsgs++;
+               if (!minConsume.tryAcquire(1, 5, TimeUnit.SECONDS))
+               {
+                  break;
+               }
                
             }
             
@@ -126,8 +136,10 @@ public class Receiver extends ClientAbstract
    protected void onCommit()
    {
       msgs += pendingMsgs;
+      this.currentDiff.addAndGet(-pendingMsgs);
+      latchMax.countDown(pendingMsgs);
       pendingMsgs = 0;
-      System.out.println("Commit on consumer " + queueJNDI + ", msgs=" + msgs);
+      System.out.println("Commit on consumer " + queueJNDI + ", msgs=" + msgs + " currentDiff = " + currentDiff);
    }
 
    /* (non-Javadoc)
@@ -137,6 +149,7 @@ public class Receiver extends ClientAbstract
    protected void onRollback()
    {
       System.out.println("Rollback on consumer " + queueJNDI + ", msgs=" + msgs);
+      minConsume.release(pendingMsgs);
       pendingMsgs = 0;
    }
    
@@ -148,16 +161,23 @@ public class Receiver extends ClientAbstract
    /**
     * @param pendingMsgs2
     */
-   public void messageProduced(int pendingMsgs2)
+   public void messageProduced(int producedMessages)
    {
-      sem.release(pendingMsgs2);
-      try
+      minConsume.release(producedMessages);
+      currentDiff.addAndGet(producedMessages);
+      System.out.println("Msg produced on " + this.queueJNDI + ", currentDiff = " + currentDiff);
+      if (currentDiff.get() > MAX_DIFF)
       {
-         max.tryAcquire(pendingMsgs2, 5, TimeUnit.SECONDS);
-      }
-      catch (InterruptedException e)
-      {
-         e.printStackTrace();
+         System.out.println("Holding producer for 5 seconds");
+         latchMax.setCount(currentDiff.get() - MAX_DIFF);
+         try
+         {
+            latchMax.await(5, TimeUnit.SECONDS);
+         }
+         catch (InterruptedException e)
+         {
+            e.printStackTrace();
+         }
       }
    }
 

@@ -113,10 +113,10 @@ public class TXRestartSoak extends HornetQExample
          rec1.start();
          rec2.start();
          
+         long timeEnd = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
          
          if (runServer)
          {
-            long timeEnd = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
             while (timeEnd > System.currentTimeMillis())
             {
                System.out.println("Letting the service run for 20 seconds");
@@ -148,10 +148,14 @@ public class TXRestartSoak extends HornetQExample
          }
          else
          {
-            long timeEnd = System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1);
             while (timeEnd > System.currentTimeMillis())
             {
-
+               if (send.getErrorsCount() != 0 || rec1.getErrorsCount() != 0 || rec2.getErrorsCount() != 0)
+               {
+                  System.out.println("There are sequence errors in some of the clients, please look at the logs");
+                  break;
+               }
+               Thread.sleep(10000);
             }
          }
          

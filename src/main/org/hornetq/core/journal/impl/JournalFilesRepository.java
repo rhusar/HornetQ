@@ -268,8 +268,7 @@ public class JournalFilesRepository
    {
       if (file.getFile().size() != fileSize)
       {
-         JournalFilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size",
-                                         new Exception("trace"));
+         JournalFilesRepository.log.warn("Deleting " + file + ".. as it doesn't have the configured size");
          file.getFile().delete();
       }
       else

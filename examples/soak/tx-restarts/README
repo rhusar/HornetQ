@@ -17,4 +17,13 @@ Run the server remotely
 
 You can start the server directly if you want, you can just start the server as:
 
+./run.sh PATH_TO_HORNETQ/examples/soak/tx-restarts/server0
+
+
+Then you can run the test as:
+
+./build.sh runRemote
+
+
+And you can now kill and restart the server manually as many times as you want.
 

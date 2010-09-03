@@ -2,6 +2,9 @@
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="urn:hornetq /schema/hornetq-configuration.xsd">
 
+
+   <journal-file-size>102400</journal-file-size>
+
    <!-- Connectors -->
    <connectors>
       <connector name="netty-connector">
