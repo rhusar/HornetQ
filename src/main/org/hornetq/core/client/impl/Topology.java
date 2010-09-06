@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 
 /**
@@ -59,17 +60,23 @@ public class Topology implements Serializable
       }
       else
       {
-         if(currentMember.getConnector().a == null && member.getConnector().a != null)
+         if(hasChanged(currentMember.getConnector().a, member.getConnector().a) && member.getConnector().a != null)
          {
+            if(currentMember.getConnector().a == null)
+            {
+               nodes++;
+            }
             currentMember.getConnector().a =  member.getConnector().a;
             replaced = true;
-            nodes++;
          }
-         if(currentMember.getConnector().b == null && member.getConnector().b != null)
+         if(hasChanged(currentMember.getConnector().b, member.getConnector().b))
          {
+            if(currentMember.getConnector().b == null)
+            {
+               nodes++;
+            }
             currentMember.getConnector().b =  member.getConnector().b;
             replaced = true;
-            nodes++;
          }
       }
       return replaced;
@@ -89,6 +96,7 @@ public class Topology implements Serializable
             nodes--;
          }
       }
+
       return (member != null);
    }
 
@@ -129,6 +137,7 @@ public class Topology implements Serializable
       {
          desc += "\t" + entry.getKey() + " => " + entry.getValue() + "\n";
       }
+      desc += "\t" + "nodes=" + nodes + "\t" + "members=" + members();
       return desc;
    }
 
@@ -141,5 +150,10 @@ public class Topology implements Serializable
    public int members()
    {
       return topology.size();
+   }
+
+   private boolean hasChanged(TransportConfiguration currentConnector, TransportConfiguration connector)
+   {
+      return (currentConnector == null && connector != null) || (currentConnector != null && !currentConnector.equals(connector));
    }
 }

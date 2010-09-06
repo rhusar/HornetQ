@@ -621,32 +621,47 @@ public class HornetQServerImpl implements HornetQServer
 
       public void close() throws Exception
       {
-         long timeout = 30000;
-
-         long start = System.currentTimeMillis();
-
-         while (backupActivationThread.isAlive() && System.currentTimeMillis() - start < timeout)
+         if (configuration.isBackup())
          {
-            backupActivationThread.interrupt();
+            long timeout = 30000;
 
-            Thread.sleep(1000);
+            long start = System.currentTimeMillis();
+
+            while (backupActivationThread.isAlive() && System.currentTimeMillis() - start < timeout)
+            {
+               backupActivationThread.interrupt();
+
+               Thread.sleep(1000);
+            }
+
+            if (System.currentTimeMillis() - start >= timeout)
+            {
+               log.warn("Timed out waiting for backup activation to exit");
+            }
+
+            if (liveLock != null)
+            {
+               liveLock.unlock();
+            }
+
+            if (backupLock != null)
+            {
+               backupLock.unlock();
+            }
          }
-
-         if (System.currentTimeMillis() - start >= timeout)
+         else
          {
-            log.warn("Timed out waiting for backup activation to exit");
-         }
+            //if we are now live, behave as live
+            // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
+            // started before the live
+            log.info("Live Server about to delete Live Lock file");
+            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
+            log.info("Live Server deleting Live Lock file");
+            liveFile.delete();
 
-         if (liveLock != null)
-         {
             liveLock.unlock();
+            log.info("Live server unlocking live lock");
          }
-
-         if (backupLock != null)
-         {
-            backupLock.unlock();
-         }
-
       }
    }
 

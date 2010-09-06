@@ -376,6 +376,31 @@ public class ClusterManagerImpl implements ClusterManager
       {
          backup = false;
 
+         String nodeID = server.getNodeID().toString();
+
+         TopologyMember member = topology.getMember(nodeID);
+         //we swap the topology backup now = live
+         if (member != null)
+         {
+            member.getConnector().a = member.getConnector().b;
+
+            member.getConnector().b = null;
+         }
+
+         if(backupSessionFactory != null)
+         {
+            //todo we could use the topology of this to preempt it arriving from the cc
+            try
+            {
+               backupSessionFactory.close();
+            }
+            catch (Exception e)
+            {
+               log.warn("problem closing backup session factory", e);
+            }
+            backupSessionFactory = null;
+         }
+
          if (clusterConnections.size() > 0)
          {
             announceNode();
