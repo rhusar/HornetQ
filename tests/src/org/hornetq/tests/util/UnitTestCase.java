@@ -440,7 +440,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the journalDir
     */
-   protected static String getJournalDir()
+   public static String getJournalDir()
    {
       return getJournalDir(testDir);
    }

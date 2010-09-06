@@ -31,6 +31,8 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.tests.integration.cluster.util.SameProcessHornetQServer;
+import org.hornetq.tests.integration.cluster.util.TestableServer;
 
 /**
  * A PagingFailoverTest
@@ -75,6 +77,9 @@ public class PagingFailoverTest extends FailoverTestBase
 
    public void internalTestPage(final boolean transacted, final boolean failBeforeConsume) throws Exception
    {
+      throw new Exception("must change the test to reflect the new replication code");
+      
+      /*
       ServerLocator locator = getServerLocator();
 
       locator.setBlockOnNonDurableSend(true);
@@ -197,6 +202,7 @@ public class PagingFailoverTest extends FailoverTestBase
          {
          }
       }
+      */
    }
 
    /**
@@ -248,6 +254,18 @@ public class PagingFailoverTest extends FailoverTestBase
                           new HashMap<String, AddressSettings>());
    }
 
+   @Override
+   protected TestableServer createBackupServer()
+   {
+      return new SameProcessHornetQServer(createServer(true, backupConfig));
+   }
+   
+   @Override
+   protected TestableServer createLiveServer()
+   {
+      return new SameProcessHornetQServer(createServer(true, liveConfig));
+   }
+   
    /**
     * @throws Exception
     */
@@ -260,14 +278,14 @@ public class PagingFailoverTest extends FailoverTestBase
       config1.setSecurityEnabled(false);
       config1.setSharedStore(true);
       config1.setBackup(true);
-      server1Service = createServer(true, config1);
-
+      backupServer = createBackupServer();
+      
       Configuration config0 = super.createDefaultConfig();
       config0.getAcceptorConfigurations().clear();
       config0.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
-      server0Service = createServer(true, config0);
+      liveServer = createLiveServer();
 
    }
 

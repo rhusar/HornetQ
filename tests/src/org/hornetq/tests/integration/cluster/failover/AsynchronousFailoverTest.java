@@ -200,7 +200,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             // Simulate failure on connection
             synchronized (lockFail)
             {
-               fail((ClientSession) createSession);
+               crash((ClientSession) createSession);
             }
 
             /*if (listener != null)

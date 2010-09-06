@@ -108,7 +108,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session);
+      crash(session);
 
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
 
@@ -188,19 +188,18 @@ public class FailoverTest extends FailoverTestBase
 
          if (i == 5)
          {
-            fail(session);
+            crash(session);
          }
       }
-
-      boolean exception = false;
 
       try
       {
          session.commit();
+         fail("session must have rolled back on failover");
       }
       catch (HornetQException e)
       {
-         exception = true;
+         assertTrue(e.getCode() == HornetQException.TRANSACTION_ROLLED_BACK);
       }
 
       consumer.close();
@@ -219,8 +218,6 @@ public class FailoverTest extends FailoverTestBase
       }
 
       session.commit();
-
-      assertTrue("Exception was expected!", exception);
 
       session.close();
 
@@ -267,14 +264,12 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      server1Service.stop();
-      server0Service.stop();
+      liveServer.stop();
       FakeLockFile.clearLocks();
-      server1Service.start();
-      server0Service.start();
+      liveServer.start();
 
-      sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
+      sf = (ClientSessionFactoryInternal)locator.createSessionFactory();
+      
       session = sf.createSession(true, true);
 
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
@@ -316,9 +311,8 @@ public class FailoverTest extends FailoverTestBase
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
-      // Stop live server
-
-      this.server0Service.stop();
+      // Crash live server
+      crash();
 
       ClientSession session = sf.createSession();
 
@@ -365,9 +359,6 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertEquals(0, sf.numConnections());
    }
 
-
-
-
    public void testTransactedMessagesSentSoRollback() throws Exception
    {
       ServerLocator locator = getServerLocator();
@@ -398,7 +389,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session);
+      crash(session);
 
       Assert.assertTrue(session.isRollbackOnly());
 
@@ -464,7 +455,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session);
+      crash(session);
 
       Assert.assertTrue(session.isRollbackOnly());
 
@@ -540,7 +531,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.commit();
 
-      fail(session);
+      crash(session);
 
       // committing again should work since didn't send anything since last commit
 
@@ -623,7 +614,7 @@ public class FailoverTest extends FailoverTestBase
 
       Assert.assertFalse(session.isRollbackOnly());
 
-      fail(session);
+      crash(session);
 
       session.commit();
 
@@ -717,7 +708,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session2);
+      crash(session2);
 
       Assert.assertTrue(session2.isRollbackOnly());
 
@@ -798,7 +789,7 @@ public class FailoverTest extends FailoverTestBase
 
       consumer.close();
 
-      fail(session2);
+      crash(session2);
 
       Assert.assertFalse(session2.isRollbackOnly());
 
@@ -866,7 +857,7 @@ public class FailoverTest extends FailoverTestBase
          producer.send(message);
       }
 
-      fail(session);
+      crash(session);
 
       try
       {
@@ -932,7 +923,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.end(xid, XAResource.TMSUCCESS);
 
-      fail(session);
+      crash(session);
 
       try
       {
@@ -1001,7 +992,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.prepare(xid);
 
-      fail(session);
+      crash(session);
 
       try
       {
@@ -1071,7 +1062,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.commit(xid, false);
 
-      fail(session);
+      crash(session);
 
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
 
@@ -1169,7 +1160,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session2);
+      crash(session2);
 
       try
       {
@@ -1250,7 +1241,7 @@ public class FailoverTest extends FailoverTestBase
 
       session2.end(xid, XAResource.TMSUCCESS);
 
-      fail(session2);
+      crash(session2);
 
       try
       {
@@ -1333,7 +1324,7 @@ public class FailoverTest extends FailoverTestBase
 
       session2.prepare(xid);
 
-      fail(session2);
+      crash(session2);
 
       try
       {
@@ -1368,7 +1359,7 @@ public class FailoverTest extends FailoverTestBase
 
       ClientSession session = sendAndConsume(sf, true);
 
-      fail(session);
+      crash(session);
 
       session.close();
 
@@ -1444,7 +1435,7 @@ public class FailoverTest extends FailoverTestBase
       Set<ClientSession> sessionSet = sessionConsumerMap.keySet();
       ClientSession[] sessions = new ClientSession[sessionSet.size()];
       sessionSet.toArray(sessions);
-      fail(sessions);
+      crash(sessions);
 
 
       for (ClientSession session : sessionConsumerMap.keySet())
@@ -1532,7 +1523,7 @@ public class FailoverTest extends FailoverTestBase
          Assert.assertEquals(i, message.getIntProperty("counter").intValue());
       }
 
-      fail(session);
+      crash(session);
 
       for (int i = 0; i < numMessages; i++)
       {
@@ -1606,7 +1597,7 @@ public class FailoverTest extends FailoverTestBase
          Assert.assertEquals(i, message.getIntProperty("counter").intValue());
       }
 
-      fail(session);
+      crash(session);
 
       // Should get the same ones after failover since we didn't ack
 
@@ -1684,7 +1675,7 @@ public class FailoverTest extends FailoverTestBase
          message.acknowledge();
       }
 
-      fail(session);
+      crash(session);
 
       // Send some more
 
@@ -1774,7 +1765,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.start();
 
-      fail(session);
+      crash(session);
 
       for (int i = 0; i < numMessages; i++)
       {
@@ -1809,7 +1800,7 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertEquals(0, sf.numConnections());
    }
 
-   public void testForceBlockingReturn() throws Exception
+   public void _testForceBlockingReturn() throws Exception
    {
       ServerLocator locator = getServerLocator();
       locator.setBlockOnNonDurableSend(true);
@@ -1821,7 +1812,7 @@ public class FailoverTest extends FailoverTestBase
 
       // Add an interceptor to delay the send method so we can get time to cause failover before it returns
 
-      server0Service.getRemotingService().addInterceptor(new DelayInterceptor());
+      //liveServer.getRemotingService().addInterceptor(new DelayInterceptor());
 
 
 
@@ -1859,7 +1850,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session);
+      crash(session);
 
       sender.join();
 
@@ -1966,7 +1957,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session);
+      crash(session);
 
       committer.join();
 
@@ -2069,7 +2060,7 @@ public class FailoverTest extends FailoverTestBase
 
             try
             {
-               server0Service.getRemotingService().addInterceptor(interceptor);
+               //liveServer.getRemotingService().addInterceptor(interceptor);
 
                session.commit();
             }
@@ -2079,7 +2070,7 @@ public class FailoverTest extends FailoverTestBase
                {
                   // Ok - now we retry the commit after removing the interceptor
 
-                  server0Service.getRemotingService().removeInterceptor(interceptor);
+                  //liveServer.getRemotingService().removeInterceptor(interceptor);
 
                   try
                   {
@@ -2103,7 +2094,7 @@ public class FailoverTest extends FailoverTestBase
 
       Thread.sleep(500);
 
-      fail(session);
+      crash(session);
 
       committer.join();
 

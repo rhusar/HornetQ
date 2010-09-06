@@ -13,6 +13,7 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +23,8 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.cluster.impl.FakeLockFile;
+import org.hornetq.tests.util.ServiceTestBase;
 
 /**
  * A SameProcessHornetQServer
@@ -53,7 +56,6 @@ public class SameProcessHornetQServer implements TestableServer
    public void stop() throws Exception
    {
       server.stop();
-      Thread.sleep(2000);
    }
 
    public void crash(ClientSession... sessions) throws Exception
@@ -76,7 +78,12 @@ public class SameProcessHornetQServer implements TestableServer
          session.addFailureListener(new MyListener());
       }
       server.stop();
-
+      // recreate the live.lock file (since it was deleted by the
+      // clean stop
+      File lockFile = new File(ServiceTestBase.getJournalDir(), "live.lock");
+      Assert.assertFalse(lockFile.exists());
+      lockFile.createNewFile();
+      
       // Wait to be informed of failure
       boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
 

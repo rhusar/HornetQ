@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -582,15 +582,15 @@ public class HornetQServerImpl implements HornetQServer
                log.info("Backup server is up - waiting for failover");
 
                liveLock.lock();
-               //todo check if we need this or not
+
                // We need to test if the file exists again, since the live might have shutdown
-              // if (!liveLockFile.exists())
-              // {
-              //    liveLock.unlock();
-
-              //    continue;
-             //  }
-
+               if (!liveLockFile.exists())
+               {
+                  liveLock.unlock();
+                  
+                  continue;
+               }
+                  
                log.info("Backup server obtained live lock");
                
                // Announce presence of live node to cluster
