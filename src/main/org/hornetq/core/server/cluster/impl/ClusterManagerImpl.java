@@ -637,6 +637,7 @@ public class ClusterManagerImpl implements ClusterManager
       serverLocator.setRetryInterval(config.getRetryInterval());
       serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());
       serverLocator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
+      serverLocator.setInitialConnectAttempts(config.getReconnectAttempts());
 
       Bridge bridge = new BridgeImpl(serverLocator,
                                      nodeUUID,

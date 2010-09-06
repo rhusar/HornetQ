@@ -579,13 +579,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
                            "Cannot connect to server(s). Tried with all available servers.");
                   }
-                  /*
                   if (topologyArray == null && initialConnectors != null && attempts == initialConnectors.length)
                   {
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
                      "Cannot connect to server(s). Tried with all available servers.");
                   }
-                  */
                   retry = true;
                }
                else
