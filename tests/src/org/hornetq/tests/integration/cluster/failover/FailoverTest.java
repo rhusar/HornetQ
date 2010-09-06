@@ -1354,7 +1354,7 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
+      locator.setFailoverOnInitialConnection(true);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
       ClientSession session = sendAndConsume(sf, true);
@@ -1363,7 +1363,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      waitForBackup(5);
+      Thread.sleep(5000);
 
       sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
