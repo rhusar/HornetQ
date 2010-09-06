@@ -719,7 +719,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                     final long maxRetryInterval,
                                                     final int reconnectAttempts,
                                                     final boolean failoverOnInitialConnection,
-                                                    final boolean failoverOnServerShutdown,
                                                     final String groupId,
                                                     String... jndiBindings) throws Exception
    {
@@ -757,7 +756,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setMaxRetryInterval(maxRetryInterval);
          configuration.setReconnectAttempts(reconnectAttempts);
          configuration.setFailoverOnInitialConnection(failoverOnInitialConnection);
-         configuration.setFailoverOnServerShutdown(failoverOnServerShutdown);
          configuration.setGroupID(groupId);
          createConnectionFactory(true, configuration, jndiBindings);
       }
@@ -797,7 +795,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
                                                     final long maxRetryInterval,
                                                     final int reconnectAttempts,
                                                     final boolean failoverOnInitialConnection,
-                                                    final boolean failoverOnServerShutdown,
                                                     final String groupId,
                                                     final String... jndiBindings) throws Exception
    {
@@ -839,7 +836,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setMaxRetryInterval(maxRetryInterval);
          configuration.setReconnectAttempts(reconnectAttempts);
          configuration.setFailoverOnInitialConnection(failoverOnInitialConnection);
-         configuration.setFailoverOnServerShutdown(failoverOnServerShutdown);
          createConnectionFactory(true, configuration, jndiBindings);
       }
    }
@@ -1042,7 +1038,6 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          cf.setMaxRetryInterval(cfConfig.getMaxRetryInterval());
          cf.setReconnectAttempts(cfConfig.getReconnectAttempts());
          cf.setFailoverOnInitialConnection(cfConfig.isFailoverOnInitialConnection());
-         cf.setFailoverOnServerShutdown(cfConfig.isFailoverOnServerShutdown());
       }
       
       connectionFactories.put(cfConfig.getName(), cf);

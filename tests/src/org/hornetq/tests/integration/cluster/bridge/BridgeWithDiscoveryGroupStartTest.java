@@ -113,7 +113,6 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
                                                                         1d,
                                                                         0,
                                                                         true,
-                                                                        true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                                                         staticConnectors,

@@ -500,17 +500,6 @@ public class HornetQConnectionFactory implements ConnectionFactory, QueueConnect
       serverLocator.setFailoverOnInitialConnection(failover);
    }
 
-   public synchronized boolean isFailoverOnServerShutdown()
-   {
-      return serverLocator.isFailoverOnServerShutdown();
-   }
-
-   public synchronized void setFailoverOnServerShutdown(final boolean failoverOnServerShutdown)
-   {
-      checkWrite();
-      serverLocator.setFailoverOnServerShutdown(failoverOnServerShutdown);
-   }
-
    public synchronized boolean isUseGlobalPools()
    {
       return serverLocator.isUseGlobalPools();

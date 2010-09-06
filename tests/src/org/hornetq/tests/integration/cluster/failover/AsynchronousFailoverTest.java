@@ -170,7 +170,6 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             ServerLocator locator = getServerLocator();
             locator.setBlockOnNonDurableSend(true);
             locator.setBlockOnDurableSend(true);
-            locator.setFailoverOnServerShutdown(true);
             locator.setReconnectAttempts(-1);
             sf = (ClientSessionFactoryInternal) createSessionFactoryAndWaitForTopology(locator, 2);
 

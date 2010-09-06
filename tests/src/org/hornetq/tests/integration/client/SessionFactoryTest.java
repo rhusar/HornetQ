@@ -141,8 +141,7 @@ public class SessionFactoryTest extends ServiceTestBase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       
       ClientSessionFactory cf = locator.createSessionFactory();
       ClientSession session = cf.createSession(false, true, true);
@@ -184,8 +183,7 @@ public class SessionFactoryTest extends ServiceTestBase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       
       ClientSessionFactory cf = locator.createSessionFactory();
       ClientSession session = cf.createSession(false, true, true);
@@ -225,7 +223,6 @@ public class SessionFactoryTest extends ServiceTestBase
       long retryInterval = RandomUtil.randomPositiveLong();
       double retryIntervalMultiplier = RandomUtil.randomDouble();
       int reconnectAttempts = RandomUtil.randomPositiveInt();
-      boolean failoverOnServerShutdown = RandomUtil.randomBoolean();
 
       locator.setDiscoveryRefreshTimeout(discoveryRefreshTimeout);
       locator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
@@ -250,7 +247,6 @@ public class SessionFactoryTest extends ServiceTestBase
       locator.setRetryInterval(retryInterval);
       locator.setRetryIntervalMultiplier(retryIntervalMultiplier);
       locator.setReconnectAttempts(reconnectAttempts);
-      locator.setFailoverOnServerShutdown(failoverOnServerShutdown);
 
       assertEqualsTransportConfigurations(tc, locator.getStaticTransportConfigurations());
       Assert.assertEquals(null, locator.getDiscoveryAddress());
@@ -279,7 +275,6 @@ public class SessionFactoryTest extends ServiceTestBase
       Assert.assertEquals(retryInterval, locator.getRetryInterval());
       Assert.assertEquals(retryIntervalMultiplier, locator.getRetryIntervalMultiplier());
       Assert.assertEquals(reconnectAttempts, locator.getReconnectAttempts());
-      Assert.assertEquals(failoverOnServerShutdown, locator.isFailoverOnServerShutdown());
 
    }
 
@@ -308,7 +303,6 @@ public class SessionFactoryTest extends ServiceTestBase
       long retryInterval = RandomUtil.randomPositiveLong();
       double retryIntervalMultiplier = RandomUtil.randomDouble();
       int reconnectAttempts = RandomUtil.randomPositiveInt();
-      boolean failoverOnServerShutdown = RandomUtil.randomBoolean();
 
       try
       {
@@ -517,15 +511,6 @@ public class SessionFactoryTest extends ServiceTestBase
       {
          // OK
       }
-      try
-      {
-         cf.getServerLocator().setFailoverOnServerShutdown(failoverOnServerShutdown);
-         Assert.fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
 
       cf.getServerLocator().getStaticTransportConfigurations();
       cf.getServerLocator().getDiscoveryAddress();
@@ -553,7 +538,6 @@ public class SessionFactoryTest extends ServiceTestBase
       cf.getServerLocator().getRetryInterval();
       cf.getServerLocator().getRetryIntervalMultiplier();
       cf.getServerLocator().getReconnectAttempts();
-      cf.getServerLocator().isFailoverOnServerShutdown();
 
    }
 
@@ -583,8 +567,7 @@ public class SessionFactoryTest extends ServiceTestBase
                                     final int threadPoolMaxSize,
                                     final long retryInterval,
                                     final double retryIntervalMultiplier,
-                                    final int reconnectAttempts,
-                                    final boolean failoverOnServerShutdown)
+                                    final int reconnectAttempts)
    {
       if (staticConnectors == null)
       {
@@ -620,7 +603,6 @@ public class SessionFactoryTest extends ServiceTestBase
       Assert.assertEquals(locator.getRetryInterval(), retryInterval);
       Assert.assertEquals(locator.getRetryIntervalMultiplier(), retryIntervalMultiplier);
       Assert.assertEquals(locator.getReconnectAttempts(), reconnectAttempts);
-      Assert.assertEquals(locator.isFailoverOnServerShutdown(), failoverOnServerShutdown);
    }
 
    private void startServer() throws Exception

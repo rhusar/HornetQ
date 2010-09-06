@@ -108,8 +108,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    private boolean failoverOnInitialConnection = HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION;
 
-   private boolean failoverOnServerShutdown = HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
-
    private String groupID = null;
 
    // Static --------------------------------------------------------
@@ -506,16 +504,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       this.failoverOnInitialConnection = failover;
    }
 
-   public boolean isFailoverOnServerShutdown()
-   {
-      return failoverOnServerShutdown;
-   }
-
-   public void setFailoverOnServerShutdown(final boolean failoverOnServerShutdown)
-   {
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
-   }
-
    public String getGroupID()
    {
       return groupID;
@@ -615,8 +603,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
       failoverOnInitialConnection = buffer.readBoolean();
 
-      failoverOnServerShutdown = buffer.readBoolean();
-
       groupID = BufferHelper.readNullableSimpleStringAsString(buffer);
    }
 
@@ -704,8 +690,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       buffer.writeInt(reconnectAttempts);
 
       buffer.writeBoolean(failoverOnInitialConnection);
-
-      buffer.writeBoolean(failoverOnServerShutdown);
 
       BufferHelper.writeAsNullableSimpleString(buffer, groupID);
    }
@@ -814,9 +798,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
               DataConstants.SIZE_BOOLEAN +
               // failoverOnInitialConnection
-
-              DataConstants.SIZE_BOOLEAN +
-              // failoverOnServerShutdown
 
               BufferHelper.sizeOfNullableSimpleString(groupID);
 

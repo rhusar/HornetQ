@@ -36,5 +36,4 @@ public interface ClientSessionFactoryInternal extends ClientSessionFactory
    int numSessions();
    
    void removeSession(final ClientSessionInternal session, boolean failingOver);
-   
 }

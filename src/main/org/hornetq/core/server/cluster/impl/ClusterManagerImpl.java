@@ -608,7 +608,6 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       serverLocator.setConfirmationWindowSize(config.getConfirmationWindowSize());
-      serverLocator.setFailoverOnServerShutdown(config.isFailoverOnServerShutdown());
       serverLocator.setReconnectAttempts(config.getReconnectAttempts());
       serverLocator.setRetryInterval(config.getRetryInterval());
       serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());

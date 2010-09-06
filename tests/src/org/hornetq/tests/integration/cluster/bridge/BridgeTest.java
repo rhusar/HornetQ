@@ -127,7 +127,6 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent
@@ -324,7 +323,6 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -496,7 +494,6 @@ public class BridgeTest extends ServiceTestBase
                                                                         1000,
                                                                         1d,
                                                                         -1,
-                                                                        true,
                                                                         false,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -628,7 +625,6 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -766,7 +762,6 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent

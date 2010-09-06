@@ -51,8 +51,6 @@ public class BridgeConfiguration implements Serializable
 
    private int reconnectAttempts;
 
-   private boolean failoverOnServerShutdown;
-
    private boolean useDuplicateDetection;
 
    private int confirmationWindowSize;
@@ -71,7 +69,6 @@ public class BridgeConfiguration implements Serializable
                               final long retryInterval,
                               final double retryIntervalMultiplier,
                               final int reconnectAttempts,
-                              final boolean failoverOnServerShutdown,
                               final boolean useDuplicateDetection,
                               final int confirmationWindowSize,
                               final long clientFailureCheckPeriod,
@@ -88,7 +85,6 @@ public class BridgeConfiguration implements Serializable
       this.retryInterval = retryInterval;
       this.retryIntervalMultiplier = retryIntervalMultiplier;
       this.reconnectAttempts = reconnectAttempts;
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
       this.useDuplicateDetection = useDuplicateDetection;
       this.confirmationWindowSize = confirmationWindowSize;
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
@@ -106,7 +102,6 @@ public class BridgeConfiguration implements Serializable
                               final long retryInterval,
                               final double retryIntervalMultiplier,
                               final int reconnectAttempts,
-                              final boolean failoverOnServerShutdown,
                               final boolean useDuplicateDetection,
                               final int confirmationWindowSize,
                               final long clientFailureCheckPeriod,
@@ -123,7 +118,6 @@ public class BridgeConfiguration implements Serializable
       this.retryInterval = retryInterval;
       this.retryIntervalMultiplier = retryIntervalMultiplier;
       this.reconnectAttempts = reconnectAttempts;
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
       this.useDuplicateDetection = useDuplicateDetection;
       this.confirmationWindowSize = confirmationWindowSize;
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
@@ -187,11 +181,6 @@ public class BridgeConfiguration implements Serializable
    public int getReconnectAttempts()
    {
       return reconnectAttempts;
-   }
-
-   public boolean isFailoverOnServerShutdown()
-   {
-      return failoverOnServerShutdown;
    }
 
    public boolean isUseDuplicateDetection()
@@ -296,14 +285,6 @@ public class BridgeConfiguration implements Serializable
    public void setReconnectAttempts(final int reconnectAttempts)
    {
       this.reconnectAttempts = reconnectAttempts;
-   }
-
-   /**
-    * @param failoverOnServerShutdown the failoverOnServerShutdown to set
-    */
-   public void setFailoverOnServerShutdown(final boolean failoverOnServerShutdown)
-   {
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
    }
 
    /**

@@ -84,7 +84,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -147,7 +146,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -236,7 +234,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -306,7 +303,6 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setFailoverOnInitialConnection(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -365,7 +361,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -431,7 +426,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -505,7 +499,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -580,7 +573,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -663,7 +655,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -740,7 +731,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -829,7 +819,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -893,7 +882,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -960,7 +948,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1028,7 +1015,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1111,7 +1097,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1190,7 +1175,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1272,7 +1256,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1384,7 +1367,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1485,7 +1467,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1558,7 +1539,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
@@ -1635,7 +1615,6 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
@@ -1741,7 +1720,6 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
@@ -1806,7 +1784,6 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
@@ -1873,7 +1850,6 @@ public class FailoverTest extends FailoverTestBase
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
 
       locator.setBlockOnAcknowledge(true);
@@ -2028,7 +2004,6 @@ public class FailoverTest extends FailoverTestBase
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
-      locator.setFailoverOnServerShutdown(true);
       locator.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 

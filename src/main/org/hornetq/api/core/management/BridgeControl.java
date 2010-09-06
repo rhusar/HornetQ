@@ -73,12 +73,6 @@ public interface BridgeControl extends HornetQComponentControl
    int getReconnectAttempts();
 
    /**
-    * Returns whether the session used by this bridge will failover if
-    * the target server is normally shutdown.
-    */
-   boolean isFailoverOnServerShutdown();
-
-   /**
     * Returns whether this bridge is using duplicate detection.
     */
    boolean isUseDuplicateDetection();

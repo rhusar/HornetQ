@@ -91,7 +91,6 @@ public class CTSMiscellaneousTest extends HornetQServerTestCase
                                                        HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                                        HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
                                                        HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                                       HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                        null,
                                                        "/StrictTCKConnectionFactory");
 

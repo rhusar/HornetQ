@@ -131,19 +131,6 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl
       }
    }
 
-   public boolean isFailoverOnServerShutdown()
-   {
-      clearIO();
-      try
-      {
-         return configuration.isFailoverOnServerShutdown();
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
-
    public String getName()
    {
       clearIO();

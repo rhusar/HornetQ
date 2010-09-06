@@ -1420,12 +1420,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       {
          cf.setBlockOnDurableSend(val);
       }
-      val = overrideProperties.isFailoverOnServerShutdown() != null ? overrideProperties.isFailoverOnServerShutdown()
-                                                                   : raProperties.isFailoverOnServerShutdown();
-      if (val != null)
-      {
-         cf.setFailoverOnServerShutdown(val);
-      }
       val = overrideProperties.isPreAcknowledge() != null ? overrideProperties.isPreAcknowledge()
                                                          : raProperties.isPreAcknowledge();
       if (val != null)

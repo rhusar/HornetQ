@@ -322,9 +322,6 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                                             "failover-on-initial-connection",
                                                                             HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION);
 
-      boolean failoverOnServerShutdown = XMLConfigurationUtil.getBoolean(e,
-                                                                         "failover-on-server-shutdown",
-                                                                         HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       boolean useGlobalPools = XMLConfigurationUtil.getBoolean(e,
                                                                "use-global-pools",
                                                                HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
@@ -465,7 +462,6 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
       cfConfig.setRetryIntervalMultiplier(retryIntervalMultiplier);
       cfConfig.setMaxRetryInterval(maxRetryInterval);
       cfConfig.setReconnectAttempts(reconnectAttempts);
-      cfConfig.setFailoverOnServerShutdown(failoverOnServerShutdown);
       cfConfig.setFailoverOnInitialConnection(failoverOnInitialConnection);
       cfConfig.setGroupID(groupid);
       return cfConfig;

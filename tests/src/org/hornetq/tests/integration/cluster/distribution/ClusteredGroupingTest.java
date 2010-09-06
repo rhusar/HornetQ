@@ -757,7 +757,12 @@ public class ClusteredGroupingTest extends ClusterTestBase
 
          stopServers(1);
 
+         closeSessionFactory(1);
+         
          startServers(1);
+
+         setupSessionFactory(1, isNetty());
+         
          Assert.assertTrue("timed out waiting for bindings to be removed and added back", latch.await(5,
                                                                                                       TimeUnit.SECONDS));
          getServer(0).getManagementService().removeNotificationListener(listener);
@@ -855,9 +860,11 @@ public class ClusteredGroupingTest extends ClusterTestBase
          getServer(2).getManagementService().addNotificationListener(listener);
          stopServers(1);
 
+         closeSessionFactory(1);
          startServers(1);
          Assert.assertTrue("timed out waiting for bindings to be removed and added back", latch.await(5,
                                                                                                       TimeUnit.SECONDS));
+         setupSessionFactory(1, isNetty());
          getServer(0).getManagementService().removeNotificationListener(listener);
          getServer(2).getManagementService().removeNotificationListener(listener);
          addConsumer(1, 1, "queue0", null);

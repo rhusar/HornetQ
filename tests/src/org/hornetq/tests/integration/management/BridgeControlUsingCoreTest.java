@@ -86,8 +86,6 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                           proxy.retrieveAttributeValue("retryIntervalMultiplier"));
       Assert.assertEquals(bridgeConfig.getReconnectAttempts(),
                           ((Integer)proxy.retrieveAttributeValue("reconnectAttempts")).intValue());
-      Assert.assertEquals(bridgeConfig.isFailoverOnServerShutdown(),
-                          ((Boolean)proxy.retrieveAttributeValue("failoverOnServerShutdown")).booleanValue());
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(),
                           ((Boolean)proxy.retrieveAttributeValue("useDuplicateDetection")).booleanValue());
 
@@ -148,7 +146,6 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                                              RandomUtil.randomPositiveLong(),
                                              RandomUtil.randomDouble(),
                                              RandomUtil.randomPositiveInt(),
-                                             RandomUtil.randomBoolean(),
                                              RandomUtil.randomBoolean(),
                                              RandomUtil.randomPositiveInt(),
                                              HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

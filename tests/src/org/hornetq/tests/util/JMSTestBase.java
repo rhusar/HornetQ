@@ -211,7 +211,6 @@ public class JMSTestBase extends ServiceTestBase
                                         HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                         reconnectAttempts,
                                         HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                        failoverOnServerShutdown,
                                         null,
                                         jndiBindings);
    }

@@ -1157,7 +1157,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
-      locator.setFailoverOnServerShutdown(false);
       locator.setRetryInterval(100);
       locator.setRetryIntervalMultiplier(1d);
       locator.setReconnectAttempts(-1);

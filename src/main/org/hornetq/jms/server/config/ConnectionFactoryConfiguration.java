@@ -165,10 +165,6 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
 
    void setReconnectAttempts(int reconnectAttempts);
 
-   boolean isFailoverOnServerShutdown();
-
-   void setFailoverOnServerShutdown(boolean failoverOnServerShutdown);
-   
    boolean isFailoverOnInitialConnection();
 
    void setFailoverOnInitialConnection(boolean failover);

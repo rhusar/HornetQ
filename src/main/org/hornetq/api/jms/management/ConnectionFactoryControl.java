@@ -247,16 +247,6 @@ public interface ConnectionFactoryControl
     */
    void setFailoverOnInitialConnection(boolean failoverOnInitialConnection);
 
-   /**
-    * @see ClientSessionFactory#isFailoverOnServerShutdown()
-    */
-   boolean isFailoverOnServerShutdown();
-
-    /**
-    * @see ClientSessionFactory#setFailoverOnServerShutdown(boolean)
-    */
-   void setFailoverOnServerShutdown(boolean failoverOnServerShutdown);
-
     /**
     * @see org.hornetq.api.core.client.ClientSessionFactory#getDiscoveryRefreshTimeout()
     */

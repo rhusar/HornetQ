@@ -87,8 +87,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       Connection conn = null;
 
       try
@@ -146,8 +145,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
 
       Connection conn = cf.createConnection();
 
@@ -189,8 +187,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       Connection conn = cf.createConnection();
 
       Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -231,8 +228,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       Connection conn = cf.createConnection();
 
       Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -274,8 +270,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                           HornetQClient.DEFAULT_THREAD_POOL_MAX_SIZE,
                           HornetQClient.DEFAULT_RETRY_INTERVAL,
                           HornetQClient.DEFAULT_RETRY_INTERVAL_MULTIPLIER,
-                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
+                          HornetQClient.DEFAULT_RECONNECT_ATTEMPTS);
       Connection conn = cf.createConnection();
 
       Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -335,7 +330,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       cf.setRetryInterval(retryInterval);
       cf.setRetryIntervalMultiplier(retryIntervalMultiplier);
       cf.setReconnectAttempts(reconnectAttempts);
-      cf.setFailoverOnServerShutdown(failoverOnServerShutdown);
 
       Assert.assertEquals(null, cf.getDiscoveryAddress());
       Assert.assertEquals(-1, cf.getDiscoveryPort());
@@ -361,7 +355,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       Assert.assertEquals(retryInterval, cf.getRetryInterval());
       Assert.assertEquals(retryIntervalMultiplier, cf.getRetryIntervalMultiplier());
       Assert.assertEquals(reconnectAttempts, cf.getReconnectAttempts());
-      Assert.assertEquals(failoverOnServerShutdown, cf.isFailoverOnServerShutdown());
 
       cf.close();
    }
@@ -623,15 +616,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       {
          // OK
       }
-      try
-      {
-         cf.setFailoverOnServerShutdown(failoverOnServerShutdown);
-         Assert.fail("Should throw exception");
-      }
-      catch (IllegalStateException e)
-      {
-         // OK
-      }
 
       cf.getStaticConnectors();
       cf.getDiscoveryAddress();
@@ -661,8 +645,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       cf.getRetryInterval();
       cf.getRetryIntervalMultiplier();
       cf.getReconnectAttempts();
-      cf.isFailoverOnServerShutdown();
-
    }
 
    private void assertFactoryParams(final HornetQConnectionFactory cf,
@@ -693,8 +675,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
                                     final int threadPoolMaxSize,
                                     final long retryInterval,
                                     final double retryIntervalMultiplier,
-                                    final int reconnectAttempts,
-                                    final boolean failoverOnServerShutdown)
+                                    final int reconnectAttempts)
    {
       TransportConfiguration[] cfStaticConnectors = cf.getStaticConnectors();
       if (staticConnectors == null)
@@ -737,7 +718,6 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       Assert.assertEquals(cf.getRetryInterval(), retryInterval);
       Assert.assertEquals(cf.getRetryIntervalMultiplier(), retryIntervalMultiplier);
       Assert.assertEquals(cf.getReconnectAttempts(), reconnectAttempts);
-      Assert.assertEquals(cf.isFailoverOnServerShutdown(), failoverOnServerShutdown);
    }
 
    @Override

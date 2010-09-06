@@ -1061,10 +1061,6 @@ public class FileConfigurationParser
                                                               ConfigurationImpl.DEFAULT_BRIDGE_RECONNECT_ATTEMPTS,
                                                               Validators.MINUS_ONE_OR_GE_ZERO);
 
-      boolean failoverOnServerShutdown = XMLConfigurationUtil.getBoolean(brNode,
-                                                                         "failover-on-server-shutdown",
-                                                                         HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
-
       boolean useDuplicateDetection = XMLConfigurationUtil.getBoolean(brNode,
                                                                       "use-duplicate-detection",
                                                                       ConfigurationImpl.DEFAULT_BRIDGE_DUPLICATE_DETECTION);
@@ -1119,7 +1115,6 @@ public class FileConfigurationParser
                                           retryInterval,
                                           retryIntervalMultiplier,
                                           reconnectAttempts,
-                                          failoverOnServerShutdown,
                                           useDuplicateDetection,
                                           confirmationWindowSize,
                                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -1138,7 +1133,6 @@ public class FileConfigurationParser
                                           retryInterval,
                                           retryIntervalMultiplier,
                                           reconnectAttempts,
-                                          failoverOnServerShutdown,
                                           useDuplicateDetection,
                                           confirmationWindowSize,
                                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

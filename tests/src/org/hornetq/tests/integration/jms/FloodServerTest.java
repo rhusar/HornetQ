@@ -157,7 +157,6 @@ public class FloodServerTest extends UnitTestCase
                                             1000,
                                             reconnectAttempts,
                                             HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                            failoverOnServerShutdown,
                                             null,
                                             "/cf");
    }

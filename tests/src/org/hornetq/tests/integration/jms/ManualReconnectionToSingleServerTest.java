@@ -176,7 +176,6 @@ public class ManualReconnectionToSingleServerTest extends UnitTestCase
       cfConfig.setRetryInterval(1000);
       cfConfig.setRetryIntervalMultiplier(1.0);
       cfConfig.setReconnectAttempts(-1);
-      cfConfig.setFailoverOnServerShutdown(true);
       configuration.getConnectionFactoryConfigurations().add(cfConfig);
       serverManager = new JMSServerManagerImpl(server, configuration);
       serverManager.start();

@@ -204,7 +204,6 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(3, bc.getRetryInterval());
             Assert.assertEquals(0.2, bc.getRetryIntervalMultiplier());
             Assert.assertEquals(2, bc.getReconnectAttempts());
-            Assert.assertEquals(false, bc.isFailoverOnServerShutdown());
             Assert.assertEquals(true, bc.isUseDuplicateDetection());
             Assert.assertEquals("connector1", bc.getStaticConnectors().get(0));
             Assert.assertEquals(null, bc.getDiscoveryGroupName());

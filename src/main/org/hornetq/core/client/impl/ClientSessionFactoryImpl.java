@@ -126,8 +126,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final int reconnectAttempts;
 
-   private final boolean failoverOnServerShutdown;
-
    private final Set<SessionFailureListener> listeners = new ConcurrentHashSet<SessionFailureListener>();
 
    private Connector connector;
@@ -143,7 +141,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private volatile boolean stopPingingAfterOne;
 
    private volatile boolean closed;
-
+   
    // Static
    // ---------------------------------------------------------------------------------------
 
@@ -152,7 +150,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    public ClientSessionFactoryImpl(final ServerLocatorInternal serverLocator,
                                    final TransportConfiguration connectorConfig,
-                                   final boolean failoverOnServerShutdown,
                                    final long callTimeout,
                                    final long clientFailureCheckPeriod,
                                    final long connectionTTL,
@@ -169,8 +166,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       this.serverLocator = serverLocator;
 
       this.connectorConfig = connectorConfig;
-
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
 
       connectorFactory = instantiateConnectorFactory(connectorConfig.getFactoryClassName());
 
@@ -505,7 +500,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          // has been shutdown cleanly unless failoverOnServerShutdown is true
          TransportConfiguration backupConfig = serverLocator.getBackup(connectorConfig);
          
-         boolean attemptFailover = backupConfig != null && (failoverOnServerShutdown || !serverShutdown);
+         boolean attemptFailover = (backupConfig != null) && !serverShutdown;
 
          boolean attemptReconnect;
 

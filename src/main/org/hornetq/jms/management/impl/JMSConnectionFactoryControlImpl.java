@@ -220,11 +220,6 @@ public class JMSConnectionFactoryControlImpl extends StandardMBean implements Co
       cf.setFailoverOnInitialConnection(failover);
    }
 
-   public void setFailoverOnServerShutdown(boolean failoverOnServerShutdown)
-   {
-      cf.setFailoverOnServerShutdown(failoverOnServerShutdown);
-   }
-
    public boolean isUseGlobalPools()
    {
       return cf.isUseGlobalPools();
@@ -388,11 +383,6 @@ public class JMSConnectionFactoryControlImpl extends StandardMBean implements Co
    public boolean isFailoverOnInitialConnection()
    {
       return cf.isFailoverOnInitialConnection();
-   }
-
-   public boolean isFailoverOnServerShutdown()
-   {
-      return cf.isFailoverOnServerShutdown();
    }
 
    public int getMinLargeMessageSize()

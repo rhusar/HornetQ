@@ -582,24 +582,6 @@ public interface ServerLocator
    void setFailoverOnInitialConnection(boolean failover);
 
    /**
-    * Returns whether connections created by this factory must failover in case the server they are
-    * connected to <em>has normally shut down</em>.
-    * 
-    * Default value is {@link HornetQClient#DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN}.
-    * 
-    * @return <code>true</code> if connections must failover if the server has normally shut down, else <code>false</code>
-    */
-   boolean isFailoverOnServerShutdown();
-
-   /**
-    * Sets whether connections created by this factory must failover in case the server they are
-    * connected to <em>has normally shut down</em>
-    * 
-    * @param failoverOnServerShutdown <code>true</code> if connections must failover if the server has normally shut down, <code>false</code> else
-    */
-   void setFailoverOnServerShutdown(boolean failoverOnServerShutdown);
-
-   /**
     * Returns the class name of the connection load balancing policy.
     * 
     * Default value is "org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy".

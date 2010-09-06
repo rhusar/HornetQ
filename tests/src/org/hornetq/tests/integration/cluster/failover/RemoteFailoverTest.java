@@ -14,19 +14,17 @@
 package org.hornetq.tests.integration.cluster.failover;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
+import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.JournalType;
-import org.hornetq.tests.integration.cluster.distribution.ClusterTestBase;
 import org.hornetq.tests.integration.cluster.util.RemoteProcessHornetQServer;
-import org.hornetq.tests.integration.cluster.util.RemoteProcessHornetQServerSupport;
 import org.hornetq.tests.integration.cluster.util.RemoteServerConfiguration;
+import org.hornetq.tests.integration.cluster.util.SameProcessHornetQServer;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
 
 /**
@@ -71,38 +69,6 @@ public class RemoteFailoverTest extends FailoverTest
 
    }
 
-   public static class SharedBackupServerConfiguration extends RemoteServerConfiguration
-   {
-
-      @Override
-      public Configuration getConfiguration()
-      {
-         Configuration config = createDefaultConfig(generateParams(1, true), NettyAcceptorFactory.class.getName());
-         config.setJournalType(JournalType.NIO);
-         config.setSharedStore(true);
-         config.setBackup(true);
-         config.setClustered(true);
-         config.setLiveConnectorName("live");
-         config.getConnectorConfigurations().put("live",
-                                                 createTransportConfiguration(true, false, generateParams(0, true)));
-         config.getConnectorConfigurations().put("self",
-                                                 createTransportConfiguration(true, false, generateParams(1, true)));
-         List<String> connectors = new ArrayList<String>();
-         connectors.add("live");
-         config.getClusterConfigurations().add(new ClusterConnectionConfiguration("cluster",
-                                                                                  "foo",
-                                                                                  "self",
-                                                                                  -1,
-                                                                                  false,
-                                                                                  false,
-                                                                                  1,
-                                                                                  1,
-                                                                                  connectors));
-         return config;
-      }
-
-   }
-
    @Override
    protected TestableServer createLiveServer()
    {
@@ -112,7 +78,7 @@ public class RemoteFailoverTest extends FailoverTest
    @Override
    protected TestableServer createBackupServer()
    {
-      return new RemoteProcessHornetQServer(SharedBackupServerConfiguration.class.getName());
+      return new SameProcessHornetQServer(HornetQServers.newHornetQServer(backupConfig));
    }
    
    protected TransportConfiguration getConnectorTransportConfiguration(final boolean live) {
@@ -125,6 +91,20 @@ public class RemoteFailoverTest extends FailoverTest
          params = generateParams(1, true);
       }
       return createTransportConfiguration(true, false, params);
+   }
+   
+   @Override
+   protected TransportConfiguration getAcceptorTransportConfiguration(boolean live)
+   {
+      Map<String, Object> params = null;
+      if (live)
+      {
+         params = generateParams(0, true);
+      } else
+      {
+         params = generateParams(1, true);
+      }
+      return createTransportConfiguration(true, true, params);
    }
 
    // Constructors --------------------------------------------------

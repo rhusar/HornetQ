@@ -116,7 +116,6 @@ public class BridgeWithPagingTest extends BridgeTestBase
                                                                         retryInterval,
                                                                         retryIntervalMultiplier,
                                                                         reconnectAttempts,
-                                                                        true,
                                                                         false,
                                                                         confirmationWindowSize,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,

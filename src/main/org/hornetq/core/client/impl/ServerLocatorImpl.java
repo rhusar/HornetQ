@@ -153,8 +153,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private volatile boolean closed;
 
-   private boolean failoverOnServerShutdown;
-
    private final List<Interceptor> interceptors = new CopyOnWriteArrayList<Interceptor>();
 
    private static ExecutorService globalThreadPool;
@@ -376,8 +374,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       failoverOnInitialConnection = HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION;
 
-      failoverOnServerShutdown = HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
-
       cacheLargeMessagesClient = HornetQClient.DEFAULT_CACHE_LARGE_MESSAGE_CLIENT;
 
       initialMessagePacketSize = HornetQClient.DEFAULT_INITIAL_MESSAGE_PACKET_SIZE;
@@ -494,7 +490,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       ClientSessionFactory factory = new ClientSessionFactoryImpl(this,
             transportConfiguration,
-            failoverOnServerShutdown,
             callTimeout,
             clientFailureCheckPeriod,
             connectionTTL,
@@ -560,7 +555,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             {
                factory = new ClientSessionFactoryImpl(this,
                      tc,
-                     failoverOnServerShutdown,
                      callTimeout,
                      clientFailureCheckPeriod,
                      connectionTTL,
@@ -921,17 +915,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       checkWrite();
       this.failoverOnInitialConnection = failover;
-   }
-
-   public synchronized boolean isFailoverOnServerShutdown()
-   {
-      return failoverOnServerShutdown;
-   }
-
-   public synchronized void setFailoverOnServerShutdown(final boolean failoverOnServerShutdown)
-   {
-      checkWrite();
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
    }
 
    public synchronized String getConnectionLoadBalancingPolicyClassName()

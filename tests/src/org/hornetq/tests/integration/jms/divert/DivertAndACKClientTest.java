@@ -141,7 +141,6 @@ public class DivertAndACKClientTest extends JMSTestBase
       int retryInterval = 1000;
       double retryIntervalMultiplier = 1.0;
       int reconnectAttempts = -1;
-      boolean failoverOnServerShutdown = true;
       int callTimeout = 30000;
 
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
@@ -174,7 +173,6 @@ public class DivertAndACKClientTest extends JMSTestBase
                                         HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                         reconnectAttempts,
                                         HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                        failoverOnServerShutdown,
                                         null,
                                         jndiBindings);
    }

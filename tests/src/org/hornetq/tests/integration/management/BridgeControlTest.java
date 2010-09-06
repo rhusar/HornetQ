@@ -81,7 +81,6 @@ public class BridgeControlTest extends ManagementTestBase
       Assert.assertEquals(bridgeConfig.getRetryInterval(), bridgeControl.getRetryInterval());
       Assert.assertEquals(bridgeConfig.getRetryIntervalMultiplier(), bridgeControl.getRetryIntervalMultiplier());
       Assert.assertEquals(bridgeConfig.getReconnectAttempts(), bridgeControl.getReconnectAttempts());
-      Assert.assertEquals(bridgeConfig.isFailoverOnServerShutdown(), bridgeControl.isFailoverOnServerShutdown());
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(), bridgeControl.isUseDuplicateDetection());
 
       String[] connectorPairData = bridgeControl.getStaticConnectors();
@@ -170,7 +169,6 @@ public class BridgeControlTest extends ManagementTestBase
                                              RandomUtil.randomPositiveLong(),
                                              RandomUtil.randomDouble(),
                                              RandomUtil.randomPositiveInt(),
-                                             RandomUtil.randomBoolean(),
                                              RandomUtil.randomBoolean(),
                                              RandomUtil.randomPositiveInt(),
                                              HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
