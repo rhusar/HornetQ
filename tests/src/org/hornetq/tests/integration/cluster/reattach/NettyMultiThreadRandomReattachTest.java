@@ -50,11 +50,10 @@ public class NettyMultiThreadRandomReattachTest extends MultiThreadRandomReattac
    protected ClientSessionFactoryInternal createSessionFactory() throws Exception
    {
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory")) ;
-      final ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-      sf.getServerLocator().setReconnectAttempts(-1);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
-      sf.getServerLocator().setAckBatchSize(0);
-      return sf;
+      locator.setReconnectAttempts(-1);
+      locator.setConfirmationWindowSize(1024 * 1024);
+      locator.setAckBatchSize(0);
+      return (ClientSessionFactoryInternal) locator.createSessionFactory();
    }
 
 }

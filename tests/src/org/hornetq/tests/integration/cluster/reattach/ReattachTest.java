@@ -73,12 +73,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = 1;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -151,12 +150,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = -1;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -242,12 +240,11 @@ public class ReattachTest extends ServiceTestBase
 
       final long asyncFailDelay = 2000;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -357,12 +354,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = 3;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -448,12 +444,11 @@ public class ReattachTest extends ServiceTestBase
 
          final int reconnectAttempts = -1;
 
+         locator.setRetryInterval(retryInterval);
+         locator.setRetryIntervalMultiplier(retryMultiplier);
+         locator.setReconnectAttempts(reconnectAttempts);
+         locator.setConfirmationWindowSize(1024 * 1024);
          final ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-         sf.getServerLocator().setRetryInterval(retryInterval);
-         sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-         sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-         sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
          session = sf.createSession();
 
@@ -559,12 +554,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = -1;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       final ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       InVMConnector.failOnCreateConnection = true;
 
@@ -658,12 +652,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = -1;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -731,12 +724,11 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = 10;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -799,12 +791,12 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = -1;
 
-      ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
+      ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -892,12 +884,12 @@ public class ReattachTest extends ServiceTestBase
 
       final int reconnectAttempts = -1;
 
-      ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setConfirmationWindowSize(1024 * 1024);
+      ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -970,13 +962,12 @@ public class ReattachTest extends ServiceTestBase
 
       final long maxRetryInterval = 1000;
 
+      locator.setRetryInterval(retryInterval);
+      locator.setRetryIntervalMultiplier(retryMultiplier);
+      locator.setReconnectAttempts(reconnectAttempts);
+      locator.setMaxRetryInterval(maxRetryInterval);
+      locator.setConfirmationWindowSize(1024 * 1024);
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
-      sf.getServerLocator().setRetryInterval(retryInterval);
-      sf.getServerLocator().setRetryIntervalMultiplier(retryMultiplier);
-      sf.getServerLocator().setReconnectAttempts(reconnectAttempts);
-      sf.getServerLocator().setMaxRetryInterval(maxRetryInterval);
-      sf.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
       ClientSession session = sf.createSession(false, true, true);
 
