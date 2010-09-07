@@ -226,6 +226,8 @@ public class AsynchronousFailoverTest extends FailoverTestBase
 
             Assert.assertEquals(0, sf.numSessions());
 
+            locator.close();
+            
             Assert.assertEquals(0, sf.numConnections());
 
             if (i != numIts - 1)
