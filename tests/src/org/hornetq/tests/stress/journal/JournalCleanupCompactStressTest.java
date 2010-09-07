@@ -280,6 +280,8 @@ public class JournalCleanupCompactStressTest extends ServiceTestBase
       
       journal.forceMoveNextFile();
       
+      journal.checkReclaimStatus();
+      
       Thread.sleep(5000);
       
       assertEquals(0, journal.getDataFilesCount());
