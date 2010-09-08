@@ -613,10 +613,18 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          Transaction tx = context.getTransaction();
          boolean depage = tx.getProperty(TransactionPropertyIndexes.IS_DEPAGE) != null;
-
-         if (!depage && message.storeIsPaging())
+         
+         // if the TX paged at least one message on a give address, all the other addresses should also go towards paging cache now 
+         boolean alreadyPaging = false;
+         
+         if (tx.isPaging())
          {
-            
+            alreadyPaging = getPageOperation(tx).isPaging(message.getAddress()); 
+         }
+         
+         if (!depage && message.storeIsPaging() || alreadyPaging)
+         {
+            tx.setPaging(true);
             getPageOperation(tx).addMessageToPage(message);
             if (startedTx)
             {
@@ -1104,11 +1112,19 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    {
       private final List<ServerMessage> messagesToPage = new ArrayList<ServerMessage>();
       
+      private final HashSet<SimpleString> addressesPaging = new HashSet<SimpleString>();
+      
       private Transaction subTX = null;
       
       void addMessageToPage(final ServerMessage message)
       {
          messagesToPage.add(message);
+         addressesPaging.add(message.getAddress());
+      }
+      
+      boolean isPaging(final SimpleString address)
+      {
+         return addressesPaging.contains(address);
       }
 
       public void afterCommit(final Transaction tx)

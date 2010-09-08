@@ -47,6 +47,8 @@ public class TransactionImpl implements Transaction
    private final Xid xid;
 
    private final long id;
+   
+   private boolean paging = false;
 
    private volatile State state = State.ACTIVE;
 
@@ -351,6 +353,16 @@ public class TransactionImpl implements Transaction
    public void setState(final State state)
    {
       this.state = state;
+   }
+   
+   public boolean isPaging()
+   {
+      return paging;
+   }
+
+   public void setPaging(boolean paging)
+   {
+      this.paging = paging;
    }
 
    public Xid getXid()

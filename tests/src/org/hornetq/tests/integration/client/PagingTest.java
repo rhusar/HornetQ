@@ -685,6 +685,133 @@ public class PagingTest extends ServiceTestBase
 
    }
 
+   public void testDepageDuringTransaction3() throws Exception
+   {
+      clearData();
+
+      Configuration config = createDefaultConfig();
+
+      HornetQServer server = createServer(true,
+                                          config,
+                                          PagingTest.PAGE_SIZE,
+                                          PagingTest.PAGE_MAX,
+                                          new HashMap<String, AddressSettings>());
+
+      server.start();
+
+      final int messageSize = 1024; // 1k
+
+      try
+      {
+         ClientSessionFactory sf = createInVMFactory();
+
+         sf.setBlockOnNonDurableSend(true);
+         sf.setBlockOnDurableSend(true);
+         sf.setBlockOnAcknowledge(true);
+
+         byte[] body = new byte[messageSize];
+
+         ClientSession sessionTransacted = sf.createSession(null, null, false, false, false, false, 0);
+         ClientProducer producerTransacted = sessionTransacted.createProducer(PagingTest.ADDRESS);
+
+         ClientSession sessionNonTX = sf.createSession(true, true, 0);
+         sessionNonTX.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
+
+         ClientProducer producerNonTransacted = sessionNonTX.createProducer(PagingTest.ADDRESS);
+
+         sessionNonTX.start();
+
+         for (int i = 0; i < 50; i++)
+         {
+            System.out.println("Sending " + i);
+            ClientMessage message = sessionNonTX.createMessage(true);
+            message.getBodyBuffer().writeBytes(body);
+            message.putIntProperty(new SimpleString("id"), i);
+
+            producerTransacted.send(message);
+            
+            if (i % 2 == 0)
+            {
+               System.out.println("Sending 20 msgs to make it page");
+               for (int j = 0 ; j < 20; j++)
+               {
+                  ClientMessage msgSend = sessionNonTX.createMessage(true);
+                  msgSend.getBodyBuffer().writeBytes(new byte[10 * 1024]);
+                  producerNonTransacted.send(msgSend);
+               }
+               assertTrue(server.getPostOffice().getPagingManager().getPageStore(PagingTest.ADDRESS).isPaging());
+            }
+            else
+            {
+               System.out.println("Consuming 20 msgs to make it page");
+               ClientConsumer consumer = sessionNonTX.createConsumer(PagingTest.ADDRESS);
+               for (int j = 0 ; j < 20; j++)
+               {
+                  ClientMessage msgReceived = consumer.receive(10000);
+                  assertNotNull(msgReceived);
+                  msgReceived.acknowledge();
+               }
+               consumer.close();
+            }
+         }
+         
+         ClientConsumer consumerNonTX = sessionNonTX.createConsumer(PagingTest.ADDRESS);
+         while (true)
+         {
+            ClientMessage msgReceived = consumerNonTX.receive(1000);
+            if (msgReceived == null)
+            {
+               break;
+            }
+            msgReceived.acknowledge();
+         }
+         consumerNonTX.close();
+         
+
+         ClientConsumer consumer = sessionNonTX.createConsumer(PagingTest.ADDRESS);
+
+         Assert.assertNull(consumer.receiveImmediate());
+
+         sessionTransacted.commit();
+
+         sessionTransacted.close();
+
+         for (int i = 0; i < 50; i++)
+         {
+            ClientMessage message = consumer.receive(PagingTest.RECEIVE_TIMEOUT);
+
+            Assert.assertNotNull(message);
+
+            Integer messageID = (Integer)message.getObjectProperty(new SimpleString("id"));
+
+            // System.out.println(messageID);
+            Assert.assertNotNull(messageID);
+            Assert.assertEquals("message received out of order", i, messageID.intValue());
+            
+            System.out.println("MessageID = " + messageID);
+
+            message.acknowledge();
+         }
+
+         Assert.assertNull(consumer.receiveImmediate());
+
+         consumer.close();
+
+         sessionNonTX.close();
+      }
+      finally
+      {
+         try
+         {
+            server.stop();
+         }
+         catch (Throwable ignored)
+         {
+         }
+      }
+
+   }
+
    public void testPageOnSchedulingNoRestart() throws Exception
    {
       internalTestPageOnScheduling(false);
