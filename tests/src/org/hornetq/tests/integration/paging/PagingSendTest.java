@@ -187,7 +187,7 @@ public class PagingSendTest extends ServiceTestBase
 
          final AtomicInteger errors = new AtomicInteger(0);
 
-         final int TOTAL_MESSAGES = 10000;
+         final int TOTAL_MESSAGES = 1000;
          
          // Consumer will be ready after we have commits
          final CountDownLatch ready = new CountDownLatch(1);
@@ -240,8 +240,6 @@ public class PagingSendTest extends ServiceTestBase
             ClientMessage msg = consumer.receive(10000);
 
             Assert.assertNotNull(msg);
-            
-            System.out.println("i = " + i);
             
             assertEquals(i, msg.getIntProperty("count").intValue());
             
