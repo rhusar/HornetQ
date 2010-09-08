@@ -51,33 +51,23 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       super.setUp();
       clearData();
       FakeLockFile.clearLocks();
-      servers.ensureCapacity(5);
-      createConfigs();
+   }
 
+   public void testMultipleFailovers() throws Exception
+   {
+      createLiveConfig(0);
+      createBackupConfig(0, 1,false,  0, 2, 3, 4, 5);
+      createBackupConfig(0, 2,false,  0, 1, 3, 4, 5);
+      createBackupConfig(0, 3,false,  0, 1, 2, 4, 5);
+      createBackupConfig(0, 4, false, 0, 1, 2, 3, 4);
+      createBackupConfig(0, 5, false, 0, 1, 2, 3, 4);
       servers.get(1).start();
       servers.get(2).start();
       servers.get(3).start();
       servers.get(4).start();
       servers.get(5).start();
       servers.get(0).start();
-   }
 
-   /**
-    * @throws Exception
-    */
-   protected void createConfigs() throws Exception
-   {
-
-      createLiveConfig(0);
-      createBackupConfig(1, 0, 2, 3, 4, 5);
-      createBackupConfig(2, 0, 1, 3, 4, 5);
-      createBackupConfig(3, 0, 1, 2, 4, 5);
-      createBackupConfig(4, 0, 1, 2, 3, 4);
-      createBackupConfig(5, 0, 1, 2, 3, 4);
-   }
-
-   public void test() throws Exception
-   {
       ServerLocator locator = getServerLocator(0);
 
       locator.setBlockOnNonDurableSend(true);
@@ -111,10 +101,49 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       fail(backupNode, session);
       session.close();
       backupNode = waitForBackup(5);
-      session = sendAndConsume(sf, false);    
+      session = sendAndConsume(sf, false);
       session.close();
       servers.get(backupNode).stop();
       System.out.println("MultipleBackupFailoverTest.test");
+   }
+
+   public void testMultipleFailovers2liveservers() throws Exception
+   {
+      createLiveConfig(0, 3);
+      createBackupConfig(0, 1, true, 0, 3);
+      createBackupConfig(0, 2,true, 0, 3);
+      createLiveConfig(3, 0);
+      createBackupConfig(3, 4, true,0, 3);
+      createBackupConfig(3, 5, true,0, 3);
+      servers.get(1).start();
+      servers.get(2).start();
+      servers.get(0).start();
+      servers.get(4).start();
+      servers.get(5).start();
+      servers.get(3).start();
+      ServerLocator locator = getServerLocator(0);
+
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setReconnectAttempts(-1);
+      ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 4);
+      ClientSession session = sendAndConsume(sf, true);
+
+      fail(0, session);
+
+      ServerLocator locator2 = getServerLocator(3);
+      locator2.setBlockOnNonDurableSend(true);
+      locator2.setBlockOnDurableSend(true);
+      locator2.setBlockOnAcknowledge(true);
+      locator2.setReconnectAttempts(-1);
+      ClientSessionFactoryInternal sf2 = createSessionFactoryAndWaitForTopology(locator2, 4);
+      ClientSession session2 = sendAndConsume(sf2, true);
+      fail(3, session2);
+      servers.get(2).stop();
+      servers.get(4).stop();
+      servers.get(1).stop();
+      servers.get(3).stop();
    }
 
    protected void fail(int node, final ClientSession... sessions) throws Exception
@@ -126,12 +155,12 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
    {
       long time = System.currentTimeMillis();
       long toWait = seconds * 1000;
-      while(true)
+      while (true)
       {
          for (int i = 0, serversSize = servers.size(); i < serversSize; i++)
          {
             TestableServer backupServer = servers.get(i);
-            if(backupServer.isInitialised())
+            if (backupServer.isInitialised())
             {
                return i;
             }
@@ -144,7 +173,7 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
          {
             //ignore
          }
-         if(System.currentTimeMillis() > (time + toWait))
+         if (System.currentTimeMillis() > (time + toWait))
          {
             fail("backup server never started");
          }
@@ -152,7 +181,7 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
    }
 
 
-   private void createBackupConfig(int nodeid, int... nodes)
+   private void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
    {
       Configuration config1 = super.createDefaultConfig();
       config1.getAcceptorConfigurations().clear();
@@ -172,15 +201,22 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       TransportConfiguration backupConnector = getConnectorTransportConfiguration(nodeid);
       List<String> pairs = null;
       ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
-               pairs);
+           createClusterConnections? staticConnectors:pairs);
       config1.getClusterConfigurations().add(ccc1);
       BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
       config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
+
+
+      config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);
+      config1.setJournalDirectory(config1.getJournalDirectory() + "_" + liveNode);
+      config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);
+      config1.setLargeMessagesDirectory(config1.getLargeMessagesDirectory() + "_" + liveNode);
+
       servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config1)));
    }
 
-   public void createLiveConfig(int liveNode)
+   public void createLiveConfig(int liveNode, int ... otherLiveNodes)
    {
       TransportConfiguration liveConnector = getConnectorTransportConfiguration(liveNode);
       Configuration config0 = super.createDefaultConfig();
@@ -189,13 +225,27 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
       config0.setClustered(true);
-       List<String> pairs = null;
+      List<String> pairs = new ArrayList<String>();
+      for (int node : otherLiveNodes)
+      {
+         TransportConfiguration otherLiveConnector = getConnectorTransportConfiguration(node);
+         config0.getConnectorConfigurations().put(otherLiveConnector.getName(), otherLiveConnector);
+         pairs.add(otherLiveConnector.getName());  
+
+      }
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1", "jms", liveConnector.getName(), -1, false, false, 1, 1,
-               pairs);
+            pairs);
       config0.getClusterConfigurations().add(ccc0);
       config0.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
+
+      config0.setBindingsDirectory(config0.getBindingsDirectory() + "_" + liveNode);
+      config0.setJournalDirectory(config0.getJournalDirectory() + "_" + liveNode);
+      config0.setPagingDirectory(config0.getPagingDirectory() + "_" + liveNode);
+      config0.setLargeMessagesDirectory(config0.getLargeMessagesDirectory() + "_" + liveNode);
+
       servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config0)));
    }
+
    private TransportConfiguration getConnectorTransportConfiguration(int node)
    {
       HashMap<String, Object> map = new HashMap<String, Object>();
@@ -220,7 +270,8 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
 
       sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
-      assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+      boolean ok = countDownLatch.await(5, TimeUnit.SECONDS);
+      assertTrue(ok);
       return sf;
    }
 
@@ -230,7 +281,7 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       for (int i = 0, configsLength = configs.length; i < configsLength; i++)
       {
          HashMap<String, Object> map = new HashMap<String, Object>();
-         map.put(TransportConstants.SERVER_ID_PROP_NAME, i);
+         map.put(TransportConstants.SERVER_ID_PROP_NAME, nodes[i]);
          configs[i] = new TransportConfiguration(INVM_CONNECTOR_FACTORY, map);
 
       }
@@ -253,10 +304,10 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
       for (int i = 0; i < numMessages; i++)
       {
          ClientMessage message = session.createMessage(HornetQTextMessage.TYPE,
-                                                       false,
-                                                       0,
-                                                       System.currentTimeMillis(),
-                                                       (byte)1);
+               false,
+               0,
+               System.currentTimeMillis(),
+               (byte) 1);
          message.putIntProperty(new SimpleString("count"), i);
          message.getBodyBuffer().writeString("aardvarks");
          producer.send(message);
@@ -283,6 +334,7 @@ public class MultipleBackupFailoverTest extends ServiceTestBase
 
       return session;
    }
+
    class LatchClusterTopologyListener implements ClusterTopologyListener
    {
       final CountDownLatch latch;

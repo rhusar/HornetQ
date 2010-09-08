@@ -401,6 +401,42 @@ public class ClusterManagerImpl implements ClusterManager
             backupSessionFactory = null;
          }
 
+         for (BroadcastGroup broadcastGroup : broadcastGroups.values())
+         {
+            try
+            {
+               broadcastGroup.start();
+            }
+            catch (Exception e)
+            {
+               log.warn("unable to start broadcast group " + broadcastGroup.getName(), e);
+            }
+         }
+
+         for (ClusterConnection clusterConnection : clusterConnections.values())
+         {
+            try
+            {
+               clusterConnection.start();
+            }
+            catch (Exception e)
+            {
+               log.warn("unable to start cluster connection " + clusterConnection.getName(), e);
+            }
+         }
+
+         for (Bridge bridge : bridges.values())
+         {
+            try
+            {
+               bridge.start();
+            }
+            catch (Exception e)
+            {
+               log.warn("unable to start bridge " + bridge.getName(), e);
+            }
+         }
+
          if (clusterConnections.size() > 0)
          {
             announceNode();
@@ -509,7 +545,10 @@ public class ClusterManagerImpl implements ClusterManager
 
       managementService.registerBroadcastGroup(group, config);
 
-      group.start();
+      if (!backup)
+      {
+         group.start();
+      }
    }
 
    private void logWarnNoConnector(final String connectorName, final String bgName)
@@ -658,7 +697,10 @@ public class ClusterManagerImpl implements ClusterManager
 
       managementService.registerBridge(bridge, config);
 
-      bridge.start();
+      if (!backup)
+      {
+         bridge.start();
+      }
    }
 
    private synchronized void deployClusterConnection(final ClusterConnectionConfiguration config) throws Exception
@@ -739,7 +781,10 @@ public class ClusterManagerImpl implements ClusterManager
 
       clusterConnections.put(config.getName(), clusterConnection);
 
-      clusterConnection.start();
+      if (!backup)
+      {
+         clusterConnection.start();
+      }
    }
 
    private Transformer instantiateTransformer(final String transformerClassName)
@@ -761,5 +806,11 @@ public class ClusterManagerImpl implements ClusterManager
          }
       }
       return transformer;
+   }
+   //for testing
+   public void clear()
+   {
+      bridges.clear();
+      clusterConnections.clear();
    }
 }

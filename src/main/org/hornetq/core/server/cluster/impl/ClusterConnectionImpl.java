@@ -133,6 +133,8 @@ public class ClusterConnectionImpl implements ClusterConnection
          this.serverLocator.setClusterConnection(true);
          this.serverLocator.setClusterTransportConfiguration(connector);
          this.serverLocator.setBackup(server.getConfiguration().isBackup());
+         this.serverLocator.setReconnectAttempts(-1);
+         this.serverLocator.setRetryInterval(retryInterval);
          
          // a cluster connection will connect to other nodes only if they are directly connected
          // through a static list of connectors 
@@ -334,6 +336,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       // discard notifications about ourselves
       if (nodeID.equals(nodeUUID.toString()))
       {
+         server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, distance);
          return;
       }
 

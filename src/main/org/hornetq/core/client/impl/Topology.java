@@ -69,7 +69,7 @@ public class Topology implements Serializable
             currentMember.getConnector().a =  member.getConnector().a;
             replaced = true;
          }
-         if(hasChanged(currentMember.getConnector().b, member.getConnector().b))
+         if(hasChanged(currentMember.getConnector().b, member.getConnector().b) && member.getConnector().b != null)
          {
             if(currentMember.getConnector().b == null)
             {
