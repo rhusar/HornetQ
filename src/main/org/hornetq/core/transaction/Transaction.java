@@ -72,6 +72,8 @@ public interface Transaction
    Object getProperty(int index);
 
    void setContainsPersistent();
+   
+   boolean isContainsPersistent();
 
    void setTimeout(int timeout);
    

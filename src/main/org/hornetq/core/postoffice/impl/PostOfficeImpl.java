@@ -612,6 +612,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       else
       {
          Transaction tx = context.getTransaction();
+         
          boolean depage = tx.getProperty(TransactionPropertyIndexes.IS_DEPAGE) != null;
          
          // if the TX paged at least one message on a give address, all the other addresses should also go towards paging cache now 
@@ -1243,7 +1244,15 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                   {
                      subTX = tx.copy();
                   }
+                  
                   route(message, subTX, false);
+                  
+                  if (subTX.isContainsPersistent())
+                  {
+                     // The route wouldn't be able to update the persistent flag on the main TX
+                     // If we don't do this we would eventually miss a commit record
+                     tx.setContainsPersistent();
+                  }
                }
             }
 

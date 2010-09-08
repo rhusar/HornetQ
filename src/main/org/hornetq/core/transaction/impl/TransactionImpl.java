@@ -131,6 +131,11 @@ public class TransactionImpl implements Transaction
    {
       containsPersistent = true;
    }
+   
+   public boolean isContainsPersistent()
+   {
+      return containsPersistent;
+   }
 
    public void setTimeout(final int timeout)
    {
