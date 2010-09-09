@@ -1282,7 +1282,7 @@
    	   
    	
    	  <copy todir="${build.dir}/eap-examples-tmp">
-   	  	  <fileset dir="${examples.dir}" excludes="**/build.sh,**/build.bat"/>
+   	  	  <fileset dir="${examples.dir}" excludes="**/build.sh,**/build.bat, **/twitter-connector/**"/>
    	  </copy>
    	
    	  <copy todir="${build.dir}/eap-examples-tmp" overwrite="true">
