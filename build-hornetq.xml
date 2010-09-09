@@ -85,6 +85,7 @@
    <property name="resources.jar.name" value="hornetq-resources.jar"/>
    <property name="resources.sources.jar.name" value="hornetq-resources-sources.jar"/>
    <property name="twitter4j.jar.name" value="twitter4j-core.jar"/>
+   <property name="eap.examples.zip.name" value="hornetq-eap-examples.zip"/>
 
    <!--source and build dirs-->
    <property name="build.dir" value="build"/>
@@ -724,7 +725,7 @@
    </target>
 
    <target name="jar"
-           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration">
+           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration, eap-examples">
    </target>
 
    <target name="jar-jnp-client" depends="init">
@@ -1275,6 +1276,28 @@
       <gzip src="${build.dir}/${build.artifact}.tar"
             destfile="${build.dir}/${build.artifact}.tar.gz"/>
    </target>
+	
+   <target name="eap-examples" description="Generates a file with examples tuned for the JBoss EAP" depends="init">
+   	  <mkdir dir="${build.dir}/eap-examples-tmp"/>
+   	   
+   	
+   	  <copy todir="${build.dir}/eap-examples-tmp">
+   	  	  <fileset dir="${examples.dir}" excludes="**/build.sh,**/build.bat"/>
+   	  </copy>
+   	
+   	  <copy todir="${build.dir}/eap-examples-tmp" overwrite="true">
+   	  	   <fileset dir="examples-eap"/>
+   	  </copy>
+   	
+   	  <replace dir="${build.dir}/eap-examples-tmp" token="hornetq-ra.rar" value="jms-ra.rar"></replace>
+   	
+   	  <zip destfile="${build.jars.dir}/${eap.examples.zip.name}">
+   	  	 <zipfileset dir="${build.dir}/eap-examples-tmp" prefix="examples/hornetq"/>
+   	  </zip>
+   	
+   	  <delete dir="${build.dir}/eap-examples-tmp"/> 
+	</target>
+
 
 
    <target name="source-distro">

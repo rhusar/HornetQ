@@ -12,12 +12,12 @@
   ~ permissions and limitations under the License.
   -->
 <project default="compile" name="javaeeexample" basedir=".">
+   <property environment="ENV"/>
    <dirname property="imported.basedir" file="${ant.file.javaeeexample}"/>
    <property file="${imported.basedir}/config/ant.properties"/>
    <property name="example.config.dir" value="config"/>
    <property file="${example.config.dir}/ant.properties"/>
     <property name="example.server.dir" value="server"/>
-   <property environment="ENV"/>
    <property name="jboss.home" value="${ENV.JBOSS_HOME}"/>
 
    <!--
@@ -56,7 +56,7 @@
       <fileset dir="${jboss.home}/client">
          <include name="**/*.jar"/>
       </fileset>
-      <fileset dir="${jboss.home}/server/default-with-hornetq/lib">
+      <fileset dir="${jboss.home}/server/${server.default}/lib">
          <include name="netty*.jar"/>
       </fileset>
    </path>
@@ -116,7 +116,7 @@
 
    <target name="deploy" depends="validate-jboss, copy-profile, copy-resources, ear">
       <property name="example-profile" value="${jboss.home}/server/${example.name}-example-profile"/>
-      <copy todir="${example-profile}/deploy/hornetq.sar" overwrite="true">
+      <copy todir="${example-profile}/deploy/${hornetq.config.dir}" overwrite="true">
          <fileset dir="${example.server.dir}"/>
       </copy>
       <copy todir="${example-profile}/deploy/" overwrite="true">
@@ -136,7 +136,7 @@
    </target>
 
    <target name="copy-profile" depends="profile.check" unless="donot.copy.profile">
-      <property name="profile" value="${jboss.home}/server/default-with-hornetq"/>
+      <property name="profile" value="${jboss.home}/server/${server.default}"/>
       <property name="example-profile" value="${jboss.home}/server/${example.name}-example-profile"/>
       <property name="deploy.dir" value="${example-profile}/deploy/"/>
       <mkdir dir="${example-profile}"/>
@@ -168,8 +168,8 @@
 
    <target name="validate-jboss">
       <fail unless="ENV.JBOSS_HOME" message="JBOSS_HOME environment variable not set! Set it and try again."/>
-      <available property="default-config" type="dir" file="${jboss.home}/server/default-with-hornetq"/>
-      <fail unless="default-config" message="${jboss.home}/server/default-with-hornetq not found!"/>
+      <available property="default-config" type="dir" file="${jboss.home}/server/${server.default}"/>
+      <fail unless="default-config" message="${jboss.home}/server/${server.default} not found!"/>
    </target>
 
    <target name="runExample" depends="validate-jboss,compile">

@@ -25,16 +25,36 @@
          <include name="hornetq-core.jar"/>
          <include name="hornetq-bootstrap.jar"/>
          <include name="hornetq-jbossas-security.jar"/>
-      </fileset>
-      <fileset dir="${hornetq.jars.dir}">
-         <include name="jboss-mc.jar"/>
+        <include name="**/netty*jar"/>
+        <include name="**/jboss-kernel.jar"/>
+        <include name="**/jboss-mc.jar"/>
+        <include name="**/jboss-logging-spi.jar"/>
+      	<include name="**/jboss-reflect.jar"/>
+      	<include name="**/jboss-common-core.jar"/>
+      	<include name="**/jboss-dependency.jar"/>
+      	<include name="**/jboss-mdr.jar"/>
+      	<include name="**/jboss-xml-binding.jar"/>
+      		      	
       </fileset>
       <fileset dir="${jars.dir}">
          <include name="**/netty*jar"/>
 
+      	 <exclude name="**/*-sources.jar"/>
 
-         <exclude name="**/*-sources.jar"/>
+         <include name="**/jboss-mc.jar"/>
 
+      	<include name="**/hornetq-core.jar"/>
+        <include name="**/hornetq-bootstrap.jar"/>
+        <include name="**/hornetq-jbossas-security.jar"/>
+        <include name="**/jboss-mc.jar"/>
+        <include name="**/jboss-kernel.jar"/>
+        <include name="**/jboss-logging-spi.jar"/>
+      	<include name="**/jboss-reflect.jar"/>
+      	<include name="**/jboss-common-core.jar"/>
+      	<include name="**/jboss-dependency.jar"/>
+      	<include name="**/jboss-mdr.jar"/>
+      	<include name="**/jboss-xml-binding.jar"/>
+      	
 
          <!-- <include name="**/*.jar"/>
          -->

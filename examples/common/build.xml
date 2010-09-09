@@ -26,6 +26,7 @@
       </condition>
    </fail>
 
+   <property environment="ENV"/>
    <dirname property="imported.basedir" file="${ant.file.example}"/>
    <property file="${imported.basedir}/config/ant.properties"/>
 
@@ -60,21 +61,25 @@
 
    <path id="compilation.classpath">
       <fileset dir="${hornetq.jars.dir}">
-         <include name="**/*.jar"/>
+         <include name="**/hornetq*.jar"/>
       </fileset>
        <fileset dir="${jars.dir}">
-         <include  name="**/jboss-jms-api.jar"/>
+         <include name="**/${jms-library}"/>
+       	 <include name="**/jboss-kernel.jar"/>
       </fileset>
       <path refid="extra.classpath"/>
    </path>
 
    <path id="client.compilation.classpath">
       <fileset dir="${hornetq.jars.dir}">
+         <include name="**/jnpserver.jar"/>
          <include name="**/*client*.jar"/>
-         <include  name="**/jboss-jms-api.jar"/>
+         <include name="**/${jms-library}"/>
+         <include name="**/netty.jar"/>
       </fileset>
        <fileset dir="${jars.dir}">
-         <include name="**/jboss-jms-api.jar"/>
+         <include name="**/jnpserver.jar"/>
+         <include name="**/${jms-library}"/>
          <include name="**/netty.jar"/>
       </fileset>
       <path refid="extra.classpath"/>
@@ -86,10 +91,12 @@
       <pathelement location="${example.config.dir}"/>
       <pathelement location="${classes.dir}"/>
       <fileset dir="${hornetq.jars.dir}">
-       	 <include name="**/*client*.jar"/>
+         <include name="**/hornetq*.jar"/>
       </fileset>
       <fileset dir="${jars.dir}">
-         <include name="**/netty*.jar"/>
+     	 <include name="**/jboss-logging-spi.jar"/>
+        <include name="**/${jms-library}"/>
+      	 <include name="**/jboss-kernel.jar"/>
       </fileset>
    </path>
 
@@ -98,10 +105,21 @@
       <pathelement location="${config.dir}"/>
       <pathelement location="${example.config.dir}"/>
       <pathelement location="${classes.dir}"/>
+      <fileset dir="${hornetq.jars.dir}">
+        <include name="**/jnpserver.jar"/>
+        <include name="**/netty*.jar"/>
+      </fileset>
       <fileset dir="${jars.dir}">
-         <include name="org/jboss/naming/lib/jnpserver.jar"/>
-         <include name="org/jboss/netty/lib/netty*.jar"/>
-         <include name="org/twitter4j/lib/twitter4j*.jar"/>
+      	 <include name="**/jboss-logging-spi.jar"/>
+         <include name="**/jnpserver.jar"/>
+         <include name="**/netty*.jar"/>
+         <include name="**/jboss-reflect.jar"/>
+      	 <include name="**/jboss-common-core.jar"/>
+     	 <include name="**/jboss-dependency.jar"/>
+    	 <include name="**/jboss-mdr.jar"/>
+   	     <include name="**/jbossxb.jar"/>
+   	     <include name="**/jboss-xml-binding.jar"/>
+         <include name="**/twitter4j*.jar"/>
       </fileset>
    </path>
 
@@ -137,7 +155,7 @@
 
       <property name="serverclasspath" refid="server.classpath"/>
       <property name="clientClasspath" refid="client.classpath"/>
-      <!--<echo>client classpath = ${clientClasspath}</echo>-->
+      <!-- <echo>server classpath = ${serverclasspath}</echo> -->
       <property file="${imported.basedir}/config/server.properties"/>
       <java classname="${example.classname}" fork="true" resultproperty="example-result">
          <jvmarg value="-Dhornetq.example.server.classpath=${serverclasspath}"/>
