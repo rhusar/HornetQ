@@ -1,8 +1,6 @@
-#This file is used to remove twitter support from HornetQ
-#As EAP doesn't have twitter4j.jar certified for the build
 Index: src/main/org/hornetq/integration/twitter/TwitterConstants.java
 ===================================================================
---- src/main/org/hornetq/integration/twitter/TwitterConstants.java	(revision 9563)
+--- src/main/org/hornetq/integration/twitter/TwitterConstants.java	(revision 9658)
 +++ src/main/org/hornetq/integration/twitter/TwitterConstants.java	(working copy)
 @@ -1,81 +0,0 @@
 -/*
@@ -88,7 +86,7 @@ Index: src/main/org/hornetq/integration/twitter/TwitterConstants.java
 -}
 Index: src/main/org/hornetq/integration/twitter/impl/OutgoingTweetsHandler.java
 ===================================================================
---- src/main/org/hornetq/integration/twitter/impl/OutgoingTweetsHandler.java	(revision 9563)
+--- src/main/org/hornetq/integration/twitter/impl/OutgoingTweetsHandler.java	(revision 9658)
 +++ src/main/org/hornetq/integration/twitter/impl/OutgoingTweetsHandler.java	(working copy)
 @@ -1,202 +0,0 @@
 -/*
@@ -295,7 +293,7 @@ Index: src/main/org/hornetq/integration/twitter/impl/OutgoingTweetsHandler.java
 -}
 Index: src/main/org/hornetq/integration/twitter/impl/IncomingTweetsHandler.java
 ===================================================================
---- src/main/org/hornetq/integration/twitter/impl/IncomingTweetsHandler.java	(revision 9563)
+--- src/main/org/hornetq/integration/twitter/impl/IncomingTweetsHandler.java	(revision 9658)
 +++ src/main/org/hornetq/integration/twitter/impl/IncomingTweetsHandler.java	(working copy)
 @@ -1,213 +0,0 @@
 -/*
@@ -513,7 +511,7 @@ Index: src/main/org/hornetq/integration/twitter/impl/IncomingTweetsHandler.java
 -}
 Index: src/main/org/hornetq/integration/twitter/TwitterOutgoingConnectorServiceFactory.java
 ===================================================================
---- src/main/org/hornetq/integration/twitter/TwitterOutgoingConnectorServiceFactory.java	(revision 9563)
+--- src/main/org/hornetq/integration/twitter/TwitterOutgoingConnectorServiceFactory.java	(revision 9658)
 +++ src/main/org/hornetq/integration/twitter/TwitterOutgoingConnectorServiceFactory.java	(working copy)
 @@ -1,45 +0,0 @@
 -/*
@@ -563,7 +561,7 @@ Index: src/main/org/hornetq/integration/twitter/TwitterOutgoingConnectorServiceF
 -}
 Index: src/main/org/hornetq/integration/twitter/TwitterIncomingConnectorServiceFactory.java
 ===================================================================
---- src/main/org/hornetq/integration/twitter/TwitterIncomingConnectorServiceFactory.java	(revision 9563)
+--- src/main/org/hornetq/integration/twitter/TwitterIncomingConnectorServiceFactory.java	(revision 9658)
 +++ src/main/org/hornetq/integration/twitter/TwitterIncomingConnectorServiceFactory.java	(working copy)
 @@ -1,48 +0,0 @@
 -/*
@@ -616,7 +614,7 @@ Index: src/main/org/hornetq/integration/twitter/TwitterIncomingConnectorServiceF
 -}
 Index: pom.xml
 ===================================================================
---- pom.xml	(revision 9563)
+--- pom.xml	(revision 9658)
 +++ pom.xml	(working copy)
 @@ -236,11 +236,6 @@
           <version>2.1.0.GA</version>
@@ -632,7 +630,7 @@ Index: pom.xml
          <groupId>junit</groupId>
 Index: tests/src/org/hornetq/tests/integration/twitter/TwitterTest.java
 ===================================================================
---- tests/src/org/hornetq/tests/integration/twitter/TwitterTest.java	(revision 9563)
+--- tests/src/org/hornetq/tests/integration/twitter/TwitterTest.java	(revision 9658)
 +++ tests/src/org/hornetq/tests/integration/twitter/TwitterTest.java	(working copy)
 @@ -1,511 +0,0 @@
 -/*
@@ -1148,7 +1146,7 @@ Index: tests/src/org/hornetq/tests/integration/twitter/TwitterTest.java
 -}
 Index: build-hornetq.xml
 ===================================================================
---- build-hornetq.xml	(revision 9563)
+--- build-hornetq.xml	(revision 9659)
 +++ build-hornetq.xml	(working copy)
 @@ -65,8 +65,8 @@
     <property name="jnp.client.jar.name" value="jnp-client.jar"/>
@@ -1166,11 +1164,11 @@ Index: build-hornetq.xml
     <property name="resources.jar.name" value="hornetq-resources.jar"/>
     <property name="resources.sources.jar.name" value="hornetq-resources-sources.jar"/>
 -   <property name="twitter4j.jar.name" value="twitter4j-core.jar"/>
-+   <!-- <property name="twitter4j.jar.name" value="twitter4j-core.jar"/> -->
++   <!--  <property name="twitter4j.jar.name" value="twitter4j-core.jar"/> -->
+    <property name="eap.examples.zip.name" value="hornetq-eap-examples.zip"/>
  
     <!--source and build dirs-->
-    <property name="build.dir" value="build"/>
-@@ -94,7 +94,7 @@
+@@ -95,7 +95,7 @@
     <property name="build.jms.classes.dir" value="${build.dir}/classes/jms"/>
     <property name="build.jms.java5.classes.dir" value="${build.dir}/classes/jms-java5"/>
     <property name="build.jboss.integration.classes.dir" value="${build.dir}/classes/jboss-integration"/>
@@ -1179,7 +1177,7 @@ Index: build-hornetq.xml
     <property name="build.service.classes.dir" value="${build.dir}/classes/service"/>
     <property name="build.bootstrap.classes.dir" value="${build.dir}/classes/bootstrap"/>
     <property name="build.logging.classes.dir" value="${build.dir}/classes/logging"/>
-@@ -213,10 +213,10 @@
+@@ -214,10 +214,10 @@
        <path refid="org.jboss.javaee.classpath"/>
     </path>
  
@@ -1192,7 +1190,7 @@ Index: build-hornetq.xml
  
     <path id="jboss.service.compilation.classpath">
        <path refid="org.jboss.javaee.classpath"/>
-@@ -246,13 +246,13 @@
+@@ -247,13 +247,13 @@
        <path refid="jboss.integration.compilation.classpath"/>
        <path refid="bootstrap.compilation.classpath"/>
        <path refid="junit.junit.classpath"/>
@@ -1208,7 +1206,7 @@ Index: build-hornetq.xml
     </path>
  
     <path id="jms.test.compilation.classpath">
-@@ -305,7 +305,7 @@
+@@ -306,7 +306,7 @@
   	  <!-- we must include Apache commons logging   -->
   	  <!-- as a transitive dependency from JBoss TM -->
   	  <path refid="apache.logging.classpath"/>
@@ -1217,7 +1215,7 @@ Index: build-hornetq.xml
     </path>
  
     <path id="emma.unit.test.execution.classpath">
-@@ -382,7 +382,7 @@
+@@ -383,7 +383,7 @@
        <mkdir dir="${build.jms.classes.dir}"/>
        <mkdir dir="${build.jms.java5.classes.dir}"/>
        <mkdir dir="${build.jboss.integration.classes.dir}"/>
@@ -1226,7 +1224,7 @@ Index: build-hornetq.xml
        <mkdir dir="${build.service.classes.dir}"/>
        <mkdir dir="${build.bootstrap.classes.dir}"/>
        <mkdir dir="${build.logging.classes.dir}"/>
-@@ -560,7 +560,7 @@
+@@ -561,7 +561,7 @@
        </javac>
     </target>
  
@@ -1235,7 +1233,7 @@ Index: build-hornetq.xml
        <javac destdir="${build.twitter.integration.classes.dir}"
               target="${javac.target}"
               source="${javac.source}"
-@@ -578,7 +578,7 @@
+@@ -579,7 +579,7 @@
           <include name="org/hornetq/integration/twitter/**/*.java"/>
           <classpath refid="twitter.integration.compilation.classpath"/>
        </javac>
@@ -1244,29 +1242,21 @@ Index: build-hornetq.xml
  
     <!-- author: Lucas Amador -->
     <target name="compile-jboss-service" depends="compile-core">
-@@ -719,12 +719,19 @@
-    <!-- Jar Targets                                                                              -->
+@@ -721,11 +721,11 @@
     <!-- ======================================================================================== -->
  
-+   <!-- <target name="sources-jar" description="create jar files containing source code"
-+           depends="jar-core-sources, jar-core-client-sources, jar-core-client-java5-sources, jar-jms-sources, jar-jms-client-sources, jar-jms-client-java5-sources, jar-jboss-integration-sources, jar-jboss-service-sources, jar-bootstrap-sources, jar-logging-sources, jar-ra-sources, jar-resources-sources, jar-twitter-integration-sources">
-+   </target> -->
     <target name="sources-jar" description="create jar files containing source code"
 -           depends="jar-core-sources, jar-core-client-sources, jar-core-client-java5-sources, jar-jms-sources, jar-jms-client-sources, jar-jms-client-java5-sources, jar-jboss-integration-sources, jar-jboss-service-sources, jar-bootstrap-sources, jar-logging-sources, jar-ra-sources, jar-resources-sources, jar-twitter-integration-sources">
 +           depends="jar-core-sources, jar-core-client-sources, jar-core-client-java5-sources, jar-jms-sources, jar-jms-client-sources, jar-jms-client-java5-sources, jar-jboss-integration-sources, jar-jboss-service-sources, jar-bootstrap-sources, jar-logging-sources, jar-ra-sources, jar-resources-sources">
     </target>
  
-+   <!-- <target name="jar"
-+           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration">
-+   </target> -->
-+
     <target name="jar"
--           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration">
-+           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar">
+-           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration, eap-examples">
++           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, eap-examples">
     </target>
  
     <target name="jar-jnp-client" depends="init">
-@@ -868,7 +875,7 @@
+@@ -869,7 +869,7 @@
        </jar>
     </target>
  
@@ -1275,7 +1265,7 @@ Index: build-hornetq.xml
  
        <jar jarfile="${build.jars.dir}/${twitter.integration.jar.name}">
           <fileset dir="${build.twitter.integration.classes.dir}" includes="**"/>
-@@ -882,7 +889,7 @@
+@@ -883,7 +883,7 @@
              <include name="org/hornetq/integration/twitter/**/*.java"/>
           </fileset>
        </jar>
@@ -1284,7 +1274,7 @@ Index: build-hornetq.xml
  
  	<!-- author: Lucas Amador -->
     <target name="jar-jboss-service" depends="compile-jboss-service">
-@@ -1148,7 +1155,7 @@
+@@ -1149,7 +1149,7 @@
           	<include name="${jms.client.jar.name}"/>
           	<include name="${jms.client.java5.jar.name}"/>
           	<include name="${jnp.client.jar.name}"/>
@@ -1293,7 +1283,7 @@ Index: build-hornetq.xml
           </fileset>
           <fileset dir="${org.jboss.naming.lib}">                                                   
              <include name="jnpserver.jar"/>
-@@ -1158,7 +1165,7 @@
+@@ -1159,7 +1159,7 @@
           </fileset>
        </copy>
        <copy file="${org.jboss.netty.lib}/${netty.jar.name}" tofile="${build.distro.lib.dir}/netty.jar"/>
@@ -1302,3 +1292,12 @@ Index: build-hornetq.xml
        <copy todir="${build.distro.config.dir}">
           <fileset dir="${src.config.dir}">
              <include name="*.xml"/>
+@@ -1563,8 +1563,6 @@
+              timeout="${junit.timeout}">
+          <sysproperty key="user.home" value="${user.home}"/>
+          <sysproperty key="java.io.tmpdir" value="${java.io.tmpdir}"/>
+-      	 <sysproperty key="twitter.username" value="${twitter.username}"/>
+-      	 <sysproperty key="twitter.password" value="${twitter.password}"/>
+       	 <jvmarg value="-Djava.library.path=native/bin"/>
+          <jvmarg value="-Dmodule.output=./"/>
+          <jvmarg value="-Djava.util.logging.config.file=src/config/trunk/non-clustered/logging.properties"/>
