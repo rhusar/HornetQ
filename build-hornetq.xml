@@ -1282,17 +1282,194 @@
    	   
    	
    	  <copy todir="${build.dir}/eap-examples-tmp">
-   	  	  <fileset dir="${examples.dir}" excludes="**/build.sh,**/build.bat, **/twitter-connector/**"/>
+   	  	  <fileset dir="${examples.dir}" excludes="**/run.bat,**/run.sh,**/twitter-connector/**"/>
    	  </copy>
    	
    	  <copy todir="${build.dir}/eap-examples-tmp" overwrite="true">
    	  	   <fileset dir="examples-eap"/>
    	  </copy>
    	
-   	  <replace dir="${build.dir}/eap-examples-tmp" token="hornetq-ra.rar" value="jms-ra.rar"></replace>
+ 	  <replace dir="${build.dir}/eap-examples-tmp" includes="**/*.java" token="hornetq-ra.rar" value="jms-ra.rar"></replace>
+ 	  <replace dir="${build.dir}/eap-examples-tmp" includes="**/build.xml" token="property name=&quot;hornetq.run_script&quot; value=&quot;false&quot;" value="property name=&quot;hornetq.run_script&quot; value=&quot;true&quot;"></replace>
+   	
+ 	  <property name="build-sh" value="$ANT_HOME/bin/ant &quot;$@&quot;"/>
+ 	  <property name="build-bat" value="call ant.bat %*"/>
+		
+   	    <!-- Fix-me, I couldn't find a better way to do this -->
+		<echo file="${build.dir}/eap-examples-tmp/javaee/xarecovery/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jca-remote/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-tx-send/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-not-supported/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jms-bridge/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-setrollbackonly/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/ejb-jms-transaction/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-required/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/servlet-transport/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-local/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jca-config/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/hajndi/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-message-selector/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/servlet-ssl/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-bmt/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/microcontainer/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/embedded-remote/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/perf/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/embedded/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-standalone/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-hierarchies/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/client-kickoff/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-requestor/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jms-bridge/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-with-jta/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-priority/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/management-notifications/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/transactional/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/delayed-redelivery/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/consumer-rate-limit/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/management/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/large-message/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/transaction-failover/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/scheduled-message/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/bridge/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/durable-subscription/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-selector/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/security/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/producer-rate-limit/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/reattach-node/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-heuristic/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/last-value-queue/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/instantiate-connection-factory/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/request-reply/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-selector-example2/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/temp-queue/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/ssl-enabled/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/static-selector/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/interceptor/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/applet/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/pre-acknowledge/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/expiry/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/browser/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-message-redistribution/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-queue/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-selector-example1/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/client-side-load-balancing/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/perf/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-group/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/stomp/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/http-transport/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/no-consumer-buffering/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/send-acknowledgements/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/symmetric-cluster/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/application-layer-failover/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-topic/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/static-selector-jms/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/embedded/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-durable-subscription/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-receive/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jmx/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jaas/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/dead-letter/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/non-transaction-failover/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/stomp-websockets/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-send/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/divert/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/paging/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-group2/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-grouping/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-counters/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/soak/tx-restarts/build.sh" message="${build-sh}"/>
+		<echo file="${build.dir}/eap-examples-tmp/common/build.sh" message="${build-sh}"/>
+   	
+		<echo file="${build.dir}/eap-examples-tmp/javaee/xarecovery/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jca-remote/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-tx-send/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-not-supported/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jms-bridge/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-setrollbackonly/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/ejb-jms-transaction/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-required/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/servlet-transport/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-cmt-tx-local/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/jca-config/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/hajndi/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-message-selector/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/servlet-ssl/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/javaee/mdb-bmt/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/microcontainer/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/embedded-remote/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/perf/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/core/embedded/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-standalone/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-hierarchies/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/client-kickoff/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-requestor/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jms-bridge/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-with-jta/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-priority/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/management-notifications/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/transactional/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/delayed-redelivery/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/consumer-rate-limit/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/management/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/large-message/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/transaction-failover/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/scheduled-message/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/bridge/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/durable-subscription/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-selector/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/security/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/producer-rate-limit/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/reattach-node/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-heuristic/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/last-value-queue/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/instantiate-connection-factory/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/request-reply/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-selector-example2/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/temp-queue/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/ssl-enabled/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/static-selector/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/interceptor/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/applet/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/pre-acknowledge/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/expiry/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/browser/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/queue-message-redistribution/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-queue/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/topic-selector-example1/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/client-side-load-balancing/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/perf/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-group/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/stomp/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/http-transport/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/no-consumer-buffering/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/send-acknowledgements/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/symmetric-cluster/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/application-layer-failover/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-topic/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/static-selector-jms/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/embedded/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-durable-subscription/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-receive/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jmx/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/jaas/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/dead-letter/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/non-transaction-failover/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/stomp-websockets/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/xa-send/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/divert/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/paging/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-group2/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/clustered-grouping/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/jms/message-counters/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/soak/tx-restarts/build.bat" message="${build-bat}"/>
+		<echo file="${build.dir}/eap-examples-tmp/common/build.bat" message="${build-bat}"/>   	
    	
    	  <zip destfile="${build.jars.dir}/${eap.examples.zip.name}">
-   	  	 <zipfileset dir="${build.dir}/eap-examples-tmp" prefix="examples/hornetq"/>
+   	  	 <zipfileset dir="${build.dir}/eap-examples-tmp" prefix="hornetq-examples"/>
    	  </zip>
    	
    	  <delete dir="${build.dir}/eap-examples-tmp"/> 
