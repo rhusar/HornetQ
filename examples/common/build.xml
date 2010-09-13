@@ -66,6 +66,7 @@
        <fileset dir="${jars.dir}">
          <include name="**/${jms-library}"/>
        	 <include name="**/jboss-kernel.jar"/>
+     	 <include name="**/jboss-mc.jar"/>
       </fileset>
       <path refid="extra.classpath"/>
    </path>
@@ -81,6 +82,7 @@
          <include name="**/jnpserver.jar"/>
          <include name="**/${jms-library}"/>
          <include name="**/netty.jar"/>
+     	 <include name="**/jboss-mc.jar"/>
       </fileset>
       <path refid="extra.classpath"/>
    </path>
@@ -97,6 +99,7 @@
      	 <include name="**/jboss-logging-spi.jar"/>
         <include name="**/${jms-library}"/>
       	 <include name="**/jboss-kernel.jar"/>
+     	 <include name="**/jboss-mc.jar"/>
       </fileset>
    </path>
 
@@ -119,6 +122,7 @@
     	 <include name="**/jboss-mdr.jar"/>
    	     <include name="**/jbossxb.jar"/>
    	     <include name="**/jboss-xml-binding.jar"/>
+      	 <include name="**/jboss-mc.jar"/>
          <include name="**/twitter4j*.jar"/>
       </fileset>
    </path>
