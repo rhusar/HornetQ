@@ -60,7 +60,11 @@ public class RemoteProcessHornetQServerSupport
          String line = null;
          while ((line = br.readLine()) != null)
          {
-            if ("STOP".equals(line.trim()))
+            if ("INIT?".equals(line.trim()))
+            {
+               System.out.println("INIT:" + server.isInitialised());
+            }
+            else if ("STOP".equals(line.trim()))
             {
                server.stop();
                System.out.println("Server stopped");
@@ -90,7 +94,7 @@ public class RemoteProcessHornetQServerSupport
    }
 
    
-   public static Process start(String serverClassName) throws Exception
+   public static Process start(String serverClassName, final RemoteProcessHornetQServer remoteProcessHornetQServer) throws Exception
    {
       String[] vmArgs = new String[] { "-Dorg.hornetq.logger-delegate-factory-class-name=org.hornetq.jms.SysoutLoggerDelegateFactory" };
       Process serverProcess = SpawnedVMSupport.spawnVM(RemoteProcessHornetQServerSupport.class.getName(), vmArgs, false, serverClassName);
@@ -115,6 +119,11 @@ public class RemoteProcessHornetQServerSupport
                      while ((line = br.readLine()) != null)
                      {
                         System.out.println("SERVER: " + line);
+                        if (line.startsWith("INIT:"))
+                        {
+                           boolean init = Boolean.parseBoolean(line.substring("INIT:".length(), line.length()));
+                           remoteProcessHornetQServer.setInitialised(init);
+                        }
                      }
                   }
                   catch (Exception e)
@@ -145,6 +154,13 @@ public class RemoteProcessHornetQServerSupport
       {
          serverProcess.destroy();
       }
+   }
+
+   public static void isInitialised(Process serverProcess) throws Exception
+   {
+      OutputStreamWriter osw = new OutputStreamWriter(serverProcess.getOutputStream());
+      osw.write("INIT?\n");
+      osw.flush();
    }
    
    public static void crash(Process serverProcess) throws Exception

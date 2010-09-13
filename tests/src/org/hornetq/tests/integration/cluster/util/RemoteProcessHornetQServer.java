@@ -34,7 +34,9 @@ public class RemoteProcessHornetQServer implements TestableServer
 
    private String configurationClassName;
    private Process serverProcess;
-
+   private boolean initialised = false;
+   private CountDownLatch initLatch;
+   
    public RemoteProcessHornetQServer(String configurationClassName)
    {
       this.configurationClassName = configurationClassName;
@@ -42,12 +44,37 @@ public class RemoteProcessHornetQServer implements TestableServer
    
    public boolean isInitialised()
    {
-      return (serverProcess != null);
+      if (serverProcess == null)
+      {
+         return false;
+      }
+      try
+      {
+         initLatch = new CountDownLatch(1);         
+         RemoteProcessHornetQServerSupport.isInitialised(serverProcess);
+         boolean ok = initLatch.await(10, TimeUnit.SECONDS);
+         if (ok)
+         {
+            return initialised;
+         }
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+         return false;
+      }
+      return false;
+   }
+   
+   public void setInitialised(boolean initialised)
+   {
+      this.initialised = initialised;
+      initLatch.countDown();
    }
 
    public void start() throws Exception
    {
-      serverProcess = RemoteProcessHornetQServerSupport.start(configurationClassName);
+      serverProcess = RemoteProcessHornetQServerSupport.start(configurationClassName, this);
       Thread.sleep(2000);
    }
 

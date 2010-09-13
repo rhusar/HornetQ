@@ -97,13 +97,12 @@ public abstract class FailoverTestBase extends ServiceTestBase
       FakeLockFile.clearLocks();
       createConfigs();
 
+      liveServer.start();
+
       if (backupServer != null)
       {
          backupServer.start();
       }
-
-      liveServer.start();
-
    }
 
    protected TestableServer createLiveServer()
