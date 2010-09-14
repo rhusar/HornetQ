@@ -16,5 +16,7 @@ Detailed list of merges that happened at this branch.
   trunk is aligned with all the changes from Branch_2_1 up to r9668
 
 - 14-sep-2010 - jmesnil        - merger from trunk -r 9682:9683 - https://jira.jboss.org/browse/HORNETQ-509
+
+- 14-sep-2010 - clebert        - merger from trunk -r 9685:9686
  
 TODO: Bring changes from HORNETQ-469 as soon as it's stable (remove this line as soon as it's done)
