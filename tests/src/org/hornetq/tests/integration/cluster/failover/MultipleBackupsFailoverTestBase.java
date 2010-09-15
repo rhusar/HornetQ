@@ -15,6 +15,7 @@ package org.hornetq.tests.integration.cluster.failover;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +71,7 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
 
    protected abstract boolean isNetty();
 
-   protected int waitForBackup(long seconds, List<TestableServer> servers, int... nodes)
+   protected int waitForBackup(long seconds, Map<Integer, TestableServer> servers, int... nodes)
    {
       long time = System.currentTimeMillis();
       long toWait = seconds * 1000;

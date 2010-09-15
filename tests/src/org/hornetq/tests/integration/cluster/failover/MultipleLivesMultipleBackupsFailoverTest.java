@@ -14,7 +14,9 @@
 package org.hornetq.tests.integration.cluster.failover;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -30,7 +32,7 @@ import org.hornetq.tests.integration.cluster.util.TestableServer;
  */
 public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFailoverTestBase
 {
-   protected ArrayList<TestableServer> servers = new ArrayList<TestableServer>(5);
+   protected Map<Integer, TestableServer> servers = new HashMap<Integer, TestableServer>();
 
    public void testMultipleFailovers2LiveServers() throws Exception
    {
@@ -124,7 +126,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);
       config1.setLargeMessagesDirectory(config1.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config1)));
+      servers.put(nodeid, new SameProcessHornetQServer(createFakeLockServer(true, config1)));
    }
 
    protected void createLiveConfig(int liveNode, int ... otherLiveNodes)
@@ -154,7 +156,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       config0.setPagingDirectory(config0.getPagingDirectory() + "_" + liveNode);
       config0.setLargeMessagesDirectory(config0.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config0)));
+      servers.put(liveNode, new SameProcessHornetQServer(createFakeLockServer(true, config0)));
    }
 
    protected boolean isNetty()

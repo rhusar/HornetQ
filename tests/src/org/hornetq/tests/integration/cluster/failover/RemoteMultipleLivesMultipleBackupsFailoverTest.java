@@ -76,13 +76,13 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
    @Override
    protected void createLiveConfig(int liveNode, int... otherLiveNodes)
    {
-      servers.add(new RemoteProcessHornetQServer(lives.get(liveNode)));
+      servers.put(liveNode, new RemoteProcessHornetQServer(lives.get(liveNode)));
    }
    
    @Override
    protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
    {
-      servers.add(new RemoteProcessHornetQServer(backups.get(nodeid)));
+      servers.put(nodeid, new RemoteProcessHornetQServer(backups.get(nodeid)));
    }
    
    // Private -------------------------------------------------------

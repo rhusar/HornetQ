@@ -13,8 +13,14 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -31,7 +37,7 @@ import org.hornetq.tests.integration.cluster.util.TestableServer;
 public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailoverTestBase
 {
 
-   protected ArrayList<TestableServer> servers = new ArrayList<TestableServer>(5);
+   protected Map<Integer, TestableServer> servers = new HashMap<Integer, TestableServer>();
 
    public void testMultipleFailovers() throws Exception
    {
@@ -90,7 +96,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       session.close();
       servers.get(backupNode).stop();
    }
-
+   
    protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
    {
       Configuration config1 = super.createDefaultConfig();
@@ -117,13 +123,12 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
-
       config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);
       config1.setJournalDirectory(config1.getJournalDirectory() + "_" + liveNode);
       config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);
       config1.setLargeMessagesDirectory(config1.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config1)));
+      servers.put(nodeid, new SameProcessHornetQServer(createFakeLockServer(true, config1)));
    }
 
    protected void createLiveConfig(int liveNode, int ... otherLiveNodes)
@@ -153,7 +158,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config0.setPagingDirectory(config0.getPagingDirectory() + "_" + liveNode);
       config0.setLargeMessagesDirectory(config0.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.add(new SameProcessHornetQServer(createFakeLockServer(true, config0)));
+      servers.put(liveNode, new SameProcessHornetQServer(createFakeLockServer(true, config0)));
    }
 
    protected boolean isNetty()

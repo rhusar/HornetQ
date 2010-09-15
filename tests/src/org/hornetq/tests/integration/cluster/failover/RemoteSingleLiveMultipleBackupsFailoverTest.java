@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -42,6 +45,62 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
 
    // Public --------------------------------------------------------
 
+   /**
+    * Checks that if the live server is restarted, it will became live again after killin the current activated server.
+    */
+   public void testMultipleFailoversAndRestartLiveServer() throws Exception
+   {
+      createLiveConfig(0);
+      createBackupConfig(0, 1, false, 0, 2, 3);
+      createBackupConfig(0, 2, false, 0, 1, 3);
+      createBackupConfig(0, 3, false, 0, 1, 2);
+      servers.get(0).start();
+      servers.get(1).start();
+      servers.get(2).start();
+      servers.get(3).start();
+
+      ServerLocator locator = getServerLocator(0);
+
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+      locator.setReconnectAttempts(-1);
+      ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
+      int backupNode;
+      ClientSession session = sendAndConsume(sf, true);
+      System.out.println("failing live node ");
+      servers.get(0).crash(session);
+
+      session.close();
+      backupNode = waitForBackup(5, servers, 1, 2, 3);
+      session = sendAndConsume(sf, false);
+
+      System.out.println("restarting live node as a backup");
+      createBackupConfig(0, 0, false, 1, 2, 3);
+      servers.get(0).start();
+      
+      System.out.println("stopping waiting nodes");
+      for (int i = 1; i <= 3; i++)
+      {
+         if (i != backupNode)
+         {
+            System.out.println("stopping node " + i);
+            servers.get(i).stop();
+         }
+      }
+      
+      System.out.println("failing node " + backupNode);
+      servers.get(backupNode).crash(session);
+      session.close();
+      backupNode = waitForBackup(5, servers, 0);
+      assertEquals(0, backupNode);
+      session = sendAndConsume(sf, false);
+     
+      locator.close();
+      
+      servers.get(0).stop();
+   }
+   
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
@@ -51,6 +110,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
    {
       super.setUp();
 
+      backups.put(0, SharedBackupServerConfiguration0.class.getName());
       backups.put(1, SharedBackupServerConfiguration1.class.getName());
       backups.put(2, SharedBackupServerConfiguration2.class.getName());
       backups.put(3, SharedBackupServerConfiguration3.class.getName());
@@ -66,13 +126,13 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
    @Override
    protected void createLiveConfig(int liveNode, int... otherLiveNodes)
    {
-      servers.add(new RemoteProcessHornetQServer(SharedLiveServerConfiguration.class.getName()));
+      servers.put(liveNode, new RemoteProcessHornetQServer(SharedLiveServerConfiguration.class.getName()));
    }
    
    @Override
    protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
    {
-      servers.add(new RemoteProcessHornetQServer(backups.get(nodeid)));
+      servers.put(nodeid, new RemoteProcessHornetQServer(backups.get(nodeid)));
    }
    
    // Private -------------------------------------------------------
@@ -117,6 +177,15 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       }
    }
 
+   public static class SharedBackupServerConfiguration0 extends RemoteServerConfiguration
+   {
+      @Override
+      public Configuration getConfiguration()
+      {
+         return createBackupConfiguration(0, 0, false, 1, 2, 3, 4, 5);
+      }
+   }
+   
    public static class SharedBackupServerConfiguration1 extends RemoteServerConfiguration
    {
       @Override
@@ -188,7 +257,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
-
+System.out.println(config1.getBindingsDirectory());
       config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);
       config1.setJournalDirectory(config1.getJournalDirectory() + "_" + liveNode);
       config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);
