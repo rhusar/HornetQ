@@ -333,7 +333,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected ServerLocatorInternal getServerLocator() throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true));// , getConnectorTransportConfiguration(false));
       return (ServerLocatorInternal) locator;
    }
 
