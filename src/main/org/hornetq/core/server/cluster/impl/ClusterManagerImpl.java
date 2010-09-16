@@ -183,7 +183,7 @@ public class ClusterManagerImpl implements ClusterManager
    private void deployBackupListener(BackupConnectorConfiguration connectorConfiguration)
          throws Exception
    {
-      ServerLocator locator;
+      ServerLocatorInternal locator;
       if (connectorConfiguration.getDiscoveryGroupName() != null)
       {
          DiscoveryGroupConfiguration groupConfiguration = configuration.getDiscoveryGroupConfigurations().get(connectorConfiguration.getDiscoveryGroupName());
@@ -217,7 +217,7 @@ public class ClusterManagerImpl implements ClusterManager
             //todo update the topology
          }
       });
-      backupSessionFactory = locator.createSessionFactory();
+      backupSessionFactory = locator.connect();
       backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
    }
 
@@ -370,7 +370,7 @@ public class ClusterManagerImpl implements ClusterManager
    }
    
    // backup node becomes live
-   public synchronized void activate()
+  public synchronized void activate()
    {
       if (backup)
       {
@@ -437,9 +437,14 @@ public class ClusterManagerImpl implements ClusterManager
             }
          }
 
-         if (clusterConnections.size() > 0)
+         for (ClusterTopologyListener listener : clientListeners)
          {
-            announceNode();
+            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
+         }
+
+         for (ClusterTopologyListener listener : clusterConnectionListeners)
+         {
+            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
          }
       }
    }

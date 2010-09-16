@@ -65,7 +65,15 @@ public class RemoteProcessHornetQServer implements TestableServer
       }
       return false;
    }
-   
+
+   public void destroy()
+   {
+      if(serverProcess != null)
+      {
+         serverProcess.destroy();
+      }
+   }
+
    public void setInitialised(boolean initialised)
    {
       this.initialised = initialised;

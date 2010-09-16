@@ -34,14 +34,34 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
 {
    protected Map<Integer, TestableServer> servers = new HashMap<Integer, TestableServer>();
 
+   @Override
+   protected void tearDown() throws Exception
+   {
+      for (TestableServer testableServer : servers.values())
+      {
+         if(testableServer != null)
+         {
+            try
+            {
+               testableServer.destroy();
+            }
+            catch (Throwable e)
+            {
+               //
+            }
+         }
+      }
+      super.tearDown();
+   }
+
    public void testMultipleFailovers2LiveServers() throws Exception
    {
       createLiveConfig(0, 3);
       createBackupConfig(0, 1, true, 0, 3);
-      createBackupConfig(0, 2,true, 0, 3);
+      createBackupConfig(0, 2, true, 0, 3);
       createLiveConfig(3, 0);
-      createBackupConfig(3, 4, true,0, 3);
-      createBackupConfig(3, 5, true,0, 3);
+      createBackupConfig(3, 4, true, 0, 3, 1, 4);
+      createBackupConfig(3, 5, true, 0, 3, 1, 4);
       servers.get(0).start();
       servers.get(3).start();
       servers.get(1).start();
@@ -60,7 +80,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       servers.get(0).crash(session);
 
       int liveAfter0 = waitForBackup(10000, servers, 1, 2);
-      
+
       ServerLocator locator2 = getServerLocator(3);
       locator2.setBlockOnNonDurableSend(true);
       locator2.setBlockOnDurableSend(true);
@@ -74,23 +94,23 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       if (liveAfter0 == 2)
       {
          servers.get(1).stop();
-         servers.get(2).stop();         
+         servers.get(2).stop();
       }
       else
       {
          servers.get(2).stop();
-         servers.get(1).stop();         
+         servers.get(1).stop();
       }
-         
+
       if (liveAfter3 == 4)
       {
          servers.get(5).stop();
-         servers.get(4).stop();         
+         servers.get(4).stop();
       }
       else
       {
          servers.get(4).stop();
-         servers.get(5).stop();         
+         servers.get(5).stop();
       }
    }
 

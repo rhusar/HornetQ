@@ -18,17 +18,8 @@ import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
@@ -70,6 +61,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
    private TransportConfiguration[] initialConnectors;
+
+   private StaticConnector staticConnector = new StaticConnector();
 
    private Topology topology = new Topology();
 
@@ -162,9 +155,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private String groupID;
 
    private String nodeID;
-   
+
    private TransportConfiguration clusterTransportConfiguration;
-   
+
    private boolean backup;
 
    private static synchronized ExecutorService getGlobalThreadPool()
@@ -184,8 +177,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       if (globalScheduledThreadPool == null)
       {
          ThreadFactory factory = new HornetQThreadFactory("HornetQ-client-global-scheduled-threads",
-                                                          true,
-                                                          getThisClassLoader());
+               true,
+               getThisClassLoader());
 
          globalScheduledThreadPool = Executors.newScheduledThreadPool(HornetQClient.DEFAULT_SCHEDULED_THREAD_POOL_MAX_SIZE,
 
@@ -428,48 +421,22 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       initialise();
    }
-   
-   public void connect()
+
+   public ClientSessionFactory connect() throws Exception
    {
+      ClientSessionFactory sf;
       // static list of initial connectors
       if (initialConnectors != null && discoveryGroup == null)
       {
-         for (TransportConfiguration connector : initialConnectors)
-         {
-            ClientSessionFactory sf = null;
-            do
-            {
-               try
-               {
-                  sf = createSessionFactory(connector);
-               }
-               catch (HornetQException e)
-               {
-                  if (e.getCode() == HornetQException.NOT_CONNECTED)
-                  {
-                     continue;
-                  }
-               }
-               catch (Exception e)
-               {
-                  break;
-               }
-            }
-            while (sf == null);
-         }
+         sf = staticConnector.connect();
       }
       // wait for discovery group to get the list of initial connectors
       else
       {
-         try
-         {
-            ClientSessionFactory sf = createSessionFactory();
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace();
-         }
+         sf = createSessionFactory();
       }
+      factories.add(sf);
+      return sf;
    }
 
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
@@ -488,7 +455,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
       }
 
-      ClientSessionFactory factory = new ClientSessionFactoryImpl(this,
+      ClientSessionFactoryInternal factory = new ClientSessionFactoryImpl(this,
             transportConfiguration,
             callTimeout,
             clientFailureCheckPeriod,
@@ -497,14 +464,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             retryIntervalMultiplier,
             maxRetryInterval,
             reconnectAttempts,
-            initialConnectAttempts,
-            failoverOnInitialConnection,
             threadPool,
             scheduledThreadPool,
             interceptors);
 
+      factory.connect(reconnectAttempts, failoverOnInitialConnection);
+
       factories.add(factory);
-      
+
       return factory;
    }
 
@@ -537,7 +504,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
       }
 
-      ClientSessionFactory factory = null;
+      ClientSessionFactoryInternal factory = null;
 
       synchronized (this)
       {
@@ -562,11 +529,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                      retryIntervalMultiplier,
                      maxRetryInterval,
                      reconnectAttempts,
-                     initialConnectAttempts,
-                     failoverOnInitialConnection,
                      threadPool,
                      scheduledThreadPool,
                      interceptors);
+               factory.connect(reconnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {
@@ -582,7 +548,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   if (topologyArray == null && initialConnectors != null && attempts == initialConnectors.length)
                   {
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
-                     "Cannot connect to server(s). Tried with all available servers.");
+                           "Cannot connect to server(s). Tried with all available servers.");
                   }
                   retry = true;
                }
@@ -1007,7 +973,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       this.nodeID = nodeID;
    }
-   
+
    public String getNodeID()
    {
       return nodeID;
@@ -1022,12 +988,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       return clusterConnection;
    }
-   
+
    public TransportConfiguration getClusterTransportConfiguration()
    {
       return clusterTransportConfiguration;
    }
-   
+
    public void setClusterTransportConfiguration(TransportConfiguration tc)
    {
       this.clusterTransportConfiguration = tc;
@@ -1037,15 +1003,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       return backup;
    }
-   
+
    public void setBackup(boolean backup)
    {
       this.backup = backup;
-   }
-
-   public void announceBackup()
-   {
-      connect();
    }
 
    @Override
@@ -1073,6 +1034,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          {
             log.error("Failed to stop discovery group", e);
          }
+      }
+      else
+      {
+         staticConnector.disconnect();
       }
 
       for (ClientSessionFactory factory : factories)
@@ -1214,12 +1179,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          this.initialConnectors[count++] = entry.getConnector();
       }
-      
+
       if (ha && clusterConnection && !receivedTopology && initialConnectors.length > 0)
       {
          // FIXME the node is alone in the cluster. We create a connection to the new node
          // to trigger the node notification to form the cluster.
-         connect();
+         try
+         {
+            connect();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+         }
       }
    }
 
@@ -1253,4 +1225,176 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return pairs.get(live);
    }
 
+   class StaticConnector
+   {
+      private List<Connector> connectors;
+
+      public ClientSessionFactory connect() throws HornetQException
+      {
+         if (closed)
+         {
+            throw new IllegalStateException("Cannot create session factory, server locator is closed (maybe it has been garbage collected)");
+         }
+
+         try
+         {
+            initialise();
+         }
+         catch (Exception e)
+         {
+            throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
+         }
+         
+         ClientSessionFactory csf = null;
+
+         createConnectors();
+
+         try
+         {
+            List<Future<ClientSessionFactory>> futures = threadPool.invokeAll(connectors);
+            for (int i = 0, futuresSize = futures.size(); i < futuresSize; i++)
+            {
+               Future<ClientSessionFactory> future = futures.get(i);
+               try
+               {
+                  csf = future.get();
+                  if(csf != null)
+                     break;
+               }
+               catch (Exception e)
+               {
+                  log.debug("unable to connect with static connector " + connectors.get(i).initialConnector);
+               }
+            }
+         }
+         catch (InterruptedException e)
+         {
+            throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors", e);
+         }
+
+         if (csf == null)
+         {
+            throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
+         }
+         return csf;
+      }
+
+      private synchronized void createConnectors()
+      {
+         connectors = new ArrayList<Connector>();
+         for (TransportConfiguration initialConnector : initialConnectors)
+         {
+            connectors.add(new Connector(initialConnector));
+         }
+      }
+
+
+      public synchronized void disconnect()
+      {
+         if (connectors != null)
+         {
+            for (Connector connector : connectors)
+            {
+               connector.disconnect();
+            }
+         }
+      }
+
+
+      class Connector implements Callable<ClientSessionFactory>
+      {
+         private TransportConfiguration initialConnector;
+         private ClientSessionFactoryInternal factory;
+         private boolean isConnected = false;
+         private boolean interrupted = false;
+         private Exception e;
+
+         public Connector(TransportConfiguration initialConnector)
+         {
+            this.initialConnector = initialConnector;
+         }
+
+         public ClientSessionFactory call() throws HornetQException
+         {
+            factory = getFactory();
+            try
+            {
+               factory.connect(reconnectAttempts, failoverOnInitialConnection);
+            }
+            catch (HornetQException e)
+            {
+               if (!interrupted)
+               {
+                  this.e = e;
+                  throw e;
+               }
+               return null;
+            }
+            isConnected = true;
+            for (Connector connector : connectors)
+            {
+               if (!connector.isConnected())
+               {
+                  connector.disconnect();
+               }
+            }
+            return factory;
+         }
+
+         public boolean isConnected()
+         {
+            return isConnected;
+         }
+
+         public void disconnect()
+         {
+            interrupted = true;
+            try
+            {
+               ClientSessionFactoryInternal factory = getFactory();
+               if (factory != null)
+               {
+                  factory.causeExit();
+               }
+               else
+               {
+                  System.out.println("ServerLocatorImpl$StaticConnector$Connector.disconnect");
+               }
+            }
+            catch (HornetQException e1)
+            {
+               log.debug("exception closing factory");
+            }
+         }
+
+         private synchronized ClientSessionFactoryInternal getFactory() throws HornetQException
+         {
+            if (factory == null)
+            {
+               try
+              {
+                 initialise();
+              }
+              catch (Exception e)
+              {
+                 throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
+              }
+
+               factory = new ClientSessionFactoryImpl(ServerLocatorImpl.this,
+                     initialConnector,
+                     callTimeout,
+                     clientFailureCheckPeriod,
+                     connectionTTL,
+                     retryInterval,
+                     retryIntervalMultiplier,
+                     maxRetryInterval,
+                     reconnectAttempts,
+                     threadPool,
+                     scheduledThreadPool,
+                     interceptors);
+            }
+            return factory;
+         }
+      }
+   }
 }

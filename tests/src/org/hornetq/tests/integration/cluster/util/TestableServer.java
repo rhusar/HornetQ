@@ -31,4 +31,6 @@ public interface TestableServer
    public void crash(ClientSession... sessions) throws Exception;
 
    public boolean isInitialised();
+
+   void destroy();
 }

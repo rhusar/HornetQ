@@ -134,7 +134,10 @@ public class ClusterConnectionImpl implements ClusterConnection
          this.serverLocator.setClusterTransportConfiguration(connector);
          this.serverLocator.setBackup(server.getConfiguration().isBackup());
          this.serverLocator.setReconnectAttempts(-1);
-         this.serverLocator.setRetryInterval(retryInterval);
+         if(retryInterval > 0)
+         {
+            this.serverLocator.setRetryInterval(retryInterval);
+         }
          
          // a cluster connection will connect to other nodes only if they are directly connected
          // through a static list of connectors 

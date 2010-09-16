@@ -157,8 +157,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                    final double retryIntervalMultiplier,
                                    final long maxRetryInterval,
                                    final int reconnectAttempts,
-                                   final int initialConnectAttempts,
-                                   final boolean failoverOnInitialConnection,
                                    final ExecutorService threadPool,
                                    final ScheduledExecutorService scheduledThreadPool,
                                    final List<Interceptor> interceptors) throws HornetQException
@@ -197,6 +195,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       this.interceptors = interceptors;
 
+   }
+
+   public void connect(int initialConnectAttempts, boolean failoverOnInitialConnection) throws HornetQException
+   {
       // Get the connection
 
       getConnectionWithRetry(initialConnectAttempts);
@@ -210,9 +212,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             // Try and connect to the backup
 
             log.warn("Server is not available to make initial connection to. Will try backup server instead.");
-            
+
             this.connectorConfig = backupConfig;
-            
+
             connectorFactory = instantiateConnectorFactory(connectorConfig.getFactoryClassName());
 
             transportParams = this.connectorConfig.getParams();

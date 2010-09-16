@@ -13,6 +13,7 @@
 
 package org.hornetq.core.client.impl;
 
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
@@ -37,7 +38,7 @@ public interface ServerLocatorInternal extends ServerLocator
 
    String getNodeID();
 
-   void connect();
+   ClientSessionFactory connect() throws  Exception;
 
    void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance);
 
@@ -54,8 +55,6 @@ public interface ServerLocatorInternal extends ServerLocator
    boolean isBackup();
    
    void setBackup(boolean backup);
-
-   void announceBackup();
 
    void setInitialConnectAttempts(int reconnectAttempts);
 }
