@@ -96,7 +96,7 @@ public class RemoteProcessHornetQServerSupport
    
    public static Process start(String serverClassName, final RemoteProcessHornetQServer remoteProcessHornetQServer) throws Exception
    {
-      String[] vmArgs = new String[] { "-Dorg.hornetq.logger-delegate-factory-class-name=org.hornetq.jms.SysoutLoggerDelegateFactory" };
+      String[] vmArgs = new String[] {};
       Process serverProcess = SpawnedVMSupport.spawnVM(RemoteProcessHornetQServerSupport.class.getName(), vmArgs, false, serverClassName);
       InputStreamReader isr = new InputStreamReader(serverProcess.getInputStream());
 
