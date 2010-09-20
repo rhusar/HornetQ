@@ -39,8 +39,6 @@ public class Topology implements Serializable
     */
    private Map<String, TopologyMember> topology = new HashMap<String, TopologyMember>();
 
-   int nodes = 0;
-
    public synchronized boolean addMember(String nodeId, TopologyMember member)
    {
       boolean replaced = false;
@@ -49,32 +47,17 @@ public class Topology implements Serializable
       {
          topology.put(nodeId, member);
          replaced = true;
-         if(member.getConnector().a != null)
-         {
-            nodes++;
-         }
-         if(member.getConnector().b != null)
-         {
-            nodes++;
-         }
       }
       else
       {
+         System.out.println("current=" + currentMember + ", new=" + member);
          if(hasChanged(currentMember.getConnector().a, member.getConnector().a) && member.getConnector().a != null)
          {
-            if(currentMember.getConnector().a == null)
-            {
-               nodes++;
-            }
             currentMember.getConnector().a =  member.getConnector().a;
             replaced = true;
          }
          if(hasChanged(currentMember.getConnector().b, member.getConnector().b) && member.getConnector().b != null)
          {
-            if(currentMember.getConnector().b == null)
-            {
-               nodes++;
-            }
             currentMember.getConnector().b =  member.getConnector().b;
             replaced = true;
          }
@@ -85,18 +68,6 @@ public class Topology implements Serializable
    public synchronized boolean removeMember(String nodeId)
    {
       TopologyMember member = topology.remove(nodeId);
-      if(member != null)
-      {
-         if(member.getConnector().a != null)
-         {
-            nodes--;
-         }
-         if(member.getConnector().b != null)
-         {
-            nodes--;
-         }
-      }
-
       return (member != null);
    }
 
@@ -126,7 +97,19 @@ public class Topology implements Serializable
 
    public int nodes()
    {
-      return nodes;
+      int count = 0;
+      for (TopologyMember member : topology.values())
+      {
+         if (member.getConnector().a != null)
+         {
+            count++;
+         }
+         if (member.getConnector().b != null)
+         {
+            count++;
+         }
+      }
+      return count;
    }
 
    public String describe()
@@ -137,14 +120,13 @@ public class Topology implements Serializable
       {
          desc += "\t" + entry.getKey() + " => " + entry.getValue() + "\n";
       }
-      desc += "\t" + "nodes=" + nodes + "\t" + "members=" + members();
+      desc += "\t" + "nodes=" + nodes() + "\t" + "members=" + members();
       return desc;
    }
 
    public void clear()
    {
       topology.clear();
-      nodes = 0;
    }
 
    public int members()
