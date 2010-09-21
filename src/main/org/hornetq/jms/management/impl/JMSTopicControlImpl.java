@@ -337,6 +337,7 @@ public class JMSTopicControlImpl extends StandardMBean implements TopicControl
          info.put("name", subName);
          info.put("durable", queue.isDurable());
          info.put("messageCount", queue.getMessageCount());
+         info.put("deliveringCount", queue.getDeliveringCount());
          array.put(info);
       }
 
