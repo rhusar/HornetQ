@@ -228,6 +228,8 @@ public interface JMSServerControl
    @Operation(desc = "List all the connection IDs", impact = MBeanOperationInfo.INFO)
    String[] listConnectionIDs() throws Exception;
 
+   String listConnectionsAsJSON() throws Exception;
+   
    /**
     * Lists all the sessions IDs for the specified connection ID.
     */

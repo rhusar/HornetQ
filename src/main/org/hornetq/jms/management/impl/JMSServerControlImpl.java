@@ -16,6 +16,7 @@ package org.hornetq.jms.management.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.ListenerNotFoundException;
@@ -31,13 +32,16 @@ import javax.management.StandardMBean;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.ManagementHelper;
-import org.hornetq.api.core.management.Parameter;
 import org.hornetq.api.jms.management.ConnectionFactoryControl;
 import org.hornetq.api.jms.management.JMSQueueControl;
 import org.hornetq.api.jms.management.JMSServerControl;
 import org.hornetq.api.jms.management.TopicControl;
 import org.hornetq.core.management.impl.MBeanInfoHelper;
+import org.hornetq.core.server.ServerSession;
 import org.hornetq.jms.server.JMSServerManager;
+import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.utils.json.JSONArray;
+import org.hornetq.utils.json.JSONObject;
 
 /**
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -567,7 +571,34 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          blockOnIO();
       }
    }
+   
+   public String listConnectionsAsJSON() throws Exception
+   {
+      checkStarted();
 
+      clearIO();
+
+      try
+      {
+         JSONArray array = new JSONArray();
+         
+         Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
+         for (RemotingConnection connection : connections)
+         {
+            JSONObject obj = new JSONObject();
+            obj.put("connectionID", connection.getID().toString());
+            obj.put("clientAddress", connection.getRemoteAddress());
+            obj.put("creationTime", connection.getCreationTime());
+            array.put(obj);
+         }
+         return array.toString();
+      }
+      finally
+      {
+         blockOnIO();
+      }
+   }
+   
    public String[] listSessions(final String connectionID) throws Exception
    {
       checkStarted();

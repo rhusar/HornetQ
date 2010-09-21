@@ -49,12 +49,16 @@ class StompConnection implements RemotingConnection
    private boolean valid;
 
    private boolean destroyed = false;
+   
+   private final long creationTime;
 
    StompConnection(final Connection transportConnection, final StompProtocolManager manager)
    {
       this.transportConnection = transportConnection;
 
       this.manager = manager;
+      
+      this.creationTime = System.currentTimeMillis();
    }
 
    public void addCloseListener(CloseListener listener)
@@ -116,6 +120,11 @@ class StompConnection implements RemotingConnection
    public String getRemoteAddress()
    {
       return transportConnection.getRemoteAddress();
+   }
+   
+   public long getCreationTime()
+   {
+      return creationTime;
    }
 
    public Connection getTransportConnection()

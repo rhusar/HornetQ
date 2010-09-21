@@ -25,6 +25,7 @@ import javax.jms.JMSException;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.jms.management.JMSConnectionInfo;
 import org.hornetq.api.jms.management.JMSServerControl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -139,6 +140,16 @@ public class JMSServerControl2Test extends ManagementTestBase
    {
       doListConnectionIDs(NettyAcceptorFactory.class.getName(), NettyConnectorFactory.class.getName());
    }
+   
+   public void testListConnectionsAsJSONForNetty() throws Exception
+   {
+      doListConnectionsAsJSON(NettyAcceptorFactory.class.getName(), NettyConnectorFactory.class.getName());
+   }
+
+   public void testListConnectionsAsJSONForInVM() throws Exception
+   {
+      doListConnectionsAsJSON(InVMAcceptorFactory.class.getName(), InVMConnectorFactory.class.getName());
+   }
 
    // Package protected ---------------------------------------------
 
@@ -207,6 +218,80 @@ public class JMSServerControl2Test extends ManagementTestBase
       }
    }
 
+   private void doListConnectionsAsJSON(final String acceptorFactory, final String connectorFactory) throws Exception
+   {
+      try
+      {
+         startHornetQServer(acceptorFactory);
+
+         JMSServerControl control = createManagementControl();
+
+         long startTime = System.currentTimeMillis();
+         
+         String jsonStr = control.listConnectionsAsJSON();
+         assertNotNull(jsonStr);
+         JMSConnectionInfo[] infos = JMSConnectionInfo.from(jsonStr);
+         assertEquals(0, infos.length);
+
+         ConnectionFactory cf1 = JMSUtil.createFactory(connectorFactory,
+                                                       JMSServerControl2Test.CONNECTION_TTL,
+                                                       JMSServerControl2Test.PING_PERIOD);
+         Connection connection = cf1.createConnection();
+
+         jsonStr = control.listConnectionsAsJSON();
+         assertNotNull(jsonStr);
+         infos = JMSConnectionInfo.from(jsonStr);
+         assertEquals(1, infos.length);
+         for (JMSConnectionInfo info : infos)
+         {
+            assertNotNull(info.getConnectionID());
+            assertNotNull(info.getClientAddress());
+            assertTrue(startTime < info.getCreationTime() && info.getCreationTime() < System.currentTimeMillis());
+         }
+
+         ConnectionFactory cf2 = JMSUtil.createFactory(connectorFactory,
+                                                       JMSServerControl2Test.CONNECTION_TTL,
+                                                       JMSServerControl2Test.PING_PERIOD);
+         Connection connection2 = cf2.createConnection();
+
+         jsonStr = control.listConnectionsAsJSON();
+         assertNotNull(jsonStr);
+         infos = JMSConnectionInfo.from(jsonStr);
+         assertEquals(2, infos.length);
+         for (JMSConnectionInfo info : infos)
+         {
+            assertNotNull(info.getConnectionID());
+            assertNotNull(info.getClientAddress());
+            assertTrue(startTime < info.getCreationTime() && info.getCreationTime() < System.currentTimeMillis());
+         }
+
+         connection.close();
+
+         waitForConnectionIDs(1, control);
+
+         connection2.close();
+
+         waitForConnectionIDs(0, control);
+         
+         jsonStr = control.listConnectionsAsJSON();
+         assertNotNull(jsonStr);
+         infos = JMSConnectionInfo.from(jsonStr);
+         assertEquals(0, infos.length);
+      }
+      finally
+      {
+         if (serverManager != null)
+         {
+            serverManager.stop();
+         }
+
+         if (server != null)
+         {
+            server.stop();
+         }
+      }
+   }
+   
    private void waitForConnectionIDs(final int num, final JMSServerControl control) throws Exception
    {
       final long timeout = 10000;
