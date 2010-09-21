@@ -77,17 +77,18 @@ public class JMSUtil
    }
 
    static MessageConsumer createConsumer(final Connection connection,
-                                         final Destination destination,
-                                         final String connectorFactory) throws JMSException
+                                         final Destination destination) throws JMSException
    {
-      Session s = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      return createConsumer(connection, destination, Session.AUTO_ACKNOWLEDGE);
+   }
+   
+   static MessageConsumer createConsumer(final Connection connection,
+                                         final Destination destination,
+                                         int ackMode) throws JMSException
+   {
+      Session s = connection.createSession(false, ackMode);
 
       return s.createConsumer(destination);
-   }
-
-   public static MessageConsumer createConsumer(final Connection connection, final Destination destination) throws JMSException
-   {
-      return JMSUtil.createConsumer(connection, destination, InVMConnectorFactory.class.getName());
    }
 
    static TopicSubscriber createDurableSubscriber(final Connection connection,
@@ -95,8 +96,17 @@ public class JMSUtil
                                                   final String clientID,
                                                   final String subscriptionName) throws JMSException
    {
+      return createDurableSubscriber(connection, topic, clientID, subscriptionName, Session.AUTO_ACKNOWLEDGE);
+   }
+   
+   static TopicSubscriber createDurableSubscriber(final Connection connection,
+                                                  final Topic topic,
+                                                  final String clientID,
+                                                  final String subscriptionName,
+                                                  final int ackMode) throws JMSException
+   {
       connection.setClientID(clientID);
-      Session s = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+      Session s = connection.createSession(false, ackMode);
 
       return s.createDurableSubscriber(topic, subscriptionName);
    }
