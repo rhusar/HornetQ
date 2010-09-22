@@ -88,6 +88,8 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       locator2.setReconnectAttempts(-1);
       ClientSessionFactoryInternal sf2 = createSessionFactoryAndWaitForTopology(locator2, 4);
       ClientSession session2 = sendAndConsume(sf2, true);
+
+
       servers.get(3).crash(session2);
       int liveAfter3 = waitForBackup(10000, servers, 4, 5);
 

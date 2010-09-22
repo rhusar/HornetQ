@@ -207,7 +207,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
       locator.addClusterTopologyListener(new ClusterTopologyListener()
       {
-         public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
+         public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
          {
             //todo update the topology
          }
@@ -218,7 +218,7 @@ public class ClusterManagerImpl implements ClusterManager
          }
       });
       backupSessionFactory = locator.connect();
-      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
+      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
    }
 
    public synchronized void stop() throws Exception
@@ -287,6 +287,7 @@ public class ClusterManagerImpl implements ClusterManager
    }
 
    public void notifyNodeUp(String nodeID,
+                            String sourceNodeID,
                                    Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    boolean last,
                                    int distance)
@@ -298,14 +299,14 @@ public class ClusterManagerImpl implements ClusterManager
       }
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, connectorPair, last, distance);
+         listener.nodeUP(nodeID, sourceNodeID, connectorPair, last, distance);
       }
 
       if (distance < topology.nodes())
       {
          for (ClusterTopologyListener listener : clusterConnectionListeners)
          {
-            listener.nodeUP(nodeID, connectorPair, last, distance);
+            listener.nodeUP(nodeID, sourceNodeID, connectorPair, last, distance);
          }
       }
    }
@@ -348,7 +349,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       // We now need to send the current topology to the client
-      topology.fireListeners(listener);
+      topology.fireListeners(listener, nodeUUID.toString());
    }
 
    public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
@@ -439,12 +440,12 @@ public class ClusterManagerImpl implements ClusterManager
 
          for (ClusterTopologyListener listener : clientListeners)
          {
-            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
+            listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
          }
 
          for (ClusterTopologyListener listener : clusterConnectionListeners)
          {
-            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
+            listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
          }
       }
    }
@@ -489,12 +490,12 @@ public class ClusterManagerImpl implements ClusterManager
 
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
+         listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
       }
       
       for (ClusterTopologyListener listener : clusterConnectionListeners)
       {
-         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
+         listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
       }
 
    }
@@ -816,6 +817,17 @@ public class ClusterManagerImpl implements ClusterManager
    public void clear()
    {
       bridges.clear();
+      for (ClusterConnection clusterConnection : clusterConnections.values())
+      {
+         try
+         {
+            clusterConnection.stop();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+         }
+      }
       clusterConnections.clear();
    }
 }

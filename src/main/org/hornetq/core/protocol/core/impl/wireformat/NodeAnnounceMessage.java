@@ -36,15 +36,19 @@ public class NodeAnnounceMessage extends PacketImpl
    
    private TransportConfiguration connector;
 
+   private String sourceNodeID;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public NodeAnnounceMessage(final String nodeID, final boolean backup, final TransportConfiguration tc)
+   public NodeAnnounceMessage(final String nodeID, final String sourceNodeID, final boolean backup, final TransportConfiguration tc)
    {
       super(PacketImpl.NODE_ANNOUNCE);
 
       this.nodeID = nodeID;
+
+      this.sourceNodeID = sourceNodeID;
       
       this.backup = backup;
       
@@ -64,6 +68,11 @@ public class NodeAnnounceMessage extends PacketImpl
       return nodeID;
    }
    
+   public String getSourceNodeID()
+   {
+      return sourceNodeID;
+   }
+   
    public boolean isBackup()
    {
       return backup;
@@ -79,6 +88,7 @@ public class NodeAnnounceMessage extends PacketImpl
    public void encodeRest(final HornetQBuffer buffer)
    {
       buffer.writeString(nodeID);
+      buffer.writeString(sourceNodeID);
       buffer.writeBoolean(backup);
       connector.encode(buffer);
    }
@@ -87,6 +97,7 @@ public class NodeAnnounceMessage extends PacketImpl
    public void decodeRest(final HornetQBuffer buffer)
    {
       this.nodeID = buffer.readString();
+      this.sourceNodeID = buffer.readString();
       this.backup = buffer.readBoolean();
       connector = new TransportConfiguration();
       connector.decode(buffer);
@@ -100,4 +111,5 @@ public class NodeAnnounceMessage extends PacketImpl
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+
 }

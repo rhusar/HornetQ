@@ -1075,7 +1075,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             if (serverLocator.isClusterConnection())
             {
                TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
-               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
+               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(),serverLocator.getNodeID(), serverLocator.isBackup(), config));
             }
          }
       }
@@ -1177,7 +1177,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             }
             else
             {
-               serverLocator.notifyNodeUp(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast(), topMessage.getDistance());
+               serverLocator.notifyNodeUp(topMessage.getNodeID(), topMessage.getSourceNodeID(), topMessage.getPair(), topMessage.isLast(), topMessage.getDistance());
             }
          }
       }

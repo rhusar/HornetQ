@@ -71,12 +71,12 @@ public class Topology implements Serializable
       return (member != null);
    }
 
-   public synchronized void fireListeners(ClusterTopologyListener listener)
+   public synchronized void fireListeners(ClusterTopologyListener listener, String sourceNodeId)
    {
       int count = 0;
       for (Map.Entry<String, TopologyMember> entry : topology.entrySet())
       {
-         listener.nodeUP(entry.getKey(), entry.getValue().getConnector(), ++count == topology.size(), entry.getValue().getDistance());
+         listener.nodeUP(entry.getKey(), sourceNodeId, entry.getValue().getConnector(), ++count == topology.size(), entry.getValue().getDistance());
       }
    }
 
