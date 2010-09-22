@@ -16,6 +16,7 @@ package org.hornetq.core.server.impl;
 import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -231,6 +232,11 @@ public class ServerSessionImpl implements ServerSession, FailureListener
    public Object getConnectionID()
    {
       return remotingConnection.getID();
+   }
+   
+   public Set<ServerConsumer> getServerConsumers() {
+      Set<ServerConsumer> consumersClone = new HashSet<ServerConsumer>(consumers.values());
+      return Collections.unmodifiableSet(consumersClone);
    }
 
    public void removeConsumer(final long consumerID) throws Exception

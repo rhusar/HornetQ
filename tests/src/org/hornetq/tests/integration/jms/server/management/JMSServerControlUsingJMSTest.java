@@ -238,6 +238,11 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
          {
             return (String)proxy.invokeOperation("listConnectionsAsJSON");
          }
+         
+         public String listConsumersAsJSON(String connectionID) throws Exception
+         {
+            return (String)proxy.invokeOperation("listConsumersAsJSON", connectionID);
+         }
 
          public String[] listRemoteAddresses() throws Exception
          {

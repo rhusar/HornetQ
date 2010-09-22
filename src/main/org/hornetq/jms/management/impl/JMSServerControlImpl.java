@@ -36,8 +36,13 @@ import org.hornetq.api.jms.management.ConnectionFactoryControl;
 import org.hornetq.api.jms.management.JMSQueueControl;
 import org.hornetq.api.jms.management.JMSServerControl;
 import org.hornetq.api.jms.management.TopicControl;
+import org.hornetq.core.filter.Filter;
 import org.hornetq.core.management.impl.MBeanInfoHelper;
+import org.hornetq.core.server.ServerConsumer;
 import org.hornetq.core.server.ServerSession;
+import org.hornetq.jms.client.HornetQDestination;
+import org.hornetq.jms.client.HornetQQueue;
+import org.hornetq.jms.client.HornetQTopic;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.utils.json.JSONArray;
@@ -89,6 +94,38 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          trimmed[i] = trimmed[i].replace("&comma;", ",");
       }
       return trimmed;
+   }
+   
+   private static String[] determineJMSDestination(String coreAddress)
+   {
+      String[] result = new String[2]; // destination name & type
+      if (coreAddress.startsWith(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX))
+      {
+         result[0] = coreAddress.substring(HornetQQueue.JMS_QUEUE_ADDRESS_PREFIX.length());
+         result[1] = "queue";
+      }
+      else if (coreAddress.startsWith(HornetQQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX))
+      {
+         result[0] = coreAddress.substring(HornetQQueue.JMS_TEMP_QUEUE_ADDRESS_PREFIX.length());
+         result[1] = "tempqueue";
+      }
+      else if (coreAddress.startsWith(HornetQQueue.JMS_TOPIC_ADDRESS_PREFIX))
+      {
+         result[0] = coreAddress.substring(HornetQQueue.JMS_TOPIC_ADDRESS_PREFIX.length());
+         result[1] = "topic";
+      }
+      else if (coreAddress.startsWith(HornetQQueue.JMS_TEMP_TOPIC_ADDRESS_PREFIX))
+      {
+         result[0] = coreAddress.substring(HornetQQueue.JMS_TEMP_TOPIC_ADDRESS_PREFIX.length());
+         result[1] = "temptopic";
+      }
+      else
+      {
+         System.out.println("JMSServerControlImpl.determineJMSDestination()" + coreAddress);
+         // not related to JMS
+         return null;
+      }
+      return result;
    }
 
    private static List<Pair<TransportConfiguration, TransportConfiguration>> convertToConnectorPairs(final Object[] liveConnectorsTransportClassNames,
@@ -598,7 +635,74 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          blockOnIO();
       }
    }
-   
+
+   public String listConsumersAsJSON(String connectionID) throws Exception
+   {
+      checkStarted();
+
+      clearIO();
+
+      try
+      {
+         JSONArray array = new JSONArray();
+         
+         Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
+         for (RemotingConnection connection : connections)
+         {
+            if (connectionID.equals(connection.getID().toString()))
+            {
+               List<ServerSession> sessions = server.getHornetQServer().getSessions(connectionID);
+               for (ServerSession session : sessions)
+               {
+                  Set<ServerConsumer> consumers = session.getServerConsumers();
+                  for (ServerConsumer consumer : consumers)
+                  {
+                     JSONObject obj = new JSONObject();
+                     obj.put("consumerID", consumer.getID());
+                     obj.put("connectionID", connectionID);
+                     obj.put("queueName", consumer.getQueue().getName().toString());
+                     obj.put("browseOnly", consumer.isBrowseOnly());
+                     obj.put("creationTime", consumer.getCreationTime());
+                     // JMS consumer with message filter use the queue's filter
+                     Filter queueFilter = consumer.getQueue().getFilter();
+                     if (queueFilter != null)
+                     {
+                        obj.put("filter", queueFilter.getFilterString().toString());
+                     }
+                     String[] destinationInfo = determineJMSDestination(consumer.getQueue().getAddress().toString());
+                     if (destinationInfo == null)
+                     {
+                        continue;
+                     }
+                     obj.put("destinationName", destinationInfo[0]);
+                     obj.put("destinationType", destinationInfo[1]);
+                     if (destinationInfo[1].equals("topic")) {
+                        try
+                        {
+                           HornetQDestination.decomposeQueueNameForDurableSubscription(consumer.getQueue().getName().toString());
+                           obj.put("durable", true);
+                        } catch (IllegalArgumentException e)
+                        {
+                           obj.put("durable", false);
+                        }
+                     }
+                     else
+                     {
+                        obj.put("durable", false);
+                     }
+                     array.put(obj);
+                  }
+               }
+            }
+         }
+         return array.toString();
+      }
+      finally
+      {
+         blockOnIO();
+      }
+   }
+
    public String[] listSessions(final String connectionID) throws Exception
    {
       checkStarted();

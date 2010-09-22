@@ -228,6 +228,13 @@ public interface JMSServerControl
    @Operation(desc = "List all the connection IDs", impact = MBeanOperationInfo.INFO)
    String[] listConnectionIDs() throws Exception;
 
+   /**
+    * Lists all the connections connected to this server.
+    * The returned String is a JSON string containing an array of JMSConnectionInfo objects.
+    * 
+    * @see JMSConnectionInfo#from(String)
+    */
+   @Operation(desc = "List all JMS connections")
    String listConnectionsAsJSON() throws Exception;
    
    /**
@@ -235,6 +242,15 @@ public interface JMSServerControl
     */
    @Operation(desc = "List the sessions for the given connectionID", impact = MBeanOperationInfo.INFO)
    String[] listSessions(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
+
+   /**
+    * Lists all the consumers which belongs to the JMS Connection specified by the connectionID.
+    * The returned String is a JSON string containing an array of JMSConsumerInfo objects.
+    * 
+    * @see JMSConsumerInfo#from(String)
+    */
+   @Operation(desc = "List all JMS consumers associated to a JMS Connection")
+   String listConsumersAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 
 
 }

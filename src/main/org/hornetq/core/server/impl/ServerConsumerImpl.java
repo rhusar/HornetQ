@@ -118,6 +118,8 @@ public class ServerConsumerImpl implements ServerConsumer
 
    private boolean transferring = false;
 
+   private final long creationTime;
+
    // Constructors ---------------------------------------------------------------------------------
 
    public ServerConsumerImpl(final long id,
@@ -160,6 +162,8 @@ public class ServerConsumerImpl implements ServerConsumer
 
       this.strictUpdateDeliveryCount = strictUpdateDeliveryCount;
 
+      this.creationTime = System.currentTimeMillis();
+      
       if (browseOnly)
       {
          browserDeliverer = new BrowserDeliverer(messageQueue.iterator());
@@ -176,6 +180,16 @@ public class ServerConsumerImpl implements ServerConsumer
    public long getID()
    {
       return id;
+   }
+   
+   public boolean isBrowseOnly()
+   {
+      return browseOnly;
+   }
+
+   public long getCreationTime()
+   {
+      return creationTime;
    }
 
    public HandleStatus handle(final MessageReference ref) throws Exception

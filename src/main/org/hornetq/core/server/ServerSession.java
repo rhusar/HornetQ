@@ -14,6 +14,7 @@
 package org.hornetq.core.server;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.xa.Xid;
 
@@ -110,4 +111,6 @@ public interface ServerSession
    void close(boolean failed) throws Exception;
 
    void setTransferring(boolean transferring);
+
+   Set<ServerConsumer> getServerConsumers();
 }
