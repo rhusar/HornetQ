@@ -67,7 +67,7 @@ public class SessionTest extends ServiceTestBase
          final CountDownLatch latch = new CountDownLatch(1);
          clientSession.addFailureListener(new SessionFailureListener()
          {
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                latch.countDown();
             }
@@ -106,7 +106,7 @@ public class SessionTest extends ServiceTestBase
          {
             boolean called = false;
 
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                called = true;
             }

@@ -102,7 +102,7 @@ public class RemoteProcessHornetQServer implements TestableServer
 
       class MyListener implements SessionFailureListener
       {
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             latch.countDown();
          }

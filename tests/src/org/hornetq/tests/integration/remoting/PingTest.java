@@ -82,7 +82,7 @@ public class PingTest extends ServiceTestBase
    {
       volatile HornetQException me;
 
-      public void connectionFailed(final HornetQException me)
+      public void connectionFailed(final HornetQException me, boolean failedOver)
       {
          this.me = me;
       }
@@ -325,7 +325,7 @@ public class PingTest extends ServiceTestBase
       final CountDownLatch clientLatch = new CountDownLatch(1);
       SessionFailureListener clientListener = new SessionFailureListener()
       {
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             clientLatch.countDown();
          }

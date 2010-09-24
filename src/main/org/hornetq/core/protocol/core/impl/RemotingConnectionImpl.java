@@ -30,7 +30,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
-import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.DisconnectMessage;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.remoting.FailureListener;
@@ -489,7 +488,7 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
       {
          try
          {
-            listener.connectionFailed(me);
+            listener.connectionFailed(me, false);
          }
          catch (final Throwable t)
          {

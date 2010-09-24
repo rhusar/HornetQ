@@ -25,7 +25,6 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.SendAcknowledgementHandler;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ClientSessionInternal;
@@ -388,7 +387,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    // FailureListener implementation --------------------------------
 
-   public void connectionFailed(final HornetQException me)
+   public void connectionFailed(final HornetQException me, boolean failedOver)
    {
       fail(false);
    }

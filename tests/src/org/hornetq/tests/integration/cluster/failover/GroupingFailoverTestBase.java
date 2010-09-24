@@ -84,7 +84,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          class MyListener implements FailureListener
          {
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                latch.countDown();
             }
@@ -182,7 +182,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          class MyListener implements FailureListener
          {
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                latch.countDown();
             }

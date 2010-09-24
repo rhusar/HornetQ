@@ -113,6 +113,13 @@ public class CoreProtocolManager implements ProtocolManager
                {
                   public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
                   {
+                     if(System.getProperty("foo") != null)
+                     {
+                        if(connectorPair.toString().contains("b=org-hornetq-core-remoting-impl-invm-InVMConnectorFactory?server-id=1"))
+                        {
+                           System.out.println("");
+                        }
+                     }
                      channel0.send(new ClusterTopologyChangeMessage(nodeID, sourceNodeID, connectorPair, last, distance + 1));
                   }
                   

@@ -254,7 +254,7 @@ public class ReattachTest extends ServiceTestBase
       {
          volatile boolean failed;
 
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             failed = true;
          }

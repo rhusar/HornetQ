@@ -235,7 +235,7 @@ public class ReplicatedDistributionTest extends ClusterTestBase
 
       class MyListener implements SessionFailureListener
       {
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             latch.countDown();
          }

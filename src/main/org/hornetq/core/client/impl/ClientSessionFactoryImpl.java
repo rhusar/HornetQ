@@ -469,7 +469,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
 
          // We call before reconnection occurs to give the user a chance to do cleanup, like cancel messages
-         callFailureListeners(me, false);
+         callFailureListeners(me, false, false);
 
          // Now get locks on all channel 1s, whilst holding the failoverLock - this makes sure
          // There are either no threads executing in createSession, or one is blocking on a createSession
@@ -599,7 +599,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             connection = null;
          }
 
-         callFailureListeners(me, true);
+         callFailureListeners(me, true, connection != null);
 
          if (connection == null)
          {
@@ -798,7 +798,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       throw new IllegalStateException("Oh my God it's full of stars!");
    }
 
-   private void callFailureListeners(final HornetQException me, final boolean afterReconnect)
+   private void callFailureListeners(final HornetQException me, final boolean afterReconnect, boolean failedOver)
    {
       final List<SessionFailureListener> listenersClone = new ArrayList<SessionFailureListener>(listeners);
 
@@ -808,7 +808,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             if (afterReconnect)
             {
-               listener.connectionFailed(me);
+               listener.connectionFailed(me, failedOver);
             }
             else
             {
@@ -1205,7 +1205,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          this.connectionID = connectionID;
       }
 
-      public void connectionFailed(final HornetQException me)
+      public void connectionFailed(final HornetQException me, boolean failedOver)
       {
          handleConnectionFailure(connectionID, me);
       }

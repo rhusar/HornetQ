@@ -1480,7 +1480,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    // FailureListener implementation --------------------------------------------
 
-   public void connectionFailed(final HornetQException me)
+   public void connectionFailed(final HornetQException me, boolean failedOver)
    {
       try
       {

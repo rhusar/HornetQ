@@ -90,7 +90,7 @@ public class ReconnectTest extends ServiceTestBase
          session.addFailureListener(new SessionFailureListener()
          {
 
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                count.incrementAndGet();
                latch.countDown();

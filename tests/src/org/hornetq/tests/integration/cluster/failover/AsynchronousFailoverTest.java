@@ -16,7 +16,6 @@ package org.hornetq.tests.integration.cluster.failover;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 
@@ -54,7 +53,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
    {
       CountDownLatch latch = new CountDownLatch(1);
 
-      public void connectionFailed(final HornetQException me)
+      public void connectionFailed(final HornetQException me, boolean failedOver)
       {
          latch.countDown();
       }

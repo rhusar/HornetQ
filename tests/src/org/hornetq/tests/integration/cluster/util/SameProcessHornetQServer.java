@@ -14,7 +14,6 @@
 package org.hornetq.tests.integration.cluster.util;
 
 import java.io.File;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -24,16 +23,9 @@ import junit.framework.Assert;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
-import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.client.impl.ClientSessionInternal;
-import org.hornetq.core.client.impl.DelegatingSession;
 import org.hornetq.core.server.HornetQServer;
-import org.hornetq.core.server.cluster.Bridge;
-import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
-import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.spi.core.protocol.RemotingConnection;
-import org.hornetq.tests.util.ServiceTestBase;
 
 /**
  * A SameProcessHornetQServer
@@ -78,7 +70,7 @@ public class SameProcessHornetQServer implements TestableServer
 
       class MyListener implements SessionFailureListener
       {
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             latch.countDown();
          }

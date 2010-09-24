@@ -583,7 +583,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
          connectionRef = new WeakReference<HornetQConnection>(connection);
       }
 
-      public synchronized void connectionFailed(final HornetQException me)
+      public synchronized void connectionFailed(final HornetQException me, boolean failedOver)
       {
          if (me == null)
          {

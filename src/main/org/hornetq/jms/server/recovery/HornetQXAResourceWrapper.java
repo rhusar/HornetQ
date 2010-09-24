@@ -216,7 +216,7 @@ public class HornetQXAResourceWrapper implements XAResource, SessionFailureListe
       }
    }
 
-   public void connectionFailed(final HornetQException me)
+   public void connectionFailed(final HornetQException me, boolean failedOver)
    {
       HornetQXAResourceWrapper.log.warn("Notified of connection failure in recovery connectionFactory for provider " + connectorFactoryClassName,
                                         me);

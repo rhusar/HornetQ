@@ -159,7 +159,7 @@ public class ServerSessionPacketHandler implements ChannelHandler, CloseListener
       return channel.getID();
    }
 
-   public void connectionFailed(final HornetQException exception)
+   public void connectionFailed(final HornetQException exception, boolean failedOver)
    {
       log.warn("Client connection failed, clearing up resources for session " + session.getName());
 

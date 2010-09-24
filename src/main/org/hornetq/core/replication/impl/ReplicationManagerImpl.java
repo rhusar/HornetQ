@@ -327,7 +327,7 @@ public class ReplicationManagerImpl implements ReplicationManager
 
       failureListener = new SessionFailureListener()
       {
-         public void connectionFailed(final HornetQException me)
+         public void connectionFailed(final HornetQException me, boolean failedOver)
          {
             if (me.getCode() == HornetQException.DISCONNECTED)
             {
