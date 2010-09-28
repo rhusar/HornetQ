@@ -611,11 +611,14 @@ public class HornetQServerImpl implements HornetQServer
          }
          catch (InterruptedException e)
          {
-            System.out.println("HornetQServerImpl$SharedStoreBackupActivation.run");
+            //this is ok, we are being stopped
          }
          catch (Exception e)
          {
-            log.error("Failure in initialisation", e);
+            if(!(e.getCause() instanceof InterruptedException))
+            {
+               log.error("Failure in initialisation", e);
+            }
          }
       }
 
