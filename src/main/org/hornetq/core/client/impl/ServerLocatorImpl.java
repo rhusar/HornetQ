@@ -1211,6 +1211,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
+   public Topology getTopology()
+   {
+      return topology;
+   }
+   
    public void addClusterTopologyListener(final ClusterTopologyListener listener)
    {
       topologyListeners.add(listener);
@@ -1320,7 +1325,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             factory = getFactory();
             try
             {
-               factory.connect(reconnectAttempts, failoverOnInitialConnection);
+               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {

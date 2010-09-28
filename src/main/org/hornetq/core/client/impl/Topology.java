@@ -50,7 +50,6 @@ public class Topology implements Serializable
       }
       else
       {
-         System.out.println("current=" + currentMember + ", new=" + member);
          if(hasChanged(currentMember.getConnector().a, member.getConnector().a) && member.getConnector().a != null)
          {
             currentMember.getConnector().a =  member.getConnector().a;

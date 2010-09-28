@@ -133,7 +133,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          this.serverLocator.setClusterConnection(true);
          this.serverLocator.setClusterTransportConfiguration(connector);
          this.serverLocator.setBackup(server.getConfiguration().isBackup());
-         this.serverLocator.setReconnectAttempts(-1);
+         this.serverLocator.setInitialConnectAttempts(-1);
          if(retryInterval > 0)
          {
             this.serverLocator.setRetryInterval(retryInterval);

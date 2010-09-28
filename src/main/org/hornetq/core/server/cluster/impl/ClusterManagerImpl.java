@@ -209,14 +209,15 @@ public class ClusterManagerImpl implements ClusterManager
       {
          public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
          {
-            //todo update the topology
+            notifyNodeUp(nodeID, sourceNodeID, connectorPair, last, distance);
          }
 
          public void nodeDown(String nodeID)
          {
-            //todo update the topology
+            notifyNodeDown(nodeID);
          }
       });
+      locator.setNodeID(nodeUUID.toString());
       backupSessionFactory = locator.connect();
       backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
    }
