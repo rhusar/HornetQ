@@ -399,8 +399,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          return;
       }
 
+      
       synchronized (createSessionLock)
       {
+         //we need to stopthe factory from connecting if it is in the middle aof trying to failover before we get the lock
+         causeExit();
          synchronized (failoverLock)
          {
             // work on a copied set. the session will be removed from sessions when session.close() is called
@@ -419,8 +422,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             checkCloseConnection();
          }
       }
-
-      causeExit();
 
       closed = true;
    }
