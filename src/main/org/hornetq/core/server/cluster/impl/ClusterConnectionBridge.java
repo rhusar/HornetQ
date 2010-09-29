@@ -60,7 +60,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    private ClientConsumer notifConsumer;
 
    private final SimpleString idsHeaderName;
-   
+
    private final TransportConfiguration connector;
 
    private final String targetNodeID;
@@ -235,7 +235,7 @@ public class ClusterConnectionBridge extends BridgeImpl
       {
          try
          {
-            session.cleanUp(false);
+            session.cleanUp(true);
          }
          catch (Exception e)
          {
