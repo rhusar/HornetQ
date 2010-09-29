@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.Pair;
@@ -98,6 +99,8 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final TransportConfiguration connector;
 
    private final boolean allowsDirectConnectionsOnly;
+
+   private final Set<TransportConfiguration> allowableConnections = new HashSet<TransportConfiguration>();
    
    public ClusterConnectionImpl(final ServerLocatorInternal serverLocator,
                                 final TransportConfiguration connector,
@@ -140,9 +143,18 @@ public class ClusterConnectionImpl implements ClusterConnection
          }
          
          // a cluster connection will connect to other nodes only if they are directly connected
-         // through a static list of connectors 
-         allowsDirectConnectionsOnly = (serverLocator.getStaticTransportConfigurations() != null);
-      } else
+         // through a static list of connectors or broadcasting using UDP.
+         TransportConfiguration[] transportConfigurations = serverLocator.getStaticTransportConfigurations();
+         allowsDirectConnectionsOnly = (transportConfigurations != null);
+         if(allowsDirectConnectionsOnly)
+         {
+            for (TransportConfiguration transportConfiguration : transportConfigurations)
+            {
+               allowableConnections.add(transportConfiguration);
+            }
+         }
+      }
+      else
       {
          allowsDirectConnectionsOnly = false;
       }
@@ -351,7 +363,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       server.getClusterManager().notifyNodeUp(nodeID, sourceNodeID, connectorPair, last, distance);
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-      if (allowsDirectConnectionsOnly && distance > 1)
+      if (allowsDirectConnectionsOnly && distance > 1 && !allowableConnections.contains(connectorPair.a))
       {
          return;
       }
