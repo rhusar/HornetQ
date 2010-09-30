@@ -873,18 +873,9 @@ public class PagingStoreImplTest extends UnitTestCase
       return msg;
    }
 
-   private HornetQBuffer createRandomBuffer(final long id, final int size)
+   protected HornetQBuffer createRandomBuffer(final long id, final int size)
    {
-      HornetQBuffer buffer = HornetQBuffers.fixedBuffer(size + 8);
-
-      buffer.writeLong(id);
-
-      for (int j = 8; j < buffer.capacity(); j++)
-      {
-         buffer.writeByte((byte)66);
-      }
-
-      return buffer;
+      return RandomUtil.randomBuffer(size, id);
    }
 
    // Protected ----------------------------------------------------
