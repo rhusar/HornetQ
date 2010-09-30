@@ -65,7 +65,7 @@ public class PageCacheTest extends ServiceTestBase
 
       StorageManager storageManager = server.getStorageManager();
 
-      final int NUM_MESSAGES = 300;
+      final int NUM_MESSAGES = 1000;
 
       pageStore.startPaging();
 
@@ -92,6 +92,8 @@ public class PageCacheTest extends ServiceTestBase
          System.out.println("Page " + i + " had " + cache.getNumberOfMessages() + " messages");
 
       }
+      
+      forceGC();
       
       assertTrue(cursorProvider.getCacheSize() < numberOfPages);
       
