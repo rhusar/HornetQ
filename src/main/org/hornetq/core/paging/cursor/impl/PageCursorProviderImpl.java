@@ -136,6 +136,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
       
       return cache;
    }
+   
+   public int getCacheSize()
+   {
+      return softCache.size();
+   }
 
    // Package protected ---------------------------------------------
 
