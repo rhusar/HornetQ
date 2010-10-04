@@ -17,7 +17,10 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageCursorProvider;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.StorageCursor;
+import org.hornetq.core.server.ServerMessage;
 
 /**
  * A PageCursorImpl
@@ -29,69 +32,99 @@ import org.hornetq.core.paging.cursor.StorageCursor;
  */
 public class PageCursorImpl implements PageCursor
 {
-   
-   private StorageCursor store;
-   
-   private PagingStore pageStore;
-   
-   public PageCursorImpl(PagingStore pageStore, StorageCursor store)
-   {
-      this.pageStore = pageStore;
-      this.store = store;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
-    */
-   public Pair<PagePositionImpl, PagedMessage> moveNext()
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#confirm(org.hornetq.core.paging.cursor.PagePosition)
-    */
-   public void ack(PagePositionImpl position)
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
-    */
-   public void returnElement(PagePositionImpl position)
-   {
-      // TODO Auto-generated method stub
-      
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#getFirstPosition()
-    */
-   public PagePositionImpl getFirstPosition()
-   {
-      // TODO Auto-generated method stub
-      return null;
-   }
-
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
+
+   private StorageCursor store;
+
+   private PagingStore pageStore;
+   
+   private final PageCursorProvider cursorProvider;
+
+   private volatile PagePosition lastPosition;
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
+   public PageCursorImpl(PageCursorProvider cursorProvider, PagingStore pageStore, StorageCursor store)
+   {
+      this.pageStore = pageStore;
+      this.store = store;
+      this.cursorProvider = cursorProvider;
+   }
+
    // Public --------------------------------------------------------
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
+    */
+   public synchronized Pair<PagePosition, ServerMessage> moveNext() throws Exception
+   {
+      if (lastPosition == null)
+      {
+         lastPosition = recoverLastPosition();
+      }
+       
+      Pair<PagePosition,ServerMessage> message = null;
+      do
+      {
+        message = cursorProvider.getAfter(lastPosition);
+        if (message != null)
+        {
+           lastPosition = message.a;
+        }
+      }
+      while (message != null && !match(message.b));
+
+      return message;
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#confirm(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void ack(PagePosition position)
+   {
+      // TODO Auto-generated method stub
+
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void returnElement(PagePosition position)
+   {
+      // TODO Auto-generated method stub
+
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#getFirstPosition()
+    */
+   public PagePosition getFirstPosition()
+   {
+      // TODO Auto-generated method stub
+      return null;
+   }
 
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
+   
+   protected boolean match(ServerMessage message)
+   {
+      return true;
+   }
 
    // Private -------------------------------------------------------
 
+   private PagePosition recoverLastPosition()
+   {
+      long firstPage = pageStore.getFirstPage();
+      return new PagePositionImpl(firstPage, -1);
+   }
+   
    // Inner classes -------------------------------------------------
 
 }

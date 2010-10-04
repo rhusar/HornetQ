@@ -13,8 +13,10 @@
 
 package org.hornetq.core.paging.cursor;
 
+import org.hornetq.api.core.Pair;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
-import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
+import org.hornetq.core.server.ServerMessage;
 
 /**
  * The provider of Cursor for a given Address
@@ -29,6 +31,7 @@ public interface PageCursorProvider
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
+   
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -42,9 +45,9 @@ public interface PageCursorProvider
    
    PageCursor createCursor();
    
-   PageCursor recoverCursor(PagePositionImpl position);
+   //PageCursor recoverCursor(PagePosition position);
    
-   PagePositionImpl getAfter(PagePositionImpl pos);
+   Pair<PagePosition,ServerMessage> getAfter(PagePosition pos) throws Exception;
 
    // Package protected ---------------------------------------------
 

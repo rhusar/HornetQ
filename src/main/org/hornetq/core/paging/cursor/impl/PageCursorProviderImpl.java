@@ -15,12 +15,14 @@ package org.hornetq.core.paging.cursor.impl;
 
 import java.util.List;
 
+import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.SoftValueHashMap;
@@ -66,7 +68,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
     */
    public PageCursor createCursor()
    {
-      return null;
+      return new PageCursorImpl(this, pagingStore, null);
    }
 
    /* (non-Javadoc)
@@ -80,9 +82,29 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public PagePositionImpl getAfter(final PagePositionImpl pos)
+   public Pair<PagePosition, ServerMessage> getAfter(final PagePosition pos) throws Exception
    {
-      return null;
+      PagePosition retPos = pos.nextMessage();
+      
+      PageCache cache = getPageCache(pos.getPageNr());
+      
+      if (retPos.getMessageNr() >= cache.getNumberOfMessages())
+      {
+         retPos = pos.nextPage();
+         
+         cache = getPageCache(retPos.getPageNr());
+         if (cache == null)
+         {
+            return null;
+         }
+         
+         if (retPos.getMessageNr() >= cache.getNumberOfMessages())
+         {
+            return null;
+         }
+      }
+      
+      return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
    }
 
    public PageCache getPageCache(final long pageId) throws Exception
@@ -91,6 +113,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
       PageCacheImpl cache = null;
       synchronized (this)
       {
+         if (pageId > pagingStore.getNumberOfPages())
+         {
+            return null;
+         }
+         
          cache = softCache.get(pageId);
          if (cache == null)
          {

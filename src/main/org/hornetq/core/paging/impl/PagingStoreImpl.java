@@ -203,6 +203,16 @@ public class PagingStoreImpl implements TestSupportPageStore
    // Public --------------------------------------------------------
 
    // PagingStore implementation ------------------------------------
+   
+   public long getFirstPage()
+   {
+      return firstPageId;
+   }
+   
+   public long getTopPage()
+   {
+      return currentPageId;
+   }
 
    public SimpleString getAddress()
    {

@@ -26,18 +26,16 @@ public class PagePositionImpl implements PagePosition
 {
    private long pageNr;
 
-   private long messageNr;
+   private int messageNr;
 
    /** ID used for storage */
    private long recordID;
-   
-   
 
    /**
     * @param pageNr
     * @param messageNr
     */
-   public PagePositionImpl(long pageNr, long messageNr)
+   public PagePositionImpl(long pageNr, int messageNr)
    {
       super();
       this.pageNr = pageNr;
@@ -71,7 +69,7 @@ public class PagePositionImpl implements PagePosition
    /**
     * @return the messageNr
     */
-   public long getMessageNr()
+   public int getMessageNr()
    {
       return messageNr;
    }
@@ -102,7 +100,17 @@ public class PagePositionImpl implements PagePosition
          return 0;
       }
    }
-   
+
+   public PagePosition nextMessage()
+   {
+      return new PagePositionImpl(this.pageNr, this.messageNr + 1);
+   }
+
+   public PagePosition nextPage()
+   {
+      return new PagePositionImpl(this.pageNr + 1, 0);
+   }
+
    public boolean isNextSequenceOf(PagePosition pos)
    {
       return this.pageNr == pos.getPageNr() && this.getRecordID() - pos.getRecordID() == 1;

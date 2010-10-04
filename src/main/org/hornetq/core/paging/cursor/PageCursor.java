@@ -14,8 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
-import org.hornetq.core.paging.PagedMessage;
-import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
+import org.hornetq.core.server.ServerMessage;
 
 /**
  * A PageCursor
@@ -27,11 +26,11 @@ import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 public interface PageCursor
 {
    
-   Pair<PagePositionImpl, PagedMessage> moveNext();
+   Pair<PagePosition, ServerMessage> moveNext() throws Exception;
    
-   PagePositionImpl getFirstPosition();
+   PagePosition getFirstPosition();
    
-   void ack(PagePositionImpl position);
+   void ack(PagePosition position);
    
-   void returnElement(PagePositionImpl position);
+   void returnElement(PagePosition position);
 }

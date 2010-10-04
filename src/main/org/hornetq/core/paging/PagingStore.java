@@ -40,6 +40,10 @@ public interface PagingStore extends HornetQComponent
    SimpleString getStoreName();
 
    AddressFullMessagePolicy getAddressFullMessagePolicy();
+   
+   long getFirstPage();
+   
+   long getTopPage();
 
    long getPageSizeBytes();
 

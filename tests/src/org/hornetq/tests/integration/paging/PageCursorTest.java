@@ -18,11 +18,14 @@ import java.util.HashMap;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.core.config.Configuration;
 import org.hornetq.core.paging.cursor.PageCache;
+import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
-import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
@@ -37,7 +40,7 @@ import org.hornetq.tests.util.ServiceTestBase;
  *
  *
  */
-public class PageCacheTest extends ServiceTestBase
+public class PageCursorTest extends ServiceTestBase
 {
 
    // Constants -----------------------------------------------------
@@ -61,30 +64,13 @@ public class PageCacheTest extends ServiceTestBase
    public void testReadCache() throws Exception
    {
 
-      PagingStoreImpl pageStore = (PagingStoreImpl)server.getPagingManager().getPageStore(ADDRESS);
-
-      StorageManager storageManager = server.getStorageManager();
-
       final int NUM_MESSAGES = 1000;
 
-      pageStore.startPaging();
-
-      for (int i = 0; i < NUM_MESSAGES; i++)
-      {
-         if (i % 100 == 0) System.out.println("Paged " + i);
-         HornetQBuffer buffer = RandomUtil.randomBuffer(1024*1024, i + 1l);
-
-         ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
-         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
-
-         Assert.assertTrue(pageStore.page(msg));
-      }
-
-      int numberOfPages = pageStore.getNumberOfPages();
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(pageStore, storageManager);
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
 
       for (int i = 0; i < numberOfPages; i++)
       {
@@ -98,9 +84,89 @@ public class PageCacheTest extends ServiceTestBase
       assertTrue(cursorProvider.getCacheSize() < numberOfPages);
       
       System.out.println("Cache size = " + cursorProvider.getCacheSize());
-      assertEquals(numberOfPages, pageStore.getNumberOfPages());
+   }
+
+
+   public void testSimpleCursor() throws Exception
+   {
+
+      final int NUM_MESSAGES = 1000;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
+
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
+      
+      PageCursor cursor = cursorProvider.createCursor();
+      
+      Pair<PagePosition, ServerMessage> msg;
+      
+      int key = 0;
+      while ((msg = cursor.moveNext()) != null)
+      {
+         assertEquals(key++, msg.b.getIntProperty("key").intValue());
+      }
+      assertEquals(NUM_MESSAGES, key);
       
       
+      forceGC();
+      
+      assertTrue(cursorProvider.getCacheSize() < numberOfPages);
+
+   }
+
+
+   public void testReadNextPage() throws Exception
+   {
+
+      final int NUM_MESSAGES = 1;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
+
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
+      
+      PageCache cache = cursorProvider.getPageCache(2);
+      
+      assertNull(cache);
+   }
+
+   /**
+    * @param numMessages
+    * @param pageStore
+    * @throws Exception
+    */
+   private int addMessages(final int numMessages, final int messageSize) throws Exception
+   {
+      PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
+
+      pageStore.startPaging();
+
+      for (int i = 0; i < numMessages; i++)
+      {
+         if (i % 100 == 0) System.out.println("Paged " + i);
+         HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+
+         ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
+         msg.putIntProperty("key", i);
+         
+         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+
+         Assert.assertTrue(pageStore.page(msg));
+      }
+      
+      return pageStore.getNumberOfPages();
+   }
+
+   /**
+    * @return
+    * @throws Exception
+    */
+   private PagingStoreImpl lookupPageStore(SimpleString address) throws Exception
+   {
+      return (PagingStoreImpl)server.getPagingManager().getPageStore(address);
    }
 
    // Package protected ---------------------------------------------
@@ -111,9 +177,13 @@ public class PageCacheTest extends ServiceTestBase
    {
       super.setUp();
       System.out.println("Tmp:" + getTemporaryDir());
+      
+      Configuration config = createDefaultConfig();
+      
+      config.setJournalSyncNonTransactional(false);
 
       server = createServer(true,
-                            createDefaultConfig(),
+                            config,
                             PAGE_SIZE,
                             PAGE_MAX,
                             new HashMap<String, AddressSettings>());

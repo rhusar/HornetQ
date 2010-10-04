@@ -25,10 +25,15 @@ public interface PagePosition extends Comparable<PagePosition>
    
    long getRecordID();
 
+   // TODO: this belongs somewhere else
    void setRecordID(long recordID);
 
    long getPageNr();
 
-   long getMessageNr();
+   int getMessageNr();
+   
+   PagePosition nextMessage();
+   
+   PagePosition nextPage();
    
 }
