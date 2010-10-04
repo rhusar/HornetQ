@@ -66,9 +66,15 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
+   public PageCursor createCursor(long cursorId)
+   {
+      return new PageCursorImpl(this, pagingStore, storageManager, cursorId);
+   }
+   
+   
    public PageCursor createCursor()
    {
-      return new PageCursorImpl(this, pagingStore, null);
+      return new PageCursorImpl(this, pagingStore, storageManager, 0);
    }
 
    /* (non-Javadoc)

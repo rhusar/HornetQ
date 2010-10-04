@@ -13,6 +13,7 @@
 
 package org.hornetq.core.paging.cursor;
 
+
 /**
  * A PagePosition
  *
@@ -23,9 +24,10 @@ package org.hornetq.core.paging.cursor;
 public interface PagePosition extends Comparable<PagePosition>
 {
 
+   // The recordID associated during ack
    long getRecordID();
 
-   // TODO: this belongs somewhere else
+   // The recordID associated during ack
    void setRecordID(long recordID);
 
    long getPageNr();

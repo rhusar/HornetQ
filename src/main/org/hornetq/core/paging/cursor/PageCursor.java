@@ -32,5 +32,7 @@ public interface PageCursor
 
    void ack(PagePosition position);
 
+   void ack(long tx, PagePosition position);
+
    void returnElement(PagePosition position);
 }

@@ -18,7 +18,7 @@ import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
-import org.hornetq.core.paging.cursor.StorageCursor;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
 
 /**
@@ -35,10 +35,12 @@ public class PageCursorImpl implements PageCursor
 
    // Attributes ----------------------------------------------------
 
-   private StorageCursor store;
+   private StorageManager store;
+
+   private final long cursorId;
 
    private PagingStore pageStore;
-   
+
    private final PageCursorProvider cursorProvider;
 
    private volatile PagePosition lastPosition;
@@ -47,11 +49,12 @@ public class PageCursorImpl implements PageCursor
 
    // Constructors --------------------------------------------------
 
-   public PageCursorImpl(PageCursorProvider cursorProvider, PagingStore pageStore, StorageCursor store)
+   public PageCursorImpl(PageCursorProvider cursorProvider, PagingStore pageStore, StorageManager store, long cursorId)
    {
       this.pageStore = pageStore;
       this.store = store;
       this.cursorProvider = cursorProvider;
+      this.cursorId = cursorId;
    }
 
    // Public --------------------------------------------------------
@@ -65,15 +68,15 @@ public class PageCursorImpl implements PageCursor
       {
          lastPosition = recoverLastPosition();
       }
-       
-      Pair<PagePosition,ServerMessage> message = null;
+
+      Pair<PagePosition, ServerMessage> message = null;
       do
       {
-        message = cursorProvider.getAfter(lastPosition);
-        if (message != null)
-        {
-           lastPosition = message.a;
-        }
+         message = cursorProvider.getAfter(lastPosition);
+         if (message != null)
+         {
+            lastPosition = message.a;
+         }
       }
       while (message != null && !match(message.b));
 
@@ -86,8 +89,14 @@ public class PageCursorImpl implements PageCursor
    public void ack(PagePosition position)
    {
       // TODO Auto-generated method stub
-
    }
+   
+   public void ack(long tx, PagePosition position)
+   {
+      
+   }
+   
+   
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
@@ -110,7 +119,7 @@ public class PageCursorImpl implements PageCursor
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
-   
+
    protected boolean match(ServerMessage message)
    {
       return true;
@@ -123,7 +132,7 @@ public class PageCursorImpl implements PageCursor
       long firstPage = pageStore.getFirstPage();
       return new PagePositionImpl(firstPage, -1);
    }
-   
+
    // Inner classes -------------------------------------------------
 
 }

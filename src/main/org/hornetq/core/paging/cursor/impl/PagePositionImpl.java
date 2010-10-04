@@ -13,7 +13,9 @@
 
 package org.hornetq.core.paging.cursor.impl;
 
+import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.paging.cursor.PagePosition;
+import org.hornetq.utils.DataConstants;
 
 /**
  * A PagePosition
@@ -40,6 +42,15 @@ public class PagePositionImpl implements PagePosition
       super();
       this.pageNr = pageNr;
       this.messageNr = messageNr;
+   }
+
+   /**
+    * @param pageNr
+    * @param messageNr
+    */
+   public PagePositionImpl()
+   {
+
    }
 
    /**
@@ -115,5 +126,4 @@ public class PagePositionImpl implements PagePosition
    {
       return this.pageNr == pos.getPageNr() && this.getRecordID() - pos.getRecordID() == 1;
    }
-
 }

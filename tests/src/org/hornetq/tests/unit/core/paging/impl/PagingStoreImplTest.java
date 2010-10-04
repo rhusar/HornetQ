@@ -46,6 +46,7 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.PagingStoreFactory;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.paging.impl.TestSupportPageStore;
@@ -1499,6 +1500,24 @@ public class PagingStoreImplTest extends UnitTestCase
        */
       public void updatePageTransaction(long txID, PageTransactionInfo pageTransaction, int depage) throws Exception
       {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#storeCursorAcknowledge(long, org.hornetq.core.paging.cursor.PagePosition)
+       */
+      public void storeCursorAcknowledge(long queueID, PagePosition position)
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#storeCursorAcknowledgeTransactional(long, long, org.hornetq.core.paging.cursor.PagePosition)
+       */
+      public void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position)
+      {
+         // TODO Auto-generated method stub
+         
       }
 
    }

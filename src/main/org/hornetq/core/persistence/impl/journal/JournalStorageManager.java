@@ -50,6 +50,8 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.cursor.PagePosition;
+import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.persistence.GroupingInfo;
 import org.hornetq.core.persistence.OperationContext;
@@ -133,6 +135,8 @@ public class JournalStorageManager implements StorageManager
    public static final byte DUPLICATE_ID = 37;
 
    public static final byte HEURISTIC_COMPLETION = 38;
+
+   public static final byte ACKNOWLEDGE_PAGING = 39;
 
    private UUID persistentID;
 
@@ -508,6 +512,15 @@ public class JournalStorageManager implements StorageManager
                                         syncNonTransactional,
                                         getContext(syncNonTransactional));
    }
+   
+   public void storeCursorAcknowledge(long queueID, PagePosition position) throws Exception
+   {
+     long ackID = idGenerator.generateID();
+     position.setRecordID(ackID);
+     messageJournal.appendAddRecord(ackID, ACKNOWLEDGE_PAGING, new CursorAckRecordEncoding(queueID, position), syncNonTransactional, getContext(syncNonTransactional));
+   }
+
+
 
    public void deleteMessage(final long messageID) throws Exception
    {
@@ -605,6 +618,16 @@ public class JournalStorageManager implements StorageManager
                                                      messageID,
                                                      JournalStorageManager.ACKNOWLEDGE_REF,
                                                      new RefEncoding(queueID));
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#storeCursorAcknowledgeTransactional(long, long, org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position) throws Exception
+   {
+      long ackID = idGenerator.generateID();
+      position.setRecordID(ackID);
+      messageJournal.appendAddRecordTransactional(txID, ackID, ACKNOWLEDGE_PAGING, new CursorAckRecordEncoding(queueID, position));
    }
 
    public long storeHeuristicCompletion(final Xid xid, final boolean isCommit) throws Exception
@@ -2192,6 +2215,7 @@ public class JournalStorageManager implements StorageManager
       }
 
    }
+   
 
    private static final class AddMessageRecord
    {
@@ -2207,6 +2231,50 @@ public class JournalStorageManager implements StorageManager
       int deliveryCount;
 
       boolean referenced = false;
+   }
+
+
+
+   private static final class CursorAckRecordEncoding implements EncodingSupport
+   {
+      public CursorAckRecordEncoding(final long queueID, final PagePosition position)
+      {
+         this.queueID = queueID;
+         this.position = position;
+      }
+
+      long queueID;
+
+      PagePosition position;
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.EncodingSupport#getEncodeSize()
+       */
+      public int getEncodeSize()
+      {
+         return DataConstants.SIZE_LONG + DataConstants.SIZE_LONG + DataConstants.SIZE_INT;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
+       */
+      public void encode(HornetQBuffer buffer)
+      {
+         buffer.writeLong(queueID);
+         buffer.writeLong(position.getPageNr());
+         buffer.writeInt(position.getMessageNr());
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.journal.EncodingSupport#decode(org.hornetq.api.core.HornetQBuffer)
+       */
+      public void decode(HornetQBuffer buffer)
+      {
+         queueID = buffer.readLong();
+         long pageNR = buffer.readLong();
+         int messageNR = buffer.readInt();
+         this.position = new PagePositionImpl(pageNR, messageNR);
+      }
    }
 
    private class LargeMessageTXFailureCallback implements TransactionFailureCallback
@@ -2245,5 +2313,4 @@ public class JournalStorageManager implements StorageManager
       }
 
    }
-
 }

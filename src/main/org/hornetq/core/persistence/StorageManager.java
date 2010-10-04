@@ -13,7 +13,6 @@
 
 package org.hornetq.core.persistence;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -27,6 +26,7 @@ import org.hornetq.core.journal.JournalLoadInformation;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.config.PersistedAddressSetting;
 import org.hornetq.core.persistence.config.PersistedRoles;
 import org.hornetq.core.postoffice.Binding;
@@ -98,6 +98,8 @@ public interface StorageManager extends HornetQComponent
    void deleteMessage(long messageID) throws Exception;
 
    void storeAcknowledge(long queueID, long messageID) throws Exception;
+   
+   void storeCursorAcknowledge(long queueID, PagePosition position) throws Exception;
 
    void updateDeliveryCount(MessageReference ref) throws Exception;
 
@@ -112,6 +114,8 @@ public interface StorageManager extends HornetQComponent
    void storeReferenceTransactional(long txID, long queueID, long messageID) throws Exception;
 
    void storeAcknowledgeTransactional(long txID, long queueID, long messageID) throws Exception;
+
+   void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position) throws Exception;
 
    void updateScheduledDeliveryTimeTransactional(long txID, MessageReference ref) throws Exception;
 
