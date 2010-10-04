@@ -26,9 +26,9 @@ import org.hornetq.core.server.ServerMessage;
 public interface PageCache
 {
    Page getPage();
-   
+
    int getNumberOfMessages();
-   
+
    /**
     * 
     * @param messageNumber The order of the message on the page

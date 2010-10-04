@@ -22,7 +22,7 @@ package org.hornetq.core.paging.cursor;
  */
 public interface PagePosition extends Comparable<PagePosition>
 {
-   
+
    long getRecordID();
 
    // TODO: this belongs somewhere else
@@ -31,9 +31,9 @@ public interface PagePosition extends Comparable<PagePosition>
    long getPageNr();
 
    int getMessageNr();
-   
+
    PagePosition nextMessage();
-   
+
    PagePosition nextPage();
-   
+
 }

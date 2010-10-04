@@ -25,12 +25,12 @@ import org.hornetq.core.server.ServerMessage;
  */
 public interface PageCursor
 {
-   
+
    Pair<PagePosition, ServerMessage> moveNext() throws Exception;
-   
+
    PagePosition getFirstPosition();
-   
+
    void ack(PagePosition position);
-   
+
    void returnElement(PagePosition position);
 }

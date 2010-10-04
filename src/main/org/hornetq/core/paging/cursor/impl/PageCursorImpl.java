@@ -14,7 +14,6 @@
 package org.hornetq.core.paging.cursor.impl;
 
 import org.hornetq.api.core.Pair;
-import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;

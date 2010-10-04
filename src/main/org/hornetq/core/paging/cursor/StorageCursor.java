@@ -24,5 +24,5 @@ import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
  */
 public interface StorageCursor
 {
-     void storeCursorInitialPosition(PagePositionImpl position);
+   void storeCursorInitialPosition(PagePositionImpl position);
 }
