@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor.impl;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.Page;
@@ -26,9 +27,13 @@ import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.SoftValueHashMap;
+import org.jboss.netty.util.internal.ConcurrentHashMap;
 
 /**
  * A PageProviderIMpl
+ * 
+ * TODO: this may be moved entirely into PagingStore as there's an one-to-one relationship here
+ *       However I want to keep this isolated as much as possible during development
  *
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  *
@@ -45,6 +50,8 @@ public class PageCursorProviderImpl implements PageCursorProvider
    private final StorageManager storageManager;
    
    private SoftValueHashMap<Long, PageCacheImpl> softCache = new SoftValueHashMap<Long, PageCacheImpl>();
+   
+   private ConcurrentMap<Long, PageCursor> activeCursors = new ConcurrentHashMap<Long, PageCursor>();
 
    // Static --------------------------------------------------------
 
@@ -66,23 +73,20 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
-   public PageCursor createCursor(long cursorId)
+   public PageCursor getCursor(long cursorID)
    {
-      return new PageCursorImpl(this, pagingStore, storageManager, cursorId);
+      PageCursor activeCursor = activeCursors.get(cursorID);
+      if (activeCursor == null)
+      {
+         activeCursor = activeCursors.putIfAbsent(cursorID, new PageCursorImpl(this, pagingStore, storageManager, cursorID));
+      }
+      
+      return activeCursor;
    }
-   
    
    public PageCursor createCursor()
    {
       return new PageCursorImpl(this, pagingStore, storageManager, 0);
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursorProvider#recoverCursor(org.hornetq.core.paging.cursor.PagePosition)
-    */
-   public PageCursor recoverCursor(final PagePositionImpl position)
-   {
-      return null;
    }
 
    /* (non-Javadoc)

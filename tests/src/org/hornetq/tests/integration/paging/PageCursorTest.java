@@ -61,6 +61,7 @@ public class PageCursorTest extends ServiceTestBase
 
    // Public --------------------------------------------------------
 
+   // Read more cache than what would fit on the memory, and validate if the memory would be cleared through soft-caches
    public void testReadCache() throws Exception
    {
 
@@ -131,6 +132,32 @@ public class PageCursorTest extends ServiceTestBase
       PageCache cache = cursorProvider.getPageCache(2);
       
       assertNull(cache);
+   }
+   
+   
+   public void testRollbackScenarios() throws Exception
+   {
+      
+   }
+   
+   public void testRedeliveryScenarios() throws Exception
+   {
+      
+   }
+   
+   public void testCleanupScenarios() throws Exception
+   {
+      // Validate the pages are being cleared (with multiple cursors)
+   }
+   
+   public void testLeavePageStateAndRestart() throws Exception
+   {
+      // Validate the cursor are working fine when all the pages are gone, and then paging being restarted   
+   }
+   
+   public void testRedeliveryWithCleanup() throws Exception
+   {
+      
    }
 
    /**

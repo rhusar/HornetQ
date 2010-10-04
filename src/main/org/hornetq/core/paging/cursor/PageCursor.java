@@ -30,9 +30,24 @@ public interface PageCursor
 
    PagePosition getFirstPosition();
 
-   void ack(PagePosition position);
+   void ack(PagePosition position) throws Exception;
 
-   void ack(long tx, PagePosition position);
+   void ackTx(long tx, PagePosition position) throws Exception;
+   
+   /**
+    * @param position
+    */
+   void recoverACK(PagePosition position);
+   
+   /**
+    * To be used to avoid a redelivery of a prepared ACK after load
+    * @param position
+    */
+   void recoverPreparedACK(PagePosition position);
 
+   /**
+    * To be used on redeliveries
+    * @param position
+    */
    void returnElement(PagePosition position);
 }

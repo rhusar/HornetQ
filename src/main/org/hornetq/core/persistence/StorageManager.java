@@ -151,6 +151,7 @@ public interface StorageManager extends HornetQComponent
                                              final PagingManager pagingManager,
                                              final ResourceManager resourceManager,
                                              final Map<Long, Queue> queues,
+                                             Map<Long, QueueBindingInfo> queueInfos,
                                              final Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap) throws Exception;
 
    long storeHeuristicCompletion(Xid xid, boolean isCommit) throws Exception;

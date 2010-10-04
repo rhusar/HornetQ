@@ -16,6 +16,7 @@ package org.hornetq.core.paging;
 import java.util.List;
 
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
@@ -60,6 +61,8 @@ public interface PagingStore extends HornetQComponent
    boolean page(ServerMessage message) throws Exception;
 
    Page createPage(final int page) throws Exception;
+   
+   PageCursorProvider getCursorProvier();
 
    /**
     * @return false if a thread was already started, or if not in page mode

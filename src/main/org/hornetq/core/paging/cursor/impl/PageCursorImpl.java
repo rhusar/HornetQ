@@ -35,11 +35,11 @@ public class PageCursorImpl implements PageCursor
 
    // Attributes ----------------------------------------------------
 
-   private StorageManager store;
+   private final StorageManager store;
 
    private final long cursorId;
 
-   private PagingStore pageStore;
+   private final PagingStore pageStore;
 
    private final PageCursorProvider cursorProvider;
 
@@ -49,7 +49,10 @@ public class PageCursorImpl implements PageCursor
 
    // Constructors --------------------------------------------------
 
-   public PageCursorImpl(PageCursorProvider cursorProvider, PagingStore pageStore, StorageManager store, long cursorId)
+   public PageCursorImpl(final PageCursorProvider cursorProvider,
+                         final PagingStore pageStore,
+                         final StorageManager store,
+                         final long cursorId)
    {
       this.pageStore = pageStore;
       this.store = store;
@@ -86,22 +89,20 @@ public class PageCursorImpl implements PageCursor
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#confirm(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void ack(PagePosition position)
+   public void ack(final PagePosition position) throws Exception
    {
-      // TODO Auto-generated method stub
+      store.storeCursorAcknowledge(cursorId, position);
    }
-   
-   public void ack(long tx, PagePosition position)
+
+   public void ackTx(final long tx, final PagePosition position) throws Exception
    {
-      
+      store.storeCursorAcknowledgeTransactional(tx, cursorId, position);
    }
-   
-   
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void returnElement(PagePosition position)
+   public void returnElement(final PagePosition position)
    {
       // TODO Auto-generated method stub
 
@@ -120,7 +121,7 @@ public class PageCursorImpl implements PageCursor
 
    // Protected -----------------------------------------------------
 
-   protected boolean match(ServerMessage message)
+   protected boolean match(final ServerMessage message)
    {
       return true;
    }
@@ -131,6 +132,24 @@ public class PageCursorImpl implements PageCursor
    {
       long firstPage = pageStore.getFirstPage();
       return new PagePositionImpl(firstPage, -1);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#recoverACK(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void recoverACK(final PagePosition position)
+   {
+      // TODO Auto-generated method stub
+
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#recoverPreparedACK(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void recoverPreparedACK(final PagePosition position)
+   {
+      // TODO Auto-generated method stub
+
    }
 
    // Inner classes -------------------------------------------------

@@ -1154,6 +1154,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                        final PagingManager pagingManager,
                                                        final ResourceManager resourceManager,
                                                        final Map<Long, Queue> queues,
+                                                       Map<Long, QueueBindingInfo> queueInfos,
                                                        final Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap) throws Exception
       {
          return new JournalLoadInformation();

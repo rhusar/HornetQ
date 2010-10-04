@@ -61,6 +61,7 @@ import org.hornetq.core.journal.impl.SyncSpeedTest;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.GroupingInfo;
@@ -163,7 +164,7 @@ public class HornetQServerImpl implements HornetQServer
    private volatile QueueFactory queueFactory;
 
    private volatile PagingManager pagingManager;
-
+ 
    private volatile PostOffice postOffice;
 
    private volatile ExecutorService threadPool;
@@ -1188,9 +1189,12 @@ public class HornetQServerImpl implements HornetQServer
       setNodeID();
 
       Map<Long, Queue> queues = new HashMap<Long, Queue>();
+      Map<Long, QueueBindingInfo> queueBindingInfosMap = new HashMap<Long, QueueBindingInfo>();
 
       for (QueueBindingInfo queueBindingInfo : queueBindingInfos)
       {
+         queueBindingInfosMap.put(queueBindingInfo.getId(), queueBindingInfo);
+         
          Filter filter = FilterImpl.createFilter(queueBindingInfo.getFilterString());
 
          Queue queue = queueFactory.createQueue(queueBindingInfo.getId(),
@@ -1226,6 +1230,7 @@ public class HornetQServerImpl implements HornetQServer
                                                          pagingManager,
                                                          resourceManager,
                                                          queues,
+                                                         queueBindingInfosMap,
                                                          duplicateIDMap);
 
       for (Map.Entry<SimpleString, List<Pair<byte[], Long>>> entry : duplicateIDMap.entrySet())

@@ -46,7 +46,7 @@ public interface PageCursorProvider
     * @param queueId The cursorID should be the same as the queueId associated for persistance
     * @return
     */
-   PageCursor createCursor(long queueId);
+   PageCursor getCursor(long queueId);
    
    /**
     * Create a non persistent cursor, usually associated with browsing

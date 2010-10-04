@@ -50,6 +50,8 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.PagingStore;
+import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
@@ -136,7 +138,7 @@ public class JournalStorageManager implements StorageManager
 
    public static final byte HEURISTIC_COMPLETION = 38;
 
-   public static final byte ACKNOWLEDGE_PAGING = 39;
+   public static final byte ACKNOWLEDGE_CURSOR = 39;
 
    private UUID persistentID;
 
@@ -517,7 +519,7 @@ public class JournalStorageManager implements StorageManager
    {
      long ackID = idGenerator.generateID();
      position.setRecordID(ackID);
-     messageJournal.appendAddRecord(ackID, ACKNOWLEDGE_PAGING, new CursorAckRecordEncoding(queueID, position), syncNonTransactional, getContext(syncNonTransactional));
+     messageJournal.appendAddRecord(ackID, ACKNOWLEDGE_CURSOR, new CursorAckRecordEncoding(queueID, position), syncNonTransactional, getContext(syncNonTransactional));
    }
 
 
@@ -627,7 +629,7 @@ public class JournalStorageManager implements StorageManager
    {
       long ackID = idGenerator.generateID();
       position.setRecordID(ackID);
-      messageJournal.appendAddRecordTransactional(txID, ackID, ACKNOWLEDGE_PAGING, new CursorAckRecordEncoding(queueID, position));
+      messageJournal.appendAddRecordTransactional(txID, ackID, ACKNOWLEDGE_CURSOR, new CursorAckRecordEncoding(queueID, position));
    }
 
    public long storeHeuristicCompletion(final Xid xid, final boolean isCommit) throws Exception
@@ -786,6 +788,7 @@ public class JournalStorageManager implements StorageManager
                                                     final PagingManager pagingManager,
                                                     final ResourceManager resourceManager,
                                                     final Map<Long, Queue> queues,
+                                                    Map<Long, QueueBindingInfo> queueInfos,
                                                     final Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap) throws Exception
    {
       List<RecordInfo> records = new ArrayList<RecordInfo>();
@@ -1000,6 +1003,29 @@ public class JournalStorageManager implements StorageManager
                HeuristicCompletionEncoding encoding = new HeuristicCompletionEncoding();
                encoding.decode(buff);
                resourceManager.putHeuristicCompletion(record.id, encoding.xid, encoding.isCommit);
+               break;
+            }
+            case ACKNOWLEDGE_CURSOR:
+            {
+               CursorAckRecordEncoding encoding = new CursorAckRecordEncoding();
+               encoding.decode(buff);
+               
+               encoding.position.setRecordID(record.id);
+               
+               QueueBindingInfo queueInfo = queueInfos.get(encoding.queueID);
+               
+               if (queueInfo != null)
+               {
+                  SimpleString address = queueInfo.getAddress();
+                  PagingStore store = pagingManager.getPageStore(address);
+                  PageCursor cursor = store.getCursorProvier().getCursor(encoding.queueID);
+                  cursor.recoverACK(encoding.position);
+               }
+               else
+               {
+                  log.warn("Can't find queue " + queueInfo.getId() + " while reloading ACKNOWLEDGE_CURSOR");
+               }
+               
                break;
             }
             default:
@@ -1534,6 +1560,12 @@ public class JournalStorageManager implements StorageManager
 
                   ids.add(new Pair<byte[], Long>(encoding.duplID, record.id));
 
+                  break;
+               }
+               case ACKNOWLEDGE_CURSOR:
+               {
+                  // TODO: implement and test this case
+                  // and make sure the rollback will work well also
                   break;
                }
                default:
@@ -2229,11 +2261,7 @@ public class JournalStorageManager implements StorageManager
       long scheduledDeliveryTime;
 
       int deliveryCount;
-
-      boolean referenced = false;
    }
-
-
 
    private static final class CursorAckRecordEncoding implements EncodingSupport
    {
@@ -2241,6 +2269,11 @@ public class JournalStorageManager implements StorageManager
       {
          this.queueID = queueID;
          this.position = position;
+      }
+      
+      public CursorAckRecordEncoding()
+      {
+         this.position = new PagePositionImpl();
       }
 
       long queueID;

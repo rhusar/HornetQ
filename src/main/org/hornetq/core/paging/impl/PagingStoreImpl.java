@@ -40,6 +40,8 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.PagingStoreFactory;
+import org.hornetq.core.paging.cursor.PageCursorProvider;
+import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
@@ -48,8 +50,8 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
-import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.Transaction.State;
+import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 
 /**
@@ -114,6 +116,8 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    /** duplicate cache used at this address */
    private final DuplicateIDCache duplicateCache;
+   
+   private final PageCursorProvider cursorProvider;
 
    /** 
     * We need to perform checks on currentPage with minimal locking
@@ -187,6 +191,8 @@ public class PagingStoreImpl implements TestSupportPageStore
       this.storeFactory = storeFactory;
 
       this.syncNonTransactional = syncNonTransactional;
+      
+      this.cursorProvider = new PageCursorProviderImpl(this, this.storageManager);
 
       // Post office could be null on the backup node
       if (postOffice == null)
@@ -203,6 +209,11 @@ public class PagingStoreImpl implements TestSupportPageStore
    // Public --------------------------------------------------------
 
    // PagingStore implementation ------------------------------------
+   
+   public PageCursorProvider getCursorProvier()
+   {
+      return cursorProvider;
+   }
    
    public long getFirstPage()
    {
