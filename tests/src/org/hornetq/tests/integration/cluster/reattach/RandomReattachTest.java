@@ -249,6 +249,8 @@ public class RandomReattachTest extends UnitTestCase
 
          session.close();
 
+         locator.close();
+
          Assert.assertEquals(0, sf.numSessions());
 
          Assert.assertEquals(0, sf.numConnections());
