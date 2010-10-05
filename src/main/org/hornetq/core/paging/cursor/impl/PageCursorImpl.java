@@ -129,6 +129,11 @@ public class PageCursorImpl implements PageCursor
    {
       store.storeCursorAcknowledgeTransactional(tx.getID(), cursorId, position);
       installTXCallback(tx, position);
+
+      // It needs to persist, otherwise the cursor will return to the fist page position
+      tx.setContainsPersistent();
+      
+      
       // tx.afterCommit()
    }
 
@@ -179,6 +184,7 @@ public class PageCursorImpl implements PageCursor
                   {
                      Pair<PagePosition, ServerMessage> msgCheck = cursorProvider.getAfter(tmpPos);
                      // end of the hole, we can finish processing here
+                     // It may be also that the next was just a next page, so we just ignore it
                      if (msgCheck == null || msgCheck.a.equals(pos))
                      {
                         break;
@@ -240,6 +246,7 @@ public class PageCursorImpl implements PageCursor
     */
    private void installTXCallback(Transaction tx, PagePosition position)
    {
+      //TODO: Play with rollbacks on the reference counts
    }
 
    // Inner classes -------------------------------------------------

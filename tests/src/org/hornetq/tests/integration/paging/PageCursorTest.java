@@ -27,11 +27,14 @@ import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.core.transaction.Transaction;
+import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.ServiceTestBase;
 
@@ -153,12 +156,18 @@ public class PageCursorTest extends ServiceTestBase
       PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
-      for (int i = 0 ; i < 500 ; i++)
+      for (int i = 0 ; i < 1000 ; i++)
       {
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
          assertEquals(i, msg.b.getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         
+         if (i < 500)
+         {
+            cursor.ack(msg.a);
+         }
       }
+      
+      OperationContextImpl.getContext(null).waitCompletion();
       
       server.stop();
       
@@ -172,6 +181,8 @@ public class PageCursorTest extends ServiceTestBase
          assertEquals(i, msg.b.getIntProperty("key").intValue());
          cursor.ack(msg.a);
       }
+      
+      
       
    }
    
@@ -225,7 +236,63 @@ public class PageCursorTest extends ServiceTestBase
    }
    
    
+   public void testRestartWithHoleOnAckAndTransaction() throws Exception
+   {
+      final int NUM_MESSAGES = 1000;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 10 * 1024);
+      
+      System.out.println("Number of pages = " + numberOfPages);
+      
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+      
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      System.out.println("Cursor: " + cursor);
+      
+      Transaction tx = new TransactionImpl(server.getStorageManager(), 60 * 1000);
+      for (int i = 0 ; i < 100 ; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         if (i < 10 || i > 20)
+         {
+            cursor.ackTx(tx, msg.a);
+         }
+      }
+      
+      tx.commit();
+      
+      server.stop();
+      
+      server.start();
+      
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      for (int i = 10; i <= 20; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+    
+      for (int i = 100; i < NUM_MESSAGES; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+      
+   }
+   
+   
    public void testRollbackScenarios() throws Exception
+   {
+      
+   }
+   
+   public void testPrepareScenarios() throws Exception
    {
       
    }
@@ -297,7 +364,7 @@ public class PageCursorTest extends ServiceTestBase
       
       Configuration config = createDefaultConfig();
       
-      config.setJournalSyncNonTransactional(false);
+      config.setJournalSyncNonTransactional(true);
 
       server = createServer(true,
                             config,
