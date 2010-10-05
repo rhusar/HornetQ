@@ -1241,14 +1241,12 @@ public abstract class MultiThreadRandomReattachTestBase extends MultiThreadReatt
     * @return
     */
    @Override
-   protected ClientSessionFactoryInternal createSessionFactory() throws Exception
+   protected ServerLocator createLocator() throws Exception
    {
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory"));
       locator.setReconnectAttempts(-1);
       locator.setConfirmationWindowSize(1024 * 1024);
-      final ClientSessionFactory sf = locator.createSessionFactory();
-
-      return (ClientSessionFactoryInternal) sf;
+      return locator;
    }
 
    @Override
