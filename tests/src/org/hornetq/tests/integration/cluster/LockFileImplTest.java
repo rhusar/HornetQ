@@ -103,7 +103,7 @@ public class LockFileImplTest extends UnitTestCase
    
    // 1. Run the class as a Java application to execute the main() in a separate VM
    // 2. Run this test
-   public void _testInterrupt() throws Exception
+   public void testInterrupt() throws Exception
    {
       Activation t = new Activation();
       t.start();
