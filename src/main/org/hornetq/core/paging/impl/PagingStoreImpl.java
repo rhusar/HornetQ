@@ -317,6 +317,13 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    public boolean startDepaging()
    {
+      
+      // Disabled for now
+      
+      return false;
+      
+      
+      /*
       if (!running)
       {
          return false;
@@ -353,11 +360,11 @@ public class PagingStoreImpl implements TestSupportPageStore
       finally
       {
          currentPageLock.readLock().unlock();
-      }
+      } */
    }
    
 
-   public void processReload()
+   public void processReload() throws Exception
    {
       cursorProvider.processReload();
    }
@@ -396,6 +403,8 @@ public class PagingStoreImpl implements TestSupportPageStore
             currentPage.close();
             currentPage = null;
          }
+         
+         cursorProvider.stop();
       }
    }
 
@@ -1218,7 +1227,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // Inner classes -------------------------------------------------
 
-   private class DepageRunnable implements Runnable
+/*   private class DepageRunnable implements Runnable
    {
       private final Executor followingExecutor;
 
@@ -1252,5 +1261,5 @@ public class PagingStoreImpl implements TestSupportPageStore
             PagingStoreImpl.log.error(e, e);
          }
       }
-   }
+   } */
 }

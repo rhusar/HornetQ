@@ -14,8 +14,10 @@
 package org.hornetq.core.paging.cursor.impl;
 
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagingStore;
@@ -23,6 +25,7 @@ import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
 
@@ -49,8 +52,11 @@ public class PageCursorImpl implements PageCursor
    private final PageCursorProvider cursorProvider;
 
    private volatile PagePosition lastPosition;
-   
+
    private List<PagePosition> recoveredACK;
+
+   // We only store the position for redeliveries. They will be read from the SoftCache again during delivery.
+   private final ConcurrentLinkedQueue<PagePosition> redeliveries = new ConcurrentLinkedQueue<PagePosition>();
 
    // Static --------------------------------------------------------
 
@@ -74,10 +80,22 @@ public class PageCursorImpl implements PageCursor
     */
    public synchronized Pair<PagePosition, ServerMessage> moveNext() throws Exception
    {
+      PagePosition redeliveryPos = null;
+
+      // Redeliveries will take precedence
+      if ((redeliveryPos = redeliveries.poll()) != null)
+      {
+         return new Pair<PagePosition, ServerMessage>(redeliveryPos, cursorProvider.getMessage(redeliveryPos));
+      }
+
       if (lastPosition == null)
       {
-         lastPosition = recoverLastPosition();
+         // it will start at the first available page
+         long firstPage = pageStore.getFirstPage();
+         lastPosition = new PagePositionImpl(firstPage, -1);
       }
+
+      boolean match = false;
 
       Pair<PagePosition, ServerMessage> message = null;
       do
@@ -87,8 +105,14 @@ public class PageCursorImpl implements PageCursor
          {
             lastPosition = message.a;
          }
+         match = match(message.b);
+
+         if (!match)
+         {
+            ignored(message.a);
+         }
       }
-      while (message != null && !match(message.b));
+      while (message != null && !match);
 
       return message;
    }
@@ -111,12 +135,10 @@ public class PageCursorImpl implements PageCursor
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void redeliver(final PagePosition position)
+   public synchronized void redeliver(final PagePosition position)
    {
-      // TODO Auto-generated method stub
-
+      this.redeliveries.add(position);
    }
-   
 
    /** 
     * Theres no need to synchronize this method as it's only called from journal load on startup
@@ -136,11 +158,49 @@ public class PageCursorImpl implements PageCursor
       installTXCallback(tx, position);
    }
 
-   public void processReload()
+   public void processReload() throws Exception
    {
       if (this.recoveredACK != null)
       {
+         System.out.println("********** processing reload!!!!!!!");
          Collections.sort(recoveredACK);
+
+         PagePosition previousPos = null;
+         for (PagePosition pos : recoveredACK)
+         {
+            lastPosition = pos;
+            if (previousPos != null)
+            {
+               if (!previousPos.isRightAfter(previousPos))
+               {
+                  PagePosition tmpPos = previousPos;
+                  // looking for holes on the ack list for redelivery
+                  while (true)
+                  {
+                     Pair<PagePosition, ServerMessage> msgCheck = cursorProvider.getAfter(tmpPos);
+                     // end of the hole, we can finish processing here
+                     if (msgCheck == null || msgCheck.a.equals(pos))
+                     {
+                        break;
+                     }
+                     else
+                     {
+                        if (match(msgCheck.b))
+                        {
+                           redeliver(msgCheck.a);
+                        }
+                     }
+                     tmpPos = msgCheck.a;
+                  }
+               }
+            }
+
+            previousPos = pos;
+            System.out.println("pos: " + pos);
+         }
+
+         recoveredACK.clear();
+         recoveredACK = null;
       }
    }
 
@@ -153,11 +213,14 @@ public class PageCursorImpl implements PageCursor
       // To be used with expressions
       return true;
    }
-   
-   
 
    // Private -------------------------------------------------------
-   
+
+   private void ignored(final PagePosition message)
+   {
+      // TODO: Update reference counts
+   }
+
    /**
     * @param committedACK
     */
@@ -167,17 +230,9 @@ public class PageCursorImpl implements PageCursor
       {
          recoveredACK = new LinkedList<PagePosition>();
       }
-      
+
       recoveredACK.add(committedACK);
    }
-
-
-   private PagePosition recoverLastPosition()
-   {
-      long firstPage = pageStore.getFirstPage();
-      return new PagePositionImpl(firstPage, -1);
-   }
-   
 
    /**
     * @param tx
@@ -185,8 +240,7 @@ public class PageCursorImpl implements PageCursor
     */
    private void installTXCallback(Transaction tx, PagePosition position)
    {
-    }
-
+   }
 
    // Inner classes -------------------------------------------------
 

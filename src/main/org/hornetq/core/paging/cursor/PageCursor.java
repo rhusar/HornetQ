@@ -48,7 +48,7 @@ public interface PageCursor
     */
    void reloadPreparedACK(Transaction tx, PagePosition position);
    
-   void processReload();
+   void processReload() throws Exception;
 
    /**
     * To be used on redeliveries

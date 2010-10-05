@@ -82,6 +82,11 @@ public class PagePositionImpl implements PagePosition
    {
       return messageNr;
    }
+   
+   public boolean isRightAfter(final PagePosition previous)
+   {
+      return this.pageNr == previous.getPageNr() && this.messageNr == previous.getMessageNr() + 1;
+   }
 
    /* (non-Javadoc)
     * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -157,5 +162,13 @@ public class PagePositionImpl implements PagePosition
          return false;
       return true;
    }
+   
+   @Override
+   public String toString()
+   {
+      return "PagePositionImpl [pageNr=" + pageNr + ", messageNr=" + messageNr + ", recordID=" + recordID + "]";
+   }
+
+
    
 }

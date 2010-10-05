@@ -229,7 +229,7 @@ public class PagingManagerImpl implements PagingManager
       }
    }
    
-   public void processReload()
+   public void processReload() throws Exception
    {
       for (PagingStore store: stores.values())
       {

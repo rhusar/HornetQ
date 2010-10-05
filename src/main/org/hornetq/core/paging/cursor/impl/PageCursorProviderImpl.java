@@ -78,7 +78,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
       PageCursor activeCursor = activeCursors.get(cursorID);
       if (activeCursor == null)
       {
-         activeCursor = activeCursors.putIfAbsent(cursorID, new PageCursorImpl(this, pagingStore, storageManager, cursorID));
+         activeCursor = new PageCursorImpl(this, pagingStore, storageManager, cursorID);
+         PageCursor previousValue = activeCursors.putIfAbsent(cursorID, activeCursor);
+         if (previousValue != null)
+         {
+            activeCursor = previousValue;
+         }
       }
       
       return activeCursor;
@@ -117,6 +122,19 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
       
       return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
+   }
+   
+   public ServerMessage getMessage(final PagePosition pos) throws Exception
+   {
+      PageCache cache = getPageCache(pos.getPageNr());
+      
+      if (pos.getMessageNr() >= cache.getNumberOfMessages())
+      {
+         // sanity check, this should never happen unless there's a bug
+         throw new IllegalStateException("Invalid messageNumber passed = " + pos);
+      }
+      
+      return cache.getMessage(pos.getMessageNr());
    }
 
    public PageCache getPageCache(final long pageId) throws Exception
@@ -181,12 +199,17 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return softCache.size();
    }
 
-   public void processReload()
+   public void processReload() throws Exception
    {
       for (PageCursor cursor : this.activeCursors.values())
       {
          cursor.processReload();
       }
+   }
+   
+   public void stop()
+   {
+      activeCursors.clear();
    }
 
    // Package protected ---------------------------------------------

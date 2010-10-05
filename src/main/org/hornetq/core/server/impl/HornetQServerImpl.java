@@ -1114,7 +1114,7 @@ public class HornetQServerImpl implements HornetQServer
          deploymentManager.start();
       }
 
-      pagingManager.reloadStores();
+      pagingManager.processReload();
       
       pagingManager.resumeDepages();
 

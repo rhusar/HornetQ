@@ -64,7 +64,7 @@ public interface PagingStore extends HornetQComponent
    
    PageCursorProvider getCursorProvier();
    
-   void processReload();
+   void processReload() throws Exception;
 
    /**
     * @return false if a thread was already started, or if not in page mode

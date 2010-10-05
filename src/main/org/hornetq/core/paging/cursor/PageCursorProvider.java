@@ -57,8 +57,12 @@ public interface PageCursorProvider
    // PageCursor recoverCursor(PagePosition position);
 
    Pair<PagePosition, ServerMessage> getAfter(PagePosition pos) throws Exception;
+   
+   ServerMessage getMessage(PagePosition pos) throws Exception;
 
-   void processReload();
+   void processReload() throws Exception;
+
+   void stop();
 
    // Package protected ---------------------------------------------
 

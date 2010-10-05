@@ -23,10 +23,12 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -50,6 +52,8 @@ public class PageCursorTest extends ServiceTestBase
    private SimpleString ADDRESS = new SimpleString("test-add");
 
    private HornetQServer server;
+   
+   private Queue queue;
 
    private static final int PAGE_MAX = -1;
 
@@ -135,6 +139,92 @@ public class PageCursorTest extends ServiceTestBase
    }
    
    
+   public void testRestart() throws Exception
+   {
+      final int NUM_MESSAGES = 1000;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 100 * 1024);
+      
+      System.out.println("Number of pages = " + numberOfPages);
+      
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+      
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      System.out.println("Cursor: " + cursor);
+      for (int i = 0 ; i < 500 ; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+      
+      server.stop();
+      
+      server.start();
+      
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      for (int i = 500; i < NUM_MESSAGES; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+      
+   }
+   
+   
+   public void testRestartWithHoleOnAck() throws Exception
+   {
+
+      final int NUM_MESSAGES = 1000;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 10 * 1024);
+      
+      System.out.println("Number of pages = " + numberOfPages);
+      
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+      
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      System.out.println("Cursor: " + cursor);
+      for (int i = 0 ; i < 100 ; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         if (i < 10 || i > 20)
+         {
+            cursor.ack(msg.a);
+         }
+      }
+      
+      server.stop();
+      
+      server.start();
+      
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      for (int i = 10; i <= 20; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+    
+      
+      for (int i = 100; i < NUM_MESSAGES; i++)
+      {
+         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+      
+   }
+   
+   
    public void testRollbackScenarios() throws Exception
    {
       
@@ -216,8 +306,10 @@ public class PageCursorTest extends ServiceTestBase
                             new HashMap<String, AddressSettings>());
 
       server.start();
+      
+      queue = server.createQueue(ADDRESS, ADDRESS, null, true, false);
 
-      createQueue(ADDRESS.toString(), ADDRESS.toString());
+      //createQueue(ADDRESS.toString(), ADDRESS.toString());
    }
 
    protected void tearDown() throws Exception
