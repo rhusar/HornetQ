@@ -15,6 +15,7 @@ package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.transaction.Transaction;
 
 /**
  * A PageCursor
@@ -26,28 +27,32 @@ import org.hornetq.core.server.ServerMessage;
 public interface PageCursor
 {
 
+   // Cursor query operations --------------------------------------
+   
    Pair<PagePosition, ServerMessage> moveNext() throws Exception;
-
-   PagePosition getFirstPosition();
 
    void ack(PagePosition position) throws Exception;
 
-   void ackTx(long tx, PagePosition position) throws Exception;
+   void ackTx(Transaction tx, PagePosition position) throws Exception;
+   
+   // Reload operations
    
    /**
     * @param position
     */
-   void recoverACK(PagePosition position);
+   void reloadACK(PagePosition position);
    
    /**
     * To be used to avoid a redelivery of a prepared ACK after load
     * @param position
     */
-   void recoverPreparedACK(PagePosition position);
+   void reloadPreparedACK(Transaction tx, PagePosition position);
+   
+   void processReload();
 
    /**
     * To be used on redeliveries
     * @param position
     */
-   void returnElement(PagePosition position);
+   void redeliver(PagePosition position);
 }

@@ -58,6 +58,8 @@ public interface PageCursorProvider
 
    Pair<PagePosition, ServerMessage> getAfter(PagePosition pos) throws Exception;
 
+   void processReload();
+
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------

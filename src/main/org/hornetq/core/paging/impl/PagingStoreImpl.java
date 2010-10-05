@@ -355,6 +355,13 @@ public class PagingStoreImpl implements TestSupportPageStore
          currentPageLock.readLock().unlock();
       }
    }
+   
+
+   public void processReload()
+   {
+      cursorProvider.processReload();
+   }
+
 
    // HornetQComponent implementation
 

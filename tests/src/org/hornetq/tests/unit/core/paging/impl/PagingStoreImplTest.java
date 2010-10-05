@@ -1027,6 +1027,15 @@ public class PagingStoreImplTest extends UnitTestCase
          return null;
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.paging.PagingManager#processReload()
+       */
+      public void processReload()
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
    }
 
    class FakeStorageManager implements StorageManager

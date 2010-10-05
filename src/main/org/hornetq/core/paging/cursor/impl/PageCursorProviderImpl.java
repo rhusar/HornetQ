@@ -94,6 +94,8 @@ public class PageCursorProviderImpl implements PageCursorProvider
     */
    public Pair<PagePosition, ServerMessage> getAfter(final PagePosition pos) throws Exception
    {
+      // TODO: consider page transactions here to avoid receiving an uncommitted message
+      // TODO: consider the case where a page came empty because of an ignored PageTX
       PagePosition retPos = pos.nextMessage();
       
       PageCache cache = getPageCache(pos.getPageNr());
@@ -177,6 +179,14 @@ public class PageCursorProviderImpl implements PageCursorProvider
    public int getCacheSize()
    {
       return softCache.size();
+   }
+
+   public void processReload()
+   {
+      for (PageCursor cursor : this.activeCursors.values())
+      {
+         cursor.processReload();
+      }
    }
 
    // Package protected ---------------------------------------------

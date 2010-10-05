@@ -1114,6 +1114,8 @@ public class HornetQServerImpl implements HornetQServer
          deploymentManager.start();
       }
 
+      pagingManager.reloadStores();
+      
       pagingManager.resumeDepages();
 
       final ServerInfo dumper = new ServerInfo(this, pagingManager);

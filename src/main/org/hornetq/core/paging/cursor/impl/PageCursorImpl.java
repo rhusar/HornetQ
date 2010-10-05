@@ -13,6 +13,10 @@
 
 package org.hornetq.core.paging.cursor.impl;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCursor;
@@ -20,6 +24,7 @@ import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.transaction.Transaction;
 
 /**
  * A PageCursorImpl
@@ -44,6 +49,8 @@ public class PageCursorImpl implements PageCursor
    private final PageCursorProvider cursorProvider;
 
    private volatile PagePosition lastPosition;
+   
+   private List<PagePosition> recoveredACK;
 
    // Static --------------------------------------------------------
 
@@ -94,27 +101,47 @@ public class PageCursorImpl implements PageCursor
       store.storeCursorAcknowledge(cursorId, position);
    }
 
-   public void ackTx(final long tx, final PagePosition position) throws Exception
+   public void ackTx(final Transaction tx, final PagePosition position) throws Exception
    {
-      store.storeCursorAcknowledgeTransactional(tx, cursorId, position);
+      store.storeCursorAcknowledgeTransactional(tx.getID(), cursorId, position);
+      installTXCallback(tx, position);
+      // tx.afterCommit()
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void returnElement(final PagePosition position)
+   public void redeliver(final PagePosition position)
    {
       // TODO Auto-generated method stub
 
    }
+   
+
+   /** 
+    * Theres no need to synchronize this method as it's only called from journal load on startup
+    */
+   public void reloadACK(final PagePosition position)
+   {
+      internalAdd(position);
+
+   }
 
    /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#getFirstPosition()
+    * @see org.hornetq.core.paging.cursor.PageCursor#recoverPreparedACK(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public PagePosition getFirstPosition()
+   public void reloadPreparedACK(final Transaction tx, final PagePosition position)
    {
-      // TODO Auto-generated method stub
-      return null;
+      internalAdd(position);
+      installTXCallback(tx, position);
+   }
+
+   public void processReload()
+   {
+      if (this.recoveredACK != null)
+      {
+         Collections.sort(recoveredACK);
+      }
    }
 
    // Package protected ---------------------------------------------
@@ -123,34 +150,43 @@ public class PageCursorImpl implements PageCursor
 
    protected boolean match(final ServerMessage message)
    {
+      // To be used with expressions
       return true;
    }
+   
+   
 
    // Private -------------------------------------------------------
+   
+   /**
+    * @param committedACK
+    */
+   private void internalAdd(final PagePosition committedACK)
+   {
+      if (recoveredACK == null)
+      {
+         recoveredACK = new LinkedList<PagePosition>();
+      }
+      
+      recoveredACK.add(committedACK);
+   }
+
 
    private PagePosition recoverLastPosition()
    {
       long firstPage = pageStore.getFirstPage();
       return new PagePositionImpl(firstPage, -1);
    }
+   
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#recoverACK(org.hornetq.core.paging.cursor.PagePosition)
+   /**
+    * @param tx
+    * @param position
     */
-   public void recoverACK(final PagePosition position)
+   private void installTXCallback(Transaction tx, PagePosition position)
    {
-      // TODO Auto-generated method stub
+    }
 
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursor#recoverPreparedACK(org.hornetq.core.paging.cursor.PagePosition)
-    */
-   public void recoverPreparedACK(final PagePosition position)
-   {
-      // TODO Auto-generated method stub
-
-   }
 
    // Inner classes -------------------------------------------------
 

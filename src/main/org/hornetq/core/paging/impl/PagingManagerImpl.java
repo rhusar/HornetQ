@@ -228,6 +228,15 @@ public class PagingManagerImpl implements PagingManager
          }
       }
    }
+   
+   public void processReload()
+   {
+      for (PagingStore store: stores.values())
+      {
+         store.processReload();
+      }
+   }
+
 
    // Package protected ---------------------------------------------
 

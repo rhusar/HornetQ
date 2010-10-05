@@ -58,7 +58,7 @@ public class PageCacheImpl implements PageCache
     */
    public Page getPage()
    {
-      return null;
+      return page;
    }
 
    /* (non-Javadoc)

@@ -1019,11 +1019,11 @@ public class JournalStorageManager implements StorageManager
                   SimpleString address = queueInfo.getAddress();
                   PagingStore store = pagingManager.getPageStore(address);
                   PageCursor cursor = store.getCursorProvier().getCursor(encoding.queueID);
-                  cursor.recoverACK(encoding.position);
+                  cursor.reloadACK(encoding.position);
                }
                else
                {
-                  log.warn("Can't find queue " + queueInfo.getId() + " while reloading ACKNOWLEDGE_CURSOR");
+                  log.warn("Can't find queue " + encoding.queueID + " while reloading ACKNOWLEDGE_CURSOR");
                }
                
                break;
