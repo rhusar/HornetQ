@@ -149,10 +149,30 @@ public class RemoteProcessHornetQServerSupport
       OutputStreamWriter osw = new OutputStreamWriter(serverProcess.getOutputStream());
       osw.write("STOP\n");
       osw.flush();
-      int exitValue = serverProcess.waitFor();
-      if (exitValue != 0)
+      int exitValue = -99;
+      long tryTime = System.currentTimeMillis() + 5000;
+      while(true)
       {
-         serverProcess.destroy();
+         try
+         {
+            exitValue = serverProcess.exitValue();
+         }
+         catch (Exception e)
+         {
+            Thread.sleep(100);
+         }
+         if(exitValue == -99 && System.currentTimeMillis() < tryTime)
+         {
+            continue;
+         }
+         else
+         {
+            if (exitValue != 0)
+            {
+               serverProcess.destroy();
+            }
+            break;
+         }
       }
    }
 

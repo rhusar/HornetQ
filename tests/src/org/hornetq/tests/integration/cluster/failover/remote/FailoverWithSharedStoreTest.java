@@ -171,6 +171,10 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
          locator.close();
 
       }
+      catch(Exception e)
+      {
+         e.printStackTrace();
+      }
       finally
       {
          if (liveServer != null)

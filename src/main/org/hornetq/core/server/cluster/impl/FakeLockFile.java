@@ -15,9 +15,7 @@ package org.hornetq.core.server.cluster.impl;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -79,7 +77,7 @@ public class FakeLockFile implements LockFile
                e.printStackTrace();
                throw new IllegalStateException(e);
             }
-
+            
             if(!f.exists())
             {
                throw new IllegalStateException("unable to create " + directory + fileName);
@@ -110,10 +108,10 @@ public class FakeLockFile implements LockFile
       }
    }
 
-   public boolean unlock() throws IOException
+   public synchronized boolean unlock() throws IOException
    {
+      semaphore.drainPermits();
       semaphore.release();
-      
       return true;
    }
 
@@ -133,5 +131,22 @@ public class FakeLockFile implements LockFile
          semaphore.drainPermits();
       }
       locks.clear();
+   }
+
+   public static void clearLocks(String dir)
+   {
+      List<String> toClear = new ArrayList<String>();
+      for (Map.Entry<String, Semaphore> e : locks.entrySet())
+      {
+         if(e.getKey().startsWith(dir))
+         {
+            e.getValue().drainPermits();
+            toClear.add(e.getKey());
+         }
+      }
+      for (String s : toClear)
+      {
+         locks.remove(s);
+      }
    }
 }

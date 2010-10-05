@@ -23,6 +23,7 @@
 package org.hornetq.tests.integration.cluster.distribution;
 
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.tests.util.UnitTestCase;
 
 /**
@@ -387,9 +388,9 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
       closeSessionFactory(0);
       closeSessionFactory(3);
 
-      stopServers(0, 3, 5, 8);
+      stopServers(5, 8, 0, 3);
 
-      startServers(5, 8, 0, 3);
+      startServers(0, 3, 5, 8);
 
       Thread.sleep(2000);
 
@@ -562,11 +563,11 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
    protected void setupServers() throws Exception
    {
       // The backups
-      setupServer(5, isFileStorage(), isNetty(), true, true);
-      setupServer(6, isFileStorage(), isNetty(), true, true);
-      setupServer(7, isFileStorage(), isNetty(), true, true);
-      setupServer(8, isFileStorage(), isNetty(), true, true);
-      setupServer(9, isFileStorage(), isNetty(), true, true);
+      setupServer(5, isFileStorage(), isNetty(), true, 0, true);
+      setupServer(6, isFileStorage(), isNetty(), true, 1, true);
+      setupServer(7, isFileStorage(), isNetty(), true, 2, true);
+      setupServer(8, isFileStorage(), isNetty(), true, 3, true);
+      setupServer(9, isFileStorage(), isNetty(), true, 4, true);
 
       // The lives
       setupServer(0, isFileStorage(), isNetty(), 5, true);
@@ -587,7 +588,7 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
       getServer(8).getConfiguration().setBackup(true);
       getServer(9).getConfiguration().setBackup(true);
 
-      startServers(5, 6, 7, 8, 9, 0, 1, 2, 3, 4);
+      startServers( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
    }
 
    @Override
@@ -597,7 +598,7 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
 
       closeAllSessionFactories();
 
-      stopServers(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+      stopServers(5, 6, 7, 8, 9, 0, 1, 2, 3, 4);
    }
 
 }

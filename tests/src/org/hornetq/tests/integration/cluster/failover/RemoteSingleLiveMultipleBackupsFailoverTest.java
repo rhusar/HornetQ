@@ -29,6 +29,7 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.tests.integration.cluster.util.RemoteProcessHornetQServer;
 import org.hornetq.tests.integration.cluster.util.RemoteServerConfiguration;
+import org.hornetq.tests.integration.cluster.util.TestableServer;
 
 public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMultipleBackupsFailoverTest
 {
@@ -117,7 +118,26 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       backups.put(4, SharedBackupServerConfiguration4.class.getName());
       backups.put(5, SharedBackupServerConfiguration5.class.getName());
    }
-   
+
+   @Override
+   protected void tearDown() throws Exception
+   {
+      super.tearDown();
+      //make sure
+      for (TestableServer testableServer : servers.values())
+      {
+         try
+         {
+            testableServer.destroy();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+         }
+      }
+
+   }
+
    protected boolean isNetty()
    {
       return true;

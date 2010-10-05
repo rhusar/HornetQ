@@ -13,6 +13,9 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -217,6 +220,26 @@ public abstract class FailoverTestBase extends ServiceTestBase
       InVMConnector.failOnCreateConnection = false;
 
       super.tearDown();
+      try
+      {
+         ServerSocket serverSocket = new ServerSocket(5445);
+         serverSocket.close();
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+         System.exit(9);
+      }
+      try
+      {
+         ServerSocket serverSocket = new ServerSocket(5446);
+         serverSocket.close();
+      }
+      catch (IOException e)
+      {
+         e.printStackTrace();
+         System.exit(9);
+      }
    }
 
    protected ClientSessionFactoryInternal createSessionFactoryAndWaitForTopology(ServerLocator locator, int topologyMembers)

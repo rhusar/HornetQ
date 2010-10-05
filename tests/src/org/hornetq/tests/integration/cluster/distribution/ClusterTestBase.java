@@ -47,6 +47,7 @@ import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
+import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -1247,7 +1248,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setJournalFileSize(100 * 1024);
       configuration.setJournalType(getDefaultJournalType());
       configuration.setSharedStore(sharedStorage);
-      if (sharedStorage)
+      if (sharedStorage && backup)
       {
          // Shared storage will share the node between the backup and live node
          int nodeDirectoryToUse = backupNode == -1 ? node : backupNode;
@@ -1565,8 +1566,26 @@ public abstract class ClusterTestBase extends ServiceTestBase
          servers[node].start();
 
          ClusterTestBase.log.info("started server " + node);
+
       }
-   }
+      for (int node : nodes)
+      {
+         //wait for each server to start, it may be a backup and started in a separate thread
+         long timetowait =System.currentTimeMillis() + 5000;
+         while(!servers[node].isStarted())
+         {
+            Thread.sleep(100);
+            if(servers[node].isStarted())
+            {
+               break;
+            }
+            else if(System.currentTimeMillis() > timetowait)
+            {
+               fail("server didnt start");
+            }
+         }
+      }
+   }                                                                    
 
    protected void stopClusterConnections(final int... nodes) throws Exception
    {
@@ -1593,6 +1612,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                ClusterTestBase.log.info("stopping server " + node);
                servers[node].stop();
                ClusterTestBase.log.info("server stopped");
+               FakeLockFile.clearLocks(servers[node].getConfiguration().getJournalDirectory());
             }
             catch (Exception e)
             {

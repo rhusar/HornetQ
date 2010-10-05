@@ -55,10 +55,10 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 2);
 
-      startServers(2, 0, 1);
 
       try
       {
+         startServers(2, 0, 1);
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
 
@@ -146,10 +146,10 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 2);
 
-      startServers(2, 0, 1);
 
       try
       {
+         startServers(2, 0, 1);
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
 

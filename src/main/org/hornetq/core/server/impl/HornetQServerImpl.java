@@ -568,7 +568,7 @@ public class HornetQServerImpl implements HornetQServer
                log.info("Backup server waiting for live lock file creation");
                while (!liveLockFile.exists())
                {
-                  log.info("Waiting for server live lock file. Live server is not started");
+                  log.debug("Waiting for server live lock file. Live server is not started");
 
                   Thread.sleep(2000);
                }
@@ -577,9 +577,11 @@ public class HornetQServerImpl implements HornetQServer
                liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
 
 
-              clusterManager.start();
+               clusterManager.start();
 
-               log.info("Backup server is up - waiting for failover");
+               started = true;
+
+               log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
 
                liveLock.lock();
 
@@ -730,11 +732,11 @@ public class HornetQServerImpl implements HornetQServer
 
             activation.run();
          }
+         started = true;
+
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
       }
 
-      started = true;
-
-      HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
 
       if (configuration.isBackup())
       {
@@ -795,6 +797,10 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       // we stop the remoting service outside a lock
+      if(remotingService == null)
+      {
+         System.out.println("HornetQServerImpl.stop");
+      }
       remotingService.stop();
 
       synchronized (this)

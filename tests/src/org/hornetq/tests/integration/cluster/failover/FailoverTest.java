@@ -226,74 +226,7 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertEquals(0, sf.numConnections());
    }
 
-   /** It doesn't fail, but it restart both servers, live and backup, and the data should be received after the restart,
-    *  and the servers should be able to connect without any problems. */
-   public void testRestartServers() throws Exception
-   {
-      ServerLocator locator = getServerLocator();
-
-      locator.setBlockOnNonDurableSend(true);
-      locator.setBlockOnDurableSend(true);
-      locator.setReconnectAttempts(-1);
-
-      ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
-
-      ClientSession session = sf.createSession(true, true);
-
-      session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
-
-      ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
-
-      final int numMessages = 100;
-
-      for (int i = 0; i < numMessages; i++)
-      {
-         ClientMessage message = session.createMessage(true);
-
-         setBody(i, message);
-
-         message.putIntProperty("counter", i);
-
-         producer.send(message);
-      }
-
-      session.commit();
-
-      session.close();
-
-      liveServer.stop();
-      FakeLockFile.clearLocks();
-      liveServer.start();
-
-      sf = (ClientSessionFactoryInternal)locator.createSessionFactory();
-      
-      session = sf.createSession(true, true);
-
-      ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
-
-      session.start();
-
-      for (int i = 0; i < numMessages; i++)
-      {
-         ClientMessage message = consumer.receive(1000);
-
-         Assert.assertNotNull(message);
-
-         assertMessageBody(i, message);
-
-         Assert.assertEquals(i, message.getIntProperty("counter").intValue());
-
-         message.acknowledge();
-      }
-
-      session.close();
-
-      sf.close();
-
-      Assert.assertEquals(0, sf.numSessions());
-
-      Assert.assertEquals(0, sf.numConnections());
-   }
+ 
 
    // https://jira.jboss.org/jira/browse/HORNETQ-285
    public void testFailoverOnInitialConnection() throws Exception

@@ -70,6 +70,24 @@ public class RemoteFailoverTest extends FailoverTest
    }
 
    @Override
+   protected void tearDown() throws Exception
+   {
+      super.tearDown();
+      //just to make sure
+      if (liveServer != null)
+      {
+         try
+         {
+            liveServer.destroy();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace(); 
+         }
+      }
+   }
+
+   @Override
    protected TestableServer createLiveServer()
    {
       return new RemoteProcessHornetQServer(SharedLiveServerConfiguration.class.getName());
