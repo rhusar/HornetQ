@@ -95,10 +95,9 @@ public class CoreClientOverSSLTest extends UnitTestCase
       tc.getParams().put(TransportConstants.KEYSTORE_PASSWORD_PROP_NAME, "invalid password");
 
       ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(tc);
-      ClientSessionFactory sf = locator.createSessionFactory();
       try
       {
-         sf.createSession(false, true, true);
+         ClientSessionFactory sf = locator.createSessionFactory();
          Assert.fail();
       }
       catch (HornetQException e)
