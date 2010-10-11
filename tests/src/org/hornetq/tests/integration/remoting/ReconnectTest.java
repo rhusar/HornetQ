@@ -73,13 +73,13 @@ public class ReconnectTest extends ServiceTestBase
       try
       {
          ServerLocator locator = createFactory(isNetty);
+         locator.setClientFailureCheckPeriod(pingPeriod);
+         locator.setRetryInterval(500);
+         locator.setRetryIntervalMultiplier(1d);
+         locator.setReconnectAttempts(-1);
+         locator.setConfirmationWindowSize(1024 * 1024);
          ClientSessionFactory factory = locator.createSessionFactory();
 
-         factory.getServerLocator().setClientFailureCheckPeriod(pingPeriod); // Using a smaller timeout
-         factory.getServerLocator().setRetryInterval(500);
-         factory.getServerLocator().setRetryIntervalMultiplier(1d);
-         factory.getServerLocator().setReconnectAttempts(-1);
-         factory.getServerLocator().setConfirmationWindowSize(1024 * 1024);
 
          session = (ClientSessionInternal)factory.createSession();
 
