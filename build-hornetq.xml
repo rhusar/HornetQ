@@ -1386,7 +1386,7 @@
                 <exclude name="**/cluster/failover/*ReplicatedDistributionTest.class"/>
                 <exclude name="**/cluster/failover/*SharedStoreDistributionTest.class"/>
                 <exclude name="**/cluster/failover/*ReplicatedNettyAsynchronousFailoverTest.class"/>
-                <exclude name="**/cluster/failover/*ReplicatedJMSFailoverTest.class"/>  
+                <exclude name="**/cluster/*ReplicatedJMSFailoverTest.class"/>
                 <exclude name="**/cluster/failover/Remote*.class"/>
                <include name="${tests.param}"/>
             </fileset>
