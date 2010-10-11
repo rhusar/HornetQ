@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.server.ServerMessage;
 
@@ -37,7 +38,7 @@ public interface PageCursorProvider
 
    // Public --------------------------------------------------------
 
-   PageCache getPageCache(long pageId) throws Exception;
+   PageCache getPageCache(PagePosition pos);
 
    PagingStore getAssociatedStore();
 

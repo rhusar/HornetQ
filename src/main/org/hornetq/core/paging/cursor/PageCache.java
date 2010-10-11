@@ -28,6 +28,8 @@ public interface PageCache
    Page getPage();
 
    int getNumberOfMessages();
+   
+   void setMessages(ServerMessage[] messages);
 
    /**
     * 

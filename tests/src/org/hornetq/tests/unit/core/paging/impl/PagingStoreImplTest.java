@@ -73,6 +73,7 @@ import org.hornetq.tests.unit.core.journal.impl.fakes.FakeSequentialFileFactory;
 import org.hornetq.tests.unit.core.server.impl.fakes.FakePostOffice;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.UUID;
 
 /**
@@ -143,7 +144,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                   null,
                                                   PagingStoreImplTest.destinationTestName,
                                                   addressSettings,
-                                                  executor,
+                                                  getExecutorFactory(),
                                                   true);
 
       storeImpl.start();
@@ -179,7 +180,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                            storeFactory,
                                                            PagingStoreImplTest.destinationTestName,
                                                            addressSettings,
-                                                           executor,
+                                                           getExecutorFactory(),
                                                            true);
 
       storeImpl.start();
@@ -215,7 +216,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                       null,
                                       PagingStoreImplTest.destinationTestName,
                                       addressSettings,
-                                      executor,
+                                      getExecutorFactory(),
                                       true);
 
       storeImpl.start();
@@ -242,7 +243,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                            storeFactory,
                                                            PagingStoreImplTest.destinationTestName,
                                                            addressSettings,
-                                                           executor,
+                                                           getExecutorFactory(),
                                                            true);
 
       storeImpl.start();
@@ -317,7 +318,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                            storeFactory,
                                                            PagingStoreImplTest.destinationTestName,
                                                            addressSettings,
-                                                           executor,
+                                                           getExecutorFactory(),
                                                            true);
 
       storeImpl.start();
@@ -464,7 +465,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                                  storeFactory,
                                                                  new SimpleString("test"),
                                                                  settings,
-                                                                 executor,
+                                                                 getExecutorFactory(),
                                                                  true);
 
       storeImpl.start();
@@ -627,7 +628,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                             storeFactory,
                                                             new SimpleString("test"),
                                                             settings,
-                                                            executor,
+                                                            getExecutorFactory(),
                                                             true);
       storeImpl2.start();
 
@@ -710,7 +711,7 @@ public class PagingStoreImplTest extends UnitTestCase
                                                                  storeFactory,
                                                                  new SimpleString("test"),
                                                                  settings,
-                                                                 executor,
+                                                                 getExecutorFactory(),
                                                                  true);
 
       storeImpl.start();
@@ -853,6 +854,18 @@ public class PagingStoreImplTest extends UnitTestCase
    private PostOffice createPostOfficeMock()
    {
       return new FakePostOffice();
+   }
+   
+   private ExecutorFactory getExecutorFactory()
+   {
+      return new ExecutorFactory()
+      {
+         
+         public Executor getExecutor()
+         {
+             return executor;
+         }
+      };
    }
 
    private ServerMessage createMessage(final long id,

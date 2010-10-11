@@ -26,6 +26,7 @@ import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
+import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.server.HornetQServer;
@@ -78,11 +79,11 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
 
       for (int i = 0; i < numberOfPages; i++)
       {
-         PageCache cache = cursorProvider.getPageCache(i + 1);
+         PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(i + 1, 0));
          System.out.println("Page " + i + " had " + cache.getNumberOfMessages() + " messages");
 
       }
@@ -104,7 +105,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
       
       PageCursor cursor = cursorProvider.createCursor();
       
@@ -134,9 +135,9 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager());
+      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
       
-      PageCache cache = cursorProvider.getPageCache(2);
+      PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(2,0));
       
       assertNull(cache);
    }
@@ -287,7 +288,12 @@ public class PageCursorTest extends ServiceTestBase
    }
    
    
-   public void testRollbackScenarios() throws Exception
+   public void testRollbackScenariosOnACK() throws Exception
+   {
+      
+   }
+   
+   public void testReadRolledBackData() throws Exception
    {
       
    }
@@ -313,6 +319,11 @@ public class PageCursorTest extends ServiceTestBase
    }
    
    public void testRedeliveryWithCleanup() throws Exception
+   {
+      
+   }
+   
+   public void testFirstMessageInTheMiddle() throws Exception
    {
       
    }

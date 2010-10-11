@@ -43,6 +43,7 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
 import org.hornetq.spi.core.security.HornetQSecurityManagerImpl;
 import org.hornetq.tests.util.ServiceTestBase;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.OrderedExecutorFactory;
 
 /**
@@ -292,7 +293,7 @@ public class PageCrashTest extends ServiceTestBase
             factoryField.setAccessible(true);
 
             OrderedExecutorFactory factory = (org.hornetq.utils.OrderedExecutorFactory)factoryField.get(this);
-            return new FailingPagingStore(destinationName, settings, factory.getExecutor(), syncNonTransactional);
+            return new FailingPagingStore(destinationName, settings, factory, syncNonTransactional);
          }
 
          // Package protected ---------------------------------------------
@@ -312,7 +313,7 @@ public class PageCrashTest extends ServiceTestBase
              */
             public FailingPagingStore(final SimpleString storeName,
                                       final AddressSettings addressSettings,
-                                      final Executor executor,
+                                      final ExecutorFactory executor,
                                       final boolean syncNonTransactional)
             {
                super(storeName,

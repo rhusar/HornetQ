@@ -37,6 +37,9 @@ public interface PagingStore extends HornetQComponent
    SimpleString getAddress();
 
    int getNumberOfPages();
+   
+   // The current page in which the system is writing files
+   int getCurrentWritingPage();
 
    SimpleString getStoreName();
 

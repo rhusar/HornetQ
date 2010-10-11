@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 
+
 /**
  * A PagePosition
  *
@@ -33,6 +34,15 @@ public interface PagePosition extends Comparable<PagePosition>
    long getPageNr();
 
    int getMessageNr();
+   
+   void setPageCache(PageCache pageCache);
+   
+   /**
+    * PagePosition will hold the page with a weak reference.
+    * So, this could be eventually null case soft-cache was released
+    * @return
+    */
+   PageCache getPageCache();
 
    PagePosition nextMessage();
 

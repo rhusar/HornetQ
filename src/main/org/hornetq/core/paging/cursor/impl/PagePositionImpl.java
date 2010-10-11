@@ -13,6 +13,10 @@
 
 package org.hornetq.core.paging.cursor.impl;
 
+import java.lang.ref.WeakReference;
+
+import org.hornetq.core.paging.Page;
+import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PagePosition;
 
 /**
@@ -30,6 +34,8 @@ public class PagePositionImpl implements PagePosition
 
    /** ID used for storage */
    private long recordID;
+   
+   private volatile WeakReference<PageCache> cacheReference;
 
    /**
     * @param pageNr
@@ -42,6 +48,12 @@ public class PagePositionImpl implements PagePosition
       this.messageNr = messageNr;
    }
 
+   public PagePositionImpl(long pageNr, int messageNr, PageCache pageCache)
+   {
+      this(pageNr, messageNr);
+      this.setPageCache(pageCache);
+   }
+
    /**
     * @param pageNr
     * @param messageNr
@@ -50,6 +62,31 @@ public class PagePositionImpl implements PagePosition
    {
       
    }
+
+   /**
+    * The cached page associaed with this position
+    * @return
+    */
+   public PageCache getPageCache()
+   {
+      if (cacheReference == null)
+      {
+         return null;
+      }
+      else
+      {
+         return cacheReference.get();
+      }
+   }
+   
+   public void setPageCache(final PageCache cache)
+   {
+      if (cache != null)
+      {
+         this.cacheReference = new WeakReference<PageCache>(cache);
+      }
+   }
+
 
    /**
     * @return the recordID
@@ -117,7 +154,7 @@ public class PagePositionImpl implements PagePosition
 
    public PagePosition nextMessage()
    {
-      return new PagePositionImpl(this.pageNr, this.messageNr + 1);
+      return new PagePositionImpl(this.pageNr, this.messageNr + 1, this.getPageCache());
    }
 
    public PagePosition nextPage()

@@ -26,6 +26,7 @@ import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.SoftValueHashMap;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
 
@@ -46,21 +47,26 @@ public class PageCursorProviderImpl implements PageCursorProvider
    // Attributes ----------------------------------------------------
 
    private final PagingStore pagingStore;
-   
+
    private final StorageManager storageManager;
-   
-   private SoftValueHashMap<Long, PageCacheImpl> softCache = new SoftValueHashMap<Long, PageCacheImpl>();
-   
+
+   private final ExecutorFactory executorFactory;
+
+   private SoftValueHashMap<Long, PageCache> softCache = new SoftValueHashMap<Long, PageCache>();
+
    private ConcurrentMap<Long, PageCursor> activeCursors = new ConcurrentHashMap<Long, PageCursor>();
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public PageCursorProviderImpl(final PagingStore pagingStore, final StorageManager storageManager)
+   public PageCursorProviderImpl(final PagingStore pagingStore,
+                                 final StorageManager storageManager,
+                                 final ExecutorFactory executorFactory)
    {
       this.pagingStore = pagingStore;
       this.storageManager = storageManager;
+      this.executorFactory = executorFactory;
    }
 
    // Public --------------------------------------------------------
@@ -78,20 +84,23 @@ public class PageCursorProviderImpl implements PageCursorProvider
       PageCursor activeCursor = activeCursors.get(cursorID);
       if (activeCursor == null)
       {
-         activeCursor = new PageCursorImpl(this, pagingStore, storageManager, cursorID);
+         activeCursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), cursorID);
          PageCursor previousValue = activeCursors.putIfAbsent(cursorID, activeCursor);
          if (previousValue != null)
          {
             activeCursor = previousValue;
          }
       }
-      
+
       return activeCursor;
    }
-   
+
+   /**
+    * this will create a non-persistent cursor
+    */
    public PageCursor createCursor()
    {
-      return new PageCursorImpl(this, pagingStore, storageManager, 0);
+      return new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), 0);
    }
 
    /* (non-Javadoc)
@@ -100,100 +109,55 @@ public class PageCursorProviderImpl implements PageCursorProvider
    public Pair<PagePosition, ServerMessage> getAfter(final PagePosition pos) throws Exception
    {
       // TODO: consider page transactions here to avoid receiving an uncommitted message
-      // TODO: consider the case where a page came empty because of an ignored PageTX
+      // TODO: consider the case where a full page is ignored because of a TX
       PagePosition retPos = pos.nextMessage();
-      
-      PageCache cache = getPageCache(pos.getPageNr());
-      
+
+      PageCache cache = getPageCache(pos);
+
       if (retPos.getMessageNr() >= cache.getNumberOfMessages())
       {
          retPos = pos.nextPage();
-         
-         cache = getPageCache(retPos.getPageNr());
+
+         cache = getPageCache(retPos);
+
          if (cache == null)
          {
             return null;
          }
-         
+
          if (retPos.getMessageNr() >= cache.getNumberOfMessages())
          {
             return null;
          }
       }
-      
+
       return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
    }
-   
+
    public ServerMessage getMessage(final PagePosition pos) throws Exception
    {
-      PageCache cache = getPageCache(pos.getPageNr());
-      
+      PageCache cache = getPageCache(pos);
+
       if (pos.getMessageNr() >= cache.getNumberOfMessages())
       {
          // sanity check, this should never happen unless there's a bug
          throw new IllegalStateException("Invalid messageNumber passed = " + pos);
       }
-      
+
       return cache.getMessage(pos.getMessageNr());
    }
 
-   public PageCache getPageCache(final long pageId) throws Exception
+   public PageCache getPageCache(PagePosition pos)
    {
-      boolean needToRead = false;
-      PageCacheImpl cache = null;
-      synchronized (this)
+      PageCache cache = pos.getPageCache();
+      if (cache == null)
       {
-         if (pageId > pagingStore.getNumberOfPages())
-         {
-            return null;
-         }
-         
-         cache = softCache.get(pageId);
-         if (cache == null)
-         {
-            cache = createPageCache(pageId);
-            needToRead = true;
-            // anyone reading from this cache will have to wait reading to finish first
-            // we also want only one thread reading this cache
-            cache.lock();
-            softCache.put(pageId, cache);
-         }
+         cache = getPageCache(pos.getPageNr());
+         pos.setPageCache(cache);
       }
-      
-      // Reading is done outside of the synchronized block, however
-      // the page stays locked until the entire reading is finished
-      if (needToRead)
-      {
-         try
-         {
-            Page page = pagingStore.createPage((int)pageId);
-            
-            page.open();
-            
-            List<PagedMessage> pgdMessages = page.read();
-            
-            ServerMessage srvMessages[] = new ServerMessage[pgdMessages.size()];
-            
-            int i = 0;
-            for (PagedMessage pdgMessage : pgdMessages)
-            {
-               ServerMessage message = pdgMessage.getMessage(storageManager);
-               srvMessages[i++] = message;
-            }
-            
-            cache.setMessages(srvMessages);
-            
-         }
-         finally
-         {
-            cache.unlock();
-         }
-      }
-      
-      
       return cache;
    }
-   
+
    public int getCacheSize()
    {
       return softCache.size();
@@ -206,7 +170,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
          cursor.processReload();
       }
    }
-   
+
    public void stop()
    {
       activeCursors.clear();
@@ -215,13 +179,76 @@ public class PageCursorProviderImpl implements PageCursorProvider
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
-   
+
    protected PageCacheImpl createPageCache(final long pageId) throws Exception
    {
       return new PageCacheImpl(pagingStore.createPage((int)pageId));
    }
 
    // Private -------------------------------------------------------
+
+   private PageCache getPageCache(final long pageId)
+   {
+      try
+      {
+         boolean needToRead = false;
+         PageCache cache = null;
+         synchronized (this)
+         {
+            if (pageId > pagingStore.getCurrentWritingPage())
+            {
+               return null;
+            }
+
+            cache = softCache.get(pageId);
+            if (cache == null)
+            {
+               cache = createPageCache(pageId);
+               needToRead = true;
+               // anyone reading from this cache will have to wait reading to finish first
+               // we also want only one thread reading this cache
+               cache.lock();
+               softCache.put(pageId, cache);
+            }
+         }
+
+         // Reading is done outside of the synchronized block, however
+         // the page stays locked until the entire reading is finished
+         if (needToRead)
+         {
+            try
+            {
+               Page page = pagingStore.createPage((int)pageId);
+
+               page.open();
+
+               List<PagedMessage> pgdMessages = page.read();
+
+               ServerMessage srvMessages[] = new ServerMessage[pgdMessages.size()];
+
+               int i = 0;
+               for (PagedMessage pdgMessage : pgdMessages)
+               {
+                  ServerMessage message = pdgMessage.getMessage(storageManager);
+                  srvMessages[i++] = message;
+               }
+
+               cache.setMessages(srvMessages);
+
+            }
+            finally
+            {
+               cache.unlock();
+            }
+         }
+
+         return cache;
+      }
+      catch (Exception e)
+      {
+         throw new RuntimeException("Couldn't complete paging due to an IO Exception on Paging - " + e.getMessage(), e);
+      }
+   }
 
    // Inner classes -------------------------------------------------
 

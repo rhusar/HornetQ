@@ -999,7 +999,7 @@ public class PagingTest extends ServiceTestBase
                          final PagingStoreFactory storeFactory,
                          final SimpleString storeName,
                          final AddressSettings addressSettings,
-                         final Executor executor,
+                         final ExecutorFactory executorFactory,
                          final boolean syncNonTransactional)
          {
             super(address,
@@ -1010,7 +1010,7 @@ public class PagingTest extends ServiceTestBase
                   storeFactory,
                   storeName,
                   addressSettings,
-                  executor,
+                  executorFactory,
                   syncNonTransactional);
          }
 
@@ -1073,7 +1073,7 @@ public class PagingTest extends ServiceTestBase
                                        this,
                                        address,
                                        settings,
-                                       getExecutorFactory().getExecutor(),
+                                       getExecutorFactory(),
                                        syncNonTransactional);
          }
 

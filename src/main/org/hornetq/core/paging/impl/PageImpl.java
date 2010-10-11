@@ -13,7 +13,6 @@
 
 package org.hornetq.core.paging.impl;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +34,7 @@ import org.hornetq.utils.DataConstants;
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  *
  */
-public class PageImpl implements Page
+public class PageImpl implements Page, Comparable<Page>
 {
    // Constants -----------------------------------------------------
 
@@ -241,12 +240,53 @@ public class PageImpl implements Page
    {
       return "PageImpl::pageID="  + this.pageId + ", file=" + this.file;
    }
+   
+
+   /* (non-Javadoc)
+    * @see java.lang.Comparable#compareTo(java.lang.Object)
+    */
+   public int compareTo(Page otherPage)
+   {
+      return otherPage.getPageId() - this.pageId;
+   }
+
+
+   /* (non-Javadoc)
+    * @see java.lang.Object#hashCode()
+    */
+   @Override
+   public int hashCode()
+   {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + pageId;
+      return result;
+   }
+
 
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
 
    // Private -------------------------------------------------------
+
+   /* (non-Javadoc)
+    * @see java.lang.Object#equals(java.lang.Object)
+    */
+   @Override
+   public boolean equals(Object obj)
+   {
+      if (this == obj)
+         return true;
+      if (obj == null)
+         return false;
+      if (getClass() != obj.getClass())
+         return false;
+      PageImpl other = (PageImpl)obj;
+      if (pageId != other.pageId)
+         return false;
+      return true;
+   }
 
    /**
     * @param position

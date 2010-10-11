@@ -98,7 +98,7 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory
                                  this,
                                  address,
                                  settings,
-                                 executorFactory.getExecutor(),
+                                 executorFactory,
                                  syncNonTransactional);
    }
 
@@ -202,7 +202,7 @@ public class PagingStoreFactoryNIO implements PagingStoreFactory
                                                     this,
                                                     address,
                                                     settings,
-                                                    executorFactory.getExecutor(),
+                                                    executorFactory,
                                                     syncNonTransactional);
 
             storesReturn.add(store);

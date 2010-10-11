@@ -53,6 +53,7 @@ import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.utils.ExecutorFactory;
 
 /**
  * 
@@ -150,7 +151,7 @@ public class PagingStoreImpl implements TestSupportPageStore
                           final PagingStoreFactory storeFactory,
                           final SimpleString storeName,
                           final AddressSettings addressSettings,
-                          final Executor executor,
+                          final ExecutorFactory executorFactory,
                           final boolean syncNonTransactional)
    {
       if (pagingManager == null)
@@ -182,7 +183,7 @@ public class PagingStoreImpl implements TestSupportPageStore
                                          pageSize);
       }
 
-      this.executor = executor;
+      this.executor = executorFactory.getExecutor();
 
       this.pagingManager = pagingManager;
 
@@ -192,7 +193,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
       this.syncNonTransactional = syncNonTransactional;
       
-      this.cursorProvider = new PageCursorProviderImpl(this, this.storageManager);
+      this.cursorProvider = new PageCursorProviderImpl(this, this.storageManager, executorFactory);
 
       // Post office could be null on the backup node
       if (postOffice == null)
@@ -278,6 +279,11 @@ public class PagingStoreImpl implements TestSupportPageStore
    public int getNumberOfPages()
    {
       return numberOfPages;
+   }
+   
+   public int getCurrentWritingPage()
+   {
+      return currentPageId;
    }
 
    public SimpleString getStoreName()
