@@ -115,6 +115,7 @@ public class PageCursorTest extends ServiceTestBase
       while ((msg = cursor.moveNext()) != null)
       {
          assertEquals(key++, msg.b.getIntProperty("key").intValue());
+         cursor.ack(msg.a);
       }
       assertEquals(NUM_MESSAGES, key);
       
@@ -270,20 +271,24 @@ public class PageCursorTest extends ServiceTestBase
       server.start();
       
       cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+
+      tx = new TransactionImpl(server.getStorageManager(), 60 * 1000);
       
       for (int i = 10; i <= 20; i++)
       {
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
          assertEquals(i, msg.b.getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         cursor.ackTx(tx,msg.a);
       }
     
       for (int i = 100; i < NUM_MESSAGES; i++)
       {
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
          assertEquals(i, msg.b.getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         cursor.ackTx(tx,msg.a);
       }
+      
+      tx.commit();
       
    }
    
