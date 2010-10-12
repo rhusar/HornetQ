@@ -116,6 +116,8 @@ public interface StorageManager extends HornetQComponent
    void storeAcknowledgeTransactional(long txID, long queueID, long messageID) throws Exception;
 
    void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position) throws Exception;
+   
+   void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception;
 
    void updateScheduledDeliveryTimeTransactional(long txID, MessageReference ref) throws Exception;
 

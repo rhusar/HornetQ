@@ -1543,6 +1543,15 @@ public class PagingStoreImplTest extends UnitTestCase
          
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#deleteCursorAcknowledgeTransactional(long, long)
+       */
+      public void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
    }
 
    class FakeStoreFactory implements PagingStoreFactory

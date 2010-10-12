@@ -631,6 +631,16 @@ public class JournalStorageManager implements StorageManager
       position.setRecordID(ackID);
       messageJournal.appendAddRecordTransactional(txID, ackID, ACKNOWLEDGE_CURSOR, new CursorAckRecordEncoding(queueID, position));
    }
+   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#deleteCursorAcknowledgeTransactional(long, long)
+    */
+   public void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception
+   {
+      messageJournal.appendDeleteRecordTransactional(txID, ackID);
+   }
+
 
    public long storeHeuristicCompletion(final Xid xid, final boolean isCommit) throws Exception
    {
