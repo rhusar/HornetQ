@@ -89,8 +89,8 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(),
                           ((Boolean)proxy.retrieveAttributeValue("useDuplicateDetection")).booleanValue());
 
-      Object[] data = (Object[])proxy.retrieveAttributeValue("connectors");
-      Assert.assertEquals(bridgeConfig.getStaticConnectors(), data[0]);
+      Object[] data = (Object[])proxy.retrieveAttributeValue("staticConnectors");
+      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0), data[0]);
 
       Assert.assertTrue((Boolean)proxy.retrieveAttributeValue("started"));
    }
@@ -138,6 +138,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                                                                     null,
                                                                     false);
       List<String> connectors = new ArrayList<String>();
+      connectors.add(connectorConfig.getName());
       bridgeConfig = new BridgeConfiguration(RandomUtil.randomString(),
                                              sourceQueueConfig.getName(),
                                              targetQueueConfig.getAddress(),
