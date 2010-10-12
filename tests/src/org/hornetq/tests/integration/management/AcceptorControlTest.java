@@ -120,6 +120,9 @@ public class AcceptorControlTest extends ManagementTestBase
       acceptorControl.start();
 
       Assert.assertTrue(acceptorControl.isStarted());
+
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
       Assert.assertNotNull(session);
       session.close();
