@@ -79,8 +79,13 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       servers.put(liveNode, new RemoteProcessHornetQServer(lives.get(liveNode)));
    }
    
+   
    @Override
-   protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
+   protected void createBackupConfig(int liveNode,
+                                     int nodeid,
+                                     boolean createClusterConnections,
+                                     int[] otherBackupNodes,
+                                     int... otherClusterNodes)
    {
       servers.put(nodeid, new RemoteProcessHornetQServer(backups.get(nodeid)));
    }
@@ -94,7 +99,7 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createLiveConfiguration(0, 3);
+         return createLiveConfiguration(0, 3, 4, 5);
       }
    }
 
@@ -103,7 +108,7 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createLiveConfiguration(3, 0);
+         return createLiveConfiguration(3, 0, 1, 2);
       }
    }
    
@@ -112,7 +117,7 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createBackupConfiguration(0, 1, true, 0, 3);
+         return createBackupConfiguration(0, 1, true, new int[] {0, 2}, 3, 4, 5);
       }
    }
 
@@ -121,7 +126,7 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createBackupConfiguration(0, 2, true, 0, 3);
+         return createBackupConfiguration(0, 2, true, new int[] {0, 1}, 3, 4, 5);
       }
    }
 
@@ -130,7 +135,7 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createBackupConfiguration(3, 4, true, 0, 3);
+         return createBackupConfiguration(3, 4, true, new int[] {3, 5}, 0, 1, 2);
       }
    }
 
@@ -139,11 +144,11 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       @Override
       public Configuration getConfiguration()
       {
-         return createBackupConfiguration(3, 5, true, 0, 3);
+         return createBackupConfiguration(3, 5, true, new int[] {3, 4}, 0, 1, 2);
       }
    }
 
-   protected static Configuration createBackupConfiguration(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
+   protected static Configuration createBackupConfiguration(int liveNode, int nodeid, boolean createClusterConnections,  int[] otherBackupNodes, int... otherClusterNodes)
    {
       Configuration config1 = new ConfigurationImpl();
       config1.getAcceptorConfigurations().add(createTransportConfiguration(true, true, generateParams(nodeid, true)));
@@ -152,22 +157,29 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       config1.setBackup(true);
       config1.setJournalType(JournalType.NIO);
       config1.setClustered(true);
-      List<String> staticConnectors = new ArrayList<String>();
 
-      for (int node : nodes)
+      List<String> staticConnectors = new ArrayList<String>();
+      for (int node : otherBackupNodes)
       {
          TransportConfiguration liveConnector = createTransportConfiguration(true, false, generateParams(node, true));
          config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
          staticConnectors.add(liveConnector.getName());
       }
       TransportConfiguration backupConnector = createTransportConfiguration(true, false, generateParams(nodeid, true));
-      List<String> pairs = null;
-      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
-           createClusterConnections? staticConnectors:pairs);
-      config1.getClusterConfigurations().add(ccc1);
       BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
       config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
+
+      List<String> clusterNodes = new ArrayList<String>();
+      for (int node : otherClusterNodes)
+      {
+         TransportConfiguration connector = createTransportConfiguration(true, false, generateParams(node, true));
+         config1.getConnectorConfigurations().put(connector.getName(), connector);
+         clusterNodes.add(connector.getName());
+      }
+      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1, clusterNodes);
+      config1.getClusterConfigurations().add(ccc1);
+
 
 
       config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);
