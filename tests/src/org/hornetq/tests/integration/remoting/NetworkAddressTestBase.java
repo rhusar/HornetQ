@@ -206,19 +206,18 @@ public abstract class NetworkAddressTestBase extends ServiceTestBase
       {
          ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(connectorConfig);
 
-         ClientSessionFactory sf = locator.createSessionFactory();
 
          if (mustConnect)
          {
-            ClientSession session = sf.createSession(false, true, true);
-            session.close();
+            ClientSessionFactory sf = locator.createSessionFactory();
+            sf.close();
             System.out.println("connection OK");
          }
          else
          {
             try
             {
-               sf.createSession(false, true, true);
+               ClientSessionFactory sf = locator.createSessionFactory();
                Assert.fail("session creation must fail because connector must not be able to connect to the server bound to another network interface");
             }
             catch (Exception e)
