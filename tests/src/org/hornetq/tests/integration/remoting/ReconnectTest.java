@@ -102,7 +102,6 @@ public class ReconnectTest extends ServiceTestBase
 
          });
 
-         locator.close();
          server.stop();
 
          Thread.sleep((pingPeriod * 2));
@@ -116,6 +115,7 @@ public class ReconnectTest extends ServiceTestBase
 
          Assert.assertEquals(1, count.get());
 
+         locator.close();
       }
       finally
       {
