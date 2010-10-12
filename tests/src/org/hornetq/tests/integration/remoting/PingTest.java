@@ -235,7 +235,7 @@ public class PingTest extends ServiceTestBase
 
       // We need to get it to stop pinging after one
 
-      //((FailoverManagerImpl)csf.getFailoverManagers()[0]).stopPingingAfterOne();
+      csf.stopPingingAfterOne();
 
       RemotingConnection serverConn = null;
 
