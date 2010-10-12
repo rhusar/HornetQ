@@ -85,7 +85,6 @@ public class BridgeControlTest extends ManagementTestBase
 
       String[] connectorPairData = bridgeControl.getStaticConnectors();
       Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0), connectorPairData[0]);
-      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(1), connectorPairData[1]);
 
       Assert.assertTrue(bridgeControl.isStarted());
    }
@@ -161,6 +160,7 @@ public class BridgeControlTest extends ManagementTestBase
                                                                     null,
                                                                     false);
       List<String> connectors = new ArrayList<String>();
+      connectors.add(connectorConfig.getName());
       bridgeConfig = new BridgeConfiguration(RandomUtil.randomString(),
                                              sourceQueueConfig.getName(),
                                              targetQueueConfig.getAddress(),
