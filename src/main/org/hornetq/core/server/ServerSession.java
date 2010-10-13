@@ -113,4 +113,6 @@ public interface ServerSession
    void setTransferring(boolean transferring);
 
    Set<ServerConsumer> getServerConsumers();
+
+   void setConnectionClientID(String clientID);
 }

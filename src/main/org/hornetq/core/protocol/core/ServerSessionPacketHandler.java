@@ -57,6 +57,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
+import org.hornetq.core.protocol.core.impl.wireformat.ConnectionSetClientIDMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.HornetQExceptionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.NullResponseMessage;
@@ -459,6 +460,11 @@ public class ServerSessionPacketHandler implements ChannelHandler
                   SessionRequestProducerCreditsMessage message = (SessionRequestProducerCreditsMessage)packet;
                   session.requestProducerCredits(message.getAddress(), message.getCredits());
                   break;
+               }
+               case PacketImpl.CONNECTION_SET_CLIENTID:
+               {
+                  ConnectionSetClientIDMessage message = (ConnectionSetClientIDMessage)packet;
+                  session.setConnectionClientID(message.getClientID());
                }
             }
          }

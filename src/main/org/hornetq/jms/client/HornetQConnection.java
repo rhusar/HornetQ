@@ -181,6 +181,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
       }
 
       this.clientID = clientID;
+      initialSession.setClientID(clientID);
 
       justCreated = false;
    }

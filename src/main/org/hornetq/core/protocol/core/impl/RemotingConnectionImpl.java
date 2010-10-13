@@ -90,6 +90,8 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
    private volatile boolean executing;
 
    private final long creationTime;
+   
+   private String clientID;
 
    // Constructors
    // ---------------------------------------------------------------------------------
@@ -555,5 +557,10 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
       {
          channel.close();
       }
+   }
+
+   public void setClientID(String cID)
+   {
+      clientID = cID;
    }
 }

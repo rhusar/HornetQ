@@ -562,4 +562,10 @@ public interface ClientSession extends XAResource
     */
    void setSendAcknowledgementHandler(SendAcknowledgementHandler handler);
 
+   /**
+    * Sets ClientID of the associated JMS connection.
+    * @param clientID the client ID
+    */
+   void setClientID(String clientID);
+
 }

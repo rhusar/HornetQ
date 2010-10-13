@@ -570,4 +570,10 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          }
       }
    }
+
+   public void setConnectionClientID(Object connID, String clientID)
+   {
+      ConnectionEntry conn = connections.get(connID);
+      conn.connection.setClientID(clientID);
+   }
 }

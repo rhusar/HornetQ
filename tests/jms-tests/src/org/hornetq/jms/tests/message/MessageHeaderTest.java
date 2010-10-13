@@ -1390,6 +1390,15 @@ public class MessageHeaderTest extends MessageHeaderTestBase
          // TODO Auto-generated method stub
          
       }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.api.core.client.ClientSession#setClientID(java.lang.String)
+       */
+      public void setClientID(String clientID)
+      {
+         // TODO Auto-generated method stub
+         
+      }
    }
 
 }

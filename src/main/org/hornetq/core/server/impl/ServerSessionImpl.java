@@ -1183,4 +1183,9 @@ public class ServerSessionImpl implements ServerSession , FailureListener
       routingContext.clear();
    }
 
+   public void setConnectionClientID(String clientID)
+   {
+      this.server.getRemotingService().setConnectionClientID(this.getConnectionID(), clientID);
+   }
+
 }

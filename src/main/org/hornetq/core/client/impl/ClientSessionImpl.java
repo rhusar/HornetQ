@@ -39,6 +39,7 @@ import org.hornetq.core.protocol.core.CommandConfirmationHandler;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
+import org.hornetq.core.protocol.core.impl.wireformat.ConnectionSetClientIDMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.ReattachSessionMessage;
@@ -1809,5 +1810,11 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          return exists;
       }
 
+   }
+
+   public void setClientID(String clientID)
+   {
+      ConnectionSetClientIDMessage msg = new ConnectionSetClientIDMessage(clientID);
+      channel.send(msg);
    }
 }

@@ -182,6 +182,8 @@ public class PacketImpl implements Packet
 
    public static final byte REPLICATION_SYNC = 103;
 
+   public static final byte CONNECTION_SET_CLIENTID = 104;
+
    // Static --------------------------------------------------------
 
    public PacketImpl(final byte type)
