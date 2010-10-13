@@ -14,6 +14,7 @@
 package org.hornetq.core.server.impl;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
@@ -72,18 +73,13 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    }
 
    /*
-    * Construct a MessageImpl from storage, or notification
+    * Construct a MessageImpl from storage, or notification, or before routing
     */
    public ServerMessageImpl(final long messageID, final int initialMessageBufferSize)
    {
       super(initialMessageBufferSize);
 
       this.messageID = messageID;
-   }
-
-   protected ServerMessageImpl(final int initialMessageBufferSize)
-   {
-      super(initialMessageBufferSize);
    }
 
    /*
@@ -269,7 +265,7 @@ public class ServerMessageImpl extends MessageImpl implements ServerMessage
    {
       if (pagingStore != null)
       {
-         return pagingStore.page(this, transactionID);
+         return pagingStore.page(Arrays.asList((ServerMessage)this), transactionID);
       }
       else
       {

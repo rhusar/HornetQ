@@ -15,16 +15,15 @@ package org.hornetq.core.postoffice.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
@@ -476,10 +475,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       if (addressManager.getBindingsForRoutingAddress(binding.getAddress()) == null)
       {
          pagingManager.deletePageStore(binding.getAddress());
-         
+
          managementService.unregisterAddress(binding.getAddress());
       }
-      
+
       if (binding.getType() == BindingType.LOCAL_QUEUE)
       {
          managementService.unregisterQueue(uniqueName, binding.getAddress());
@@ -488,21 +487,24 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          managementService.unregisterDivert(uniqueName);
       }
+      
+      if (binding.getType() != BindingType.DIVERT)
+      {
+         TypedProperties props = new TypedProperties();
 
-      TypedProperties props = new TypedProperties();
+         props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, binding.getAddress());
 
-      props.putSimpleStringProperty(ManagementHelper.HDR_ADDRESS, binding.getAddress());
+         props.putSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME, binding.getClusterName());
 
-      props.putSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME, binding.getClusterName());
+         props.putSimpleStringProperty(ManagementHelper.HDR_ROUTING_NAME, binding.getRoutingName());
 
-      props.putSimpleStringProperty(ManagementHelper.HDR_ROUTING_NAME, binding.getRoutingName());
+         props.putIntProperty(ManagementHelper.HDR_DISTANCE, binding.getDistance());
 
-      props.putIntProperty(ManagementHelper.HDR_DISTANCE, binding.getDistance());
-
-      managementService.sendNotification(new Notification(null, NotificationType.BINDING_REMOVED, props));
+         managementService.sendNotification(new Notification(null, NotificationType.BINDING_REMOVED, props));
+      }
 
       binding.close();
-      
+
       return binding;
    }
 
@@ -537,7 +539,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    {
       route(message, new RoutingContextImpl(tx), direct);
    }
-   
+
    public void route(final ServerMessage message, final RoutingContext context, final boolean direct) throws Exception
    {
       // Sanity check
@@ -547,7 +549,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
 
       SimpleString address = message.getAddress();
-      
+
       setPagingStore(message);
 
       Object duplicateID = message.getObjectProperty(Message.HDR_DUPLICATE_DETECTION_ID);
@@ -614,17 +616,18 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       else
       {
          Transaction tx = context.getTransaction();
-         
+
          boolean depage = tx.getProperty(TransactionPropertyIndexes.IS_DEPAGE) != null;
-         
-         // if the TX paged at least one message on a give address, all the other addresses should also go towards paging cache now 
+
+         // if the TX paged at least one message on a give address, all the other addresses should also go towards
+         // paging cache now
          boolean alreadyPaging = false;
-         
+
          if (tx.isPaging())
          {
-            alreadyPaging = getPageOperation(tx).isPaging(message.getAddress()); 
+            alreadyPaging = getPageOperation(tx).isPaging(message.getAddress());
          }
-         
+
          if (!depage && message.storeIsPaging() || alreadyPaging)
          {
             tx.setPaging(true);
@@ -633,7 +636,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             {
                tx.commit();
             }
-            
+
             return;
          }
       }
@@ -849,7 +852,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    private void setPagingStore(final ServerMessage message) throws Exception
    {
       PagingStore store = pagingManager.getPageStore(message.getAddress());
-      
+
       message.setPagingStore(store);
    }
 
@@ -1113,21 +1116,26 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
    private class PageMessageOperation implements TransactionOperation
    {
-      private final List<ServerMessage> messagesToPage = new ArrayList<ServerMessage>();
-      
-      private final HashSet<SimpleString> addressesPaging = new HashSet<SimpleString>();
-      
+      private final HashMap<SimpleString, Pair<PagingStore, List<ServerMessage>>> pagingData = new HashMap<SimpleString, Pair<PagingStore, List<ServerMessage>>>();
+
       private Transaction subTX = null;
-      
+
       void addMessageToPage(final ServerMessage message)
       {
-         messagesToPage.add(message);
-         addressesPaging.add(message.getAddress());
+         Pair<PagingStore, List<ServerMessage>> pagePair = pagingData.get(message.getAddress());
+         if (pagePair == null)
+         {
+            pagePair = new Pair<PagingStore, List<ServerMessage>>(message.getPagingStore(),
+                                                                  new ArrayList<ServerMessage>());
+            pagingData.put(message.getAddress(), pagePair);
+         }
+
+         pagePair.b.add(message);
       }
-      
+
       boolean isPaging(final SimpleString address)
       {
-         return addressesPaging.contains(address);
+         return pagingData.get(address) != null;
       }
 
       public void afterCommit(final Transaction tx)
@@ -1142,7 +1150,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          {
             pageTransaction.commit();
          }
-         
+
          if (subTX != null)
          {
             subTX.afterCommit();
@@ -1178,18 +1186,18 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          {
             pageMessages(tx);
          }
-         
+
          if (subTX != null)
          {
             subTX.beforeCommit();
          }
-         
+
       }
 
       public void beforePrepare(final Transaction tx) throws Exception
       {
          pageMessages(tx);
-         
+
          if (subTX != null)
          {
             subTX.beforePrepare();
@@ -1206,7 +1214,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       private void pageMessages(final Transaction tx) throws Exception
       {
-         if (!messagesToPage.isEmpty())
+         if (!pagingData.isEmpty())
          {
             PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 
@@ -1223,21 +1231,33 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
             boolean pagingPersistent = false;
 
-            Set<PagingStore> pagingStoresToSync = new HashSet<PagingStore>();
+            ArrayList<ServerMessage> nonPagedMessages = null;
 
-            for (ServerMessage message : messagesToPage)
+            for (Pair<PagingStore, List<ServerMessage>> pair : pagingData.values())
             {
-               if (message.page(tx.getID()))
+               
+               if (!pair.a.page(pair.b, tx.getID()))
                {
-                  if (message.isDurable())
+                  if (nonPagedMessages == null)
                   {
-                     // We only create pageTransactions if using persistent messages
+                     nonPagedMessages = new ArrayList<ServerMessage>();
+                  }
+                  nonPagedMessages.addAll(pair.b);
+               }
+               
+               for (ServerMessage msg : pair.b)
+               {
+                  if (msg.isDurable())
+                  {
                      pageTransaction.increment();
                      pagingPersistent = true;
-                     pagingStoresToSync.add(message.getPagingStore());
                   }
                }
-               else
+            }
+
+            if (nonPagedMessages != null)
+            {
+               for (ServerMessage message : nonPagedMessages)
                {
                   // This could happen when the PageStore left the pageState
                   // we create a copy of the transaction so that messages are routed with the same tx ID.
@@ -1246,9 +1266,9 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                   {
                      subTX = tx.copy();
                   }
-                  
+
                   route(message, subTX, false);
-                  
+
                   if (subTX.isContainsPersistent())
                   {
                      // The route wouldn't be able to update the persistent flag on the main TX
@@ -1261,16 +1281,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             if (pagingPersistent)
             {
                tx.setContainsPersistent();
-
-               if (!pagingStoresToSync.isEmpty())
+               for (Pair<PagingStore, List<ServerMessage>> pair : pagingData.values())
                {
-                  for (PagingStore store : pagingStoresToSync)
-                  {
-                     store.sync();
-                  }
-
-                  pageTransaction.store(storageManager, pagingManager, tx);
+                  pair.a.sync();
                }
+
+               pageTransaction.store(storageManager, pagingManager, tx);
             }
          }
       }

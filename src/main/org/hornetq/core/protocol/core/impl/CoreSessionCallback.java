@@ -23,11 +23,12 @@ import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.spi.core.protocol.ProtocolManager;
 import org.hornetq.spi.core.protocol.SessionCallback;
+import org.hornetq.spi.core.remoting.ReadyListener;
 
 /**
  * A CoreSessionCallback
  *
- * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
+ * @author Tim Fox
  *
  *
  */
@@ -54,8 +55,8 @@ public final class CoreSessionCallback implements SessionCallback
 
       channel.send(packet);
 
-      int size =  packet.getPacketSize();
-      
+      int size = packet.getPacketSize();
+
       return size;
    }
 
@@ -67,14 +68,14 @@ public final class CoreSessionCallback implements SessionCallback
 
       return packet.getPacketSize();
    }
-     
+
    public int sendMessage(ServerMessage message, long consumerID, int deliveryCount)
    {
       Packet packet = new SessionReceiveMessage(consumerID, message, deliveryCount);
 
       channel.sendBatched(packet);
-      
-      int size =  packet.getPacketSize();
+
+      int size = packet.getPacketSize();
 
       return size;
    }
@@ -90,4 +91,15 @@ public final class CoreSessionCallback implements SessionCallback
    {
       protocolManager.removeHandler(name);
    }
+   
+   public void addReadyListener(final ReadyListener listener)
+   {
+      channel.getConnection().getTransportConnection().addReadyListener(listener);      
+   }
+
+   public void removeReadyListener(final ReadyListener listener)
+   {
+      channel.getConnection().getTransportConnection().removeReadyListener(listener);
+   }
+
 }

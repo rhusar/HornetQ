@@ -30,6 +30,7 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.spi.core.protocol.SessionCallback;
+import org.hornetq.spi.core.remoting.ReadyListener;
 import org.hornetq.utils.DataConstants;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -93,7 +94,7 @@ class StompSession implements SessionCallback
          HornetQBuffer buffer = serverMessage.getBodyBuffer();
 
          int bodyPos = serverMessage.getEndOfBodyPosition() == -1 ? buffer.writerIndex()
-                                                                  : serverMessage.getEndOfBodyPosition();
+                                                                 : serverMessage.getEndOfBodyPosition();
          int size = bodyPos - buffer.readerIndex();
          buffer.readerIndex(MessageImpl.BUFFER_HEADER_SPACE + DataConstants.SIZE_INT);
          byte[] data = new byte[size];
@@ -108,7 +109,8 @@ class StompSession implements SessionCallback
             if (text != null)
             {
                data = text.toString().getBytes("UTF-8");
-            } else
+            }
+            else
             {
                data = new byte[0];
             }
@@ -154,6 +156,16 @@ class StompSession implements SessionCallback
 
    public void closed()
    {
+   }
+   
+   public void addReadyListener(final ReadyListener listener)
+   {
+      connection.getTransportConnection().addReadyListener(listener);      
+   }
+
+   public void removeReadyListener(final ReadyListener listener)
+   {
+      connection.getTransportConnection().removeReadyListener(listener);
    }
 
    public void acknowledge(String messageID) throws Exception

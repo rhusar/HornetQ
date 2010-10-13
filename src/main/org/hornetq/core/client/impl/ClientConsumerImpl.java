@@ -16,7 +16,6 @@ package org.hornetq.core.client.impl;
 import java.io.File;
 import java.util.Iterator;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.HornetQException;
@@ -113,7 +112,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
    private boolean stopped = false;
 
-   private final AtomicLong forceDeliveryCount = new AtomicLong(0);
+   private long forceDeliveryCount;
 
    private final SessionQueueQueryResponseMessage queueInfo;
 
@@ -226,7 +225,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
                      // we only force delivery once per call to receive
                      if (!deliveryForced)
                      {
-                        session.forceDelivery(id, forceDeliveryCount.incrementAndGet());
+                        session.forceDelivery(id, forceDeliveryCount++);
 
                         deliveryForced = true;
                      }
@@ -260,18 +259,17 @@ public class ClientConsumerImpl implements ClientConsumerInternal
                if (m.containsProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE))
                {
                   long seq = m.getLongProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE);
-                  if (seq >= forceDeliveryCount.longValue())
+
+                  if (forcingDelivery && seq == forceDeliveryCount - 1)
                   {
                      // forced delivery messages are discarded, nothing has been delivered by the queue
-                     if (forcingDelivery)
-                     {
-                        resetIfSlowConsumer();
-                        return null;
-                     }
+                     resetIfSlowConsumer();
+
+                     return null;
                   }
                   else
                   {
-                     // ignore any previous forced delivery message
+                     // Ignore the message
                      continue;
                   }
                }
@@ -425,7 +423,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       lastAckedMessage = null;
 
       creditsToSend = 0;
-      
+
       ackIndividually = false;
    }
 
@@ -468,7 +466,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    {
       return browseOnly;
    }
-   
+
    public synchronized void handleMessage(final ClientMessageInternal message) throws Exception
    {
       if (closing)
@@ -571,7 +569,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
          while (iter.hasNext())
          {
             ClientMessageInternal message = iter.next();
-            
+
             flowControlBeforeConsumption(message);
          }
 
@@ -603,7 +601,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
          {
             flushAcks();
          }
-         
+
          session.individualAcknowledge(id, message.getMessageID());
       }
       else
@@ -708,7 +706,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
    private void resetIfSlowConsumer()
    {
-      if(clientWindowSize == 0)
+      if (clientWindowSize == 0)
       {
          slowConsumerInitialCreditSent = false;
          sendCredits(0);
@@ -729,6 +727,7 @@ public class ClientConsumerImpl implements ClientConsumerInternal
       {
          ClientConsumerImpl.log.trace("Adding Runner on Executor for delivery");
       }
+      
       sessionExecutor.execute(runner);
    }
 
@@ -806,6 +805,12 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
          if (message != null)
          {
+            if (message.containsProperty(ClientConsumerImpl.FORCED_DELIVERY_MESSAGE))
+            {
+               //Ignore, this could be a relic from a previous receiveImmediate();
+               return;
+            }
+            
             boolean expired = message.isExpired();
 
             flowControlBeforeConsumption(message);
@@ -933,7 +938,6 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    {
       public void run()
       {
-
          try
          {
             callOnMessage();

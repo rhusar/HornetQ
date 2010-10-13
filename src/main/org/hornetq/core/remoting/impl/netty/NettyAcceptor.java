@@ -137,7 +137,7 @@ public class NettyAcceptor implements Acceptor
 
    private final HttpKeepAliveRunnable httpKeepAliveRunnable;
 
-   private final ConcurrentMap<Object, Connection> connections = new ConcurrentHashMap<Object, Connection>();
+   private final ConcurrentMap<Object, NettyConnection> connections = new ConcurrentHashMap<Object, NettyConnection>();
 
    private final Executor threadPool;
 
@@ -356,8 +356,8 @@ public class NettyAcceptor implements Acceptor
             if (protocol == ProtocolType.CORE)
             {
                // Core protocol uses its own optimised decoder
-               
-               handlers.put("hornetq-decode", new HornetQFrameDecoder2());
+
+               handlers.put("hornetq-decoder", new HornetQFrameDecoder2());
             }
             else if (protocol == ProtocolType.STOMP_WS)
             {
@@ -367,13 +367,17 @@ public class NettyAcceptor implements Acceptor
                handlers.put("hornetq-decoder", new HornetQFrameDecoder(decoder));
                handlers.put("websocket-handler", new WebSocketServerHandler());
             }
+            else if (protocol == ProtocolType.STOMP)
+            {
+               //With STOMP the decoding is handled in the StompFrame class
+            }
             else
             {
-                handlers.put("hornetq-decoder", new HornetQFrameDecoder(decoder));
+               handlers.put("hornetq-decoder", new HornetQFrameDecoder(decoder));
             }
 
             handlers.put("handler", new HornetQServerChannelHandler(channelGroup, handler, new Listener()));
-            
+
             /**
              * STOMP_WS protocol mandates use of named handlers to be able to replace http codecs
              * by websocket codecs after handshake.
@@ -650,7 +654,7 @@ public class NettyAcceptor implements Acceptor
    {
       public void connectionCreated(final Connection connection, final ProtocolType protocol)
       {
-         if (connections.putIfAbsent(connection.getID(), connection) != null)
+         if (connections.putIfAbsent(connection.getID(), (NettyConnection)connection) != null)
          {
             throw new IllegalArgumentException("Connection already exists with id " + connection.getID());
          }
@@ -679,6 +683,16 @@ public class NettyAcceptor implements Acceptor
          }.start();
 
       }
+
+      public void connectionReadyForWrites(final Object connectionID, boolean ready)
+      {
+         NettyConnection conn = connections.get(connectionID);
+         
+         if (conn != null)
+         {
+            conn.fireReady(ready);
+         }         
+      }            
    }
 
    private class BatchFlusher implements Runnable
