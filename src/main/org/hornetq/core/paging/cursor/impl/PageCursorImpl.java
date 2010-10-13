@@ -368,7 +368,7 @@ public class PageCursorImpl implements PageCursor
 
       final ArrayList<PageCursorInfo> completedPages = new ArrayList<PageCursorInfo>();
 
-      // First get the completed pages
+      // First get the completed pages using a lock   
       synchronized (this)
       {
          for (Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())

@@ -39,6 +39,8 @@ public interface PageCursorProvider
    // Public --------------------------------------------------------
 
    PageCache getPageCache(PagePosition pos);
+   
+   void addPageCache(PageCache cache);
 
    PagingStore getAssociatedStore();
 
@@ -54,8 +56,6 @@ public interface PageCursorProvider
     * @return
     */
    PageCursor createCursor();
-
-   // PageCursor recoverCursor(PagePosition position);
 
    Pair<PagePosition, ServerMessage> getAfter(PagePosition pos) throws Exception;
    

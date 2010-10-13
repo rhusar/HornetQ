@@ -292,6 +292,51 @@ public class PageCursorTest extends ServiceTestBase
       
    }
    
+   public void testConsumeLivePage() throws Exception
+   {
+      PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
+
+      pageStore.startPaging();
+
+      final int NUM_MESSAGES = 1000;
+      
+      final int messageSize = 1024 * 1024;
+      
+      
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+      
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      System.out.println("Cursor: " + cursor);
+
+      
+      for (int i = 0; i < NUM_MESSAGES; i++)
+      {
+         if (i % 100 == 0) System.out.println("Paged " + i);
+         
+         HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+
+         ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
+         msg.putIntProperty("key", i);
+         
+         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+
+         Assert.assertTrue(pageStore.page(msg));
+         
+         Pair<PagePosition, ServerMessage> readMessage = cursor.moveNext();
+         
+         assertNotNull(readMessage);
+         
+         // TODO: ack on live data
+         
+         assertEquals(i, readMessage.b.getIntProperty("key").intValue());
+         
+         assertNull(cursor.moveNext());
+      }
+      
+   }
+   
    
    public void testRollbackScenariosOnACK() throws Exception
    {

@@ -22,8 +22,6 @@ import org.hornetq.core.server.ServerMessage;
 
 /**
  * The caching associated to a single page.
- * 
- * TODO: Solve how to update the cache for the current page on PagingStore.
  *
  * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
@@ -110,6 +108,14 @@ public class PageCacheImpl implements PageCache
       {
          lock.readLock().unlock();
       }
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCache#isLive()
+    */
+   public boolean isLive()
+   {
+      return true;
    }
 
 

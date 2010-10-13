@@ -114,7 +114,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       PageCache cache = getPageCache(pos);
 
-      if (retPos.getMessageNr() >= cache.getNumberOfMessages())
+      if (!cache.isLive() && retPos.getMessageNr() >= cache.getNumberOfMessages())
       {
          retPos = pos.nextPage();
 
@@ -130,8 +130,17 @@ public class PageCursorProviderImpl implements PageCursorProvider
             return null;
          }
       }
-
-      return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
+      
+      ServerMessage serverMessage = cache.getMessage(retPos.getMessageNr());
+      
+      if (serverMessage != null)
+      {
+         return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
+      }
+      else
+      {
+         return null;
+      }
    }
 
    public ServerMessage getMessage(final PagePosition pos) throws Exception
@@ -147,6 +156,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return cache.getMessage(pos.getMessageNr());
    }
 
+   /**
+    * No need to synchronize this method since the private getPageCache will have a synchronized call
+    */
    public PageCache getPageCache(PagePosition pos)
    {
       PageCache cache = pos.getPageCache();
@@ -157,8 +169,14 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
       return cache;
    }
+   
+   public synchronized void addPageCache(PageCache cache)
+   {
+      // TODO: remove the type cast here
+      softCache.put((long)cache.getPage().getPageId(), cache);
+   }
 
-   public int getCacheSize()
+   public synchronized int getCacheSize()
    {
       return softCache.size();
    }
@@ -171,6 +189,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
    }
 
+
    public void stop()
    {
       activeCursors.clear();
@@ -180,6 +199,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    // Protected -----------------------------------------------------
 
+   /* Protected as we may let test cases to instrument the test */
    protected PageCacheImpl createPageCache(final long pageId) throws Exception
    {
       return new PageCacheImpl(pagingStore.createPage((int)pageId));

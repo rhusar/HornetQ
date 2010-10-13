@@ -18,7 +18,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import junit.framework.Assert;
@@ -34,6 +33,7 @@ import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
+import org.hornetq.core.paging.cursor.LivePageCache;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
@@ -433,6 +433,13 @@ public class PageCrashTest extends ServiceTestBase
          public FailingPage(final Page delegatePage)
          {
             delegatedPage = delegatePage;
+         }
+
+         /* (non-Javadoc)
+          * @see org.hornetq.core.paging.Page#setLiveCache(org.hornetq.core.paging.cursor.LivePageCache)
+          */
+         public void setLiveCache(LivePageCache pageCache)
+         {
          }
       }
 

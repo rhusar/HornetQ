@@ -40,7 +40,9 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.PagingStoreFactory;
+import org.hornetq.core.paging.cursor.LivePageCache;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
+import org.hornetq.core.paging.cursor.impl.LivePageCacheImpl;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.DuplicateIDCache;
@@ -545,9 +547,9 @@ public class PagingStoreImpl implements TestSupportPageStore
       return currentPage;
    }
 
-   public Page createPage(final int page) throws Exception
+   public Page createPage(final int pageNumber) throws Exception
    {
-      String fileName = createFileName(page);
+      String fileName = createFileName(pageNumber);
 
       if (fileFactory == null)
       {
@@ -555,14 +557,24 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
 
       SequentialFile file = fileFactory.createSequentialFile(fileName, 1000);
+      
+      Page page = new PageImpl(storeName, storageManager, fileFactory, file, pageNumber);
+      
+      LivePageCache pageCache = new LivePageCacheImpl(page);
+      
+      page.setLiveCache(pageCache);
 
+      cursorProvider.addPageCache(pageCache);
+      
+      // To create the file 
       file.open();
 
       file.position(0);
 
       file.close();
+      
 
-      return new PageImpl(storeName, storageManager, fileFactory, file, page);
+      return page;
    }
 
    // TestSupportPageStore ------------------------------------------

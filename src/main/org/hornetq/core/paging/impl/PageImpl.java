@@ -26,6 +26,7 @@ import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.paging.cursor.LivePageCache;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.utils.DataConstants;
 
@@ -57,6 +58,11 @@ public class PageImpl implements Page, Comparable<Page>
    private final SequentialFile file;
 
    private final SequentialFileFactory fileFactory;
+   
+   /**
+    * The page cache that will be filled with data as we write more data
+    */
+   private volatile LivePageCache pageCache;
 
    private final AtomicInteger size = new AtomicInteger(0);
 
@@ -88,6 +94,11 @@ public class PageImpl implements Page, Comparable<Page>
    public int getPageId()
    {
       return pageId;
+   }
+   
+   public void setLiveCache(LivePageCache pageCache)
+   {
+      this.pageCache = pageCache;
    }
 
    public List<PagedMessage> read() throws Exception
@@ -167,6 +178,11 @@ public class PageImpl implements Page, Comparable<Page>
       buffer.rewind();
 
       file.writeDirect(buffer, false);
+      
+      if (pageCache != null)
+      {
+         pageCache.addLiveMessage(message.getMessage(storageManager));
+      }
 
       numberOfMessages.incrementAndGet();
       size.addAndGet(buffer.limit());
@@ -191,6 +207,12 @@ public class PageImpl implements Page, Comparable<Page>
       if (storageManager != null)
       {
          storageManager.pageClosed(storeName, pageId);
+      }
+      if (pageCache != null)
+      {
+         pageCache.close();
+         // leave it to the soft cache to decide when to release it now
+         pageCache = null;
       }
       file.close();
    }

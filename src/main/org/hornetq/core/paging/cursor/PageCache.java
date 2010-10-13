@@ -30,6 +30,12 @@ public interface PageCache
    int getNumberOfMessages();
    
    void setMessages(ServerMessage[] messages);
+   
+   /**
+    * If this cache is still being updated
+    * @return
+    */
+   boolean isLive();
 
    /**
     * 
