@@ -563,4 +563,9 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
    {
       clientID = cID;
    }
+   
+   public String getClientID()
+   {
+      return clientID;
+   }
 }

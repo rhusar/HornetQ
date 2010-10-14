@@ -13,6 +13,7 @@
 
 package org.hornetq.spi.core.protocol;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.hornetq.api.core.HornetQBuffer;
@@ -171,5 +172,11 @@ public interface RemotingConnection extends BufferHandler
     * @param clientID the clientID
     */
    void setClientID(String clientID);
+
+   /**
+    * get the client id
+    * @return the clientID
+    */
+   String getClientID();
 
 }

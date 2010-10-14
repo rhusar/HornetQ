@@ -742,6 +742,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
             obj.put("connectionID", connection.getID().toString());
             obj.put("clientAddress", connection.getRemoteAddress());
             obj.put("creationTime", connection.getCreationTime());
+            obj.put("clientID", connection.getClientID());
             array.put(obj);
          }
          return array.toString();

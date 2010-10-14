@@ -78,10 +78,12 @@ import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SET_TIMEOUT
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SET_TIMEOUT_RESP;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_START;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SUSPEND;
+import static org.hornetq.core.protocol.core.impl.PacketImpl.CONNECTION_SET_CLIENTID;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
+import org.hornetq.core.protocol.core.impl.wireformat.ConnectionSetClientIDMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
@@ -484,6 +486,11 @@ public class PacketDecoder
          case SESS_FORCE_CONSUMER_DELIVERY:
          {
             packet = new SessionForceConsumerDelivery();
+            break;
+         }
+         case CONNECTION_SET_CLIENTID:
+         {
+            packet = new ConnectionSetClientIDMessage();
             break;
          }
          default:

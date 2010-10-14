@@ -24,6 +24,11 @@ import org.hornetq.core.protocol.core.impl.PacketImpl;
 public class ConnectionSetClientIDMessage extends PacketImpl
 {
    private String clientID;
+   
+   public ConnectionSetClientIDMessage()
+   {
+      super(PacketImpl.CONNECTION_SET_CLIENTID);
+   }
 
    public ConnectionSetClientIDMessage(String cID)
    {
