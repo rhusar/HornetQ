@@ -29,6 +29,8 @@ public interface PageCursor
 
    // Cursor query operations --------------------------------------
    
+   void stop();
+   
    Pair<PagePosition, ServerMessage> moveNext() throws Exception;
 
    void ack(PagePosition position) throws Exception;
@@ -55,4 +57,6 @@ public interface PageCursor
     * @param position
     */
    void redeliver(PagePosition position);
+   
+   void printDebug();
 }

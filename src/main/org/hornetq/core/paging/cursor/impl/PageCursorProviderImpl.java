@@ -192,6 +192,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void stop()
    {
+      for (PageCursor cursor : activeCursors.values())
+      {
+         cursor.stop();
+      }
+      
       activeCursors.clear();
    }
    

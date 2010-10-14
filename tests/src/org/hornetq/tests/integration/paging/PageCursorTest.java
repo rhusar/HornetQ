@@ -25,6 +25,7 @@ import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
+import org.hornetq.core.paging.cursor.impl.PageCursorImpl;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
@@ -153,26 +154,35 @@ public class PageCursorTest extends ServiceTestBase
       System.out.println("Number of pages = " + numberOfPages);
       
       PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
-      cursorProvider.printDebug();
       
       
       PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+ 
+      PageCache firstPage = cursorProvider.getPageCache(new PagePositionImpl(server.getPagingManager().getPageStore(ADDRESS).getFirstPage(), 0));
+
+      int firstPageSize = firstPage.getNumberOfMessages();
+      
+      firstPage = null;
       
       System.out.println("Cursor: " + cursor);
+      cursorProvider.printDebug();
+
       for (int i = 0 ; i < 1000 ; i++)
       {
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         cursorProvider.printDebug();
          assertNotNull(msg);
          assertEquals(i, msg.b.getIntProperty("key").intValue());
          
-         if (i < 500)
+         if (i < firstPageSize)
          {
             cursor.ack(msg.a);
          }
       }
-      
-      OperationContextImpl.getContext(null).waitCompletion();
+      cursorProvider.printDebug();
+     
+      // needs to clear the context since we are using the same thread over two distinct servers
+      // otherwise we will get the old executor on the factory
+      OperationContextImpl.clearContext();
       
       server.stop();
       
@@ -180,17 +190,24 @@ public class PageCursorTest extends ServiceTestBase
       
       cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
       
-      for (int i = 500; i < NUM_MESSAGES; i++)
+      for (int i = firstPageSize; i < NUM_MESSAGES; i++)
       {
+         System.out.println("Received " + i);
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         assertNotNull(msg);
          assertEquals(i, msg.b.getIntProperty("key").intValue());
+         
          cursor.ack(msg.a);
+         
+         OperationContextImpl.getContext(null).waitCompletion();
+         
       }
-      
+
+      OperationContextImpl.getContext(null).waitCompletion(); 
+      ((PageCursorImpl)cursor).printDebug();
       
       
    }
-   
    
    public void testRestartWithHoleOnAck() throws Exception
    {
@@ -424,6 +441,7 @@ public class PageCursorTest extends ServiceTestBase
    protected void setUp() throws Exception
    {
       super.setUp();
+      OperationContextImpl.clearContext();
       System.out.println("Tmp:" + getTemporaryDir());
       
       Configuration config = createDefaultConfig();
@@ -445,6 +463,7 @@ public class PageCursorTest extends ServiceTestBase
 
    protected void tearDown() throws Exception
    {
+      OperationContextImpl.clearContext();
       server.stop();
       super.tearDown();
    }

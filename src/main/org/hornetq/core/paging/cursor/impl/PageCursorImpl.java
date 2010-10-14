@@ -41,6 +41,7 @@ import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionOperationAbstract;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.utils.Future;
 
 /**
  * A PageCursorImpl
@@ -57,11 +58,11 @@ public class PageCursorImpl implements PageCursor
 
    // Attributes ----------------------------------------------------
 
-   private final boolean isTrace = true; //PageCursorImpl.log.isTraceEnabled();
+   private final boolean isTrace = false; // PageCursorImpl.log.isTraceEnabled();
 
    private static void trace(final String message)
    {
-      //PageCursorImpl.log.info(message);
+      // PageCursorImpl.log.info(message);
       System.out.println(message);
    }
 
@@ -76,6 +77,8 @@ public class PageCursorImpl implements PageCursor
    private final Executor executor;
 
    private volatile PagePosition lastPosition;
+
+   private volatile PagePosition lastAckedPosition;
 
    private List<PagePosition> recoveredACK;
 
@@ -275,8 +278,26 @@ public class PageCursorImpl implements PageCursor
             previousPos = pos;
          }
 
+         this.lastAckedPosition = lastPosition;
+
          recoveredACK.clear();
          recoveredACK = null;
+      }
+   }
+   
+   public void stop()
+   {
+      Future future = new Future();
+      executor.execute(future);
+      future.await(1000);
+   }
+
+   public void printDebug()
+   {
+      System.out.println("Debug information on PageCurorImpl- " + this);
+      for (PageCursorInfo info : consumedPages.values())
+      {
+         System.out.println(info);
       }
    }
 
@@ -315,7 +336,10 @@ public class PageCursorImpl implements PageCursor
    // The only exception is on non storage events such as not matching messages
    private void processACK(final PagePosition pos)
    {
-      System.out.println("Processing ack for " + pos);
+      if (lastAckedPosition == null || pos.compareTo(lastAckedPosition) > 0)
+      {
+         this.lastAckedPosition = pos;
+      }
       PageCursorInfo info = getPageInfo(pos);
 
       info.addACK(pos);
@@ -387,7 +411,14 @@ public class PageCursorImpl implements PageCursor
          {
             if (entry.getValue().isDone())
             {
-               completedPages.add(entry.getValue());
+               if (entry.getKey() == lastAckedPosition.getPageNr())
+               {
+                  System.out.println("We can't clear page " + entry.getKey() + " now since it's the current page");
+               }
+               else
+               {
+                  completedPages.add(entry.getValue());
+               }
             }
          }
       }
@@ -396,27 +427,8 @@ public class PageCursorImpl implements PageCursor
       {
          PageCursorInfo info = completedPages.get(i);
 
-         boolean firstLine = true;
          for (PagePosition pos : info.acks)
          {
-            if (firstLine)
-            {
-               firstLine = false;
-               // We only do this check at the first line
-               PageCache cache = pos.getPageCache();
-               // The live cache has a hard reference on the PagingStoreImpl,
-               // So we are sure the reference would be filled on the PagePosition
-               if (cache != null && cache.isLive())
-               {
-                  completedPages.remove(i);
-                  break;
-               }
-               if (isTrace)
-               {
-                  PageCursorImpl.trace("Cleaning ACK records on page " + info.getPageId());
-               }
-            }
-
             if (pos.getRecordID() > 0)
             {
                store.deleteCursorAcknowledgeTransactional(tx.getID(), pos.getRecordID());
@@ -444,6 +456,7 @@ public class PageCursorImpl implements PageCursor
                   {
                      PageCursorImpl.trace("Removing page " + completePage.getPageId());
                   }
+                  System.out.println("Removing page " + completePage.getPageId());
                   consumedPages.remove(completePage.getPageId());
                }
             }
@@ -474,6 +487,11 @@ public class PageCursorImpl implements PageCursor
       // We need a separate counter as the cursor may be ignoring certain values because of incomplete transactions or
       // expressions
       private final AtomicInteger confirmed = new AtomicInteger(0);
+
+      public String toString()
+      {
+         return "PageCursorInfo::PaeID=" + pageId + " numberOfMessage = " + numberOfMessages;
+      }
 
       public PageCursorInfo(final long pageId, final int numberOfMessages, final PageCache cache)
       {
