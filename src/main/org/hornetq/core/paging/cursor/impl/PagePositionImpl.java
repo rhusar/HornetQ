@@ -15,7 +15,6 @@ package org.hornetq.core.paging.cursor.impl;
 
 import java.lang.ref.WeakReference;
 
-import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PagePosition;
 

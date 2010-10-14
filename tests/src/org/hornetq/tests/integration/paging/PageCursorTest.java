@@ -152,8 +152,9 @@ public class PageCursorTest extends ServiceTestBase
       
       System.out.println("Number of pages = " + numberOfPages);
       
-      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
-      System.out.println("cursorProvider = " + cursorProvider);
+      PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      cursorProvider.printDebug();
+      
       
       PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
       
@@ -161,6 +162,8 @@ public class PageCursorTest extends ServiceTestBase
       for (int i = 0 ; i < 1000 ; i++)
       {
          Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         cursorProvider.printDebug();
+         assertNotNull(msg);
          assertEquals(i, msg.b.getIntProperty("key").intValue());
          
          if (i < 500)
@@ -328,7 +331,7 @@ public class PageCursorTest extends ServiceTestBase
          
          assertNotNull(readMessage);
          
-         // TODO: ack on live data
+         cursor.ack(readMessage.a);
          
          assertEquals(i, readMessage.b.getIntProperty("key").intValue());
          

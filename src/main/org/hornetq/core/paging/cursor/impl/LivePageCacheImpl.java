@@ -38,6 +38,11 @@ public class LivePageCacheImpl implements LivePageCache
    private final Page page;
    
    private boolean isLive = true;
+   
+   public String toString()
+   {
+      return "LivePacheCacheImpl::page=" + page.getPageId() + " number of messages=" + messages.size() + " isLive = " + isLive;
+   }
 
    // Static --------------------------------------------------------
 

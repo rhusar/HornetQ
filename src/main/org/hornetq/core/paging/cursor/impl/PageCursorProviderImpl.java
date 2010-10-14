@@ -194,6 +194,14 @@ public class PageCursorProviderImpl implements PageCursorProvider
    {
       activeCursors.clear();
    }
+   
+   public void printDebug()
+   {
+      for (PageCache cache: softCache.values())
+      {
+         System.out.println("Cache " + cache);
+      }
+   }
 
    // Package protected ---------------------------------------------
 

@@ -13,6 +13,7 @@
 
 package org.hornetq.core.paging.cursor.impl;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,6 +56,14 @@ public class PageCursorImpl implements PageCursor
    private static final Logger log = Logger.getLogger(PageCursorImpl.class);
 
    // Attributes ----------------------------------------------------
+
+   private final boolean isTrace = true; //PageCursorImpl.log.isTraceEnabled();
+
+   private static void trace(final String message)
+   {
+      //PageCursorImpl.log.info(message);
+      System.out.println(message);
+   }
 
    private final StorageManager store;
 
@@ -190,6 +199,7 @@ public class PageCursorImpl implements PageCursor
     */
    public void reloadACK(final PagePosition position)
    {
+      System.out.println("reloading " + position);
       if (recoveredACK == null)
       {
          recoveredACK = new LinkedList<PagePosition>();
@@ -211,7 +221,10 @@ public class PageCursorImpl implements PageCursor
    {
       if (recoveredACK != null)
       {
-         System.out.println("********** processing reload!!!!!!!");
+         if (isTrace)
+         {
+            PageCursorImpl.trace("********** processing reload!!!!!!!");
+         }
          Collections.sort(recoveredACK);
 
          PagePosition previousPos = null;
@@ -260,7 +273,6 @@ public class PageCursorImpl implements PageCursor
             }
 
             previousPos = pos;
-            System.out.println("pos: " + pos);
          }
 
          recoveredACK.clear();
@@ -272,14 +284,15 @@ public class PageCursorImpl implements PageCursor
     * @param page
     * @return
     */
-   private PageCursorInfo getPageInfo(final PagePosition pos)
+   private synchronized PageCursorInfo getPageInfo(final PagePosition pos)
    {
       PageCursorInfo pageInfo = consumedPages.get(pos.getPageNr());
 
       if (pageInfo == null)
       {
          PageCache cache = cursorProvider.getPageCache(pos);
-         pageInfo = new PageCursorInfo(pos.getPageNr(), cache.getNumberOfMessages());
+         System.out.println("Number of Messages = " + cache.getNumberOfMessages());
+         pageInfo = new PageCursorInfo(pos.getPageNr(), cache.getNumberOfMessages(), cache);
          consumedPages.put(pos.getPageNr(), pageInfo);
       }
 
@@ -302,6 +315,7 @@ public class PageCursorImpl implements PageCursor
    // The only exception is on non storage events such as not matching messages
    private void processACK(final PagePosition pos)
    {
+      System.out.println("Processing ack for " + pos);
       PageCursorInfo info = getPageInfo(pos);
 
       info.addACK(pos);
@@ -338,8 +352,6 @@ public class PageCursorImpl implements PageCursor
     */
    private void onPageDone(final PageCursorInfo info)
    {
-      System.out.println("Page " + info.getPageId() + " has completed");
-
       executor.execute(new Runnable()
       {
 
@@ -351,7 +363,7 @@ public class PageCursorImpl implements PageCursor
             }
             catch (Exception e)
             {
-               PageCursorImpl.log.warn("Error on cleaning up cursor pages");
+               PageCursorImpl.log.warn("Error on cleaning up cursor pages", e);
             }
          }
       });
@@ -368,7 +380,7 @@ public class PageCursorImpl implements PageCursor
 
       final ArrayList<PageCursorInfo> completedPages = new ArrayList<PageCursorInfo>();
 
-      // First get the completed pages using a lock   
+      // First get the completed pages using a lock
       synchronized (this)
       {
          for (Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())
@@ -380,10 +392,31 @@ public class PageCursorImpl implements PageCursor
          }
       }
 
-      for (PageCursorInfo info : completedPages)
+      for (int i = 0; i < completedPages.size(); i++)
       {
+         PageCursorInfo info = completedPages.get(i);
+
+         boolean firstLine = true;
          for (PagePosition pos : info.acks)
          {
+            if (firstLine)
+            {
+               firstLine = false;
+               // We only do this check at the first line
+               PageCache cache = pos.getPageCache();
+               // The live cache has a hard reference on the PagingStoreImpl,
+               // So we are sure the reference would be filled on the PagePosition
+               if (cache != null && cache.isLive())
+               {
+                  completedPages.remove(i);
+                  break;
+               }
+               if (isTrace)
+               {
+                  PageCursorImpl.trace("Cleaning ACK records on page " + info.getPageId());
+               }
+            }
+
             if (pos.getRecordID() > 0)
             {
                store.deleteCursorAcknowledgeTransactional(tx.getID(), pos.getRecordID());
@@ -407,7 +440,10 @@ public class PageCursorImpl implements PageCursor
             {
                for (PageCursorInfo completePage : completedPages)
                {
-                  System.out.println("Removing page " + completePage.getPageId());
+                  if (isTrace)
+                  {
+                     PageCursorImpl.trace("Removing page " + completePage.getPageId());
+                  }
                   consumedPages.remove(completePage.getPageId());
                }
             }
@@ -430,19 +466,29 @@ public class PageCursorImpl implements PageCursor
       // Confirmed ACKs on this page
       private final List<PagePosition> acks = Collections.synchronizedList(new LinkedList<PagePosition>());
 
+      private WeakReference<PageCache> cache;
+
+      // The page was live at the time of the creation
+      private final boolean wasLive;
+
       // We need a separate counter as the cursor may be ignoring certain values because of incomplete transactions or
       // expressions
       private final AtomicInteger confirmed = new AtomicInteger(0);
 
-      public PageCursorInfo(final long pageId, final int numberOfMessages)
+      public PageCursorInfo(final long pageId, final int numberOfMessages, final PageCache cache)
       {
          this.pageId = pageId;
          this.numberOfMessages = numberOfMessages;
+         wasLive = cache.isLive();
+         if (wasLive)
+         {
+            this.cache = new WeakReference<PageCache>(cache);
+         }
       }
 
       public boolean isDone()
       {
-         return numberOfMessages == confirmed.get();
+         return getNumberOfMessages() == confirmed.get();
       }
 
       /**
@@ -461,9 +507,40 @@ public class PageCursorImpl implements PageCursor
             acks.add(posACK);
          }
 
-         if (numberOfMessages == confirmed.incrementAndGet())
+         if (isTrace)
+         {
+            PageCursorImpl.trace("numberOfMessages =  " + getNumberOfMessages() +
+                                 " confirmed =  " +
+                                 (confirmed.get() + 1) +
+                                 ", page = " +
+                                 pageId);
+         }
+
+         if (getNumberOfMessages() == confirmed.incrementAndGet())
          {
             onPageDone(this);
+         }
+      }
+
+      private int getNumberOfMessages()
+      {
+         if (wasLive)
+         {
+            PageCache cache = this.cache.get();
+            if (cache != null)
+            {
+               return cache.getNumberOfMessages();
+            }
+            else
+            {
+               cache = cursorProvider.getPageCache(new PagePositionImpl(pageId, 0));
+               this.cache = new WeakReference<PageCache>(cache);
+               return cache.getNumberOfMessages();
+            }
+         }
+         else
+         {
+            return numberOfMessages;
          }
       }
 

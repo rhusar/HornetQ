@@ -559,13 +559,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       SequentialFile file = fileFactory.createSequentialFile(fileName, 1000);
       
       Page page = new PageImpl(storeName, storageManager, fileFactory, file, pageNumber);
-      
-      LivePageCache pageCache = new LivePageCacheImpl(page);
-      
-      page.setLiveCache(pageCache);
 
-      cursorProvider.addPageCache(pageCache);
-      
       // To create the file 
       file.open();
 
@@ -1209,7 +1203,13 @@ public class PagingStoreImpl implements TestSupportPageStore
          }
 
          currentPage = createPage(currentPageId);
+         
+         LivePageCache pageCache = new LivePageCacheImpl(currentPage);
+         
+         currentPage.setLiveCache(pageCache);
 
+         cursorProvider.addPageCache(pageCache);
+         
          currentPageSize.set(0);
 
          currentPage.open();

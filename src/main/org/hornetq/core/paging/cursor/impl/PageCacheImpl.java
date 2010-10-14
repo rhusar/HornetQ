@@ -115,7 +115,12 @@ public class PageCacheImpl implements PageCache
     */
    public boolean isLive()
    {
-      return true;
+      return false;
+   }
+   
+   public String toString()
+   {
+      return "PageCacheImpl::page=" + page.getPageId() + " numberOfMessages = " + messages.length;
    }
 
 
