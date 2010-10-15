@@ -13,7 +13,7 @@
 
 package org.hornetq.core.paging.cursor;
 
-import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.paging.PagedMessage;
 
 /**
  * A LivePageCache
@@ -25,7 +25,5 @@ import org.hornetq.core.server.ServerMessage;
 public interface LivePageCache extends PageCache
 {
    
-   void addLiveMessage(ServerMessage message);
-
-   void close();
+   void addLiveMessage(PagedMessage message);
 }

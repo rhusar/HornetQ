@@ -1019,7 +1019,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
       for (PagedMessage pagedMessage : pagedMessages)
       {
-         ServerMessage message = pagedMessage.getMessage(storageManager);
+         ServerMessage message = pagedMessage.getMessage();
 
          if (message.isLargeMessage())
          {
@@ -1060,7 +1060,7 @@ public class PagingStoreImpl implements TestSupportPageStore
                // This is to avoid a race condition where messages are depaged
                // before the commit arrived
 
-               while (running && !pageUserTransaction.waitCompletion(500))
+               while (running)
                {
                   // This is just to give us a chance to interrupt the process..
                   // if we start a shutdown in the middle of transactions, the commit/rollback may never come, delaying

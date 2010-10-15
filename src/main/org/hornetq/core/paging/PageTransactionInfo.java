@@ -24,8 +24,6 @@ import org.hornetq.core.transaction.Transaction;
  */
 public interface PageTransactionInfo extends EncodingSupport
 {
-   boolean waitCompletion(int timeoutMilliSeconds) throws Exception;
-
    boolean isCommit();
 
    boolean isRollback();
@@ -45,11 +43,9 @@ public interface PageTransactionInfo extends EncodingSupport
    void storeUpdate(StorageManager storageManager, PagingManager pagingManager, Transaction tx, int depages) throws Exception;
 
    // To be used after the update was stored or reload
-   void update(int update, StorageManager storageManager, PagingManager pagingManager);
+   void onUpdate(int update, StorageManager storageManager, PagingManager pagingManager);
 
    void increment();
 
    int getNumberOfMessages();
-
-   void markIncomplete();
 }

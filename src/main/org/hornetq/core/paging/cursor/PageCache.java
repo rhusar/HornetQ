@@ -14,7 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.core.paging.Page;
-import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.paging.PagedMessage;
 
 /**
  * A PageCache
@@ -29,7 +29,7 @@ public interface PageCache
 
    int getNumberOfMessages();
    
-   void setMessages(ServerMessage[] messages);
+   void setMessages(PagedMessage[] messages);
    
    /**
     * If this cache is still being updated
@@ -42,7 +42,7 @@ public interface PageCache
     * @param messageNumber The order of the message on the page
     * @return
     */
-   ServerMessage getMessage(int messageNumber);
+   PagedMessage getMessage(int messageNumber);
 
    /**
     * When the cache is being created,
@@ -54,4 +54,7 @@ public interface PageCache
     * You have to call this method within the same thread you called lock
     */
    void unlock();
+   
+   void close();
+
 }

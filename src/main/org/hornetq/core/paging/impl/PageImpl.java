@@ -181,7 +181,7 @@ public class PageImpl implements Page, Comparable<Page>
       
       if (pageCache != null)
       {
-         pageCache.addLiveMessage(message.getMessage(storageManager));
+         pageCache.addLiveMessage(message);
       }
 
       numberOfMessages.incrementAndGet();

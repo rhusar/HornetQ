@@ -13,8 +13,6 @@
 
 package org.hornetq.core.paging.impl;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.api.core.HornetQBuffer;
@@ -43,11 +41,9 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
 
    private volatile long recordID = -1;
 
-   private volatile CountDownLatch countDownCompleted;
+   private volatile boolean committed = false;
 
-   private volatile boolean committed;
-
-   private volatile boolean rolledback;
+   private volatile boolean rolledback = false;
 
    private AtomicInteger numberOfMessages = new AtomicInteger(0);
 
@@ -59,7 +55,6 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    {
       this();
       this.transactionID = transactionID;
-      countDownCompleted = new CountDownLatch(1);
    }
 
    public PageTransactionInfoImpl()
@@ -83,7 +78,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       return transactionID;
    }
 
-   public void update(final int update, final StorageManager storageManager, PagingManager pagingManager)
+   public void onUpdate(final int update, final StorageManager storageManager, PagingManager pagingManager)
    {
       int sizeAfterUpdate = numberOfMessages.addAndGet(-update);
       if (sizeAfterUpdate == 0 && storageManager != null)
@@ -120,7 +115,6 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    {
       transactionID = buffer.readLong();
       numberOfMessages.set(buffer.readInt());
-      countDownCompleted = null;
       committed = true;
    }
 
@@ -135,25 +129,9 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       return DataConstants.SIZE_LONG + DataConstants.SIZE_INT;
    }
 
-   public void commit()
+   public synchronized void commit()
    {
       committed = true;
-      /** 
-       * this is to avoid a race condition where the transaction still being committed while another thread is depaging messages
-       */
-      countDownCompleted.countDown();
-   }
-
-   public boolean waitCompletion(final int timeoutMilliseconds) throws InterruptedException
-   {
-      if (countDownCompleted == null)
-      {
-         return true;
-      }
-      else
-      {
-         return countDownCompleted.await(timeoutMilliseconds, TimeUnit.MILLISECONDS);
-      }
    }
 
    public void store(final StorageManager storageManager, PagingManager pagingManager, final Transaction tx) throws Exception
@@ -194,7 +172,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
          
          public void afterCommit(Transaction tx)
          {
-            pgToUpdate.update(depages, storageManager, pagingManager);
+            pgToUpdate.onUpdate(depages, storageManager, pagingManager);
          }
       });
    }
@@ -209,19 +187,10 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       return rolledback;
    }
 
-   public void rollback()
+   public synchronized void rollback()
    {
       rolledback = true;
       committed = false;
-      countDownCompleted.countDown();
-   }
-
-   public void markIncomplete()
-   {
-      committed = false;
-      rolledback = false;
-
-      countDownCompleted = new CountDownLatch(1);
    }
 
    public String toString()

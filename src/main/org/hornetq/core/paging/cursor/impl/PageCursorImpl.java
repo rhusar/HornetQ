@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
@@ -109,14 +110,14 @@ public class PageCursorImpl implements PageCursor
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
-   public synchronized Pair<PagePosition, ServerMessage> moveNext() throws Exception
+   public synchronized Pair<PagePosition, PagedMessage> moveNext() throws Exception
    {
       PagePosition redeliveryPos = null;
 
       // Redeliveries will take precedence
       if ((redeliveryPos = redeliveries.poll()) != null)
       {
-         return new Pair<PagePosition, ServerMessage>(redeliveryPos, cursorProvider.getMessage(redeliveryPos));
+         return new Pair<PagePosition, PagedMessage>(redeliveryPos, cursorProvider.getMessage(redeliveryPos));
       }
 
       if (lastPosition == null)
@@ -128,17 +129,17 @@ public class PageCursorImpl implements PageCursor
 
       boolean match = false;
 
-      Pair<PagePosition, ServerMessage> message = null;
+      Pair<PagePosition, PagedMessage> message = null;
 
       do
       {
-         message = cursorProvider.getAfter(lastPosition);
+         message = cursorProvider.getAfter(this, lastPosition);
 
          if (message != null)
          {
             lastPosition = message.a;
 
-            match = match(message.b);
+            match = match(message.b.getMessage());
 
             if (!match)
             {
@@ -246,7 +247,7 @@ public class PageCursorImpl implements PageCursor
                   // looking for holes on the ack list for redelivery
                   while (true)
                   {
-                     Pair<PagePosition, ServerMessage> msgCheck = cursorProvider.getAfter(tmpPos);
+                     Pair<PagePosition, PagedMessage> msgCheck = cursorProvider.getAfter(this, tmpPos);
 
                      positions = getPageInfo(tmpPos);
 
@@ -258,7 +259,7 @@ public class PageCursorImpl implements PageCursor
                      }
                      else
                      {
-                        if (match(msgCheck.b))
+                        if (match(msgCheck.b.getMessage()))
                         {
                            redeliver(msgCheck.a);
                         }

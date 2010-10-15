@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
 
@@ -31,7 +32,7 @@ public interface PageCursor
    
    void stop();
    
-   Pair<PagePosition, ServerMessage> moveNext() throws Exception;
+   Pair<PagePosition, PagedMessage> moveNext() throws Exception;
 
    void ack(PagePosition position) throws Exception;
 

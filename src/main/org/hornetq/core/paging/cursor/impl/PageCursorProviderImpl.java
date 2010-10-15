@@ -106,7 +106,20 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public Pair<PagePosition, ServerMessage> getAfter(final PagePosition pos) throws Exception
+   public Pair<PagePosition, PagedMessage> getAfter(PageCursor cursor, final PagePosition pos) throws Exception
+   {
+
+      while(true)
+      {
+         Pair<PagePosition, PagedMessage> retPos = internalAfter(pos);
+         
+         
+         
+         return retPos;
+      }
+   }
+   
+   private Pair<PagePosition, PagedMessage> internalAfter(final PagePosition pos)
    {
       // TODO: consider page transactions here to avoid receiving an uncommitted message
       // TODO: consider the case where a full page is ignored because of a TX
@@ -131,11 +144,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
          }
       }
       
-      ServerMessage serverMessage = cache.getMessage(retPos.getMessageNr());
+      PagedMessage serverMessage = cache.getMessage(retPos.getMessageNr());
       
       if (serverMessage != null)
       {
-         return new Pair<PagePosition, ServerMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
+         return new Pair<PagePosition, PagedMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
       }
       else
       {
@@ -143,7 +156,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
    }
 
-   public ServerMessage getMessage(final PagePosition pos) throws Exception
+   public PagedMessage getMessage(final PagePosition pos) throws Exception
    {
       PageCache cache = getPageCache(pos);
 
@@ -257,16 +270,13 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
                List<PagedMessage> pgdMessages = page.read();
 
-               ServerMessage srvMessages[] = new ServerMessage[pgdMessages.size()];
-
                int i = 0;
                for (PagedMessage pdgMessage : pgdMessages)
                {
-                  ServerMessage message = pdgMessage.getMessage(storageManager);
-                  srvMessages[i++] = message;
+                  pdgMessage.initMessage(storageManager);
                }
 
-               cache.setMessages(srvMessages);
+               cache.setMessages(pgdMessages.toArray(new PagedMessage[pgdMessages.size()]));
 
             }
             finally

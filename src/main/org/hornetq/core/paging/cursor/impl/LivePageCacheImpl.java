@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.hornetq.core.paging.Page;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.LivePageCache;
 import org.hornetq.core.server.ServerMessage;
 
@@ -33,7 +34,7 @@ public class LivePageCacheImpl implements LivePageCache
 
    // Attributes ----------------------------------------------------
    
-   private final List<ServerMessage> messages = new LinkedList<ServerMessage>();
+   private final List<PagedMessage> messages = new LinkedList<PagedMessage>();
    
    private final Page page;
    
@@ -74,10 +75,10 @@ public class LivePageCacheImpl implements LivePageCache
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#setMessages(org.hornetq.core.server.ServerMessage[])
     */
-   public synchronized void setMessages(ServerMessage[] messages)
+   public synchronized void setMessages(PagedMessage[] messages)
    {
       // This method shouldn't be called on liveCache, but we will provide the implementation for it anyway
-      for (ServerMessage msg : messages)
+      for (PagedMessage msg : messages)
       {
          addLiveMessage(msg);
       }
@@ -86,7 +87,7 @@ public class LivePageCacheImpl implements LivePageCache
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#getMessage(int)
     */
-   public synchronized ServerMessage getMessage(int messageNumber)
+   public synchronized PagedMessage getMessage(int messageNumber)
    {
       if (messageNumber < messages.size())
       {
@@ -125,7 +126,7 @@ public class LivePageCacheImpl implements LivePageCache
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.LivePageCache#addLiveMessage(org.hornetq.core.server.ServerMessage)
     */
-   public synchronized void addLiveMessage(ServerMessage message)
+   public synchronized void addLiveMessage(PagedMessage message)
    {
       this.messages.add(message);
    }

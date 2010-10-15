@@ -28,7 +28,9 @@ import org.hornetq.core.server.ServerMessage;
  */
 public interface PagedMessage extends EncodingSupport
 {
-   ServerMessage getMessage(StorageManager storageManager);
+   ServerMessage getMessage();
+   
+   void initMessage(StorageManager storageManager);
 
    long getTransactionID();
 }

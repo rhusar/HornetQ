@@ -948,7 +948,7 @@ public class JournalStorageManager implements StorageManager
 
                   PageTransactionInfo pageTX = pagingManager.getTransaction(pageUpdate.pageTX);
 
-                  pageTX.update(pageUpdate.recods, null, null);
+                  pageTX.onUpdate(pageUpdate.recods, null, null);
                }
                else
                {
@@ -1533,8 +1533,6 @@ public class JournalStorageManager implements StorageManager
                   PageTransactionInfo pageTransactionInfo = new PageTransactionInfoImpl();
 
                   pageTransactionInfo.decode(buff);
-
-                  pageTransactionInfo.markIncomplete();
 
                   tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransactionInfo);
 

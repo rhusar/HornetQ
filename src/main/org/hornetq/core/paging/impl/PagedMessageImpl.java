@@ -67,7 +67,12 @@ public class PagedMessageImpl implements PagedMessage
    {
    }
 
-   public ServerMessage getMessage(final StorageManager storage)
+   public ServerMessage getMessage()
+   {
+      return message;
+   }
+   
+   public void initMessage(StorageManager storage)
    {
       if (largeMessageLazyData != null)
       {
@@ -76,7 +81,6 @@ public class PagedMessageImpl implements PagedMessage
          message.decodeHeadersAndProperties(buffer);
          largeMessageLazyData = null;
       }
-      return message;
    }
 
    public long getTransactionID()

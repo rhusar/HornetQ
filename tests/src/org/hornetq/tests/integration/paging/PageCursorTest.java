@@ -21,6 +21,7 @@ import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
@@ -110,12 +111,12 @@ public class PageCursorTest extends ServiceTestBase
       
       PageCursor cursor = cursorProvider.createCursor();
       
-      Pair<PagePosition, ServerMessage> msg;
+      Pair<PagePosition, PagedMessage> msg;
       
       int key = 0;
       while ((msg = cursor.moveNext()) != null)
       {
-         assertEquals(key++, msg.b.getIntProperty("key").intValue());
+         assertEquals(key++, msg.b.getMessage().getIntProperty("key").intValue());
          cursor.ack(msg.a);
       }
       assertEquals(NUM_MESSAGES, key);
@@ -169,9 +170,9 @@ public class PageCursorTest extends ServiceTestBase
 
       for (int i = 0 ; i < 1000 ; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
          assertNotNull(msg);
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          
          if (i < firstPageSize)
          {
@@ -193,9 +194,9 @@ public class PageCursorTest extends ServiceTestBase
       for (int i = firstPageSize; i < NUM_MESSAGES; i++)
       {
          System.out.println("Received " + i);
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
          assertNotNull(msg);
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          
          cursor.ack(msg.a);
          
@@ -226,8 +227,8 @@ public class PageCursorTest extends ServiceTestBase
       System.out.println("Cursor: " + cursor);
       for (int i = 0 ; i < 100 ; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          if (i < 10 || i > 20)
          {
             cursor.ack(msg.a);
@@ -242,16 +243,16 @@ public class PageCursorTest extends ServiceTestBase
       
       for (int i = 10; i <= 20; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          cursor.ack(msg.a);
       }
     
       
       for (int i = 100; i < NUM_MESSAGES; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          cursor.ack(msg.a);
       }
       
@@ -276,8 +277,8 @@ public class PageCursorTest extends ServiceTestBase
       Transaction tx = new TransactionImpl(server.getStorageManager(), 60 * 1000);
       for (int i = 0 ; i < 100 ; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          if (i < 10 || i > 20)
          {
             cursor.ackTx(tx, msg.a);
@@ -296,15 +297,15 @@ public class PageCursorTest extends ServiceTestBase
       
       for (int i = 10; i <= 20; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          cursor.ackTx(tx,msg.a);
       }
     
       for (int i = 100; i < NUM_MESSAGES; i++)
       {
-         Pair<PagePosition, ServerMessage> msg =  cursor.moveNext();
-         assertEquals(i, msg.b.getIntProperty("key").intValue());
+         Pair<PagePosition, PagedMessage> msg =  cursor.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
          cursor.ackTx(tx,msg.a);
       }
       
@@ -344,13 +345,13 @@ public class PageCursorTest extends ServiceTestBase
 
          Assert.assertTrue(pageStore.page(msg));
          
-         Pair<PagePosition, ServerMessage> readMessage = cursor.moveNext();
+         Pair<PagePosition, PagedMessage> readMessage = cursor.moveNext();
          
          assertNotNull(readMessage);
          
          cursor.ack(readMessage.a);
          
-         assertEquals(i, readMessage.b.getIntProperty("key").intValue());
+         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
          
          assertNull(cursor.moveNext());
       }

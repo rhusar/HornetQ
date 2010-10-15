@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.server.ServerMessage;
 
@@ -56,9 +57,9 @@ public interface PageCursorProvider
     */
    PageCursor createCursor();
 
-   Pair<PagePosition, ServerMessage> getAfter(PagePosition pos) throws Exception;
+   Pair<PagePosition, PagedMessage> getAfter(PageCursor cursor, PagePosition pos) throws Exception;
    
-   ServerMessage getMessage(PagePosition pos) throws Exception;
+   PagedMessage getMessage(PagePosition pos) throws Exception;
 
    void processReload() throws Exception;
 

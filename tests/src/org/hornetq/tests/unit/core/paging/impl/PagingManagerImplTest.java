@@ -98,7 +98,7 @@ public class PagingManagerImplTest extends UnitTestCase
       Assert.assertEquals(1, msgs.size());
 
       UnitTestCase.assertEqualsByteArrays(msg.getBodyBuffer().writerIndex(), msg.getBodyBuffer().toByteBuffer().array(), msgs.get(0)
-                                                                                          .getMessage(null)
+                                                                                          .getMessage()
                                                                                           .getBodyBuffer()
                                                                                           .toByteBuffer()
                                                                                           .array());

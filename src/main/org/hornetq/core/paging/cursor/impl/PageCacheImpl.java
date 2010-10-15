@@ -17,8 +17,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.hornetq.core.paging.Page;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.server.ServerMessage;
 
 /**
  * The caching associated to a single page.
@@ -29,28 +29,28 @@ import org.hornetq.core.server.ServerMessage;
  */
 public class PageCacheImpl implements PageCache
 {
-   
+
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-   
-   private ServerMessage[] messages;
-   
+
+   private PagedMessage[] messages;
+
    private final Page page;
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
-   
-   public PageCacheImpl(Page page)
+
+   public PageCacheImpl(final Page page)
    {
       this.page = page;
    }
 
    // Public --------------------------------------------------------
-   
+
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#getPage()
     */
@@ -62,7 +62,7 @@ public class PageCacheImpl implements PageCache
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#getMessage(int)
     */
-   public ServerMessage getMessage(int messageNumber)
+   public PagedMessage getMessage(final int messageNumber)
    {
       lock.readLock().lock();
       try
@@ -81,22 +81,22 @@ public class PageCacheImpl implements PageCache
          lock.readLock().unlock();
       }
    }
-   
+
    public void lock()
    {
       lock.writeLock().lock();
    }
-   
+
    public void unlock()
    {
       lock.writeLock().unlock();
    }
-   
-   public void setMessages(ServerMessage[] messages)
+
+   public void setMessages(final PagedMessage[] messages)
    {
       this.messages = messages;
    }
-   
+
    public int getNumberOfMessages()
    {
       lock.readLock().lock();
@@ -110,6 +110,10 @@ public class PageCacheImpl implements PageCache
       }
    }
 
+   public void close()
+   {
+   }
+
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#isLive()
     */
@@ -117,12 +121,12 @@ public class PageCacheImpl implements PageCache
    {
       return false;
    }
-   
+
+   @Override
    public String toString()
    {
       return "PageCacheImpl::page=" + page.getPageId() + " numberOfMessages = " + messages.length;
    }
-
 
    // Package protected ---------------------------------------------
 
