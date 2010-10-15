@@ -739,20 +739,25 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
 
          Set<ServerSession> sessions = server.getHornetQServer().getSessions();
-         Map<Object, String> clientIDs = new HashMap<Object, String>();
+         
+         Map<Object, ServerSession> initialSessions = new HashMap<Object, ServerSession>();
+
          for (ServerSession session : sessions)
          {
-            if (session.getMetaData("jms-initial-session") != null) {
-               clientIDs.put(session.getConnectionID(), session.getMetaData("jms-client-id"));
+            if (session.getMetaData("jms-initial-session") != null)
+            {
+               initialSessions.put(session.getConnectionID(), session);
             }
          }
+
          for (RemotingConnection connection : connections)
          {
             JSONObject obj = new JSONObject();
             obj.put("connectionID", connection.getID().toString());
             obj.put("clientAddress", connection.getRemoteAddress());
             obj.put("creationTime", connection.getCreationTime());
-            obj.put("clientID", clientIDs.get(connection.getID()));
+            obj.put("clientID", initialSessions.get(connection.getID()).getMetaData("jms-client-id"));
+            obj.put("principal", initialSessions.get(connection.getID()).getUsername());
             array.put(obj);
          }
          return array.toString();
