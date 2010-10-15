@@ -381,8 +381,8 @@ public class PageCursorTest extends ServiceTestBase
       
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       System.out.println("cursorProvider = " + cursorProvider);
-      
-      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+       
+      PageCursor cursor = pageStore.getCursorProvier().getCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
       
@@ -392,14 +392,20 @@ public class PageCursorTest extends ServiceTestBase
       PageTransactionInfoImpl pgtxForgotten = new PageTransactionInfoImpl(storage.generateUniqueID());
       PageTransactionInfoImpl pgtxCommit = new PageTransactionInfoImpl(storage.generateUniqueID());
       
+      System.out.println("Forgetting tx " + pgtxForgotten.getTransactionID());
+      
       this.server.getPagingManager().addTransaction(pgtxRollback);
       this.server.getPagingManager().addTransaction(pgtxCommit);
       
       pgMessages(storage, pageStore, pgtxRollback, 0, NUM_MESSAGES, messageSize);
+      pageStore.forceAnotherPage();
       pgMessages(storage, pageStore, pgtxForgotten, 100, NUM_MESSAGES, messageSize);
+      pageStore.forceAnotherPage();
       pgMessages(storage, pageStore, pgtxCommit, 200, NUM_MESSAGES, messageSize);
+      pageStore.forceAnotherPage();
       
       addMessages(300, NUM_MESSAGES, messageSize);
+      pageStore.forceAnotherPage();
 
 
       // First consume what's already there without any tx as nothing was committed
@@ -414,6 +420,7 @@ public class PageCursorTest extends ServiceTestBase
       assertNull(cursor.moveNext());
       
       pgtxRollback.rollback();
+      this.server.getPagingManager().removeTransaction(pgtxRollback.getTransactionID());
       pgtxCommit.commit();
       // Second:after pgtxCommit was done
       for (int i = 200; i < 300; i++)

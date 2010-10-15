@@ -207,6 +207,14 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    {
       rolledback = true;
       committed = false;
+
+      if (lateDeliveries != null)
+      {
+         for (Pair<PageCursor, PagePosition> pos : lateDeliveries)
+         {
+            pos.a.positionIgnored(pos.b);
+         }
+      }
    }
 
    public String toString()
