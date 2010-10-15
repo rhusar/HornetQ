@@ -78,12 +78,11 @@ import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SET_TIMEOUT
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SET_TIMEOUT_RESP;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_START;
 import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_XA_SUSPEND;
-import static org.hornetq.core.protocol.core.impl.PacketImpl.CONNECTION_SET_CLIENTID;
+import static org.hornetq.core.protocol.core.impl.PacketImpl.SESS_ADD_METADATA;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
-import org.hornetq.core.protocol.core.impl.wireformat.ConnectionSetClientIDMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateReplicationSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
@@ -109,6 +108,7 @@ import org.hornetq.core.protocol.core.impl.wireformat.ReplicationPrepareMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.ReplicationResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.RollbackMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionAcknowledgeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionAddMetaDataMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionBindingQueryMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionBindingQueryResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionCloseMessage;
@@ -488,9 +488,9 @@ public class PacketDecoder
             packet = new SessionForceConsumerDelivery();
             break;
          }
-         case CONNECTION_SET_CLIENTID:
+         case SESS_ADD_METADATA:
          {
-            packet = new ConnectionSetClientIDMessage();
+            packet = new SessionAddMetaDataMessage();
             break;
          }
          default:

@@ -136,6 +136,8 @@ public class ServerSessionImpl implements ServerSession , FailureListener
    private volatile SimpleString defaultAddress;
 
    private volatile int timeoutSeconds;
+   
+   private Map<String, String> metaData;
 
    // Constructors ---------------------------------------------------------------------------------
 
@@ -1183,9 +1185,23 @@ public class ServerSessionImpl implements ServerSession , FailureListener
       routingContext.clear();
    }
 
-   public void setConnectionClientID(String clientID)
+   public void addMetaData(String key, String data)
    {
-      this.server.getRemotingService().setConnectionClientID(this.getConnectionID(), clientID);
+      if (metaData == null)
+      {
+         metaData = new HashMap<String, String>();
+      }
+      metaData.put(key, data);
+   }
+
+   public String getMetaData(String key)
+   {
+      String data = null;
+      if (metaData != null)
+      {
+         data = metaData.get(key);
+      }
+      return data;
    }
 
 }

@@ -114,5 +114,7 @@ public interface ServerSession
 
    Set<ServerConsumer> getServerConsumers();
 
-   void setConnectionClientID(String clientID);
+   void addMetaData(String key, String data);
+
+   String getMetaData(String key);
 }

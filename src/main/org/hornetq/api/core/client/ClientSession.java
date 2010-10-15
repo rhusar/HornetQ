@@ -563,9 +563,8 @@ public interface ClientSession extends XAResource
    void setSendAcknowledgementHandler(SendAcknowledgementHandler handler);
 
    /**
-    * Sets ClientID of the associated JMS connection.
-    * @param clientID the client ID
+    * Attach any metadata to the session.
+    * @throws HornetQException 
     */
-   void setClientID(String clientID);
-
+   void addMetaData(String key, String data) throws HornetQException;
 }

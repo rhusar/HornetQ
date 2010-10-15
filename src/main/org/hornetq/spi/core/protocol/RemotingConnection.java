@@ -166,17 +166,4 @@ public interface RemotingConnection extends BufferHandler
     */
    void flush();
 
-   /**
-    * set the connections's clientID
-    * 
-    * @param clientID the clientID
-    */
-   void setClientID(String clientID);
-
-   /**
-    * get the client id
-    * @return the clientID
-    */
-   String getClientID();
-
 }

@@ -45,6 +45,4 @@ public interface RemotingService extends HornetQComponent
    void freeze();
 
    RemotingConnection getServerSideReplicatingConnection();
-
-   void setConnectionClientID(Object connID, String clientID);
 }

@@ -14,6 +14,7 @@
 package org.hornetq.jms.management.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -736,13 +737,22 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          JSONArray array = new JSONArray();
          
          Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
+
+         Set<ServerSession> sessions = server.getHornetQServer().getSessions();
+         Map<Object, String> clientIDs = new HashMap<Object, String>();
+         for (ServerSession session : sessions)
+         {
+            if (session.getMetaData("jms-initial-session") != null) {
+               clientIDs.put(session.getConnectionID(), session.getMetaData("jms-client-id"));
+            }
+         }
          for (RemotingConnection connection : connections)
          {
             JSONObject obj = new JSONObject();
             obj.put("connectionID", connection.getID().toString());
             obj.put("clientAddress", connection.getRemoteAddress());
             obj.put("creationTime", connection.getCreationTime());
-            obj.put("clientID", connection.getClientID());
+            obj.put("clientID", clientIDs.get(connection.getID()));
             array.put(obj);
          }
          return array.toString();

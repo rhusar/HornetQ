@@ -57,12 +57,12 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
-import org.hornetq.core.protocol.core.impl.wireformat.ConnectionSetClientIDMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateQueueMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.HornetQExceptionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.NullResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.RollbackMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionAcknowledgeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionAddMetaDataMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionBindingQueryMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionBindingQueryResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionConsumerCloseMessage;
@@ -461,10 +461,11 @@ public class ServerSessionPacketHandler implements ChannelHandler
                   session.requestProducerCredits(message.getAddress(), message.getCredits());
                   break;
                }
-               case PacketImpl.CONNECTION_SET_CLIENTID:
+               case PacketImpl.SESS_ADD_METADATA:
                {
-                  ConnectionSetClientIDMessage message = (ConnectionSetClientIDMessage)packet;
-                  session.setConnectionClientID(message.getClientID());
+                  SessionAddMetaDataMessage message = (SessionAddMetaDataMessage)packet;
+                  session.addMetaData(message.getKey(), message.getData());
+                  break;
                }
             }
          }

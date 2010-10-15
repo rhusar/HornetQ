@@ -181,7 +181,16 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
       }
 
       this.clientID = clientID;
-      initialSession.setClientID(clientID);
+      try
+      {
+         initialSession.addMetaData("jms-client-id", clientID);
+      }
+      catch (HornetQException e)
+      {
+         JMSException ex = new JMSException("Internal erro setting metadata jms-client-id");
+         ex.setLinkedException(e);
+         throw ex;
+      }
 
       justCreated = false;
    }
@@ -562,6 +571,9 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
       try
       {
          initialSession = sessionFactory.createSession(username, password, false, false, false, false, 0);
+         //mark it is a jms initial session
+         initialSession.addMetaData("jms-initial-session", "");
+         initialSession.addMetaData("jms-username", username);
 
          initialSession.addFailureListener(listener);
       }
