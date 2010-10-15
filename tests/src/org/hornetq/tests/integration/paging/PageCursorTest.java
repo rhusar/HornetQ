@@ -13,7 +13,9 @@
 
 package org.hornetq.tests.integration.paging;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import junit.framework.Assert;
 
@@ -21,6 +23,7 @@ import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
@@ -29,7 +32,9 @@ import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PageCursorImpl;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
+import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
+import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
@@ -237,6 +242,8 @@ public class PageCursorTest extends ServiceTestBase
       
       server.stop();
       
+      OperationContextImpl.clearContext();
+      
       server.start();
       
       cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
@@ -288,6 +295,8 @@ public class PageCursorTest extends ServiceTestBase
       tx.commit();
       
       server.stop();
+      
+      OperationContextImpl.clearContext();
       
       server.start();
       
@@ -359,17 +368,102 @@ public class PageCursorTest extends ServiceTestBase
    }
    
    
+   public void testPrepareScenarios() throws Exception
+   {
+      PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
+
+      pageStore.startPaging();
+
+      final int NUM_MESSAGES = 100;
+      
+      final int messageSize = 10 * 1024;
+      
+      
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+      
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      
+      System.out.println("Cursor: " + cursor);
+      
+      StorageManager storage = this.server.getStorageManager();
+      
+      PageTransactionInfoImpl pgtxRollback = new PageTransactionInfoImpl(storage.generateUniqueID());
+      PageTransactionInfoImpl pgtxForgotten = new PageTransactionInfoImpl(storage.generateUniqueID());
+      PageTransactionInfoImpl pgtxCommit = new PageTransactionInfoImpl(storage.generateUniqueID());
+      
+      this.server.getPagingManager().addTransaction(pgtxRollback);
+      this.server.getPagingManager().addTransaction(pgtxCommit);
+      
+      pgMessages(storage, pageStore, pgtxRollback, 0, NUM_MESSAGES, messageSize);
+      pgMessages(storage, pageStore, pgtxForgotten, 100, NUM_MESSAGES, messageSize);
+      pgMessages(storage, pageStore, pgtxCommit, 200, NUM_MESSAGES, messageSize);
+      
+      addMessages(300, NUM_MESSAGES, messageSize);
+
+
+      // First consume what's already there without any tx as nothing was committed
+      for (int i = 300; i < 400; i++)
+      {
+         Pair<PagePosition, PagedMessage> pos = cursor.moveNext();
+         assertNotNull("Null at position " + i, pos);
+         assertEquals(i, pos.b.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos.a);
+      }
+
+      assertNull(cursor.moveNext());
+      
+      pgtxRollback.rollback();
+      pgtxCommit.commit();
+      // Second:after pgtxCommit was done
+      for (int i = 200; i < 300; i++)
+      {
+         Pair<PagePosition, PagedMessage> pos = cursor.moveNext();
+         assertNotNull(pos);
+         assertEquals(i, pos.b.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos.a);
+      }
+      
+      
+   }
+
+
+   /**
+    * @param storage
+    * @param pageStore
+    * @param pgParameter
+    * @param start
+    * @param NUM_MESSAGES
+    * @param messageSize
+    * @throws Exception
+    */
+   private void pgMessages(StorageManager storage,
+                           PagingStoreImpl pageStore,
+                           PageTransactionInfo pgParameter,
+                           int start,
+                           final int NUM_MESSAGES,
+                           final int messageSize) throws Exception
+   {
+      List<ServerMessage> messages = new ArrayList<ServerMessage>();
+      
+      for (int i = start ; i < start + NUM_MESSAGES; i++)
+      {
+         HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+         ServerMessage msg = new ServerMessageImpl(storage.generateUniqueID(), buffer.writerIndex());
+         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+         msg.putIntProperty("key", i);
+         messages.add(msg);
+      }
+      
+      pageStore.page(messages, pgParameter.getTransactionID());
+   }
+   
    public void testRollbackScenariosOnACK() throws Exception
    {
       
    }
    
    public void testReadRolledBackData() throws Exception
-   {
-      
-   }
-   
-   public void testPrepareScenarios() throws Exception
    {
       
    }
@@ -398,19 +492,24 @@ public class PageCursorTest extends ServiceTestBase
    {
       
    }
+   
+   private int addMessages(final int numMessages, final int messageSize) throws Exception
+   {
+      return addMessages(0, numMessages, messageSize);
+   }
 
    /**
     * @param numMessages
     * @param pageStore
     * @throws Exception
     */
-   private int addMessages(final int numMessages, final int messageSize) throws Exception
+   private int addMessages(final int start, final int numMessages, final int messageSize) throws Exception
    {
       PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
 
       pageStore.startPaging();
 
-      for (int i = 0; i < numMessages; i++)
+      for (int i = start; i < start + numMessages; i++)
       {
          if (i % 100 == 0) System.out.println("Paged " + i);
          HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
@@ -464,7 +563,6 @@ public class PageCursorTest extends ServiceTestBase
 
    protected void tearDown() throws Exception
    {
-      OperationContextImpl.clearContext();
       server.stop();
       super.tearDown();
    }

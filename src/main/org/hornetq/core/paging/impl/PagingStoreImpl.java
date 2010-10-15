@@ -377,6 +377,10 @@ public class PagingStoreImpl implements TestSupportPageStore
       cursorProvider.processReload();
    }
 
+   public PagingManager getPagingManager()
+   {
+      return pagingManager;
+   }
 
    // HornetQComponent implementation
 

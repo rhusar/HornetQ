@@ -13,12 +13,17 @@
 
 package org.hornetq.core.paging.impl;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.Pair;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.TransactionOperation;
@@ -46,6 +51,8 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    private volatile boolean rolledback = false;
 
    private AtomicInteger numberOfMessages = new AtomicInteger(0);
+   
+   private List<Pair<PageCursor, PagePosition>> lateDeliveries;
 
    // Static --------------------------------------------------------
 
@@ -132,6 +139,15 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    public synchronized void commit()
    {
       committed = true;
+      if (lateDeliveries != null)
+      {
+         for (Pair<PageCursor, PagePosition> pos : lateDeliveries)
+         {
+            pos.a.redeliver(pos.b);
+         }
+      }
+      lateDeliveries.clear();
+      lateDeliveries = null;
    }
 
    public void store(final StorageManager storageManager, PagingManager pagingManager, final Transaction tx) throws Exception
@@ -201,6 +217,32 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
              ",numberOfMessages=" +
              numberOfMessages +
              ")";
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.PageTransactionInfo#deliverAfterCommit(org.hornetq.core.paging.cursor.PageCursor, org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public synchronized boolean deliverAfterCommit(PageCursor cursor, PagePosition cursorPos)
+   {
+      if (committed)
+      {
+         return false;
+      }
+      else
+      if (rolledback)
+      {
+         cursor.positionIgnored(cursorPos);
+         return true;
+      }
+      else
+      {
+         if (lateDeliveries == null)
+         {
+            lateDeliveries = new LinkedList<Pair<PageCursor, PagePosition>>();
+         }
+         lateDeliveries.add(new Pair<PageCursor, PagePosition>(cursor, cursorPos));
+         return true;
+      }
    }
 
    // Package protected ---------------------------------------------

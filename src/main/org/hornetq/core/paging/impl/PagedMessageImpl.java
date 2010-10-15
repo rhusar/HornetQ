@@ -50,7 +50,7 @@ public class PagedMessageImpl implements PagedMessage
 
    private ServerMessage message;
 
-   private long transactionID = -1;
+   private long transactionID = 0;
 
    public PagedMessageImpl(final ServerMessage message, final long transactionID)
    {

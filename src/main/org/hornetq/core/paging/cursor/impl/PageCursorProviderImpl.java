@@ -17,15 +17,17 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.Page;
+import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.SoftValueHashMap;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
@@ -44,9 +46,13 @@ public class PageCursorProviderImpl implements PageCursorProvider
 {
    // Constants -----------------------------------------------------
 
+   private static final Logger log = Logger.getLogger(PageCursorProviderImpl.class);
+
    // Attributes ----------------------------------------------------
 
    private final PagingStore pagingStore;
+   
+   private final PagingManager pagingManager;
 
    private final StorageManager storageManager;
 
@@ -65,6 +71,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
                                  final ExecutorFactory executorFactory)
    {
       this.pagingStore = pagingStore;
+      this.pagingManager = pagingStore.getPagingManager();
       this.storageManager = storageManager;
       this.executorFactory = executorFactory;
    }
@@ -106,23 +113,47 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public Pair<PagePosition, PagedMessage> getAfter(PageCursor cursor, final PagePosition pos) throws Exception
+   public Pair<PagePosition, PagedMessage> getNext(final PageCursor cursor, PagePosition cursorPos) throws Exception
    {
 
       while(true)
       {
-         Pair<PagePosition, PagedMessage> retPos = internalAfter(pos);
+         Pair<PagePosition, PagedMessage> retPos = internalAfter(cursorPos);
          
-         
-         
-         return retPos;
+         if (retPos == null)
+         {
+            return null;
+         }
+         else
+         if (retPos != null)
+         {
+            cursorPos = retPos.a;
+            if (retPos.b.getTransactionID() != 0)
+            {
+               PageTransactionInfo tx = pagingManager.getTransaction(retPos.b.getTransactionID());
+               if (tx == null)
+               {
+                  log.warn("Couldn't locate page transaction " + retPos.b.getTransactionID() + ", ignoring message on position " + retPos.a);
+                  cursor.positionIgnored(cursorPos);
+               }
+               else
+               {
+                  if (!tx.deliverAfterCommit(cursor, cursorPos))
+                  {
+                     return retPos;
+                  }
+               }
+            }
+            else
+            {
+               return retPos;
+            }
+         }
       }
    }
    
    private Pair<PagePosition, PagedMessage> internalAfter(final PagePosition pos)
    {
-      // TODO: consider page transactions here to avoid receiving an uncommitted message
-      // TODO: consider the case where a full page is ignored because of a TX
       PagePosition retPos = pos.nextMessage();
 
       PageCache cache = getPageCache(pos);

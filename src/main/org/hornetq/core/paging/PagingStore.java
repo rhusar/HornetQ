@@ -65,6 +65,8 @@ public interface PagingStore extends HornetQComponent
 
    Page createPage(final int page) throws Exception;
    
+   PagingManager getPagingManager();
+   
    PageCursorProvider getCursorProvier();
    
    void processReload() throws Exception;

@@ -133,7 +133,7 @@ public class PageCursorImpl implements PageCursor
 
       do
       {
-         message = cursorProvider.getAfter(this, lastPosition);
+         message = cursorProvider.getNext(this, lastPosition);
 
          if (message != null)
          {
@@ -217,10 +217,19 @@ public class PageCursorImpl implements PageCursor
     */
    public void reloadPreparedACK(final Transaction tx, final PagePosition position)
    {
-      // internalAdd(position);
       installTXCallback(tx, position);
    }
 
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#positionIgnored(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public void positionIgnored(PagePosition position)
+   {
+      processACK(position);
+   }
+
+   
    public void processReload() throws Exception
    {
       if (recoveredACK != null)
@@ -247,7 +256,7 @@ public class PageCursorImpl implements PageCursor
                   // looking for holes on the ack list for redelivery
                   while (true)
                   {
-                     Pair<PagePosition, PagedMessage> msgCheck = cursorProvider.getAfter(this, tmpPos);
+                     Pair<PagePosition, PagedMessage> msgCheck = cursorProvider.getNext(this, tmpPos);
 
                      positions = getPageInfo(tmpPos);
 
