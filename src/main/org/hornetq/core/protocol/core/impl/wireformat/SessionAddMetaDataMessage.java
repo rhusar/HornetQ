@@ -19,7 +19,7 @@ import org.hornetq.core.protocol.core.impl.PacketImpl;
 /**
  * A SessionAddMetaDataMessage
  *
- * @author howard
+ * @author <a href="mailto:hgao@redhat.com>Howard Gao</a>
  *
  *
  */
@@ -52,6 +52,12 @@ public class SessionAddMetaDataMessage extends PacketImpl
    {
       key = buffer.readString();
       data = buffer.readString();
+   }
+
+   @Override
+   public final boolean isRequiresConfirmations()
+   {
+      return false;
    }
 
    public String getKey()

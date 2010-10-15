@@ -573,7 +573,10 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
          initialSession = sessionFactory.createSession(username, password, false, false, false, false, 0);
          //mark it is a jms initial session
          initialSession.addMetaData("jms-initial-session", "");
-         initialSession.addMetaData("jms-username", username);
+         if (clientID != null)
+         {
+            initialSession.addMetaData("jms-client-id", clientID);
+         }
 
          initialSession.addFailureListener(listener);
       }

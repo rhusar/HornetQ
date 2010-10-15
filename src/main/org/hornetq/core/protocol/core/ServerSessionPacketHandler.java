@@ -463,6 +463,7 @@ public class ServerSessionPacketHandler implements ChannelHandler
                }
                case PacketImpl.SESS_ADD_METADATA:
                {
+                  response = new NullResponseMessage();
                   SessionAddMetaDataMessage message = (SessionAddMetaDataMessage)packet;
                   session.addMetaData(message.getKey(), message.getData());
                   break;
