@@ -1028,7 +1028,7 @@ public class JournalStorageManager implements StorageManager
                {
                   SimpleString address = queueInfo.getAddress();
                   PagingStore store = pagingManager.getPageStore(address);
-                  PageCursor cursor = store.getCursorProvier().getCursor(encoding.queueID);
+                  PageCursor cursor = store.getCursorProvier().getPersistentCursor(encoding.queueID);
                   cursor.reloadACK(encoding.position);
                }
                else

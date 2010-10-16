@@ -189,6 +189,24 @@ public class PageCursorImpl implements PageCursor
       installTXCallback(tx, position);
 
    }
+   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#getFirstPage()
+    */
+   public long getFirstPage()
+   {
+      Long firstKey = consumedPages.firstKey();
+      if (firstKey == null)
+      {
+         return Long.MAX_VALUE;
+      }
+      else
+      {
+         return consumedPages.firstKey();
+      }
+   }
+
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
@@ -348,6 +366,11 @@ public class PageCursorImpl implements PageCursor
    {
       if (lastAckedPosition == null || pos.compareTo(lastAckedPosition) > 0)
       {
+         if (lastAckedPosition != null && lastAckedPosition.getPageNr() != pos.getPageNr())
+         {
+            // there's a different page being acked, we will do the check right away
+            scheduleCleanupCheck();
+         }
          this.lastAckedPosition = pos;
       }
       PageCursorInfo info = getPageInfo(pos);
@@ -385,6 +408,11 @@ public class PageCursorImpl implements PageCursor
     * @param info
     */
    private void onPageDone(final PageCursorInfo info)
+   {
+      scheduleCleanupCheck();
+   }
+
+   private void scheduleCleanupCheck()
    {
       executor.execute(new Runnable()
       {
@@ -458,18 +486,27 @@ public class PageCursorImpl implements PageCursor
          @Override
          public void afterCommit(final Transaction tx)
          {
-            synchronized (PageCursorImpl.this)
+            executor.execute(new Runnable()
             {
-               for (PageCursorInfo completePage : completedPages)
+               
+               public void run()
                {
-                  if (isTrace)
+                  synchronized (PageCursorImpl.this)
                   {
-                     PageCursorImpl.trace("Removing page " + completePage.getPageId());
+                     for (PageCursorInfo completePage : completedPages)
+                     {
+                        if (isTrace)
+                        {
+                           PageCursorImpl.trace("Removing page " + completePage.getPageId());
+                        }
+                        System.out.println("Removing page " + completePage.getPageId());
+                        consumedPages.remove(completePage.getPageId());
+                     }
                   }
-                  System.out.println("Removing page " + completePage.getPageId());
-                  consumedPages.remove(completePage.getPageId());
+                  
+                  cursorProvider.scheduleCleanup();
                }
-            }
+            });
          }
       });
 

@@ -15,7 +15,6 @@ package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagedMessage;
-import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
 
 /**
@@ -37,6 +36,11 @@ public interface PageCursor
    void ack(PagePosition position) throws Exception;
 
    void ackTx(Transaction tx, PagePosition position) throws Exception;
+   /**
+    * 
+    * @return the first page in use or MAX_LONG if none is in use
+    */
+   long getFirstPage();
    
    // Reload operations
    

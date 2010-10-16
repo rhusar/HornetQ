@@ -16,7 +16,6 @@ package org.hornetq.core.paging.cursor;
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
-import org.hornetq.core.server.ServerMessage;
 
 /**
  * The provider of Cursor for a given Address
@@ -49,13 +48,13 @@ public interface PageCursorProvider
     * @param queueId The cursorID should be the same as the queueId associated for persistance
     * @return
     */
-   PageCursor getCursor(long queueId);
+   PageCursor getPersistentCursor(long queueId);
    
    /**
     * Create a non persistent cursor, usually associated with browsing
     * @return
     */
-   PageCursor createCursor();
+   PageCursor createNonPersistentCursor();
 
    Pair<PagePosition, PagedMessage> getNext(PageCursor cursor, PagePosition pos) throws Exception;
    
@@ -64,6 +63,8 @@ public interface PageCursorProvider
    void processReload() throws Exception;
 
    void stop();
+
+   void scheduleCleanup();
 
    // Package protected ---------------------------------------------
 

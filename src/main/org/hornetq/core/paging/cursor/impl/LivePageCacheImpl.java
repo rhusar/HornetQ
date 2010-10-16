@@ -63,6 +63,11 @@ public class LivePageCacheImpl implements LivePageCache
    {
       return page;
    }
+   
+   public long getPageId()
+   {
+      return page.getPageId();
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCache#getNumberOfMessages()

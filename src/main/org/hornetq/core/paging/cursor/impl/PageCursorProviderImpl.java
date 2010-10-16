@@ -13,8 +13,10 @@
 
 package org.hornetq.core.paging.cursor.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.logging.Logger;
@@ -28,6 +30,8 @@ import org.hornetq.core.paging.cursor.PageCursor;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.utils.ConcurrentHashSet;
+import org.hornetq.utils.ConcurrentSet;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.SoftValueHashMap;
 import org.jboss.netty.util.internal.ConcurrentHashMap;
@@ -51,16 +55,20 @@ public class PageCursorProviderImpl implements PageCursorProvider
    // Attributes ----------------------------------------------------
 
    private final PagingStore pagingStore;
-   
+
    private final PagingManager pagingManager;
 
    private final StorageManager storageManager;
 
    private final ExecutorFactory executorFactory;
 
+   private final Executor executor;
+
    private SoftValueHashMap<Long, PageCache> softCache = new SoftValueHashMap<Long, PageCache>();
 
    private ConcurrentMap<Long, PageCursor> activeCursors = new ConcurrentHashMap<Long, PageCursor>();
+   
+   private ConcurrentSet<PageCursor> nonPersistentCursors = new ConcurrentHashSet<PageCursor>();
 
    // Static --------------------------------------------------------
 
@@ -74,6 +82,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       this.pagingManager = pagingStore.getPagingManager();
       this.storageManager = storageManager;
       this.executorFactory = executorFactory;
+      this.executor = executorFactory.getExecutor();
    }
 
    // Public --------------------------------------------------------
@@ -86,7 +95,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
-   public PageCursor getCursor(long cursorID)
+   public PageCursor getPersistentCursor(long cursorID)
    {
       PageCursor activeCursor = activeCursors.get(cursorID);
       if (activeCursor == null)
@@ -105,9 +114,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /**
     * this will create a non-persistent cursor
     */
-   public PageCursor createCursor()
+   public PageCursor createNonPersistentCursor()
    {
-      return new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), 0);
+      PageCursor cursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), 0);
+      nonPersistentCursors.add(cursor);
+      return cursor;
    }
 
    /* (non-Javadoc)
@@ -116,16 +127,15 @@ public class PageCursorProviderImpl implements PageCursorProvider
    public Pair<PagePosition, PagedMessage> getNext(final PageCursor cursor, PagePosition cursorPos) throws Exception
    {
 
-      while(true)
+      while (true)
       {
          Pair<PagePosition, PagedMessage> retPos = internalAfter(cursorPos);
-         
+
          if (retPos == null)
          {
             return null;
          }
-         else
-         if (retPos != null)
+         else if (retPos != null)
          {
             cursorPos = retPos.a;
             if (retPos.b.getTransactionID() != 0)
@@ -133,7 +143,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
                PageTransactionInfo tx = pagingManager.getTransaction(retPos.b.getTransactionID());
                if (tx == null)
                {
-                  log.warn("Couldn't locate page transaction " + retPos.b.getTransactionID() + ", ignoring message on position " + retPos.a);
+                  log.warn("Couldn't locate page transaction " + retPos.b.getTransactionID() +
+                           ", ignoring message on position " +
+                           retPos.a);
                   cursor.positionIgnored(cursorPos);
                }
                else
@@ -151,7 +163,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
          }
       }
    }
-   
+
    private Pair<PagePosition, PagedMessage> internalAfter(final PagePosition pos)
    {
       PagePosition retPos = pos.nextMessage();
@@ -174,9 +186,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
             return null;
          }
       }
-      
+
       PagedMessage serverMessage = cache.getMessage(retPos.getMessageNr());
-      
+
       if (serverMessage != null)
       {
          return new Pair<PagePosition, PagedMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
@@ -213,11 +225,10 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
       return cache;
    }
-   
+
    public synchronized void addPageCache(PageCache cache)
    {
-      // TODO: remove the type cast here
-      softCache.put((long)cache.getPage().getPageId(), cache);
+      softCache.put(cache.getPageId(), cache);
    }
 
    public synchronized int getCacheSize()
@@ -233,20 +244,53 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
    }
 
-
    public void stop()
    {
       for (PageCursor cursor : activeCursors.values())
       {
          cursor.stop();
       }
-      
+
       activeCursors.clear();
    }
-   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursorProvider#scheduleCleanup()
+    */
+   public void scheduleCleanup()
+   {
+      executor.execute(new Runnable()
+      {
+         public void run()
+         {
+            cleanup();
+         }
+      });
+   }
+
+   private void cleanup()
+   {
+      long minPage = getMinPageInUse();
+
+      try
+      {
+         System.out.println("MinPage = " + minPage + " firstPage = "  + pagingStore.getFirstPage());
+         for (long i = pagingStore.getFirstPage(); i < minPage; i++)
+         {
+            Page page = pagingStore.depage();
+            System.out.println("Deleting files associated with page " + page);
+            page.delete();
+         }
+      }
+      catch (Exception e)
+      {
+         log.warn("Couldn't complete cleanup on paging", e);
+      }
+   }
+
    public void printDebug()
    {
-      for (PageCache cache: softCache.values())
+      for (PageCache cache : softCache.values())
       {
          System.out.println("Cache " + cache);
       }
@@ -263,6 +307,37 @@ public class PageCursorProviderImpl implements PageCursorProvider
    }
 
    // Private -------------------------------------------------------
+
+   private long getMinPageInUse()
+   {
+      ArrayList<PageCursor> cursorList = new ArrayList<PageCursor>();
+      synchronized (this)
+      {
+         cursorList.addAll(activeCursors.values());
+         cursorList.addAll(nonPersistentCursors);
+      }
+      
+      if (cursorList.size() == 0)
+      {
+         return 0l;
+      }
+
+      long minPage = Long.MAX_VALUE;
+      
+      System.out.println("CursorList : " + cursorList.size());
+
+      for (PageCursor cursor : cursorList)
+      {
+         long firstPage = cursor.getFirstPage();
+         if (firstPage < minPage)
+         {
+            minPage = firstPage;
+         }
+      }
+
+      return minPage;
+
+   }
 
    private PageCache getPageCache(final long pageId)
    {

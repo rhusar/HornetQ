@@ -26,6 +26,8 @@ import org.hornetq.core.paging.PagedMessage;
 public interface PageCache
 {
    Page getPage();
+   
+   long getPageId();
 
    int getNumberOfMessages();
    

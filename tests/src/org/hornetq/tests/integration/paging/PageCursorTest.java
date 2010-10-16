@@ -106,7 +106,7 @@ public class PageCursorTest extends ServiceTestBase
    public void testSimpleCursor() throws Exception
    {
 
-      final int NUM_MESSAGES = 1000;
+      final int NUM_MESSAGES = 100;
 
       int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
 
@@ -114,7 +114,7 @@ public class PageCursorTest extends ServiceTestBase
 
       PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
       
-      PageCursor cursor = cursorProvider.createCursor();
+      PageCursor cursor = cursorProvider.createNonPersistentCursor();
       
       Pair<PagePosition, PagedMessage> msg;
       
@@ -162,7 +162,7 @@ public class PageCursorTest extends ServiceTestBase
       PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       
       
-      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
  
       PageCache firstPage = cursorProvider.getPageCache(new PagePositionImpl(server.getPagingManager().getPageStore(ADDRESS).getFirstPage(), 0));
 
@@ -194,7 +194,7 @@ public class PageCursorTest extends ServiceTestBase
       
       server.start();
       
-      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
       
       for (int i = firstPageSize; i < NUM_MESSAGES; i++)
       {
@@ -227,7 +227,7 @@ public class PageCursorTest extends ServiceTestBase
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       System.out.println("cursorProvider = " + cursorProvider);
       
-      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
       for (int i = 0 ; i < 100 ; i++)
@@ -246,7 +246,7 @@ public class PageCursorTest extends ServiceTestBase
       
       server.start();
       
-      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
       
       for (int i = 10; i <= 20; i++)
       {
@@ -277,7 +277,7 @@ public class PageCursorTest extends ServiceTestBase
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       System.out.println("cursorProvider = " + cursorProvider);
       
-      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
       
@@ -300,7 +300,7 @@ public class PageCursorTest extends ServiceTestBase
       
       server.start();
       
-      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
 
       tx = new TransactionImpl(server.getStorageManager(), 60 * 1000);
       
@@ -336,7 +336,7 @@ public class PageCursorTest extends ServiceTestBase
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       System.out.println("cursorProvider = " + cursorProvider);
       
-      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getCursor(queue.getID());
+      PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
 
@@ -382,7 +382,7 @@ public class PageCursorTest extends ServiceTestBase
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
       System.out.println("cursorProvider = " + cursorProvider);
        
-      PageCursor cursor = pageStore.getCursorProvier().getCursor(queue.getID());
+      PageCursor cursor = pageStore.getCursorProvier().getPersistentCursor(queue.getID());
       
       System.out.println("Cursor: " + cursor);
       
@@ -463,21 +463,6 @@ public class PageCursorTest extends ServiceTestBase
       }
       
       pageStore.page(messages, pgParameter.getTransactionID());
-   }
-   
-   public void testRollbackScenariosOnACK() throws Exception
-   {
-      
-   }
-   
-   public void testReadRolledBackData() throws Exception
-   {
-      
-   }
-   
-   public void testRedeliveryScenarios() throws Exception
-   {
-      
    }
    
    public void testCleanupScenarios() throws Exception
