@@ -56,6 +56,7 @@ import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.ExecutorFactory;
+import org.hornetq.utils.Future;
 
 /**
  * 
@@ -210,6 +211,11 @@ public class PagingStoreImpl implements TestSupportPageStore
    }
 
    // Public --------------------------------------------------------
+   
+   public String toString()
+   {
+      return "PagingStoreImpl(" + this.address + ")";
+   }
 
    // PagingStore implementation ------------------------------------
    
@@ -393,30 +399,26 @@ public class PagingStoreImpl implements TestSupportPageStore
    {
       if (running)
       {
+         
+         cursorProvider.stop();
+
          running = false;
 
-         final CountDownLatch latch = new CountDownLatch(1);
+         Future future = new Future();
 
-         executor.execute(new Runnable()
-         {
-            public void run()
-            {
-               latch.countDown();
-            }
-         });
+         executor.execute(future);
 
-         if (!latch.await(60, TimeUnit.SECONDS))
+         if (!future.await(60000))
          {
             PagingStoreImpl.log.warn("Timed out on waiting PagingStore " + address + " to shutdown");
          }
+         
 
          if (currentPage != null)
          {
             currentPage.close();
             currentPage = null;
          }
-         
-         cursorProvider.stop();
       }
    }
 

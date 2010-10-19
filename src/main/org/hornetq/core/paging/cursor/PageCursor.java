@@ -29,7 +29,14 @@ public interface PageCursor
 
    // Cursor query operations --------------------------------------
    
+   // To be called before the server is down
    void stop();
+   
+   /** It will be 0 if non persistent cursor */
+   public long getId();
+   
+   // To be called when the cursor is closed for good. Most likely when the queue is deleted
+   void close() throws Exception;
    
    Pair<PagePosition, PagedMessage> moveNext() throws Exception;
 

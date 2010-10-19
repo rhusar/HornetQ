@@ -470,6 +470,51 @@ public class PageCursorTest extends ServiceTestBase
       // Validate the pages are being cleared (with multiple cursors)
    }
    
+   
+   public void testCloseNonPersistentConsumer() throws Exception
+   {
+
+      final int NUM_MESSAGES = 100;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
+
+      PageCursorProvider cursorProvider = lookupPageStore(ADDRESS).getCursorProvier();
+      
+      PageCursor cursor = cursorProvider.createNonPersistentCursor();
+      PageCursorImpl cursor2 = (PageCursorImpl)cursorProvider.createNonPersistentCursor();
+      
+      Pair<PagePosition, PagedMessage> msg;
+      
+      int key = 0;
+      while ((msg = cursor.moveNext()) != null)
+      {
+         assertEquals(key++, msg.b.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msg.a);
+      }
+      assertEquals(NUM_MESSAGES, key);
+      
+      
+      forceGC();
+      
+      assertTrue(cursorProvider.getCacheSize() < numberOfPages);
+      
+      for (int i = 0 ; i < 10; i++)
+      {
+         msg = cursor2.moveNext();
+         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+      }
+        
+      assertSame(cursor2.getProvider(), cursorProvider);
+
+      cursor2.close();
+      
+      server.stop();
+
+   }
+  
+   
    public void testLeavePageStateAndRestart() throws Exception
    {
       // Validate the cursor are working fine when all the pages are gone, and then paging being restarted   

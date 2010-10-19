@@ -24,6 +24,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.api.core.Pair;
@@ -107,6 +108,11 @@ public class PageCursorImpl implements PageCursor
 
    // Public --------------------------------------------------------
 
+   public PageCursorProvider getProvider()
+   {
+      return this.cursorProvider;
+   }
+   
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
@@ -196,10 +202,9 @@ public class PageCursorImpl implements PageCursor
     */
    public long getFirstPage()
    {
-      Long firstKey = consumedPages.firstKey();
-      if (firstKey == null)
+      if (consumedPages.isEmpty())
       {
-         return Long.MAX_VALUE;
+         return 0;
       }
       else
       {
@@ -221,7 +226,6 @@ public class PageCursorImpl implements PageCursor
     */
    public void reloadACK(final PagePosition position)
    {
-      System.out.println("reloading " + position);
       if (recoveredACK == null)
       {
          recoveredACK = new LinkedList<PagePosition>();
@@ -246,6 +250,93 @@ public class PageCursorImpl implements PageCursor
    {
       processACK(position);
    }
+   
+   
+   /**
+    * All the data associated with the cursor should go away here
+    */
+   public void close()  throws Exception
+   {
+      final long tx = store.generateUniqueID();
+      
+      final ArrayList<Exception> ex = new ArrayList<Exception>();
+      
+      final AtomicBoolean isPersistent = new AtomicBoolean(false);
+      
+
+      // We can't delete the records at the caller's thread
+      // because an executor may be holding the synchronized on PageCursorImpl
+      // what would lead to a dead lock
+      // so, we delete it inside the executor also
+      // and wait for the result
+      // The caller will be treating eventual IO exceptions and dispatching to the original thread's caller
+      executor.execute(new Runnable()
+      {
+
+         public void run()
+         {
+            try
+            {
+               synchronized (PageCursorImpl.this)
+               {
+                  for (PageCursorInfo cursor : consumedPages.values())
+                  {
+                     for (PagePosition info : cursor.acks)
+                     {
+                        if (info.getRecordID() != 0)
+                        {
+                           isPersistent.set(true);
+                           store.deleteCursorAcknowledgeTransactional(tx, info.getRecordID());
+                        }
+                     }
+                  }
+               }
+            }
+            catch (Exception e)
+            {
+               ex.add(e);
+               log.warn(e.getMessage(), e);
+            }
+         }
+      });
+       
+      Future future = new Future();
+      
+      executor.execute(future);
+      
+      while (!future.await(5000))
+      {
+         log.warn("Timeout on waiting cursor " + this + " to be closed");
+      }
+      
+      
+      if (isPersistent.get())
+      {
+         // Another reason to perform the commit at the main thread is because the OperationContext may only send the result to the client when
+         // the IO on commit is done
+         if (ex.size() == 0)
+         {
+            store.commit(tx);
+         }
+         else
+         {
+            store.rollback(tx);
+            throw ex.get(0);
+         }
+      }
+      
+      cursorProvider.close(this);
+   }
+   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#getId()
+    */
+   public long getId()
+   {
+      return cursorId;
+   }
+
 
    
    public void processReload() throws Exception
@@ -317,7 +408,10 @@ public class PageCursorImpl implements PageCursor
    {
       Future future = new Future();
       executor.execute(future);
-      future.await(1000);
+      while (!future.await(1000))
+      {
+         log.warn("Waiting page cursor to finish executors - " + this);
+      }
    }
 
    public void printDebug()
@@ -340,7 +434,6 @@ public class PageCursorImpl implements PageCursor
       if (pageInfo == null)
       {
          PageCache cache = cursorProvider.getPageCache(pos);
-         System.out.println("Number of Messages = " + cache.getNumberOfMessages());
          pageInfo = new PageCursorInfo(pos.getPageNr(), cache.getNumberOfMessages(), cache);
          consumedPages.put(pos.getPageNr(), pageInfo);
       }
@@ -451,7 +544,7 @@ public class PageCursorImpl implements PageCursor
             {
                if (entry.getKey() == lastAckedPosition.getPageNr())
                {
-                  System.out.println("We can't clear page " + entry.getKey() + " now since it's the current page");
+                  trace("We can't clear page " + entry.getKey() + " now since it's the current page");
                }
                else
                {
@@ -499,7 +592,7 @@ public class PageCursorImpl implements PageCursor
                         {
                            PageCursorImpl.trace("Removing page " + completePage.getPageId());
                         }
-                        System.out.println("Removing page " + completePage.getPageId());
+                        trace("Removing page " + completePage.getPageId());
                         consumedPages.remove(completePage.getPageId());
                      }
                   }

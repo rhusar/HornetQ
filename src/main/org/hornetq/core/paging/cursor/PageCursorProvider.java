@@ -66,6 +66,15 @@ public interface PageCursorProvider
 
    void scheduleCleanup();
 
+   /**
+    * @param pageCursorImpl
+    */
+   void close(PageCursor pageCursorImpl);
+   
+   // to be used on tests -------------------------------------------
+   
+   int getCacheSize();
+
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
