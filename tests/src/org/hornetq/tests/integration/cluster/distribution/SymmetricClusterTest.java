@@ -1330,7 +1330,7 @@ public class SymmetricClusterTest extends ClusterTestBase
       verifyReceiveRoundRobinInSomeOrder(10, 1, 2, 3, 4);
    }
 
-   public void testStartStopServers() throws Exception
+   public void _testStartStopServers() throws Exception
    {
       doTestStartStopServers(1, 3000);
    }

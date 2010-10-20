@@ -1231,7 +1231,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return pairs.get(live);
    }
 
-   class StaticConnector
+   class StaticConnector implements Serializable
    {
       private List<Connector> connectors;
 
@@ -1271,6 +1271,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                {
                   log.debug("unable to connect with static connector " + connectors.get(i).initialConnector);
                }
+            }
+            if (csf == null)
+            {
+               throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
             }
          }
          catch (InterruptedException e)
@@ -1325,7 +1329,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             factory = getFactory();
             try
             {
-               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
+               factory.connect(reconnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {

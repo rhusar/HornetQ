@@ -13,7 +13,6 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
-import java.io.File;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -93,12 +92,7 @@ public class SameProcessHornetQServer implements TestableServer
 
       ClusterManagerImpl clusterManager = (ClusterManagerImpl) server.getClusterManager();
       clusterManager.clear();
-      server.stop();
-      // recreate the live.lock file (since it was deleted by the
-      // clean stop
-      File lockFile = new File(server.getConfiguration().getJournalDirectory(), "live.lock");
-      Assert.assertFalse(lockFile.exists());
-      lockFile.createNewFile();
+      server.kill();
 
 
       // Wait to be informed of failure

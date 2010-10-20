@@ -14,7 +14,6 @@
 package org.hornetq.tests.integration.cluster.distribution;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,14 +25,10 @@ import java.util.Set;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.Message;
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
-import org.hornetq.core.config.BroadcastGroupConfiguration;
-import org.hornetq.core.config.ClusterConnectionConfiguration;
-import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.DiscoveryGroupConfiguration;
+import org.hornetq.core.config.*;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
@@ -44,12 +39,13 @@ import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
+import org.hornetq.core.server.NodeManager;
 import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.RemoteQueueBinding;
-import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
+import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.tests.util.UnitTestCase;
 
@@ -77,7 +73,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                        TransportConstants.DEFAULT_PORT + 8,
                                        TransportConstants.DEFAULT_PORT + 9, };
 
-   private static final long WAIT_TIMEOUT = 60000;
+   private static final long WAIT_TIMEOUT = 5000;
 
    @Override
    protected void setUp() throws Exception
@@ -94,6 +90,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       sfs = new ClientSessionFactory[ClusterTestBase.MAX_SERVERS];
 
+      nodeManagers = new NodeManager[ClusterTestBase.MAX_SERVERS];
+
+      for (int i = 0, nodeManagersLength = nodeManagers.length; i < nodeManagersLength; i++)
+      {
+         nodeManagers[i] = new InVMNodeManager();
+      }
+
    }
 
    @Override
@@ -108,6 +111,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
       consumers = null;
 
       consumers = new ConsumerHolder[ClusterTestBase.MAX_CONSUMERS];
+
+      nodeManagers = null;
 
       super.tearDown();
    }
@@ -143,6 +148,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
    private ConsumerHolder[] consumers;
 
    protected HornetQServer[] servers;
+
+   protected NodeManager[] nodeManagers;
 
    protected ClientSessionFactory[] sfs;
 
@@ -1157,7 +1164,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
 
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(serverTotc);
       locator.setRetryInterval(100);
       locator.setRetryIntervalMultiplier(1d);
       locator.setReconnectAttempts(-1);
@@ -1185,49 +1192,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    protected void setupServer(final int node, final boolean fileStorage, final boolean netty)
    {
-      setupServer(node, fileStorage, netty, false, -1);
+      setupLiveServer(node, fileStorage, true, netty);
    }
 
-   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final boolean backup)
-   {
-      setupServer(node, fileStorage, netty, backup, -1);
-   }
-   
-   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final boolean backup, final boolean useFakeLock)
-   {
-      setupServer(node, fileStorage, netty, backup, -1);
-   }
-
-   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final int backupNode)
-   {
-      setupServer(node, fileStorage, netty, false, backupNode, false);
-   }
-
-   protected void setupServer(final int node, final boolean fileStorage, final boolean netty, final int backupNode, final boolean useFakeLock)
-   {
-      setupServer(node, fileStorage, netty, false, backupNode, useFakeLock);
-   }
-
-   protected void setupServer(final int node,
-                              final boolean fileStorage,
-                              final boolean netty,
-                              final boolean backup,
-                              final int backupNode)
-   {
-      setupServer(node, fileStorage, netty, backup, backupNode, false);
-   }
-   
-   protected void setupServer(final int node,
-                              final boolean fileStorage,
-                              final boolean netty,
-                              final boolean backup,
-                              final int backupNode,
-                              final boolean useFakeLock)
-   {
-      setupServer(node, fileStorage, true, netty, backup, backupNode, useFakeLock);
-   }
-
-   protected void setupServer(final int node,
+   /*protected void setupServer(final int node,
                               final boolean fileStorage,
                               final boolean sharedStorage,
                               final boolean netty,
@@ -1296,8 +1264,152 @@ public abstract class ClusterTestBase extends ServiceTestBase
          }
       }
       servers[node] = server;
-   }
+   }*/
 
+   protected void setupLiveServer(final int node,
+                                  final boolean fileStorage,
+                                  final boolean sharedStorage,
+                                  final boolean netty)
+      {
+         if (servers[node] != null)
+         {
+            throw new IllegalArgumentException("Already a server at node " + node);
+         }
+
+         Configuration configuration = new ConfigurationImpl();
+
+         configuration.setSecurityEnabled(false);
+         configuration.setJournalMinFiles(2);
+         configuration.setJournalMaxIO_AIO(1000);
+         configuration.setJournalFileSize(100 * 1024);
+         configuration.setJournalType(getDefaultJournalType());
+         configuration.setSharedStore(sharedStorage);
+         if (sharedStorage)
+         {
+            // Shared storage will share the node between the backup and live node
+            configuration.setBindingsDirectory(getBindingsDir(node, false));
+            configuration.setJournalDirectory(getJournalDir(node, false));
+            configuration.setPagingDirectory(getPageDir(node, false));
+            configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, false));
+         }
+         else
+         {
+            configuration.setBindingsDirectory(getBindingsDir(node, true));
+            configuration.setJournalDirectory(getJournalDir(node, true));
+            configuration.setPagingDirectory(getPageDir(node, true));
+            configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
+         }
+         configuration.setClustered(true);
+         configuration.setJournalCompactMinFiles(0);
+
+         configuration.getAcceptorConfigurations().clear();
+         configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node, netty)));
+
+         HornetQServer server;
+
+         if (fileStorage)
+         {
+            if (sharedStorage)
+            {
+               server = createInVMFailoverServer(true, configuration, nodeManagers[node]);
+            }
+            else
+            {
+               server = HornetQServers.newHornetQServer(configuration);
+            }
+         }
+         else
+         {
+            if (sharedStorage)
+            {
+               server = createInVMFailoverServer(false, configuration,  nodeManagers[node]);
+            }
+            else
+            {
+               server = HornetQServers.newHornetQServer(configuration, false);
+            }
+         }
+         servers[node] = server;
+      }
+
+
+    protected void setupBackupServer(final int node,
+                                     final int liveNode,
+                                     final boolean fileStorage,
+                                     final boolean sharedStorage,
+                                     final boolean netty)
+   {
+      if (servers[node] != null)
+      {
+         throw new IllegalArgumentException("Already a server at node " + node);
+      }
+
+      Configuration configuration = new ConfigurationImpl();
+
+      configuration.setSecurityEnabled(false);
+      configuration.setJournalMinFiles(2);
+      configuration.setJournalMaxIO_AIO(1000);
+      configuration.setJournalFileSize(100 * 1024);
+      configuration.setJournalType(getDefaultJournalType());
+      configuration.setSharedStore(sharedStorage);
+      if (sharedStorage)
+      {
+         // Shared storage will share the node between the backup and live node
+         configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
+         configuration.setJournalDirectory(getJournalDir(liveNode, false));
+         configuration.setPagingDirectory(getPageDir(liveNode, false));
+         configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
+      }
+      else
+      {
+         configuration.setBindingsDirectory(getBindingsDir(node, true));
+         configuration.setJournalDirectory(getJournalDir(node, true));
+         configuration.setPagingDirectory(getPageDir(node, true));
+         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
+      }
+      configuration.setClustered(true);
+      configuration.setJournalCompactMinFiles(0);
+      configuration.setBackup(true);
+
+      configuration.getAcceptorConfigurations().clear();
+      TransportConfiguration acceptorConfig = createTransportConfiguration(netty, true, generateParams(node, netty));
+      configuration.getAcceptorConfigurations().add(acceptorConfig);
+      //add backup connector
+      TransportConfiguration liveConfig = createTransportConfiguration(netty, false, generateParams(liveNode, netty));
+      configuration.getConnectorConfigurations().put(liveConfig.getName(), liveConfig);
+      TransportConfiguration backupConfig = createTransportConfiguration(netty, false, generateParams(node, netty));
+      configuration.getConnectorConfigurations().put(backupConfig.getName(), backupConfig);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+      staticConnectors.add(liveConfig.getName());
+      BackupConnectorConfiguration bcc = new BackupConnectorConfiguration(staticConnectors, backupConfig.getName());
+      configuration.setBackupConnectorConfiguration(bcc);
+
+      HornetQServer server;
+
+      if (fileStorage)
+      {
+         if (sharedStorage)
+         {
+            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+         }
+         else
+         {
+            server = HornetQServers.newHornetQServer(configuration);
+         }
+      }
+      else
+      {
+         if (sharedStorage)
+         {
+            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+         }
+         else
+         {
+            server = HornetQServers.newHornetQServer(configuration, false);
+         }
+      }
+      servers[node] = server;
+   }
    protected void setupServerWithDiscovery(final int node,
                                            final String groupAddress,
                                            final int port,
@@ -1618,7 +1730,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
                ClusterTestBase.log.info("stopping server " + node);
                servers[node].stop();
                ClusterTestBase.log.info("server stopped");
-               FakeLockFile.clearLocks(servers[node].getConfiguration().getJournalDirectory());
             }
             catch (Exception e)
             {

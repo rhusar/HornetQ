@@ -29,6 +29,8 @@ import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.server.NodeManager;
+import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.tests.integration.cluster.util.SameProcessHornetQServer;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
 
@@ -38,14 +40,16 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
 {
 
    protected Map<Integer, TestableServer> servers = new HashMap<Integer, TestableServer>();
+   private NodeManager nodeManager;
 
    public void testMultipleFailovers() throws Exception
    {
+      nodeManager = new InVMNodeManager();
       createLiveConfig(0);
       createBackupConfig(0, 1,false,  0, 2, 3, 4, 5);
       createBackupConfig(0, 2,false,  0, 1, 3, 4, 5);
       createBackupConfig(0, 3,false,  0, 1, 2, 4, 5);
-      createBackupConfig(0, 4, false, 0, 1, 2, 3, 4);
+      createBackupConfig(0, 4, false, 0, 1, 2, 3, 5);
       createBackupConfig(0, 5, false, 0, 1, 2, 3, 4);
       servers.get(0).start();
       servers.get(1).start();
@@ -128,7 +132,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);
       config1.setLargeMessagesDirectory(config1.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.put(nodeid, new SameProcessHornetQServer(createFakeLockServer(true, config1)));
+      servers.put(nodeid, new SameProcessHornetQServer(createInVMFailoverServer(true, config1, nodeManager)));
    }
 
    protected void createLiveConfig(int liveNode, int ... otherLiveNodes)
@@ -140,7 +144,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
       config0.setClustered(true);
-      List<String> pairs = new ArrayList<String>();
+      List<String> pairs = null;
       for (int node : otherLiveNodes)
       {
          TransportConfiguration otherLiveConnector = createTransportConfiguration(isNetty(), false, generateParams(node, isNetty()));
@@ -158,7 +162,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config0.setPagingDirectory(config0.getPagingDirectory() + "_" + liveNode);
       config0.setLargeMessagesDirectory(config0.getLargeMessagesDirectory() + "_" + liveNode);
 
-      servers.put(liveNode, new SameProcessHornetQServer(createFakeLockServer(true, config0)));
+      servers.put(liveNode, new SameProcessHornetQServer(createInVMFailoverServer(true, config0, nodeManager)));
    }
 
    protected boolean isNetty()

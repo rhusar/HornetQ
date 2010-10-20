@@ -38,6 +38,8 @@ import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.NodeManager;
+import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
@@ -206,46 +208,38 @@ public abstract class ServiceTestBase extends UnitTestCase
       return createServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>());
    }
 
-   protected HornetQServer createFakeLockServer(final boolean realFiles)
+   protected HornetQServer createInVMFailoverServer(final boolean realFiles, final Configuration configuration, NodeManager nodeManager)
    {
-      return createFakeLockServer(realFiles, false);
+      return createInVMFailoverServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>(), nodeManager);
    }
 
-   protected HornetQServer createFakeLockServer(final boolean realFiles, final boolean netty)
-   {
-      return createFakeLockServer(realFiles, createDefaultConfig(netty), -1, -1, new HashMap<String, AddressSettings>());
-   }
-
-   protected HornetQServer createFakeLockServer(final boolean realFiles, final Configuration configuration)
-   {
-      return createFakeLockServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>());
-   }
-
-   protected HornetQServer createFakeLockServer(final boolean realFiles,
-                                           final Configuration configuration,
-                                           final int pageSize,
-                                           final int maxAddressSize,
-                                           final Map<String, AddressSettings> settings)
-   {
-      HornetQServer server;
-      HornetQSecurityManager securityManager = new HornetQSecurityManagerImpl();
-      configuration.setPersistenceEnabled(realFiles);
-      server = new FakeLockHornetQServer(configuration,ManagementFactory.getPlatformMBeanServer(),securityManager);
-
-
-      for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
+   protected HornetQServer createInVMFailoverServer(final boolean realFiles,
+                                              final Configuration configuration,
+                                              final int pageSize,
+                                              final int maxAddressSize,
+                                              final Map<String, AddressSettings> settings,
+                                              NodeManager nodeManager)
       {
-         server.getAddressSettingsRepository().addMatch(setting.getKey(), setting.getValue());
+         HornetQServer server;
+         HornetQSecurityManager securityManager = new HornetQSecurityManagerImpl();
+         configuration.setPersistenceEnabled(realFiles);
+         server = new InVMNodeManagerServer(configuration,ManagementFactory.getPlatformMBeanServer(),securityManager, nodeManager);
+
+
+         for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
+         {
+            server.getAddressSettingsRepository().addMatch(setting.getKey(), setting.getValue());
+         }
+
+         AddressSettings defaultSetting = new AddressSettings();
+         defaultSetting.setPageSizeBytes(pageSize);
+         defaultSetting.setMaxSizeBytes(maxAddressSize);
+
+         server.getAddressSettingsRepository().addMatch("#", defaultSetting);
+
+         return server;
       }
 
-      AddressSettings defaultSetting = new AddressSettings();
-      defaultSetting.setPageSizeBytes(pageSize);
-      defaultSetting.setMaxSizeBytes(maxAddressSize);
-
-      server.getAddressSettingsRepository().addMatch("#", defaultSetting);
-
-      return server;
-   }
 
    protected HornetQServer createServer(final boolean realFiles,
                                         final Configuration configuration,
@@ -509,5 +503,44 @@ public abstract class ServiceTestBase extends UnitTestCase
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
+   class InVMNodeManagerServer extends HornetQServerImpl
+   {
+      final NodeManager nodeManager;
+      public InVMNodeManagerServer(NodeManager nodeManager)
+      {
+         super();
+         this.nodeManager = nodeManager;
+      }
 
+      public InVMNodeManagerServer(Configuration configuration, NodeManager nodeManager)
+      {
+         super(configuration);
+         this.nodeManager = nodeManager;
+      }
+
+      public InVMNodeManagerServer(Configuration configuration, MBeanServer mbeanServer, NodeManager nodeManager)
+      {
+         super(configuration, mbeanServer);
+         this.nodeManager = nodeManager;
+      }
+
+      public InVMNodeManagerServer(Configuration configuration, HornetQSecurityManager securityManager, NodeManager nodeManager)
+      {
+         super(configuration, securityManager);
+         this.nodeManager = nodeManager;
+      }
+
+      public InVMNodeManagerServer(Configuration configuration, MBeanServer mbeanServer, HornetQSecurityManager securityManager, NodeManager nodeManager)
+      {
+         super(configuration, mbeanServer, securityManager);
+         this.nodeManager = nodeManager;
+      }
+
+      @Override
+      protected NodeManager createNodeManager(String directory)
+      {
+         return nodeManager;
+      }
+
+   }
 }

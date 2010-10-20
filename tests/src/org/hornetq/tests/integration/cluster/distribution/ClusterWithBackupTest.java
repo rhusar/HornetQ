@@ -115,14 +115,14 @@ public class ClusterWithBackupTest extends ClusterTestBase
    protected void setupServers() throws Exception
    {
       // The backups
-      setupServer(0, isFileStorage(), isNetty(), true, 3, true);
-      setupServer(1, isFileStorage(), isNetty(), true, 4, true);
-      setupServer(2, isFileStorage(), isNetty(), true, 5, true);
+      setupBackupServer(0, 3, isFileStorage(), true, isNetty());
+      setupBackupServer(1, 4, isFileStorage(), true, isNetty());
+      setupBackupServer(2, 5, isFileStorage(), true, isNetty());
 
       // The lives
-      setupServer(3, isFileStorage(), isNetty(), 0, true);
-      setupServer(4, isFileStorage(), isNetty(), 1, true);
-      setupServer(5, isFileStorage(), isNetty(), 2, true);
+      setupLiveServer(3, isFileStorage(), true, isNetty());
+      setupLiveServer(4, isFileStorage(), true, isNetty());
+      setupLiveServer(5, isFileStorage(), true, isNetty());
 
    }
 

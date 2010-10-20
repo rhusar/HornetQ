@@ -133,7 +133,7 @@ public class JMSClusteredTestBase extends ServiceTestBase
       List<String> toOtherServerPair = new ArrayList<String>();
       toOtherServerPair.add("toServer1");
 
-      Configuration conf2 = createDefaultConfig(1, generateInVMParams(2), InVMAcceptorFactory.class.getCanonicalName());
+      Configuration conf2 = createDefaultConfig(2, generateInVMParams(2), InVMAcceptorFactory.class.getCanonicalName());
       conf2.setSecurityEnabled(false);
       conf2.setJMXManagementEnabled(true);
       conf2.setPersistenceEnabled(false);

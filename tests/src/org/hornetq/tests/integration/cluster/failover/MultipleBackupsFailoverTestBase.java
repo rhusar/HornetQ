@@ -34,7 +34,6 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
-import org.hornetq.core.server.cluster.impl.FakeLockFile;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -63,7 +62,6 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
    {
       super.setUp();
       clearData();
-      FakeLockFile.clearLocks();
    }
 
    // Package protected ---------------------------------------------

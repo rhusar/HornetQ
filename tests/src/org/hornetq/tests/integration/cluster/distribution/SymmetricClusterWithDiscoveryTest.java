@@ -96,7 +96,7 @@ public class SymmetricClusterWithDiscoveryTest extends SymmetricClusterTest
     * This is like testStopStartServers but we make sure we pause longer than discovery group timeout
     * before restarting (5 seconds)
     */
-   public void testStartStopServersWithPauseBeforeRestarting() throws Exception
+   public void _testStartStopServersWithPauseBeforeRestarting() throws Exception
    {
       doTestStartStopServers(10000, 3000);
    }

@@ -143,4 +143,6 @@ public interface HornetQServer extends HornetQComponent
    ReplicationManager getReplicationManager();
 
    boolean checkActivate() throws Exception;
+
+   void kill() throws Exception;
 }

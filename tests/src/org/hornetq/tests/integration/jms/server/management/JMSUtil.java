@@ -228,7 +228,7 @@ public class JMSUtil
 
       ClusterManagerImpl clusterManager = (ClusterManagerImpl) server.getClusterManager();
       clusterManager.clear();
-      server.stop();
+      server.kill();
       // recreate the live.lock file (since it was deleted by the
       // clean stop
       File lockFile = new File(server.getConfiguration().getJournalDirectory(), "live.lock");

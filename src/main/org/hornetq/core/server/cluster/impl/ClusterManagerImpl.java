@@ -218,6 +218,7 @@ public class ClusterManagerImpl implements ClusterManager
          }
       });
       locator.setNodeID(nodeUUID.toString());
+      locator.setReconnectAttempts(-1);
       backupSessionFactory = locator.connect();
       backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
    }
@@ -743,6 +744,7 @@ public class ClusterManagerImpl implements ClusterManager
 
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(tcConfigs);
          serverLocator.setNodeID(nodeUUID.toString());
+         serverLocator.setReconnectAttempts(-1);
       }
       else if (config.getDiscoveryGroupName() != null)
       {
@@ -757,6 +759,7 @@ public class ClusterManagerImpl implements ClusterManager
 
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
          serverLocator.setNodeID(nodeUUID.toString());
+         serverLocator.setReconnectAttempts(-1);
       }
       else
       {

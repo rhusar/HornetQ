@@ -94,14 +94,14 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
    protected void setupServers() throws Exception
    {
       // The backups
-      setupServer(3, isFileStorage(), isNetty(), true);
-      setupServer(4, isFileStorage(), isNetty(), true);
-      setupServer(5, isFileStorage(), isNetty(), true);
+      setupBackupServer(3, 0, isFileStorage(), true, isNetty());
+      setupBackupServer(4, 1, isFileStorage(), true, isNetty());
+      setupBackupServer(5, 2, isFileStorage(), true, isNetty());
 
       // The lives
-      setupServer(0, isFileStorage(), isNetty(), 3);
-      setupServer(1, isFileStorage(), isNetty(), 4);
-      setupServer(2, isFileStorage(), isNetty(), 5);
+      setupLiveServer(0, isFileStorage(), true, isNetty());
+      setupLiveServer(1, isFileStorage(), true, isNetty());
+      setupLiveServer(2, isFileStorage(), true, isNetty());
    }
    // Package protected ---------------------------------------------
 

@@ -267,9 +267,9 @@ public class ReplicatedDistributionTest extends ClusterTestBase
    {
       super.setUp();
 
-      setupServer(1, true, isShared(), true, false, -1, false);
-      setupServer(2, true, isShared(), true, true, -1, false);
-      setupServer(3, true, isShared(), true, true, 2, false);
+      setupLiveServer(1, true, isShared(), true);
+      setupBackupServer(2, 1, true, isShared(), true);
+      setupBackupServer(3, 1, true, isShared(), true);
 
       setupClusterConnectionWithBackups("test", "test", false, 1, true, 1, new int[] { 3 }, new int[] { 2 });
 

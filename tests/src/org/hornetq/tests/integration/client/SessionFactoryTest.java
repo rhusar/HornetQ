@@ -633,7 +633,7 @@ public class SessionFactoryTest extends ServiceTestBase
       bcConfigs1.add(bcConfig1);
       liveConf.setBroadcastGroupConfigurations(bcConfigs1);
 
-      liveService = createFakeLockServer(false, liveConf);
+      liveService = createServer(false, liveConf);
       liveService.start();
    }
 }

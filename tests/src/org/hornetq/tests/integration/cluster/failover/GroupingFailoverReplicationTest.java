@@ -87,6 +87,6 @@ public class GroupingFailoverReplicationTest extends GroupingFailoverTestBase
    @Override
    void setupMasterServer(final int i, final boolean fileStorage, final boolean netty)
    {
-      setupServer(i, fileStorage, false, netty, false, 2, false);
+      setupLiveServer(i, fileStorage, false, netty);
    }
 }

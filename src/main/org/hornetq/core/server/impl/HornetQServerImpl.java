@@ -13,13 +13,7 @@
 
 package org.hornetq.core.server.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -44,7 +38,6 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.CoreQueueConfiguration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -87,18 +80,10 @@ import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.security.SecurityStore;
 import org.hornetq.core.security.impl.SecurityStoreImpl;
-import org.hornetq.core.server.ActivateCallback;
-import org.hornetq.core.server.Divert;
-import org.hornetq.core.server.HornetQServer;
-import org.hornetq.core.server.MemoryManager;
-import org.hornetq.core.server.Queue;
-import org.hornetq.core.server.QueueFactory;
-import org.hornetq.core.server.ServerSession;
+import org.hornetq.core.server.*;
 import org.hornetq.core.server.cluster.ClusterManager;
-import org.hornetq.core.server.cluster.LockFile;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
-import org.hornetq.core.server.cluster.impl.LockFileImpl;
 import org.hornetq.core.server.group.GroupingHandler;
 import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.server.group.impl.GroupingHandlerConfiguration;
@@ -120,8 +105,6 @@ import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.OrderedExecutorFactory;
 import org.hornetq.utils.SecurityFormatter;
-import org.hornetq.utils.UUID;
-import org.hornetq.utils.UUIDGenerator;
 import org.hornetq.utils.VersionLoader;
 
 /**
@@ -144,9 +127,6 @@ public class HornetQServerImpl implements HornetQServer
    // Attributes
    // -----------------------------------------------------------------------------------
 
-   private volatile SimpleString nodeID;
-
-   private volatile UUID uuid;
    
    private final Version version;
 
@@ -215,6 +195,7 @@ public class HornetQServerImpl implements HornetQServer
    private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
    private volatile GroupingHandler groupingHandler;
+   private NodeManager nodeManager;
 
    // Constructors
    // ---------------------------------------------------------------------------------
@@ -279,69 +260,23 @@ public class HornetQServerImpl implements HornetQServer
 
    private interface Activation extends Runnable
    {
-      void close() throws Exception;
+      void close(boolean permanently) throws Exception;
    }
 
    /*
     * Can be overridden for tests
     */
-   protected LockFile createLockFile(final String fileName, final String directory)
+   protected NodeManager createNodeManager(final String directory)
    {
-      return new LockFileImpl(fileName, directory);
+      return new FileLockNodeManager(directory);
    }
 
    private class NoSharedStoreLiveActivation implements Activation
    {
-      LockFile liveLock;
-
       public void run()
       {
          try
          {
-            checkJournalDirectory();
-
-            // We now load the node id file, creating it, if it doesn't exist yet
-            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
-
-            if (!nodeIDFile.exists())
-            {
-               // We use another file lock to prevent a backup reading it before it is complete
-
-               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
-
-               nodeIDLockFile.lock();
-
-               OutputStream os = null;
-
-               try
-               {
-                  os = new BufferedOutputStream(new FileOutputStream(nodeIDFile));
-
-                  uuid = UUIDGenerator.getInstance().generateUUID();
-
-                  nodeID = new SimpleString(uuid.toString());
-
-                  os.write(uuid.asBytes());
-
-                  log.info("Wrote node id, it is " + nodeID);
-               }
-               finally
-               {
-                  if (os != null)
-                  {
-                     os.close();
-                  }
-               }
-
-               nodeIDLockFile.unlock();
-            }
-            else
-            {
-               // Read it
-
-               readNodeID(nodeIDFile);
-            }
-
             initialisePart1();
 
             initialisePart2();
@@ -354,27 +289,14 @@ public class HornetQServerImpl implements HornetQServer
          }
       }
 
-      public void close() throws Exception
+      public void close(boolean permanently) throws Exception
       {
-         if (liveLock != null)
-         {
-            // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
-            // started before the live
 
-            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
-
-            liveFile.delete();
-
-            liveLock.unlock();
-
-         }
       }
    }
 
    private class SharedStoreLiveActivation implements Activation
    {
-      LockFile liveLock;
-
       public void run()
       {
          try
@@ -383,53 +305,7 @@ public class HornetQServerImpl implements HornetQServer
 
             checkJournalDirectory();
 
-            liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
-
-            liveLock.lock();
-
-            log.info("Live Server Obtained live lock");
-
-            // We now load the node id file, creating it, if it doesn't exist yet
-            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
-
-            if (!nodeIDFile.exists())
-            {
-               // We use another file lock to prevent a backup reading it before it is complete
-
-               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
-
-               nodeIDLockFile.lock();
-
-               OutputStream os = null;
-
-               try
-               {
-                  os = new BufferedOutputStream(new FileOutputStream(nodeIDFile));
-
-                  uuid = UUIDGenerator.getInstance().generateUUID();
-
-                  nodeID = new SimpleString(uuid.toString());
-
-                  os.write(uuid.asBytes());
-
-                  log.info("Wrote node id, it is " + nodeID);
-               }
-               finally
-               {
-                  if (os != null)
-                  {
-                     os.close();
-                  }
-               }
-
-               nodeIDLockFile.unlock();
-            }
-            else
-            {
-               // Read it
-
-               readNodeID(nodeIDFile);
-            }
+            nodeManager.startLiveNode();
 
             initialisePart1();
 
@@ -443,163 +319,37 @@ public class HornetQServerImpl implements HornetQServer
          }
       }
 
-      public void close() throws Exception
+      public void close(boolean permanently) throws Exception
       {
-         if (liveLock != null)
+         if(permanently)
          {
-            // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
-            // started before the live
-            log.info("Live Server about to delete Live Lock file");
-            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
-            log.info("Live Server deleting Live Lock file");
-            liveFile.delete();
-
-            liveLock.unlock();
-            log.info("Live server unlocking live lock");
-
+            nodeManager.crashLiveServer();
+         }
+         else
+         {
+            nodeManager.pauseLiveServer();
          }
       }
    }
 
-   private void readNodeID(final File nodeIDFile) throws Exception
-   {
-      // Read it
-      InputStream is = null;
-
-      try
-      {
-         is = new BufferedInputStream(new FileInputStream(nodeIDFile));
-
-         byte[] bytes = new byte[16];
-
-         int read = 0;
-
-         while (read < 16)
-         {
-            int r = is.read(bytes, read, 16 - read);
-
-            if (r <= 0)
-            {
-               throw new IllegalStateException("Cannot read node id file, perhaps it is corrupt?");
-            }
-
-            read += r;
-         }
-
-         uuid = new UUID(UUID.TYPE_TIME_BASED, bytes);
-
-         nodeID = new SimpleString(uuid.toString());
-
-         log.info("Read node id, it is " + nodeID);
-      }
-      finally
-      {
-         if (is != null)
-         {
-            is.close();
-         }
-      }
-   }
 
    private class SharedStoreBackupActivation implements Activation
    {
-      LockFile backupLock;
-
-      LockFile liveLock;
-
       public void run()
       {
          try
          {
-            checkJournalDirectory();
-
-            backupLock = createLockFile("backup.lock", configuration.getJournalDirectory());
-
-            log.info("Waiting to become backup node");
-
-            backupLock.lock();
-
-            log.info("** got backup lock");
-
-            // We load the node id from the file in the journal dir - if the backup is started before live and live has
-            // never been started before it may not exist yet, so
-            // we wait for it
-
-            File nodeIDFile = new File(configuration.getJournalDirectory(), "node.id");
-
-            while (true)
-            {
-               // We also need to create another lock file for the node.id file since we don't want to see any partially
-               // written
-               // node id if the live node is still creating it.
-               // Also renaming is not atomic necessarily so we can't use a write and rename strategy safely
-
-               LockFile nodeIDLockFile = createLockFile("nodeid.lock", configuration.getJournalDirectory());
-
-               nodeIDLockFile.lock();
-               log.info("Backup server waiting for node id file creation");
-               if (!nodeIDFile.exists())
-               {
-                  nodeIDLockFile.unlock();
-
-                  Thread.sleep(2000);
-                  log.info("Backup server still waiting for node id file creation");
-                  continue;
-               }
-               log.info("Backup server waited for node id file creation");
-               nodeIDLockFile.unlock();
-
-               break;
-            }
-
-            readNodeID(nodeIDFile);
-
-            log.info("Read node id " + nodeID);
+            nodeManager.startBackup();
 
             initialisePart1();
-            
-            //TODO TODO at this point the clustermanager needs to announce it's presence so the cluster can know about the backup
-            // We now look for the live.lock file - if it doesn't exist it means the live isn't started yet, so we wait
-            // for that
 
-            while (true)
-            {
-               File liveLockFile = new File(configuration.getJournalDirectory(), "live.lock");
-               log.info("Backup server waiting for live lock file creation");
-               while (!liveLockFile.exists())
-               {
-                  log.debug("Waiting for server live lock file. Live server is not started");
+            clusterManager.start();
 
-                  Thread.sleep(2000);
-               }
-               log.info("Backup server waited for live lock file creation");
+            started = true;
 
-               liveLock = createLockFile("live.lock", configuration.getJournalDirectory());
+            log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "] started");
 
-
-               clusterManager.start();
-
-               started = true;
-
-               log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
-
-               liveLock.lock();
-
-               // We need to test if the file exists again, since the live might have shutdown
-               if (!liveLockFile.exists())
-               {
-                  liveLock.unlock();
-                  
-                  continue;
-               }
-                  
-               log.info("Backup server obtained live lock");
-               
-               // Announce presence of live node to cluster
-               
-               
-               break;
-            }
+            nodeManager.awaitLiveNode();
             
             configuration.setBackup(false);
             
@@ -608,8 +358,6 @@ public class HornetQServerImpl implements HornetQServer
             clusterManager.activate();
 
             log.info("Backup Server is now live");
-
-            backupLock.unlock();
          }
          catch (InterruptedException e)
          {
@@ -622,9 +370,13 @@ public class HornetQServerImpl implements HornetQServer
                log.error("Failure in initialisation", e);
             }
          }
+         catch(Throwable e)
+         {
+            log.error("Failure in initialisation", e);
+         }
       }
 
-      public void close() throws Exception
+      public void close(boolean permanently) throws Exception
       {
          if (configuration.isBackup())
          {
@@ -644,28 +396,21 @@ public class HornetQServerImpl implements HornetQServer
                log.warn("Timed out waiting for backup activation to exit");
             }
 
-            if (liveLock != null)
-            {
-               liveLock.unlock();
-            }
-
-            if (backupLock != null)
-            {
-               backupLock.unlock();
-            }
+            nodeManager.stopBackup();
          }
          else
          {
             //if we are now live, behave as live
             // We need to delete the file too, otherwise the backup will failover when we shutdown or if the backup is
             // started before the live
-            log.info("Live Server about to delete Live Lock file");
-            File liveFile = new File(configuration.getJournalDirectory(), "live.lock");
-            log.info("Live Server deleting Live Lock file");
-            liveFile.delete();
-
-            liveLock.unlock();
-            log.info("Live server unlocking live lock");
+            if(permanently)
+            {
+               nodeManager.crashLiveServer();
+            }
+            else
+            {
+               nodeManager.pauseLiveServer();
+            }
          }
       }
    }
@@ -688,7 +433,7 @@ public class HornetQServerImpl implements HornetQServer
          }
       }
 
-      public void close() throws Exception
+      public void close(boolean permanently) throws Exception
       {
       }
    }
@@ -700,6 +445,12 @@ public class HornetQServerImpl implements HornetQServer
    public synchronized void start() throws Exception
    {
       initialiseLogging();
+
+      checkJournalDirectory();
+
+      nodeManager = createNodeManager(configuration.getJournalDirectory());
+
+      nodeManager.start();
 
       if (started)
       {
@@ -734,7 +485,7 @@ public class HornetQServerImpl implements HornetQServer
          }
          started = true;
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeID + "] started");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "] started");
       }
 
 
@@ -771,7 +522,17 @@ public class HornetQServerImpl implements HornetQServer
       super.finalize();
    }
 
+   public void kill() throws Exception
+   {
+      stop(true);
+   }
+
    public void stop() throws Exception
+   {
+      stop(false);
+   }
+
+   public void stop(boolean permanently) throws Exception
    {
       System.out.println("*** stop called on server");
 
@@ -901,18 +662,21 @@ public class HornetQServerImpl implements HornetQServer
          started = false;
          initialised = false;
          // to display in the log message
-         SimpleString tempNodeID = nodeID;
-         nodeID = null;
+         SimpleString tempNodeID = getNodeID();
 
          if (activation != null)
          {
-            activation.close();
+            activation.close(permanently);
          }
 
          if (backupActivationThread != null)
          {
             backupActivationThread.join();
          }
+
+         nodeManager.stop();
+
+         nodeManager = null;
 
          HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + tempNodeID + "] stopped");
 
@@ -1119,7 +883,7 @@ public class HornetQServerImpl implements HornetQServer
 
    public SimpleString getNodeID()
    {
-      return nodeID;
+      return nodeManager == null?null:nodeManager.getNodeId();
    }
 
    public Queue createQueue(final SimpleString address,
@@ -1524,7 +1288,7 @@ public class HornetQServerImpl implements HornetQServer
                                               scheduledPool,
                                               managementService,
                                               configuration,
-                                              uuid,
+                                              nodeManager.getUUID(),
                                               configuration.isBackup(),
                                               configuration.isClustered());
 
@@ -1659,7 +1423,7 @@ public class HornetQServerImpl implements HornetQServer
                                                 true,
                                                 false);
 
-         Binding binding = new LocalQueueBinding(queueBindingInfo.getAddress(), queue, nodeID);
+         Binding binding = new LocalQueueBinding(queueBindingInfo.getAddress(), queue, nodeManager.getNodeId());
 
          queues.put(queueBindingInfo.getId(), queue);
 
@@ -1759,7 +1523,7 @@ public class HornetQServerImpl implements HornetQServer
                                                    durable,
                                                    temporary);
 
-      binding = new LocalQueueBinding(address, queue, nodeID);
+      binding = new LocalQueueBinding(address, queue, nodeManager.getNodeId());
 
       if (durable)
       {

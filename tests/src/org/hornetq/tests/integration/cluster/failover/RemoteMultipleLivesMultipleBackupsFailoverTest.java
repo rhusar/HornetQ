@@ -73,14 +73,14 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
       return true;
    }
 
-   @Override
+
    protected void createLiveConfig(int liveNode, int... otherLiveNodes)
    {
       servers.put(liveNode, new RemoteProcessHornetQServer(lives.get(liveNode)));
    }
    
    
-   @Override
+   
    protected void createBackupConfig(int liveNode,
                                      int nodeid,
                                      boolean createClusterConnections,

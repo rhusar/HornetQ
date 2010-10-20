@@ -23,11 +23,14 @@
 package org.hornetq.tests.integration.cluster.failover;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.BroadcastGroup;
+import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
+import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.tests.integration.cluster.distribution.ClusterTestBase;
 import org.hornetq.tests.util.ServiceTestBase;
 
@@ -340,10 +343,18 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
             group.stop();
          }
       }
-      
+      Set<RemotingConnection> connections = server.getRemotingService().getConnections();
+      for (RemotingConnection remotingConnection : connections)
+      {
+         remotingConnection.destroy();
+         server.getRemotingService().removeConnection(remotingConnection.getID());
+      }
+
+      ClusterManagerImpl clusterManager = (ClusterManagerImpl) server.getClusterManager();
+      clusterManager.clear();
       //FailoverManagerImpl.failAllConnectionsForConnector(serverTC);
 
-      server.stop();
+      server.kill();
    }
 
    public void testFailAllNodes() throws Exception

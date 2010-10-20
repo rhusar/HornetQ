@@ -14,7 +14,6 @@
 package org.hornetq.tests.integration.cluster.failover;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +41,8 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
-import org.hornetq.core.server.cluster.impl.FakeLockFile;
+import org.hornetq.core.server.NodeManager;
+import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.tests.integration.cluster.util.SameProcessHornetQServer;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -69,6 +69,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
    protected Configuration backupConfig;
 
    protected Configuration liveConfig;
+   private NodeManager nodeManager;
 
    // Static --------------------------------------------------------
 
@@ -97,7 +98,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
    {
       super.setUp();
       clearData();
-      FakeLockFile.clearLocks();
       createConfigs();
 
       liveServer.start();
@@ -110,12 +110,12 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected TestableServer createLiveServer()
    {
-      return new SameProcessHornetQServer(createFakeLockServer(true, liveConfig));
+      return new SameProcessHornetQServer(createInVMFailoverServer(true, liveConfig, nodeManager));
    }
 
    protected TestableServer createBackupServer()
    {
-      return new SameProcessHornetQServer(createFakeLockServer(true, backupConfig));
+      return new SameProcessHornetQServer(createInVMFailoverServer(true, backupConfig, nodeManager));
    }
 
    /**
@@ -123,6 +123,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
     */
    protected void createConfigs() throws Exception
    {
+      nodeManager = new InVMNodeManager();
+
       backupConfig = super.createDefaultConfig();
       backupConfig.getAcceptorConfigurations().clear();
       backupConfig.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(false));
@@ -216,6 +218,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupServer = null;
 
       liveServer = null;
+
+      nodeManager = null;
 
       InVMConnector.failOnCreateConnection = false;
 
@@ -408,4 +412,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
          //To change body of implemented methods use File | Settings | File Templates.
       }
    }
+
+
 }
