@@ -34,6 +34,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.jms.management.ConnectionFactoryControl;
+import org.hornetq.api.jms.management.DestinationControl;
 import org.hornetq.api.jms.management.JMSQueueControl;
 import org.hornetq.api.jms.management.JMSServerControl;
 import org.hornetq.api.jms.management.TopicControl;
@@ -43,7 +44,6 @@ import org.hornetq.core.server.ServerConsumer;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.jms.client.HornetQDestination;
 import org.hornetq.jms.client.HornetQQueue;
-import org.hornetq.jms.client.HornetQTopic;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.utils.json.JSONArray;
@@ -744,7 +744,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
 
          for (ServerSession session : sessions)
          {
-            if (session.getMetaData("jms-client-id") != null)
+            if (session.getMetaData("jms-session") != null)
             {
                jmsSessions.put(session.getConnectionID(), session);
             }
@@ -935,5 +935,56 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          list.add(values[i].trim());
       }
       return list;
+   }
+
+   public String[] listTargetDestinations(String sessionID) throws Exception
+   {
+      String[] addresses = server.getHornetQServer().getHornetQServerControl().listTargetAddresses(sessionID);
+      Map<String, DestinationControl> allDests = new HashMap<String, DestinationControl>();
+      
+      Object[] queueControls = server.getHornetQServer().getManagementService().getResources(JMSQueueControl.class);
+      for (int i = 0; i < queueControls.length; i++)
+      {
+         JMSQueueControl queueControl = (JMSQueueControl)queueControls[i];
+         allDests.put(queueControl.getAddress(), queueControl);
+      }
+      
+      Object[] topicControls = server.getHornetQServer().getManagementService().getResources(TopicControl.class);
+      for (int i = 0; i < topicControls.length; i++)
+      {
+         TopicControl topicControl = (TopicControl)topicControls[i];
+         allDests.put(topicControl.getAddress(), topicControl);
+      }
+      
+      List<String> destinations = new ArrayList<String>();
+      for (int i = 0; i < addresses.length; i++)
+      {
+         DestinationControl control = allDests.get(addresses[i]);
+         if (control != null)
+         {
+            destinations.add(control.getAddress());
+         }
+      }
+      return destinations.toArray(new String[0]);
+   }
+
+   public String getLastSentMessageID(String sessionID, String address) throws Exception
+   {
+      ServerSession session = server.getHornetQServer().getSessionByID(sessionID);
+      if (session != null)
+      {
+         return session.getLastSentMessageID(address);
+      }
+      return null;
+   }
+
+   public String getSessionCreationTime(String sessionID) throws Exception
+   {
+      ServerSession session = server.getHornetQServer().getSessionByID(sessionID);
+      if (session != null)
+      {
+         return String.valueOf(session.getCreationTime());
+      }
+      return null;
    }
 }

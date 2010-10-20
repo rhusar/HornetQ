@@ -117,4 +117,10 @@ public interface ServerSession
    void addMetaData(String key, String data);
 
    String getMetaData(String key);
+
+   String[] getTargetAddresses();
+
+   String getLastSentMessageID(String address);
+
+   long getCreationTime();
 }

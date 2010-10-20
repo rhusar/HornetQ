@@ -586,6 +586,7 @@ public class HornetQConnection implements Connection, QueueConnection, TopicConn
 
    private void addSessionMetaData(ClientSession session) throws HornetQException
    {
+      session.addMetaData("jms-session", "");
       if (clientID != null)
       {
          session.addMetaData("jms-client-id", clientID);

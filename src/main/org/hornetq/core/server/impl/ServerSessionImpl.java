@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,6 +66,7 @@ import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.spi.core.protocol.SessionCallback;
 import org.hornetq.utils.TypedProperties;
+import org.hornetq.utils.UUID;
 
 /*
  * Session implementation 
@@ -138,6 +140,10 @@ public class ServerSessionImpl implements ServerSession , FailureListener
    private volatile int timeoutSeconds;
    
    private Map<String, String> metaData;
+
+   private Map<SimpleString, UUID> targetAddressInfos = new HashMap<SimpleString, UUID>();
+   
+   private long creationTime = System.currentTimeMillis();
 
    // Constructors ---------------------------------------------------------------------------------
 
@@ -1181,6 +1187,8 @@ public class ServerSessionImpl implements ServerSession , FailureListener
       }
 
       postOffice.route(msg, routingContext, direct);
+      
+      targetAddressInfos.put(msg.getAddress(), msg.getUserID());
 
       routingContext.clear();
    }
@@ -1203,5 +1211,29 @@ public class ServerSessionImpl implements ServerSession , FailureListener
       }
       return data;
    }
+   
+   public String[] getTargetAddresses()
+   {
+      Map<SimpleString, UUID> copy = new HashMap<SimpleString, UUID>(targetAddressInfos);
+      Iterator<SimpleString> iter = copy.keySet().iterator();
+      int num = copy.keySet().size();
+      String[] addresses = new String[num];
+      int i = 0;
+      while (iter.hasNext())
+      {
+         addresses[i] = iter.next().toString();
+         i++;
+      }
+      return addresses;
+   }
 
+   public String getLastSentMessageID(String address)
+   {
+      return targetAddressInfos.get(SimpleString.toSimpleString(address)).toString();
+   }
+
+   public long getCreationTime()
+   {
+      return this.creationTime;
+   }
 }

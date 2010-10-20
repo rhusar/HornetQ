@@ -251,4 +251,23 @@ public interface JMSServerControl
     */
    @Operation(desc = "List all JMS consumers associated to a JMS Connection")
    String listConsumersAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
+   
+   /**
+    * Lists all addresses to which the designated server session has sent messages.
+    */
+   @Operation(desc = "Lists all addresses to which the designated session has sent messages", impact = MBeanOperationInfo.INFO)
+   String[] listTargetDestinations(@Parameter(desc = "a session ID", name = "sessionID") String sessionID) throws Exception;
+   
+   /**
+    * Returns the last sent message's ID from the given session to an address.
+    */
+   @Operation(desc = "Returns the last sent message's ID from the given session to an address", impact = MBeanOperationInfo.INFO)
+   String getLastSentMessageID(@Parameter(desc = "session name", name = "sessionID") String sessionID,
+                               @Parameter(desc = "address", name = "address") String address) throws Exception;
+   
+   /**
+    * Gets the session's creation time.
+    */
+   @Operation(desc = "Gets the sessions creation time", impact = MBeanOperationInfo.INFO)
+   String getSessionCreationTime(@Parameter(desc = "session name", name = "sessionID") String sessionID) throws Exception;
 }
