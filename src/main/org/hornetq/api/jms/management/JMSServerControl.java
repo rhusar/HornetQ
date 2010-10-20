@@ -251,6 +251,4 @@ public interface JMSServerControl
     */
    @Operation(desc = "List all JMS consumers associated to a JMS Connection")
    String listConsumersAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
-
-
 }
