@@ -74,6 +74,8 @@ public interface PageCursorProvider
    // to be used on tests -------------------------------------------
    
    int getCacheSize();
+   
+   void printDebug();
 
    // Package protected ---------------------------------------------
 

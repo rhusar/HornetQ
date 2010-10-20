@@ -112,7 +112,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
+      PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)createNonPersistentCursor();
       
       PageCursor cursor = cursorProvider.createNonPersistentCursor();
       
@@ -134,6 +134,16 @@ public class PageCursorTest extends ServiceTestBase
    }
 
 
+   /**
+    * @return
+    * @throws Exception
+    */
+   private PageCursor createNonPersistentCursor() throws Exception
+   {
+      return lookupCursorProvider().createNonPersistentCursor();
+   }
+
+
    public void testReadNextPage() throws Exception
    {
 
@@ -143,11 +153,21 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProviderImpl cursorProvider = new PageCursorProviderImpl(lookupPageStore(ADDRESS), server.getStorageManager(), server.getExecutorFactory());
+      PageCursorProvider cursorProvider = lookupCursorProvider();
       
       PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(2,0));
       
       assertNull(cache);
+   }
+
+
+   /**
+    * @return
+    * @throws Exception
+    */
+   private PageCursorProvider lookupCursorProvider() throws Exception
+   {
+      return lookupPageStore(ADDRESS).getCursorProvier();
    }
    
    
@@ -159,7 +179,7 @@ public class PageCursorTest extends ServiceTestBase
       
       System.out.println("Number of pages = " + numberOfPages);
       
-      PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      PageCursorProvider cursorProvider = lookupCursorProvider();
       
       
       PageCursor cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
@@ -480,7 +500,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProvider cursorProvider = lookupPageStore(ADDRESS).getCursorProvier();
+      PageCursorProvider cursorProvider = lookupCursorProvider();
       
       PageCursor cursor = cursorProvider.createNonPersistentCursor();
       PageCursorImpl cursor2 = (PageCursorImpl)cursorProvider.createNonPersistentCursor();
@@ -527,7 +547,43 @@ public class PageCursorTest extends ServiceTestBase
    
    public void testFirstMessageInTheMiddle() throws Exception
    {
+
+      final int NUM_MESSAGES = 100;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
+
+      PageCursorProvider cursorProvider = lookupCursorProvider();
       
+      PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(5, 0));
+
+      PageCursor cursor = cursorProvider.createNonPersistentCursor();
+      PagePosition startingPos = new PagePositionImpl(5, cache.getNumberOfMessages()/2);
+      cursor.bookmark(startingPos);
+      PagedMessage msg = cache.getMessage(startingPos.getMessageNr() + 1);
+      msg.initMessage(server.getStorageManager());
+      int key = msg.getMessage().getIntProperty("key").intValue();
+      
+      msg = null;
+      
+      cache = null;
+      
+      Pair<PagePosition, PagedMessage> msgCursor = null;
+      while ((msgCursor = cursor.moveNext()) != null)
+      {
+         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msgCursor.a);
+      }
+      assertEquals(NUM_MESSAGES, key);
+      
+      
+      forceGC();
+      
+      assertTrue(cursorProvider.getCacheSize() < numberOfPages);
+      
+      server.stop();
+
    }
    
    private int addMessages(final int numMessages, final int messageSize) throws Exception

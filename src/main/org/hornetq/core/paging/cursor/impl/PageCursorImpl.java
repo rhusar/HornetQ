@@ -39,7 +39,6 @@ import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
-import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionOperationAbstract;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
@@ -110,9 +109,28 @@ public class PageCursorImpl implements PageCursor
 
    public PageCursorProvider getProvider()
    {
-      return this.cursorProvider;
+      return cursorProvider;
    }
    
+   public void bookmark(PagePosition position) throws Exception
+   {
+      if (lastPosition != null)
+      {
+         throw new RuntimeException("Bookmark can only be done at the time of the cursor's creation");
+      }
+      
+      lastPosition = position;
+      
+      PageCursorInfo cursorInfo = getPageInfo(position);
+      
+      if (position.getMessageNr() > 0)
+      {
+         cursorInfo.confirmed.addAndGet(position.getMessageNr() - 1);
+      }
+      
+      ack(position);
+   }
+
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
@@ -195,7 +213,6 @@ public class PageCursorImpl implements PageCursor
       installTXCallback(tx, position);
 
    }
-   
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#getFirstPage()
@@ -211,7 +228,6 @@ public class PageCursorImpl implements PageCursor
          return consumedPages.firstKey();
       }
    }
-
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
@@ -242,27 +258,24 @@ public class PageCursorImpl implements PageCursor
       installTXCallback(tx, position);
    }
 
-
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#positionIgnored(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void positionIgnored(PagePosition position)
+   public void positionIgnored(final PagePosition position)
    {
       processACK(position);
    }
-   
-   
+
    /**
     * All the data associated with the cursor should go away here
     */
-   public void close()  throws Exception
+   public void close() throws Exception
    {
       final long tx = store.generateUniqueID();
-      
+
       final ArrayList<Exception> ex = new ArrayList<Exception>();
-      
+
       final AtomicBoolean isPersistent = new AtomicBoolean(false);
-      
 
       // We can't delete the records at the caller's thread
       // because an executor may be holding the synchronized on PageCursorImpl
@@ -295,24 +308,24 @@ public class PageCursorImpl implements PageCursor
             catch (Exception e)
             {
                ex.add(e);
-               log.warn(e.getMessage(), e);
+               PageCursorImpl.log.warn(e.getMessage(), e);
             }
          }
       });
-       
+
       Future future = new Future();
-      
+
       executor.execute(future);
-      
+
       while (!future.await(5000))
       {
-         log.warn("Timeout on waiting cursor " + this + " to be closed");
+         PageCursorImpl.log.warn("Timeout on waiting cursor " + this + " to be closed");
       }
-      
-      
+
       if (isPersistent.get())
       {
-         // Another reason to perform the commit at the main thread is because the OperationContext may only send the result to the client when
+         // Another reason to perform the commit at the main thread is because the OperationContext may only send the
+         // result to the client when
          // the IO on commit is done
          if (ex.size() == 0)
          {
@@ -324,10 +337,9 @@ public class PageCursorImpl implements PageCursor
             throw ex.get(0);
          }
       }
-      
+
       cursorProvider.close(this);
    }
-   
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#getId()
@@ -337,8 +349,6 @@ public class PageCursorImpl implements PageCursor
       return cursorId;
    }
 
-
-   
    public void processReload() throws Exception
    {
       if (recoveredACK != null)
@@ -397,29 +407,29 @@ public class PageCursorImpl implements PageCursor
             previousPos = pos;
          }
 
-         this.lastAckedPosition = lastPosition;
+         lastAckedPosition = lastPosition;
 
          recoveredACK.clear();
          recoveredACK = null;
       }
    }
-   
+
    public void stop()
    {
       Future future = new Future();
       executor.execute(future);
       while (!future.await(1000))
       {
-         log.warn("Waiting page cursor to finish executors - " + this);
+         PageCursorImpl.log.warn("Waiting page cursor to finish executors - " + this);
       }
    }
 
    public void printDebug()
    {
-      printDebug(this.toString());
+      printDebug(toString());
    }
-   
-   public void printDebug(String msg)
+
+   public void printDebug(final String msg)
    {
       System.out.println("Debug information on PageCurorImpl- " + msg);
       for (PageCursorInfo info : consumedPages.values())
@@ -469,7 +479,7 @@ public class PageCursorImpl implements PageCursor
             // there's a different page being acked, we will do the check right away
             scheduleCleanupCheck();
          }
-         this.lastAckedPosition = pos;
+         lastAckedPosition = pos;
       }
       PageCursorInfo info = getPageInfo(pos);
 
@@ -550,7 +560,7 @@ public class PageCursorImpl implements PageCursor
             {
                if (entry.getKey() == lastAckedPosition.getPageNr())
                {
-                  trace("We can't clear page " + entry.getKey() + " now since it's the current page");
+                  PageCursorImpl.trace("We can't clear page " + entry.getKey() + " now since it's the current page");
                }
                else
                {
@@ -588,7 +598,7 @@ public class PageCursorImpl implements PageCursor
          {
             executor.execute(new Runnable()
             {
-               
+
                public void run()
                {
                   synchronized (PageCursorImpl.this)
@@ -601,12 +611,13 @@ public class PageCursorImpl implements PageCursor
                         }
                         if (consumedPages.remove(completePage.getPageId()) == null)
                         {
-                           log.warn("Couldn't remove page " + completePage.getPageId() + " from consumed pages on cursor for address " + pageStore.getAddress());
+                           PageCursorImpl.log.warn("Couldn't remove page " + completePage.getPageId() +
+                                                   " from consumed pages on cursor for address " +
+                                                   pageStore.getAddress());
                         }
-                      }
+                     }
                   }
-                  
-                  
+
                   cursorProvider.scheduleCleanup();
                }
             });
@@ -638,11 +649,12 @@ public class PageCursorImpl implements PageCursor
       // We're holding this object to avoid delete the pages before the IO is complete,
       // however we can't delete these records again
       private boolean pendingDelete;
-      
+
       // We need a separate counter as the cursor may be ignoring certain values because of incomplete transactions or
       // expressions
       private final AtomicInteger confirmed = new AtomicInteger(0);
 
+      @Override
       public String toString()
       {
          return "PageCursorInfo::PageID=" + pageId + " numberOfMessage = " + numberOfMessages;
@@ -663,15 +675,15 @@ public class PageCursorImpl implements PageCursor
       {
          return getNumberOfMessages() == confirmed.get();
       }
-      
+
       public boolean isPendingDelete()
       {
          return pendingDelete;
       }
-      
+
       public void setPendingDelete()
       {
-         this.pendingDelete = true;
+         pendingDelete = true;
       }
 
       /**
@@ -699,9 +711,13 @@ public class PageCursorImpl implements PageCursor
                                  pageId);
          }
 
-         if (getNumberOfMessages() == confirmed.incrementAndGet())
+         // Negative could mean a bookmark on the first element for the page (example -1)
+         if (posACK.getMessageNr() >= 0)
          {
-            onPageDone(this);
+            if (getNumberOfMessages() == confirmed.incrementAndGet())
+            {
+               onPageDone(this);
+            }
          }
       }
 
@@ -729,7 +745,7 @@ public class PageCursorImpl implements PageCursor
 
    }
 
-   static class PageCursorTX implements TransactionOperation
+   static class PageCursorTX extends TransactionOperationAbstract
    {
       HashMap<PageCursorImpl, List<PagePosition>> pendingPositions = new HashMap<PageCursorImpl, List<PagePosition>>();
 
@@ -747,29 +763,9 @@ public class PageCursorImpl implements PageCursor
       }
 
       /* (non-Javadoc)
-       * @see org.hornetq.core.transaction.TransactionOperation#beforePrepare(org.hornetq.core.transaction.Transaction)
-       */
-      public void beforePrepare(final Transaction tx) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.transaction.TransactionOperation#afterPrepare(org.hornetq.core.transaction.Transaction)
-       */
-      public void afterPrepare(final Transaction tx)
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.transaction.TransactionOperation#beforeCommit(org.hornetq.core.transaction.Transaction)
-       */
-      public void beforeCommit(final Transaction tx) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
        * @see org.hornetq.core.transaction.TransactionOperation#afterCommit(org.hornetq.core.transaction.Transaction)
        */
+      @Override
       public void afterCommit(final Transaction tx)
       {
          for (Entry<PageCursorImpl, List<PagePosition>> entry : pendingPositions.entrySet())
@@ -786,19 +782,6 @@ public class PageCursorImpl implements PageCursor
          }
       }
 
-      /* (non-Javadoc)
-       * @see org.hornetq.core.transaction.TransactionOperation#beforeRollback(org.hornetq.core.transaction.Transaction)
-       */
-      public void beforeRollback(final Transaction tx) throws Exception
-      {
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.core.transaction.TransactionOperation#afterRollback(org.hornetq.core.transaction.Transaction)
-       */
-      public void afterRollback(final Transaction tx)
-      {
-      }
    }
 
 }

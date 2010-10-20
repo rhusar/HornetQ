@@ -32,6 +32,8 @@ public interface PageCursor
    // To be called before the server is down
    void stop();
    
+   void bookmark(PagePosition position) throws Exception;
+   
    /** It will be 0 if non persistent cursor */
    public long getId();
    
