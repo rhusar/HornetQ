@@ -125,7 +125,7 @@ public class PageCursorImpl implements PageCursor
       
       if (position.getMessageNr() > 0)
       {
-         cursorInfo.confirmed.addAndGet(position.getMessageNr() - 1);
+         cursorInfo.confirmed.addAndGet(position.getMessageNr());
       }
       
       ack(position);
