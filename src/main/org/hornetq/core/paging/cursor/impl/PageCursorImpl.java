@@ -358,11 +358,21 @@ public class PageCursorImpl implements PageCursor
             PageCursorImpl.trace("********** processing reload!!!!!!!");
          }
          Collections.sort(recoveredACK);
+         
+         boolean first = true;
 
          PagePosition previousPos = null;
          for (PagePosition pos : recoveredACK)
          {
             PageCursorInfo positions = getPageInfo(pos);
+            if (first)
+            {
+               first = false;
+               if (pos.getMessageNr() > 0)
+               {
+                  positions.confirmed.addAndGet(pos.getMessageNr());
+               }
+            }
 
             positions.addACK(pos);
 
@@ -556,7 +566,7 @@ public class PageCursorImpl implements PageCursor
          for (Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())
          {
             PageCursorInfo info = entry.getValue();
-            if (info.isDone() && !info.isPendingDelete())
+            if (info.isDone() && !info.isPendingDelete() && lastAckedPosition != null)
             {
                if (entry.getKey() == lastAckedPosition.getPageNr())
                {

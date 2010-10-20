@@ -130,7 +130,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       while (true)
       {
-         Pair<PagePosition, PagedMessage> retPos = internalAfter(cursorPos);
+         Pair<PagePosition, PagedMessage> retPos = internalGetNext(cursorPos);
 
          if (retPos == null)
          {
@@ -165,7 +165,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
    }
 
-   private Pair<PagePosition, PagedMessage> internalAfter(final PagePosition pos)
+   private Pair<PagePosition, PagedMessage> internalGetNext(final PagePosition pos)
    {
       PagePosition retPos = pos.nextMessage();
 
@@ -308,6 +308,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
             Page page = pagingStore.depage();
             if (page != null)
             {
+               System.out.println("Deleting " + page);
                page.delete();
             }
          }

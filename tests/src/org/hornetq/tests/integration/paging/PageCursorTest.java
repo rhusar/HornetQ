@@ -583,6 +583,77 @@ public class PageCursorTest extends ServiceTestBase
       assertTrue(cursorProvider.getCacheSize() < numberOfPages);
       
       server.stop();
+      
+      server.start();
+      
+      Thread.sleep(1000);
+      assertEquals(2, lookupPageStore(ADDRESS).getNumberOfPages());
+      
+      
+
+   }
+   
+   
+   public void testFirstMessageInTheMiddlePersistent() throws Exception
+   {
+
+      final int NUM_MESSAGES = 100;
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
+
+      PageCursorProvider cursorProvider = lookupCursorProvider();
+      
+      PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(5, 0));
+
+      PageCursor cursor = cursorProvider.getPersistentCursor(queue.getID());
+      PagePosition startingPos = new PagePositionImpl(5, cache.getNumberOfMessages()/2);
+      cursor.bookmark(startingPos);
+      PagedMessage msg = cache.getMessage(startingPos.getMessageNr() + 1);
+      msg.initMessage(server.getStorageManager());
+      int initialKey = msg.getMessage().getIntProperty("key").intValue();
+      int key = initialKey;
+      
+      msg = null;
+      
+      cache = null;
+      
+      Pair<PagePosition, PagedMessage> msgCursor = null;
+      while ((msgCursor = cursor.moveNext()) != null)
+      {
+         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
+      }
+      assertEquals(NUM_MESSAGES, key);
+      
+      
+      server.stop();
+      
+      OperationContextImpl.clearContext();
+      
+      server.start();
+      
+      cursorProvider = lookupCursorProvider();
+      cursor = cursorProvider.getPersistentCursor(queue.getID());
+      key = initialKey;
+      while ((msgCursor = cursor.moveNext()) != null)
+      {
+         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msgCursor.a);
+      }
+      
+      
+      forceGC();
+      
+      assertTrue(cursorProvider.getCacheSize() < numberOfPages);
+      
+      // This is to make sure all the pending files will be deleted
+      server.stop();
+      
+      server.start();
+      
+      // TODO: this should be exact 2
+      assertTrue(lookupPageStore(ADDRESS).getNumberOfPages() <= 3);
 
    }
    
