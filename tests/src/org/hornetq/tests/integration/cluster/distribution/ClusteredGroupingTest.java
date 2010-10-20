@@ -72,9 +72,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
          waitForBindings(1, "queues.testaddress", 1, 1, true);
          waitForBindings(2, "queues.testaddress", 1, 1, true);
 
-         /*waitForBindings(0, "queues.testaddress", 2, 2, false);
+         waitForBindings(0, "queues.testaddress", 2, 2, false);
          waitForBindings(1, "queues.testaddress", 2, 2, false);
-         waitForBindings(2, "queues.testaddress", 2, 2, false);*/
+         waitForBindings(2, "queues.testaddress", 2, 2, false);
 
          sendWithProperty(0, "queues.testaddress", 10, false, Message.HDR_GROUP_ID, new SimpleString("id1"));
 
@@ -171,9 +171,9 @@ public class ClusteredGroupingTest extends ClusterTestBase
          waitForBindings(1, "queues.testaddress", 1, 1, true);
          waitForBindings(2, "queues.testaddress", 1, 1, true);
 
-         /*waitForBindings(0, "queues.testaddress", 2, 2, false);
+         waitForBindings(0, "queues.testaddress", 2, 2, false);
          waitForBindings(1, "queues.testaddress", 2, 2, false);
-         waitForBindings(2, "queues.testaddress", 2, 2, false);*/
+         waitForBindings(2, "queues.testaddress", 2, 2, false);
 
          try
          {
