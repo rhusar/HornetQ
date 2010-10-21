@@ -36,9 +36,10 @@ public class JMSConnectionInfo
    
    private final long creationTime;
    
-   // TODO
-   // user name
-   // client ID
+   private final String clientID;
+   
+   private final String username;
+   
 
    // Static --------------------------------------------------------
    
@@ -49,9 +50,14 @@ public class JMSConnectionInfo
       for (int i = 0; i < array.length(); i++)
       {
          JSONObject obj = array.getJSONObject(i);
+         String cid = obj.isNull("clientID") ? null : obj.getString("clientID");
+         String uname = obj.isNull("principal") ? null : obj.getString("principal");
+         
          JMSConnectionInfo info = new JMSConnectionInfo(obj.getString("connectionID"),
                                                         obj.getString("clientAddress"),
-                                                        obj.getLong("creationTime"));
+                                                        obj.getLong("creationTime"),
+                                                        cid,
+                                                        uname);
          infos[i] = info;
       }
       return infos;
@@ -61,11 +67,15 @@ public class JMSConnectionInfo
 
    private JMSConnectionInfo(final String connectionID,
                              final String clientAddress,
-                             final long creationTime)
+                             final long creationTime,
+                             final String clientID,
+                             final String username)
    {
       this.connectionID = connectionID;
       this.clientAddress = clientAddress;
       this.creationTime = creationTime;
+      this.clientID = clientID;
+      this.username = username;
    }
    
    // Public --------------------------------------------------------
@@ -83,6 +93,16 @@ public class JMSConnectionInfo
    public long getCreationTime()
    {
       return creationTime;
+   }
+   
+   public String getClientID()
+   {
+      return clientID;
+   }
+   
+   public String getUsername()
+   {
+      return username;
    }
    
    // Package protected ---------------------------------------------

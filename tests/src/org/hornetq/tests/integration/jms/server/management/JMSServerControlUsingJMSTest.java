@@ -298,6 +298,12 @@ public class JMSServerControlUsingJMSTest extends JMSServerControlTest
             return null;
          }
 
+         public String listSessionsAsJSON(String connectionID) throws Exception
+         {
+            // TODO Auto-generated method stub
+            return null;
+         }
+
       };
    }
    // Public --------------------------------------------------------

@@ -987,4 +987,30 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       }
       return null;
    }
+
+   public String listSessionsAsJSON(final String connectionID) throws Exception
+   {
+      checkStarted();
+
+      clearIO();
+      
+      JSONArray array = new JSONArray();
+      try
+      {
+         List<ServerSession> sessions = server.getHornetQServer().getSessions(connectionID);
+         for (ServerSession sess : sessions)
+         {
+            JSONObject obj = new JSONObject();
+            obj.put("sessionID", sess.getName());
+            obj.put("creationTime", sess.getCreationTime());
+            array.put(obj);
+         }
+      }
+      finally
+      {
+         blockOnIO();
+      }
+      return array.toString();
+   }
+
 }

@@ -1229,7 +1229,12 @@ public class ServerSessionImpl implements ServerSession , FailureListener
 
    public String getLastSentMessageID(String address)
    {
-      return targetAddressInfos.get(SimpleString.toSimpleString(address)).toString();
+      UUID id = targetAddressInfos.get(SimpleString.toSimpleString(address));
+      if (id != null)
+      {
+         return id.toString();
+      }
+      return null;
    }
 
    public long getCreationTime()

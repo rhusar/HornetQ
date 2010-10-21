@@ -270,4 +270,10 @@ public interface JMSServerControl
     */
    @Operation(desc = "Gets the sessions creation time", impact = MBeanOperationInfo.INFO)
    String getSessionCreationTime(@Parameter(desc = "session name", name = "sessionID") String sessionID) throws Exception;
+   
+   /**
+    * Lists all the sessions IDs for the specified connection ID.
+    */
+   @Operation(desc = "List the sessions for the given connectionID", impact = MBeanOperationInfo.INFO)
+   String listSessionsAsJSON(@Parameter(desc = "a connection ID", name = "connectionID") String connectionID) throws Exception;
 }
