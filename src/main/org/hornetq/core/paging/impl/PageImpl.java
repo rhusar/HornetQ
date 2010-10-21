@@ -105,8 +105,9 @@ public class PageImpl implements Page, Comparable<Page>
    {
       ArrayList<PagedMessage> messages = new ArrayList<PagedMessage>();
 
+      size.set((int)file.size());
       // Using direct buffer, as described on https://jira.jboss.org/browse/HORNETQ-467
-      ByteBuffer buffer2 = ByteBuffer.allocateDirect((int)file.size());
+      ByteBuffer buffer2 = ByteBuffer.allocateDirect(size.get());
       
       file.position(0);
       file.read(buffer2);

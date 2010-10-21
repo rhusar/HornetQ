@@ -134,15 +134,6 @@ public class PageCursorTest extends ServiceTestBase
    }
 
 
-   /**
-    * @return
-    * @throws Exception
-    */
-   private PageCursor createNonPersistentCursor() throws Exception
-   {
-      return lookupCursorProvider().createNonPersistentCursor();
-   }
-
 
    public void testReadNextPage() throws Exception
    {
@@ -160,15 +151,6 @@ public class PageCursorTest extends ServiceTestBase
       assertNull(cache);
    }
 
-
-   /**
-    * @return
-    * @throws Exception
-    */
-   private PageCursorProvider lookupCursorProvider() throws Exception
-   {
-      return lookupPageStore(ADDRESS).getCursorProvier();
-   }
    
    
    public void testRestart() throws Exception
@@ -348,7 +330,7 @@ public class PageCursorTest extends ServiceTestBase
 
       pageStore.startPaging();
 
-      final int NUM_MESSAGES = 1000;
+      final int NUM_MESSAGES = 100;
       
       final int messageSize = 1024 * 1024;
       
@@ -378,12 +360,81 @@ public class PageCursorTest extends ServiceTestBase
          
          assertNotNull(readMessage);
          
-         cursor.ack(readMessage.a);
-         
          assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
          
          assertNull(cursor.moveNext());
       }
+      
+      server.stop();
+      
+      OperationContextImpl.clearContext();
+      
+      createServer();
+      
+      pageStore = lookupPageStore(ADDRESS);
+      
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
+      
+      for (int i = 0; i < NUM_MESSAGES * 2; i++)
+      {
+         if (i % 100 == 0) System.out.println("Paged " + i);
+
+         if (i >= NUM_MESSAGES)
+         {
+            
+            HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+   
+            ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
+            msg.putIntProperty("key", i);
+            
+            msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+   
+            Assert.assertTrue(pageStore.page(msg));
+         }
+         
+         Pair<PagePosition, PagedMessage> readMessage = cursor.moveNext();
+         
+         assertNotNull(readMessage);
+         
+         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
+      }
+
+      server.stop();
+      
+      OperationContextImpl.clearContext();
+      
+      createServer();
+      
+      pageStore = lookupPageStore(ADDRESS);
+      
+      cursor = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
+      
+      for (int i = 0; i < NUM_MESSAGES * 3; i++)
+      {
+         if (i % 100 == 0) System.out.println("Paged " + i);
+
+         if (i >= NUM_MESSAGES * 2)
+         {
+            
+            HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+   
+            ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
+            msg.putIntProperty("key", i);
+            
+            msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+   
+            Assert.assertTrue(pageStore.page(msg));
+         }
+         
+         Pair<PagePosition, PagedMessage> readMessage = cursor.moveNext();
+         
+         assertNotNull(readMessage);
+         
+         cursor.ack(readMessage.a);
+         
+         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
+      }
+
       
    }
    
@@ -455,36 +506,6 @@ public class PageCursorTest extends ServiceTestBase
    }
 
 
-   /**
-    * @param storage
-    * @param pageStore
-    * @param pgParameter
-    * @param start
-    * @param NUM_MESSAGES
-    * @param messageSize
-    * @throws Exception
-    */
-   private void pgMessages(StorageManager storage,
-                           PagingStoreImpl pageStore,
-                           PageTransactionInfo pgParameter,
-                           int start,
-                           final int NUM_MESSAGES,
-                           final int messageSize) throws Exception
-   {
-      List<ServerMessage> messages = new ArrayList<ServerMessage>();
-      
-      for (int i = start ; i < start + NUM_MESSAGES; i++)
-      {
-         HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
-         ServerMessage msg = new ServerMessageImpl(storage.generateUniqueID(), buffer.writerIndex());
-         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
-         msg.putIntProperty("key", i);
-         messages.add(msg);
-      }
-      
-      pageStore.page(messages, pgParameter.getTransactionID());
-   }
-   
    public void testCleanupScenarios() throws Exception
    {
       // Validate the pages are being cleared (with multiple cursors)
@@ -587,7 +608,7 @@ public class PageCursorTest extends ServiceTestBase
       server.start();
       
       Thread.sleep(1000);
-      assertEquals(2, lookupPageStore(ADDRESS).getNumberOfPages());
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
       
       
 
@@ -631,7 +652,7 @@ public class PageCursorTest extends ServiceTestBase
       
       OperationContextImpl.clearContext();
       
-      server.start();
+      createServer();
       
       cursorProvider = lookupCursorProvider();
       cursor = cursorProvider.getPersistentCursor(queue.getID());
@@ -649,11 +670,11 @@ public class PageCursorTest extends ServiceTestBase
       
       // This is to make sure all the pending files will be deleted
       server.stop();
+      OperationContextImpl.clearContext();
+
+      createServer();
       
-      server.start();
-      
-      // TODO: this should be exact 2
-      assertTrue(lookupPageStore(ADDRESS).getNumberOfPages() <= 3);
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
    
@@ -708,6 +729,17 @@ public class PageCursorTest extends ServiceTestBase
       OperationContextImpl.clearContext();
       System.out.println("Tmp:" + getTemporaryDir());
       
+      createServer();
+
+      //createQueue(ADDRESS.toString(), ADDRESS.toString());
+   }
+
+
+   /**
+    * @throws Exception
+    */
+   private void createServer() throws Exception
+   {
       Configuration config = createDefaultConfig();
       
       config.setJournalSyncNonTransactional(true);
@@ -720,10 +752,62 @@ public class PageCursorTest extends ServiceTestBase
 
       server.start();
       
-      queue = server.createQueue(ADDRESS, ADDRESS, null, true, false);
-
-      //createQueue(ADDRESS.toString(), ADDRESS.toString());
+      try
+      {
+         queue = server.createQueue(ADDRESS, ADDRESS, null, true, false);
+      }
+      catch (Exception ignored)
+      {
+       }
    }
+   /**
+    * @return
+    * @throws Exception
+    */
+   private PageCursor createNonPersistentCursor() throws Exception
+   {
+      return lookupCursorProvider().createNonPersistentCursor();
+   }
+
+   /**
+    * @return
+    * @throws Exception
+    */
+   private PageCursorProvider lookupCursorProvider() throws Exception
+   {
+      return lookupPageStore(ADDRESS).getCursorProvier();
+   }
+
+   /**
+    * @param storage
+    * @param pageStore
+    * @param pgParameter
+    * @param start
+    * @param NUM_MESSAGES
+    * @param messageSize
+    * @throws Exception
+    */
+   private void pgMessages(StorageManager storage,
+                           PagingStoreImpl pageStore,
+                           PageTransactionInfo pgParameter,
+                           int start,
+                           final int NUM_MESSAGES,
+                           final int messageSize) throws Exception
+   {
+      List<ServerMessage> messages = new ArrayList<ServerMessage>();
+      
+      for (int i = start ; i < start + NUM_MESSAGES; i++)
+      {
+         HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
+         ServerMessage msg = new ServerMessageImpl(storage.generateUniqueID(), buffer.writerIndex());
+         msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
+         msg.putIntProperty("key", i);
+         messages.add(msg);
+      }
+      
+      pageStore.page(messages, pgParameter.getTransactionID());
+   }
+   
 
    protected void tearDown() throws Exception
    {

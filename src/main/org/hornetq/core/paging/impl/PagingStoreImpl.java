@@ -20,9 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -472,9 +470,32 @@ public class PagingStoreImpl implements TestSupportPageStore
                         firstPageId = fileId;
                      }
                   }
-
-                  if (numberOfPages != 0)
+                  
+                  if (currentPageId != 0)
                   {
+                     currentPage = createPage(currentPageId);
+                     currentPage.open();
+                     
+                     List<PagedMessage> messages = currentPage.read();
+                     
+                     LivePageCache pageCache = new LivePageCacheImpl(currentPage);
+                     
+                     for (PagedMessage msg : messages)
+                     {
+                        msg.initMessage(storageManager);
+                        pageCache.addLiveMessage(msg);
+                     }
+                     
+                     currentPage.setLiveCache(pageCache);
+                     
+                     currentPageSize.set(currentPage.getSize());
+                     
+                     cursorProvider.addPageCache(pageCache);
+                  }
+                  
+                  if (currentPage != null)
+                  {
+                     
                      startPaging();
                   }
                }
