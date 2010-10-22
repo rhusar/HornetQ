@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PageTransactionInfo;
@@ -92,32 +93,34 @@ public class PageCursorProviderImpl implements PageCursorProvider
    {
       return pagingStore;
    }
+   
+   public PageCursor createPersistentCursor(long cursorID, Filter filter)
+   {
+      PageCursor activeCursor = activeCursors.get(cursorID);
+      if (activeCursor != null)
+      {
+         throw new IllegalStateException("Cursor " + cursorID + " had already been created");
+      }
+      
+      activeCursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), filter, cursorID);
+      activeCursors.put(cursorID, activeCursor);
+      return activeCursor;
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
    public PageCursor getPersistentCursor(long cursorID)
    {
-      PageCursor activeCursor = activeCursors.get(cursorID);
-      if (activeCursor == null)
-      {
-         activeCursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), cursorID);
-         PageCursor previousValue = activeCursors.putIfAbsent(cursorID, activeCursor);
-         if (previousValue != null)
-         {
-            activeCursor = previousValue;
-         }
-      }
-
-      return activeCursor;
+      return activeCursors.get(cursorID);
    }
 
    /**
     * this will create a non-persistent cursor
     */
-   public PageCursor createNonPersistentCursor()
+   public PageCursor createNonPersistentCursor(Filter filter)
    {
-      PageCursor cursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), 0);
+      PageCursor cursor = new PageCursorImpl(this, pagingStore, storageManager, executorFactory.getExecutor(), filter, 0);
       nonPersistentCursors.add(cursor);
       return cursor;
    }

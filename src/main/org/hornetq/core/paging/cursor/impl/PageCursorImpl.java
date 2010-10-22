@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
@@ -70,6 +71,8 @@ public class PageCursorImpl implements PageCursor
    private final StorageManager store;
 
    private final long cursorId;
+   
+   private final Filter filter;
 
    private final PagingStore pageStore;
 
@@ -96,6 +99,7 @@ public class PageCursorImpl implements PageCursor
                          final PagingStore pageStore,
                          final StorageManager store,
                          final Executor executor,
+                         final Filter filter,
                          final long cursorId)
    {
       this.pageStore = pageStore;
@@ -103,6 +107,7 @@ public class PageCursorImpl implements PageCursor
       this.cursorProvider = cursorProvider;
       this.cursorId = cursorId;
       this.executor = executor;
+      this.filter = filter;
    }
 
    // Public --------------------------------------------------------
@@ -472,8 +477,14 @@ public class PageCursorImpl implements PageCursor
 
    protected boolean match(final ServerMessage message)
    {
-      // To be used with expressions
-      return true;
+      if (filter == null)
+      {
+         return true;
+      }
+      else
+      {
+         return filter.match(message);
+      }
    }
 
    // Private -------------------------------------------------------

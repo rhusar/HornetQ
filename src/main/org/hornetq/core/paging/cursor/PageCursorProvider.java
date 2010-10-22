@@ -14,6 +14,7 @@
 package org.hornetq.core.paging.cursor;
 
 import org.hornetq.api.core.Pair;
+import org.hornetq.core.filter.Filter;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 
@@ -50,11 +51,13 @@ public interface PageCursorProvider
     */
    PageCursor getPersistentCursor(long queueId);
    
+   PageCursor createPersistentCursor(long queueId, Filter filter);
+   
    /**
     * Create a non persistent cursor, usually associated with browsing
     * @return
     */
-   PageCursor createNonPersistentCursor();
+   PageCursor createNonPersistentCursor(Filter filter);
 
    Pair<PagePosition, PagedMessage> getNext(PageCursor cursor, PagePosition pos) throws Exception;
    
