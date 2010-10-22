@@ -111,10 +111,8 @@ public class PageCursorTest extends ServiceTestBase
       int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
 
       System.out.println("NumberOfPages = " + numberOfPages);
-
-      PageCursorProviderImpl cursorProvider = (PageCursorProviderImpl)createNonPersistentCursor();
       
-      PageCursor cursor = cursorProvider.createNonPersistentCursor();
+      PageCursor cursor = createNonPersistentCursor();
       
       Pair<PagePosition, PagedMessage> msg;
       
@@ -129,7 +127,11 @@ public class PageCursorTest extends ServiceTestBase
       
       forceGC();
       
-      assertTrue(cursorProvider.getCacheSize() < numberOfPages);
+      assertTrue(lookupCursorProvider().getCacheSize() < numberOfPages);
+      
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
 
@@ -214,7 +216,10 @@ public class PageCursorTest extends ServiceTestBase
       OperationContextImpl.getContext(null).waitCompletion(); 
       ((PageCursorImpl)cursor).printDebug();
       
-      
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+
    }
    
    public void testRestartWithHoleOnAck() throws Exception
@@ -265,6 +270,10 @@ public class PageCursorTest extends ServiceTestBase
          cursor.ack(msg.a);
       }
       
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+
    }
    
    
@@ -321,6 +330,10 @@ public class PageCursorTest extends ServiceTestBase
       }
       
       tx.commit();
+      
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
       
    }
    
@@ -435,7 +448,10 @@ public class PageCursorTest extends ServiceTestBase
          assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
       }
 
-      
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+ 
    }
    
    
@@ -447,7 +463,7 @@ public class PageCursorTest extends ServiceTestBase
 
       final int NUM_MESSAGES = 100;
       
-      final int messageSize = 10 * 1024;
+      final int messageSize = 100 * 1024;
       
       
       PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
@@ -476,7 +492,8 @@ public class PageCursorTest extends ServiceTestBase
       pageStore.forceAnotherPage();
       
       addMessages(300, NUM_MESSAGES, messageSize);
-      pageStore.forceAnotherPage();
+      
+      System.out.println("Number of pages - " + pageStore.getNumberOfPages());
 
 
       // First consume what's already there without any tx as nothing was committed
@@ -490,9 +507,12 @@ public class PageCursorTest extends ServiceTestBase
 
       assertNull(cursor.moveNext());
       
+      cursor.printDebug();
       pgtxRollback.rollback();
+      
       this.server.getPagingManager().removeTransaction(pgtxRollback.getTransactionID());
       pgtxCommit.commit();
+
       // Second:after pgtxCommit was done
       for (int i = 200; i < 300; i++)
       {
@@ -502,15 +522,14 @@ public class PageCursorTest extends ServiceTestBase
          cursor.ack(pos.a);
       }
       
+      assertNull(cursor.moveNext());
+      
+      server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+   
       
    }
-
-
-   public void testCleanupScenarios() throws Exception
-   {
-      // Validate the pages are being cleared (with multiple cursors)
-   }
-   
    
    public void testCloseNonPersistentConsumer() throws Exception
    {
@@ -550,8 +569,10 @@ public class PageCursorTest extends ServiceTestBase
       assertSame(cursor2.getProvider(), cursorProvider);
 
       cursor2.close();
-      
+
       server.stop();
+      createServer();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
   
@@ -560,12 +581,7 @@ public class PageCursorTest extends ServiceTestBase
    {
       // Validate the cursor are working fine when all the pages are gone, and then paging being restarted   
    }
-   
-   public void testRedeliveryWithCleanup() throws Exception
-   {
-      
-   }
-   
+    
    public void testFirstMessageInTheMiddle() throws Exception
    {
 
@@ -604,14 +620,8 @@ public class PageCursorTest extends ServiceTestBase
       assertTrue(cursorProvider.getCacheSize() < numberOfPages);
       
       server.stop();
-      
-      server.start();
-      
-      Thread.sleep(1000);
+      createServer();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
-      
-      
-
    }
    
    
@@ -668,12 +678,8 @@ public class PageCursorTest extends ServiceTestBase
       
       assertTrue(cursorProvider.getCacheSize() < numberOfPages);
       
-      // This is to make sure all the pending files will be deleted
       server.stop();
-      OperationContextImpl.clearContext();
-
       createServer();
-      
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -740,6 +746,8 @@ public class PageCursorTest extends ServiceTestBase
     */
    private void createServer() throws Exception
    {
+      OperationContextImpl.clearContext();
+      
       Configuration config = createDefaultConfig();
       
       config.setJournalSyncNonTransactional(true);

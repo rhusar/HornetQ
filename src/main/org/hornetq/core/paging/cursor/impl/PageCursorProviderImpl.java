@@ -321,6 +321,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void printDebug()
    {
+      System.out.println("Debug information for PageCursorProviderImpl:");
       for (PageCache cache : softCache.values())
       {
          System.out.println("Cache " + cache);

@@ -111,23 +111,23 @@ public class PageCursorImpl implements PageCursor
    {
       return cursorProvider;
    }
-   
+
    public void bookmark(PagePosition position) throws Exception
    {
       if (lastPosition != null)
       {
          throw new RuntimeException("Bookmark can only be done at the time of the cursor's creation");
       }
-      
+
       lastPosition = position;
-      
+
       PageCursorInfo cursorInfo = getPageInfo(position);
-      
+
       if (position.getMessageNr() > 0)
       {
          cursorInfo.confirmed.addAndGet(position.getMessageNr());
       }
-      
+
       ack(position);
    }
 
@@ -358,7 +358,7 @@ public class PageCursorImpl implements PageCursor
             PageCursorImpl.trace("********** processing reload!!!!!!!");
          }
          Collections.sort(recoveredACK);
-         
+
          boolean first = true;
 
          PagePosition previousPos = null;
@@ -667,7 +667,7 @@ public class PageCursorImpl implements PageCursor
       @Override
       public String toString()
       {
-         return "PageCursorInfo::PageID=" + pageId + " numberOfMessage = " + numberOfMessages;
+         return "PageCursorInfo::PageID=" + pageId + " numberOfMessage = " + numberOfMessages + ", confirmed = " + confirmed;
       }
 
       public PageCursorInfo(final long pageId, final int numberOfMessages, final PageCache cache)
