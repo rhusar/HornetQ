@@ -69,7 +69,6 @@ public class InVMNodeManager extends NodeManager
          }
          else if (state == LIVE)
          {
-            releaseBackupNode();
             break;
          }
       }
@@ -109,6 +108,24 @@ public class InVMNodeManager extends NodeManager
    public void stopBackup() throws Exception
    {
       backupLock.release();
+   }
+
+   @Override
+   public void releaseBackup()
+   {
+      releaseBackupNode();
+   }
+
+   @Override
+   public boolean isAwaitingFailback() throws Exception
+   {
+      return state == FAILING_BACK; 
+   }
+
+   @Override
+   public void killServer()
+   {
+      //todo
    }
 
    private void releaseBackupNode()

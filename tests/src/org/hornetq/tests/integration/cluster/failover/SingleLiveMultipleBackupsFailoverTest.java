@@ -13,20 +13,15 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.server.NodeManager;
@@ -46,11 +41,11 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
    {
       nodeManager = new InVMNodeManager();
       createLiveConfig(0);
-      createBackupConfig(0, 1,false,  0, 2, 3, 4, 5);
-      createBackupConfig(0, 2,false,  0, 1, 3, 4, 5);
-      createBackupConfig(0, 3,false,  0, 1, 2, 4, 5);
-      createBackupConfig(0, 4, false, 0, 1, 2, 3, 5);
-      createBackupConfig(0, 5, false, 0, 1, 2, 3, 4);
+      createBackupConfig(0, 1, 0, 2, 3, 4, 5);
+      createBackupConfig(0, 2, 0, 1, 3, 4, 5);
+      createBackupConfig(0, 3, 0, 1, 2, 4, 5);
+      createBackupConfig(0, 4, 0, 1, 2, 3, 5);
+      createBackupConfig(0, 5, 0, 1, 2, 3, 4);
       servers.get(0).start();
       servers.get(1).start();
       servers.get(2).start();
@@ -69,39 +64,39 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       ClientSession session = sendAndConsume(sf, true);
       System.out.println("failing node 0");
       servers.get(0).crash(session);
-
+      
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3, 4, 5);
+      backupNode = waitForNewLive(5, true, servers, 1, 2, 3, 4, 5);
       session = sendAndConsume(sf, false);
       System.out.println("failing node " + backupNode);
       servers.get(backupNode).crash(session);
 
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3, 4, 5);
+      backupNode = waitForNewLive(5, true, servers, 1, 2, 3, 4, 5);
       session = sendAndConsume(sf, false);
       System.out.println("failing node " + backupNode);
       servers.get(backupNode).crash(session);
 
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3, 4, 5);
+      backupNode = waitForNewLive(5, true, servers, 1, 2, 3, 4, 5);
       session = sendAndConsume(sf, false);
       System.out.println("failing node " + backupNode);
       servers.get(backupNode).crash(session);
 
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3, 4, 5);
+      backupNode = waitForNewLive(5, true, servers, 1, 2, 3, 4, 5);
       session = sendAndConsume(sf, false);
       System.out.println("failing node " + backupNode);
       servers.get(backupNode).crash(session);
 
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3, 4, 5);
+      backupNode = waitForNewLive(5, false, servers, 1, 2, 3, 4, 5);
       session = sendAndConsume(sf, false);
       session.close();
       servers.get(backupNode).stop();
    }
    
-   protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
+   protected void createBackupConfig(int liveNode, int nodeid, int... nodes)
    {
       Configuration config1 = super.createDefaultConfig();
       config1.getAcceptorConfigurations().clear();
@@ -119,12 +114,8 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
          staticConnectors.add(liveConnector.getName());
       }
       TransportConfiguration backupConnector = createTransportConfiguration(isNetty(), false, generateParams(nodeid, isNetty()));
-      List<String> pairs = null;
-      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
-           createClusterConnections? staticConnectors:pairs);
+      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1, staticConnectors);
       config1.getClusterConfigurations().add(ccc1);
-      BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
-      config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
       config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);

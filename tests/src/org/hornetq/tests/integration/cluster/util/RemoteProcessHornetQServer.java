@@ -36,7 +36,8 @@ public class RemoteProcessHornetQServer implements TestableServer
    private Process serverProcess;
    private boolean initialised = false;
    private CountDownLatch initLatch;
-   
+   private boolean started;
+
    public RemoteProcessHornetQServer(String configurationClassName)
    {
       this.configurationClassName = configurationClassName;
@@ -72,6 +73,11 @@ public class RemoteProcessHornetQServer implements TestableServer
       {
          serverProcess.destroy();
       }
+   }
+
+   public boolean isStarted()
+   {
+      return started;
    }
 
    public void setInitialised(boolean initialised)
@@ -146,4 +152,8 @@ public class RemoteProcessHornetQServer implements TestableServer
 
    // Inner classes -------------------------------------------------
 
+   public void setStarted(boolean init)
+   {
+      started = true;
+   }
 }

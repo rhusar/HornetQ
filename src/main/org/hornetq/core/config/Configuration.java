@@ -51,6 +51,19 @@ public interface Configuration extends Serializable
    void setClustered(boolean clustered);
 
    /**
+    * returns whether a backup will auto die when a live server is failing back
+    * @return
+    */
+   public boolean isAllowAutoFailBack();
+
+   /**
+    * whether a backup will auto die when a live server is failing back
+    *
+    * @param allowAutoFailBack true if allowed
+    */
+   public void setAllowAutoFailBack(boolean allowAutoFailBack);
+
+   /**
     * Returns whether delivery count is persisted before messages are delivered to the consumers.
     * <br>
     * Default value is {@value org.hornetq.core.config.impl.ConfigurationImpl#DEFAULT_PERSIST_DELIVERY_COUNT_BEFORE_DELIVERY}.
@@ -251,17 +264,6 @@ public interface Configuration extends Serializable
     * Returns the connectors configured for this server.
     */
    Map<String, TransportConfiguration> getConnectorConfigurations();
-
-
-  /**
-   * sets the connectors used to get topology info from for the backup server when shared store is used.
-   */
-   void setBackupConnectorConfiguration(BackupConnectorConfiguration backupConnectorConfiguration);
-
-   /**
-    * Returns the connectors used to get topology info from for the backup server when shared store is used.
-    */
-   BackupConnectorConfiguration getBackupConnectorConfiguration();
 
    /**
     * Sets the connectors configured for this server.

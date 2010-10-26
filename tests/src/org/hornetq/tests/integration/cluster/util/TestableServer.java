@@ -33,4 +33,6 @@ public interface TestableServer
    public boolean isInitialised();
 
    void destroy();
+
+   boolean isStarted();
 }

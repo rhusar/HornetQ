@@ -70,18 +70,33 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
 
    protected abstract boolean isNetty();
 
-   protected int waitForBackup(long seconds, Map<Integer, TestableServer> servers, int... nodes)
+   protected int waitForNewLive(long seconds, boolean waitForNewBackup, Map<Integer, TestableServer> servers, int... nodes)
    {
       long time = System.currentTimeMillis();
       long toWait = seconds * 1000;
+      int newLive = -1;
       while (true)
       {
          for (int node : nodes)
          {
             TestableServer backupServer = servers.get(node);
-            if (backupServer.isInitialised())
+            if (newLive == -1 && backupServer.isInitialised())
             {
-               return node;
+               newLive = node;
+            }
+            else if(newLive != -1)
+            {
+               if(waitForNewBackup)
+                  {
+                  if(node != newLive && servers.get(node).isStarted())
+                  {
+                     return newLive;
+                  }
+               }
+               else
+               {
+                  return newLive;
+               }
             }
          }
          try

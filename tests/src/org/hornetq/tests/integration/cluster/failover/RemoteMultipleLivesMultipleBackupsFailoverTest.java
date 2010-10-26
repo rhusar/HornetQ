@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -166,8 +165,6 @@ public class RemoteMultipleLivesMultipleBackupsFailoverTest extends MultipleLive
          staticConnectors.add(liveConnector.getName());
       }
       TransportConfiguration backupConnector = createTransportConfiguration(true, false, generateParams(nodeid, true));
-      BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
-      config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
       List<String> clusterNodes = new ArrayList<String>();

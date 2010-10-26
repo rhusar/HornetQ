@@ -22,7 +22,6 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -73,7 +72,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       servers.get(0).crash(session);
 
       session.close();
-      backupNode = waitForBackup(5, servers, 1, 2, 3);
+      backupNode = waitForNewLive(5, true, servers, 1, 2, 3);
       session = sendAndConsume(sf, false);
 
       System.out.println("restarting live node as a backup");
@@ -93,7 +92,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       System.out.println("failing node " + backupNode);
       servers.get(backupNode).crash(session);
       session.close();
-      backupNode = waitForBackup(5, servers, 0);
+      backupNode = waitForNewLive(5, true, servers, 0);
       assertEquals(0, backupNode);
       session = sendAndConsume(sf, false);
      
@@ -149,7 +148,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       servers.put(liveNode, new RemoteProcessHornetQServer(SharedLiveServerConfiguration.class.getName()));
    }
    
-   @Override
+
    protected void createBackupConfig(int liveNode, int nodeid, boolean createClusterConnections, int... nodes)
    {
       servers.put(nodeid, new RemoteProcessHornetQServer(backups.get(nodeid)));
@@ -273,8 +272,6 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
            createClusterConnections? staticConnectors:pairs);
       config1.getClusterConfigurations().add(ccc1);
-      BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
-      config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
 System.out.println(config1.getBindingsDirectory());

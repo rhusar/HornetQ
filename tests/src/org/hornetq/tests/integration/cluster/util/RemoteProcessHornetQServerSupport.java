@@ -64,6 +64,10 @@ public class RemoteProcessHornetQServerSupport
             {
                System.out.println("INIT:" + server.isInitialised());
             }
+            else if ("STARTED?".equals(line.trim()))
+            {
+               System.out.println("STARTED:" + server.isStarted());
+            }
             else if ("STOP".equals(line.trim()))
             {
                server.stop();
@@ -123,6 +127,11 @@ public class RemoteProcessHornetQServerSupport
                         {
                            boolean init = Boolean.parseBoolean(line.substring("INIT:".length(), line.length()));
                            remoteProcessHornetQServer.setInitialised(init);
+                        }
+                        if (line.startsWith("STARTED:"))
+                        {
+                           boolean init = Boolean.parseBoolean(line.substring("STARTED:".length(), line.length()));
+                           remoteProcessHornetQServer.setStarted(init);
                         }
                      }
                   }

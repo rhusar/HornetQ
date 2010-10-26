@@ -189,6 +189,8 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
       createQueue(0, "queues.testaddress", "queue0", null, false);
       addConsumer(0, 0, "queue0", null);
 
+      waitForBindings(0, "queues.testaddress", 1, 1, true);
+
       send(0, "queues.testaddress", 10, false, null);
       verifyReceiveAll(10, 0);
       verifyNotReceive(0);

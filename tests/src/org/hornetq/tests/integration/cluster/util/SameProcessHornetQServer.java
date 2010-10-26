@@ -53,6 +53,11 @@ public class SameProcessHornetQServer implements TestableServer
       //To change body of implemented methods use File | Settings | File Templates.
    }
 
+   public boolean isStarted()
+   {
+      return server.isStarted();
+   }
+
    public void start() throws Exception
    {
       server.start();

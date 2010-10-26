@@ -1655,7 +1655,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    private void checkClosed() throws HornetQException
    {
-      if (closed)
+      if (closed || inClose)
       {
          throw new HornetQException(HornetQException.OBJECT_CLOSED, "Session is closed");
       }

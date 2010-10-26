@@ -222,7 +222,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
 
          long toWait = timeout;
 
-         while (!received && toWait > 0)
+         while (!received && (toWait > 0 || timeout == 0))
          {
             try
             {
@@ -232,11 +232,14 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
             {
             }
 
-            long now = System.currentTimeMillis();
+            if (timeout != 0)
+            {
+               long now = System.currentTimeMillis();
 
-            toWait -= now - start;
+               toWait -= now - start;
 
-            start = now;
+               start = now;
+            }
          }
 
          boolean ret = received;

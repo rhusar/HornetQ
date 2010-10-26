@@ -358,6 +358,30 @@ public class HornetQServerImpl implements HornetQServer
             clusterManager.activate();
 
             log.info("Backup Server is now live");
+
+            nodeManager.releaseBackup();
+            if(configuration.isAllowAutoFailBack())
+            {
+               //todo dont hardcode schedule timings
+               scheduledPool.scheduleAtFixedRate(new Runnable()
+               {
+                  public void run()
+                  {
+                     try
+                     {
+                        if(nodeManager.isAwaitingFailback())
+                        {
+                           log.info("live server wants to restart, killing server");
+                           nodeManager.killServer();
+                        }
+                     }
+                     catch (Exception e)
+                     {
+                        log.warn("unable to kill server, please kill manually to force failback");
+                     }
+                  }
+               },  1000l, 1000l, TimeUnit.MILLISECONDS);
+            }
          }
          catch (InterruptedException e)
          {
@@ -685,7 +709,7 @@ public class HornetQServerImpl implements HornetQServer
 
       try
       {
-         if (!threadPool.awaitTermination(30000, TimeUnit.MILLISECONDS))
+         if (!threadPool.awaitTermination(5000, TimeUnit.MILLISECONDS))
          {
             HornetQServerImpl.log.warn("Timed out waiting for pool to terminate");
          }

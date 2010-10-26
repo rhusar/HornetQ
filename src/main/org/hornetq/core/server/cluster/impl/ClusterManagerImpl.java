@@ -148,11 +148,6 @@ public class ClusterManagerImpl implements ClusterManager
 
       if (clustered)
       {
-         BackupConnectorConfiguration connectorConfiguration = configuration.getBackupConnectorConfiguration();
-         if(connectorConfiguration != null)
-         {
-            deployBackupListener(connectorConfiguration);
-         }
          for (BroadcastGroupConfiguration config : configuration.getBroadcastGroupConfigurations())
          {
             deployBroadcastGroup(config);
@@ -180,48 +175,6 @@ public class ClusterManagerImpl implements ClusterManager
       started = true;
    }
 
-   private void deployBackupListener(BackupConnectorConfiguration connectorConfiguration)
-         throws Exception
-   {
-      ServerLocatorInternal locator;
-      if (connectorConfiguration.getDiscoveryGroupName() != null)
-      {
-         DiscoveryGroupConfiguration groupConfiguration = configuration.getDiscoveryGroupConfigurations().get(connectorConfiguration.getDiscoveryGroupName());
-         if (groupConfiguration == null)
-         {
-            ClusterManagerImpl.log.warn("There is no discovery group deployed with name " + connectorConfiguration.getDiscoveryGroupName() +
-                                        " deployed. This one will not be deployed.");
-
-            return;
-         }
-         locator = new ServerLocatorImpl(true, groupConfiguration.getGroupAddress(), groupConfiguration.getGroupPort());
-      }
-      else
-      {
-         TransportConfiguration[] configs = new TransportConfiguration[connectorConfiguration.getStaticConnectors().size()];
-         for (int i = 0, configsLength = configs.length; i < configsLength; i++)
-         {
-            configs[i] = configuration.getConnectorConfigurations().get(connectorConfiguration.getStaticConnectors().get(i));
-         }
-         locator = new ServerLocatorImpl(true, configs);
-      }
-      locator.addClusterTopologyListener(new ClusterTopologyListener()
-      {
-         public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
-         {
-            notifyNodeUp(nodeID, sourceNodeID, connectorPair, last, distance);
-         }
-
-         public void nodeDown(String nodeID)
-         {
-            notifyNodeDown(nodeID);
-         }
-      });
-      locator.setNodeID(nodeUUID.toString());
-      locator.setReconnectAttempts(-1);
-      backupSessionFactory = locator.connect();
-      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, configuration.getConnectorConfigurations().get(connectorConfiguration.getConnector())));
-   }
 
    public synchronized void stop() throws Exception
    {
@@ -795,6 +748,44 @@ public class ClusterManagerImpl implements ClusterManager
       {
          clusterConnection.start();
       }
+      else
+      {
+         announceBackup(config, connector);
+      }
+   }
+
+   private void announceBackup(ClusterConnectionConfiguration config, TransportConfiguration connector) throws Exception
+   {
+      ServerLocatorInternal locator;
+
+      if (config.getStaticConnectors() != null)
+      {
+         TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
+
+         locator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(tcConfigs);
+         locator.setReconnectAttempts(-1);
+      }
+      else if (config.getDiscoveryGroupName() != null)
+      {
+         DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations()
+                                                       .get(config.getDiscoveryGroupName());
+
+         if (dg == null)
+         {
+            ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupName() +
+                                        "'. The cluster connection will not be deployed.");
+         }
+
+         locator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(dg.getGroupAddress(), dg.getGroupPort());
+         locator.setReconnectAttempts(-1);
+         locator.setDiscoveryInitialWaitTimeout(0);
+      }
+      else
+      {
+         return;
+      }
+      backupSessionFactory = locator.connect();
+      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, connector));
    }
 
    private Transformer instantiateTransformer(final String transformerClassName)

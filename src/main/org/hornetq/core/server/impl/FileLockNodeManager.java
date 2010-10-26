@@ -86,6 +86,24 @@ public class FileLockNodeManager extends NodeManager
       super.stop();
    }
 
+   @Override
+   public boolean isAwaitingFailback() throws Exception
+   {
+      return getState() == FAILINGBACK;
+   }
+
+   @Override
+   public void killServer()
+   {
+      System.exit(0);
+   }
+
+   @Override
+   public void releaseBackup() throws Exception
+   {
+      releaseBackupLock();
+   }
+
 
    public void awaitLiveNode() throws Exception
    {
@@ -93,6 +111,7 @@ public class FileLockNodeManager extends NodeManager
       {
          while (getState() == NOT_STARTED)
          {
+            log.info("awaiting live node startup");
             Thread.sleep(2000);
          }
 
@@ -103,17 +122,17 @@ public class FileLockNodeManager extends NodeManager
          if (state == PAUSED)
          {
             liveLock.release();
+            log.info("awaiting live node restarting");
             Thread.sleep(2000);
          }
          else if (state == FAILINGBACK)
          {
             liveLock.release();
+            log.info("awaiting live node failing back");
             Thread.sleep(2000);
          }
          else if (state == LIVE)
          {
-            releaseBackupLock();
-
             break;
          }
       }

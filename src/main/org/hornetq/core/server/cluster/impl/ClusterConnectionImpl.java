@@ -229,7 +229,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
    }
 
-   public synchronized void stop() throws Exception
+   public void stop() throws Exception
    {
       if (!started)
       {
@@ -241,34 +241,37 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.removeClusterTopologyListener(this);
       }
 
-      for (MessageFlowRecord record : records.values())
+      synchronized (this)
       {
-         try
+         for (MessageFlowRecord record : records.values())
          {
-            record.close();
+            try
+            {
+               record.close();
+            }
+            catch (Exception ignore)
+            {
+            }
          }
-         catch (Exception ignore)
+
+         if (serverLocator != null)
          {
+            serverLocator.close();
          }
+
+
+         if (managementService != null)
+         {
+            TypedProperties props = new TypedProperties();
+            props.putSimpleStringProperty(new SimpleString("name"), name);
+            Notification notification = new Notification(nodeUUID.toString(),
+                                                         NotificationType.CLUSTER_CONNECTION_STOPPED,
+                                                         props);
+            managementService.sendNotification(notification);
+         }
+
+         started = false;
       }
-
-      if (serverLocator != null)
-      {
-         serverLocator.close();
-      }
-
-
-      if (managementService != null)
-      {
-         TypedProperties props = new TypedProperties();
-         props.putSimpleStringProperty(new SimpleString("name"), name);
-         Notification notification = new Notification(nodeUUID.toString(),
-                                                      NotificationType.CLUSTER_CONNECTION_STOPPED,
-                                                      props);
-         managementService.sendNotification(notification);
-      }
-
-      started = false;
    }
 
    public boolean isStarted()
@@ -399,7 +402,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                // actually routed to at that address though
                queue = server.createQueue(queueName, queueName, null, true, false);
             }
-            
+
             createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
          }
          else

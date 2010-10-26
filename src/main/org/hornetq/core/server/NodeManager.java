@@ -38,6 +38,8 @@ public abstract class NodeManager implements HornetQComponent
 
    public abstract void stopBackup() throws Exception;
 
+   public abstract void releaseBackup() throws Exception;
+
    private boolean isStarted = false;
 
    protected volatile SimpleString nodeID;
@@ -69,4 +71,8 @@ public abstract class NodeManager implements HornetQComponent
    {
       return uuid;
    }
+
+   public abstract boolean isAwaitingFailback() throws Exception;
+
+   public abstract void killServer();
 }

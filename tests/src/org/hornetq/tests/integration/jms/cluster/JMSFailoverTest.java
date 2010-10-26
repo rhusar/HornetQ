@@ -37,7 +37,6 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.client.impl.ClientSessionInternal;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -337,7 +336,6 @@ public class JMSFailoverTest extends UnitTestCase
       backupConf.getConnectorConfigurations().put(backuptc.getName(), backuptc);
       ArrayList<String> staticConnectors = new ArrayList<String>();
       staticConnectors.add(livetc.getName());
-      backupConf.setBackupConnectorConfiguration(new BackupConnectorConfiguration(staticConnectors, backuptc.getName()) );
 
       backupConf.setSecurityEnabled(false);
       backupConf.setJournalType(getDefaultJournalType());

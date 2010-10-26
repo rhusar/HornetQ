@@ -46,6 +46,8 @@ public class ConfigurationImpl implements Configuration
 
    public static final boolean DEFAULT_BACKUP = false;
 
+   public static final boolean DEFAULT_ALLOW_AUTO_FAILBACK = true;
+
    public static final boolean DEFAULT_SHARED_STORE = false;
 
    public static final boolean DEFAULT_FILE_DEPLOYMENT_ENABLED = false;
@@ -177,6 +179,8 @@ public class ConfigurationImpl implements Configuration
 
    protected boolean backup = ConfigurationImpl.DEFAULT_BACKUP;
 
+   protected boolean allowAutoFailBack = ConfigurationImpl.DEFAULT_ALLOW_AUTO_FAILBACK;
+
    protected boolean sharedStore = ConfigurationImpl.DEFAULT_SHARED_STORE;
 
    protected boolean fileDeploymentEnabled = ConfigurationImpl.DEFAULT_FILE_DEPLOYMENT_ENABLED;
@@ -230,8 +234,6 @@ public class ConfigurationImpl implements Configuration
    protected List<CoreQueueConfiguration> queueConfigurations = new ArrayList<CoreQueueConfiguration>();
 
    protected List<BroadcastGroupConfiguration> broadcastGroupConfigurations = new ArrayList<BroadcastGroupConfiguration>();
-
-   protected BackupConnectorConfiguration backupConnectorConfiguration;
 
    protected Map<String, DiscoveryGroupConfiguration> discoveryGroupConfigurations = new LinkedHashMap<String, DiscoveryGroupConfiguration>();
 
@@ -328,6 +330,16 @@ public class ConfigurationImpl implements Configuration
    public void setClustered(final boolean clustered)
    {
       this.clustered = clustered;
+   }
+
+   public boolean isAllowAutoFailBack()
+   {
+      return allowAutoFailBack;
+   }
+
+   public void setAllowAutoFailBack(boolean allowAutoFailBack)
+   {
+      this.allowAutoFailBack = allowAutoFailBack;
    }
 
    public boolean isBackup()
@@ -466,16 +478,6 @@ public class ConfigurationImpl implements Configuration
    public Map<String, TransportConfiguration> getConnectorConfigurations()
    {
       return connectorConfigs;
-   }
-
-   public void setBackupConnectorConfiguration(BackupConnectorConfiguration backupConnectorConfiguration)
-   {
-      this.backupConnectorConfiguration = backupConnectorConfiguration;
-   }
-
-   public BackupConnectorConfiguration getBackupConnectorConfiguration()
-   {
-      return backupConnectorConfiguration;
    }
 
    public void setConnectorConfigurations(final Map<String, TransportConfiguration> infos)

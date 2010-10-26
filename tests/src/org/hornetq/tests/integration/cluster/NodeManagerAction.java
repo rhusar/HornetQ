@@ -31,11 +31,13 @@ public class NodeManagerAction
    public final static int PAUSE_LIVE = 3;
    public final static int STOP_BACKUP = 4;
    public final static int AWAIT_LIVE = 5;
+   public final static int RELEASE_BACKUP = 6;
 
    public final static int HAS_LIVE = 10;
    public final static int HAS_BACKUP = 11;
    public final static int DOESNT_HAVE_LIVE = 12;
    public final static int DOESNT_HAVE_BACKUP = 13;
+
 
    private final int[] work;
 
@@ -77,8 +79,10 @@ public class NodeManagerAction
             case AWAIT_LIVE:
                nodeManager.awaitLiveNode();
                hasLiveLock = true;
-               hasBackupLock = false;
                break;
+            case RELEASE_BACKUP:
+               nodeManager.releaseBackup();
+               hasBackupLock = false;
             case HAS_LIVE:
                if (!hasLiveLock)
                {

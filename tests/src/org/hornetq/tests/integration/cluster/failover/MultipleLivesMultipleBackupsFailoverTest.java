@@ -23,7 +23,6 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.server.NodeManager;
@@ -85,7 +84,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       System.out.println(((ServerLocatorInternal)locator).getTopology().describe());
       servers.get(0).crash(session);
 
-      int liveAfter0 = waitForBackup(10000, servers, 1, 2);
+      int liveAfter0 = waitForNewLive(10000, true, servers, 1, 2);
 
       ServerLocator locator2 = getServerLocator(3);
       locator2.setBlockOnNonDurableSend(true);
@@ -97,7 +96,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
 
       System.setProperty("foo", "bar");
       servers.get(3).crash(session2);
-      int liveAfter3 = waitForBackup(10000, servers, 4, 5);
+      int liveAfter3 = waitForNewLive(10000, true, servers, 4, 5);
 
       if (liveAfter0 == 2)
       {
@@ -140,8 +139,6 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
          staticConnectors.add(liveConnector.getName());
       }
       TransportConfiguration backupConnector = createTransportConfiguration(isNetty(), false, generateParams(nodeid, isNetty()));
-      BackupConnectorConfiguration connectorConfiguration = new BackupConnectorConfiguration(staticConnectors, backupConnector.getName());
-      config1.setBackupConnectorConfiguration(connectorConfiguration);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
       List<String> clusterNodes = new ArrayList<String>();

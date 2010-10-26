@@ -494,8 +494,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       if (initialConnectors == null && discoveryGroup != null)
       {
          // Wait for an initial broadcast to give us at least one node in the cluster
-
-         boolean ok = discoveryGroup.waitForBroadcast(discoveryInitialWaitTimeout);
+         long timeout = clusterConnection?0:discoveryInitialWaitTimeout;
+         boolean ok = discoveryGroup.waitForBroadcast(timeout);
 
          if (!ok)
          {
@@ -1272,7 +1272,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   log.debug("unable to connect with static connector " + connectors.get(i).initialConnector);
                }
             }
-            if (csf == null)
+            if (csf == null && !closed)
             {
                throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
             }
@@ -1282,7 +1282,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors", e);
          }
 
-         if (csf == null)
+         if (csf == null && !closed)
          {
             throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
          }

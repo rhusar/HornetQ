@@ -98,6 +98,7 @@
    <property name="src.config.standalone.clustered.dir" value="${src.dir}/config/stand-alone/clustered"/>
    <property name="src.config.trunk.non-clustered.dir" value="${src.dir}/config/trunk/non-clustered"/>
    <property name="src.config.trunk.clustered.dir" value="${src.dir}/config/trunk/clustered"/>
+   <property name="src.config.trunk.clustered.backup.dir" value="${src.dir}/config/trunk/clustered-backup"/>
    <property name="src.config.jbossas4.non-clustered.dir" value="${src.dir}/config/jboss-as-4/non-clustered"/>
    <property name="src.config.jbossas4.clustered.dir" value="${src.dir}/config/jboss-as-4/clustered"/>
    <property name="src.config.jbossas5.non-clustered.dir" value="${src.dir}/config/jboss-as-5/non-clustered"/>
@@ -1658,17 +1659,20 @@
 
 <target name="runBackup1" depends="jar">
       <mkdir dir="logs"/>
-   	  <property name="server.config" value="${src.dir}/config/ha-test/backup-1"/>
-      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="false">
+   	  <property name="server.config" value="${src.config.trunk.clustered.backup.dir}"/>
+      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="true">
          <jvmarg value="-XX:+UseParallelGC"/>
          <jvmarg value="-Xms512M"/>
          <jvmarg value="-Xmx2048M"/>
          <jvmarg value="-XX:+AggressiveOpts"/>
          <jvmarg value="-XX:+UseFastAccessorMethods"/>
          <jvmarg value="-Dcom.sun.management.jmxremote"/>
-         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.non-clustered.dir}/logging.properties"/>
+         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.clustered.backup.dir}/logging.properties"/>
          <jvmarg value="-Djava.library.path=${native.bin.dir}"/>
-         <!--<jvmarg line="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000"/>-->
+         <jvmarg value="-Dhornetq.remoting.netty.port=5446"/>
+         <jvmarg value="-Djnp.port=1199"/>
+         <jvmarg value="-Djnp.rmiPort=1198"/>
+         <jvmarg line="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"/>
          <arg line="hornetq-beans.xml"/>
          <classpath path="${server.config}" />
          <classpath refid="jms.standalone.server.classpath"/>
@@ -1677,16 +1681,19 @@
 
 <target name="runBackup2" depends="jar">
       <mkdir dir="logs"/>
-   	  <property name="server.config" value="${src.dir}/config/ha-test/backup-2"/>
-      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="false">
+   	  <property name="server.config" value="${src.config.trunk.clustered.backup.dir}"/>
+       <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="true">
          <jvmarg value="-XX:+UseParallelGC"/>
          <jvmarg value="-Xms512M"/>
          <jvmarg value="-Xmx2048M"/>
          <jvmarg value="-XX:+AggressiveOpts"/>
          <jvmarg value="-XX:+UseFastAccessorMethods"/>
          <jvmarg value="-Dcom.sun.management.jmxremote"/>
-         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.non-clustered.dir}/logging.properties"/>
+         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.clustered.backup.dir}/logging.properties"/>
          <jvmarg value="-Djava.library.path=${native.bin.dir}"/>
+         <jvmarg value="-Dhornetq.remoting.netty.port=5447"/>
+         <jvmarg value="-Djnp.port=1299"/>
+         <jvmarg value="-Djnp.rmiPort=1298"/>
          <!--<jvmarg line="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000"/>-->
          <arg line="hornetq-beans.xml"/>
          <classpath path="${server.config}" />
@@ -1696,16 +1703,19 @@
 
 <target name="runBackup3" depends="jar">
       <mkdir dir="logs"/>
-   	  <property name="server.config" value="${src.dir}/config/ha-test/backup-3"/>
-      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="false">
+   	  <property name="server.config" value="${src.config.trunk.clustered.backup.dir}"/>
+      <java classname="org.hornetq.integration.bootstrap.HornetQBootstrapServer" fork="true">
          <jvmarg value="-XX:+UseParallelGC"/>
          <jvmarg value="-Xms512M"/>
          <jvmarg value="-Xmx2048M"/>
          <jvmarg value="-XX:+AggressiveOpts"/>
          <jvmarg value="-XX:+UseFastAccessorMethods"/>
          <jvmarg value="-Dcom.sun.management.jmxremote"/>
-         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.non-clustered.dir}/logging.properties"/>
+         <jvmarg value="-Djava.util.logging.config.file=${src.config.trunk.clustered.backup.dir}/logging.properties"/>
          <jvmarg value="-Djava.library.path=${native.bin.dir}"/>
+         <jvmarg value="-Dhornetq.remoting.netty.port=5448"/>
+         <jvmarg value="-Djnp.port=1399"/>
+         <jvmarg value="-Djnp.rmiPort=1398"/>
          <!--<jvmarg line="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000"/>-->
          <arg line="hornetq-beans.xml"/>
          <classpath path="${server.config}" />
@@ -1747,11 +1757,13 @@
          <jvmarg value="-Djnp.port=${jnp.port}"/>
          <jvmarg value="-Djnp.rmiPort=${jnp.rmiPort}"/>
          <jvmarg value="-Dhornetq.data.dir=${hornetq.data.dir}"/>
+        <!-- <jvmarg line="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"/>-->
          <arg line="hornetq-beans.xml"/>
          <classpath path="${src.config.trunk.clustered.dir}" />
          <classpath refid="jms.standalone.server.classpath"/>
       </java>
    </target>
+
 
    <target name="debugServer" depends="jar">
  	  <property name="server.config" value="${src.config.trunk.non-clustered.dir}"/>

@@ -1381,8 +1381,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.getConnectorConfigurations().put(backupConfig.getName(), backupConfig);
       ArrayList<String> staticConnectors = new ArrayList<String>();
       staticConnectors.add(liveConfig.getName());
-      BackupConnectorConfiguration bcc = new BackupConnectorConfiguration(staticConnectors, backupConfig.getName());
-      configuration.setBackupConnectorConfiguration(bcc);
 
       HornetQServer server;
 

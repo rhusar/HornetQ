@@ -35,7 +35,6 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
-import org.hornetq.core.config.BackupConnectorConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
@@ -138,7 +137,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
       ArrayList<String> staticConnectors = new ArrayList<String>();
       staticConnectors.add(liveConnector.getName());
-      backupConfig.setBackupConnectorConfiguration(new BackupConnectorConfiguration(staticConnectors, backupConnector.getName()));
       backupServer = createBackupServer();
       
       // FIXME
@@ -283,7 +281,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
             fail("backup server never started");
          }
       }
-      System.out.println("FailoverTestBase.waitForBackup");
+      System.out.println("FailoverTestBase.waitForNewLive");
    }
 
    protected TransportConfiguration getInVMConnectorTransportConfiguration(final boolean live)
