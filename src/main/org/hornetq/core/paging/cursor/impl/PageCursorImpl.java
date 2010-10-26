@@ -271,6 +271,15 @@ public class PageCursorImpl implements PageCursor
       processACK(position);
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#isComplete(long)
+    */
+   public boolean isComplete(long page)
+   {
+      PageCursorInfo info = consumedPages.get(page);
+      return info != null && info.isDone();
+   }
+
    /**
     * All the data associated with the cursor should go away here
     */

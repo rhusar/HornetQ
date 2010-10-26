@@ -93,4 +93,14 @@ public interface PagingStore extends HornetQComponent
    void addSize(int size);
    
    void executeRunnableWhenMemoryAvailable(Runnable runnable);
+   
+   /** This method will hold and producer, but it wait operations to finish before locking (write lock) */
+   void lock();
+   
+   /** 
+    * 
+    * Call this method using the same thread used by the last call of {@link PagingStore#lock()}
+    * 
+    */
+    void unlock();
 }

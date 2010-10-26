@@ -272,6 +272,7 @@ public class PageCursorTest extends ServiceTestBase
 
       for (int i = 0; i < 1000; i++)
       {
+         System.out.println("Reading Msg : " + i);
          Pair<PagePosition, PagedMessage> msg = cursor.moveNext();
          assertNotNull(msg);
          assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());

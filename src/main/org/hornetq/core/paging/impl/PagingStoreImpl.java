@@ -217,6 +217,16 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // PagingStore implementation ------------------------------------
    
+   public void lock()
+   {
+      writeLock.lock();
+   }
+   
+   public void unlock()
+   {
+      writeLock.unlock();
+   }
+   
    public PageCursorProvider getCursorProvier()
    {
       return cursorProvider;

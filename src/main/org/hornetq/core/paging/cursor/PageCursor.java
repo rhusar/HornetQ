@@ -79,4 +79,10 @@ public interface PageCursor
    void redeliver(PagePosition position);
    
    void printDebug();
+
+   /**
+    * @param minPage
+    * @return
+    */
+   boolean isComplete(long minPage);
 }
