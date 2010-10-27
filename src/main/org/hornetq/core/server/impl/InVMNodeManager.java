@@ -123,9 +123,9 @@ public class InVMNodeManager extends NodeManager
    }
 
    @Override
-   public void killServer()
+   public boolean isBackupLive() throws Exception
    {
-      //todo
+      return liveLock.availablePermits() == 0;
    }
 
    private void releaseBackupNode()

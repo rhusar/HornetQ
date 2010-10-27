@@ -1159,7 +1159,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                // cause reconnect loop
                public void run()
                {
-                  conn.fail(new HornetQException(HornetQException.DISCONNECTED,
+                  conn.fail(new HornetQException(msg.isFailoverOnServerShutdown()?HornetQException.NOT_CONNECTED:HornetQException.DISCONNECTED,
                                                  "The connection was disconnected because of server shutdown"));
                   if (msg.getNodeID() != null)
                   {

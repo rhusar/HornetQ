@@ -89,7 +89,7 @@ class StompConnection implements RemotingConnection
       manager.cleanup(this);
    }
 
-   public void disconnect()
+   public void disconnect(boolean clientFailover)
    {
    }
 

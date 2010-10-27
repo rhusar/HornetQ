@@ -305,9 +305,18 @@ public class HornetQServerImpl implements HornetQServer
 
             checkJournalDirectory();
 
-            nodeManager.startLiveNode();
-
             initialisePart1();
+
+            if(nodeManager.isBackupLive())
+            {
+               //looks like we've failed over at some point need to inform that we are the backup so when the current live
+               // goes down they failover to us
+               clusterManager.announceBackup();
+               //
+               Thread.sleep(2000);
+            }
+
+            nodeManager.startLiveNode();
 
             initialisePart2();
             
@@ -362,25 +371,43 @@ public class HornetQServerImpl implements HornetQServer
             nodeManager.releaseBackup();
             if(configuration.isAllowAutoFailBack())
             {
-               //todo dont hardcode schedule timings
-               scheduledPool.scheduleAtFixedRate(new Runnable()
+               class FailbackChecker implements Runnable
                {
+                  boolean restarting = false;
                   public void run()
                   {
                      try
                      {
-                        if(nodeManager.isAwaitingFailback())
+                        if(!restarting && nodeManager.isAwaitingFailback())
                         {
-                           log.info("live server wants to restart, killing server");
-                           nodeManager.killServer();
+                           log.info("live server wants to restart, restarting server in backup");
+                           restarting = true;
+                           Thread t = new Thread(new Runnable()
+                           {
+                              public void run()
+                              {
+                                 try
+                                 {
+                                    stop(true);
+                                    configuration.setBackup(true);
+                                    start();
+                                 }
+                                 catch (Exception e)
+                                 {
+                                    log.info("unable to restart server, please kill and restart manually", e);
+                                 }
+                              }
+                           });
+                           t.start();
                         }
                      }
                      catch (Exception e)
                      {
-                        log.warn("unable to kill server, please kill manually to force failback");
+                        //hopefully it will work next call
                      }
                   }
-               },  1000l, 1000l, TimeUnit.MILLISECONDS);
+               }
+               scheduledPool.scheduleAtFixedRate(new FailbackChecker(),  1000l, 1000l, TimeUnit.MILLISECONDS);
             }
          }
          catch (InterruptedException e)
@@ -586,7 +613,7 @@ public class HornetQServerImpl implements HornetQServer
       {
          System.out.println("HornetQServerImpl.stop");
       }
-      remotingService.stop();
+      remotingService.stop(permanently);
 
       synchronized (this)
       {

@@ -36,6 +36,14 @@ public class FileLockNodeManager extends NodeManager
 
    private final String SERVER_LOCK_NAME = "server.lock";
 
+   private static final String ACCESS_MODE = "rw";
+
+   private static  final int LIVE_LOCK_POS = 1;
+
+   private static  final int BACKUP_LOCK_POS = 2;
+
+   private static final int LOCK_LENGTH = 1;
+
    private static final byte LIVE = 'L';
 
    private static final byte FAILINGBACK = 'F';
@@ -51,6 +59,7 @@ public class FileLockNodeManager extends NodeManager
    private FileLock backupLock;
 
    private final String directory;
+
 
    public FileLockNodeManager(final String directory)
    {
@@ -70,7 +79,7 @@ public class FileLockNodeManager extends NodeManager
          file.createNewFile();
       }
 
-      RandomAccessFile raFile = new RandomAccessFile(file, "rw");
+      RandomAccessFile raFile = new RandomAccessFile(file, ACCESS_MODE);
 
       channel = raFile.getChannel();
 
@@ -92,12 +101,20 @@ public class FileLockNodeManager extends NodeManager
       return getState() == FAILINGBACK;
    }
 
-   @Override
-   public void killServer()
+   public boolean isBackupLive() throws Exception
    {
-      System.exit(0);
+      FileLock liveAttemptLock;
+      liveAttemptLock = channel.tryLock(LIVE_LOCK_POS, LOCK_LENGTH, false);
+      if(liveAttemptLock == null)
+      {
+         return true;
+      }
+      else
+      {
+         liveAttemptLock.release();
+         return false;
+      }
    }
-
    @Override
    public void releaseBackup() throws Exception
    {
@@ -115,7 +132,7 @@ public class FileLockNodeManager extends NodeManager
             Thread.sleep(2000);
          }
 
-         liveLock = channel.lock(1, 1, false);
+         liveLock = channel.lock(LIVE_LOCK_POS, 1, false);
 
          byte state = getState();
 
@@ -144,7 +161,7 @@ public class FileLockNodeManager extends NodeManager
 
       log.info("Waiting to become backup node");
 
-      backupLock = channel.lock(2, 1, false);
+      backupLock = channel.lock(BACKUP_LOCK_POS, LOCK_LENGTH, false);
 
       log.info("** got backup lock");
 
@@ -157,7 +174,7 @@ public class FileLockNodeManager extends NodeManager
 
       log.info("Waiting to obtain live lock");
 
-      liveLock = channel.lock(1, 1, false);
+      liveLock = channel.lock(LIVE_LOCK_POS, LOCK_LENGTH, false);
 
       log.info("Live Server Obtained live lock");
 

@@ -210,7 +210,10 @@ public class ClusterConnectionImpl implements ClusterConnection
                }
                catch (Exception e)
                {
-                  log.warn("did not connect the cluster connection to other nodes", e);
+                  if(started)
+                  {
+                     log.warn("did not connect the cluster connection to other nodes", e);
+                  }
                }
             }
          });

@@ -30,9 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.ServerSessionPacketHandler;
@@ -255,6 +253,11 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
    public void stop() throws Exception
    {
+      stop(false);
+   }
+
+   public void stop(boolean clientFailover) throws Exception
+   {
       if (!started)
       {
          return;
@@ -279,7 +282,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       {
          RemotingConnection conn = entry.connection;
 
-         conn.disconnect();
+         conn.disconnect(clientFailover);
       }
 
       for (Acceptor acceptor : acceptors)

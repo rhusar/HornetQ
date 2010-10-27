@@ -362,6 +362,7 @@ public class ClusterManagerImpl implements ClusterManager
             try
             {
                broadcastGroup.start();
+               broadcastGroup.activate();
             }
             catch (Exception e)
             {
@@ -402,6 +403,29 @@ public class ClusterManagerImpl implements ClusterManager
          {
             listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
          }
+      }
+   }
+
+   public void announceBackup() throws Exception
+   {
+      List<ClusterConnectionConfiguration> configs = this.configuration.getClusterConfigurations();
+      if(!configs.isEmpty())
+      {
+         ClusterConnectionConfiguration config = configs.get(0);
+
+         TransportConfiguration connector = configuration.getConnectorConfigurations().get(config.getConnectorName());
+
+         if (connector == null)
+         {
+            log.warn("No connecor with name '" + config.getConnectorName() +
+                     "'. backup cannot be announced.");
+            return;
+         }
+         announceBackup(config, connector);
+      }
+      else
+      {
+         log.warn("no cluster connections defined, unable to announce backup");
       }
    }
 
@@ -784,6 +808,7 @@ public class ClusterManagerImpl implements ClusterManager
       {
          return;
       }
+      log.info("announcing backup");
       backupSessionFactory = locator.connect();
       backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, connector));
    }

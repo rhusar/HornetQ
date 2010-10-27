@@ -165,6 +165,11 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
          started = false;
       }
 
+      synchronized (waitLock)
+      {
+         waitLock.notify();
+      }
+
       try
       {
          thread.join();
@@ -172,6 +177,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
       catch (InterruptedException e)
       {
       }
+
 
       socket.close();
 
@@ -222,7 +228,7 @@ public class DiscoveryGroupImpl implements Runnable, DiscoveryGroup
 
          long toWait = timeout;
 
-         while (!received && (toWait > 0 || timeout == 0))
+         while (started && !received && (toWait > 0 || timeout == 0))
          {
             try
             {

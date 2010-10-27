@@ -52,4 +52,6 @@ public interface ClusterManager extends HornetQComponent
    void notifyNodeUp(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean backup, int distance);
 
    Topology getTopology();
+
+   void announceBackup() throws Exception;
 }
