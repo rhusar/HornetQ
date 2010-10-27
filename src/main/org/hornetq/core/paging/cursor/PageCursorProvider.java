@@ -66,8 +66,13 @@ public interface PageCursorProvider
    void processReload() throws Exception;
 
    void stop();
+   
+   void flushExecutors();
 
    void scheduleCleanup();
+   
+   // Perform the cleanup at the caller's thread (for startup and recovery)
+   void cleanup();
 
    /**
     * @param pageCursorImpl

@@ -68,10 +68,12 @@ public class PageCursorImpl implements PageCursor
       System.out.println(message);
    }
 
+   private volatile boolean autoCleanup = true;
+
    private final StorageManager store;
 
    private final long cursorId;
-   
+
    private final Filter filter;
 
    private final PagingStore pageStore;
@@ -111,6 +113,16 @@ public class PageCursorImpl implements PageCursor
    }
 
    // Public --------------------------------------------------------
+
+   public void disableAutoCleanup()
+   {
+      autoCleanup = false;
+   }
+
+   public void enableAutoCleanup()
+   {
+      autoCleanup = true;
+   }
 
    public PageCursorProvider getProvider()
    {
@@ -438,7 +450,7 @@ public class PageCursorImpl implements PageCursor
       }
    }
 
-   public void stop()
+   public void flushExecutors()
    {
       Future future = new Future();
       executor.execute(future);
@@ -446,6 +458,11 @@ public class PageCursorImpl implements PageCursor
       {
          PageCursorImpl.log.warn("Waiting page cursor to finish executors - " + this);
       }
+   }
+
+   public void stop()
+   {
+      flushExecutors();
    }
 
    public void printDebug()
@@ -507,7 +524,10 @@ public class PageCursorImpl implements PageCursor
          if (lastAckedPosition != null && lastAckedPosition.getPageNr() != pos.getPageNr())
          {
             // there's a different page being acked, we will do the check right away
-            scheduleCleanupCheck();
+            if (autoCleanup)
+            {
+               scheduleCleanupCheck();
+            }
          }
          lastAckedPosition = pos;
       }
@@ -547,32 +567,38 @@ public class PageCursorImpl implements PageCursor
     */
    private void onPageDone(final PageCursorInfo info)
    {
-      scheduleCleanupCheck();
+      if (autoCleanup)
+      {
+         scheduleCleanupCheck();
+      }
    }
 
-   private void scheduleCleanupCheck()
+   public void scheduleCleanupCheck()
    {
-      executor.execute(new Runnable()
+      if (autoCleanup)
       {
-
-         public void run()
+         executor.execute(new Runnable()
          {
-            try
+
+            public void run()
             {
-               cleanupPages();
+               try
+               {
+                  cleanupEntries();
+               }
+               catch (Exception e)
+               {
+                  PageCursorImpl.log.warn("Error on cleaning up cursor pages", e);
+               }
             }
-            catch (Exception e)
-            {
-               PageCursorImpl.log.warn("Error on cleaning up cursor pages", e);
-            }
-         }
-      });
+         });
+      }
    }
 
    /** 
     * It will cleanup all the records for completed pages
     * */
-   private void cleanupPages() throws Exception
+   public void cleanupEntries() throws Exception
    {
       Transaction tx = new TransactionImpl(store);
 
@@ -687,7 +713,11 @@ public class PageCursorImpl implements PageCursor
       @Override
       public String toString()
       {
-         return "PageCursorInfo::PageID=" + pageId + " numberOfMessage = " + numberOfMessages + ", confirmed = " + confirmed;
+         return "PageCursorInfo::PageID=" + pageId +
+                " numberOfMessage = " +
+                numberOfMessages +
+                ", confirmed = " +
+                confirmed;
       }
 
       public PageCursorInfo(final long pageId, final int numberOfMessages, final PageCache cache)

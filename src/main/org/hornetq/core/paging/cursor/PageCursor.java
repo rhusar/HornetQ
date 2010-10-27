@@ -40,6 +40,14 @@ public interface PageCursor
    // To be called when the cursor is closed for good. Most likely when the queue is deleted
    void close() throws Exception;
    
+   void scheduleCleanupCheck();
+   
+   void cleanupEntries() throws Exception;
+   
+   void disableAutoCleanup();
+   
+   void enableAutoCleanup();
+   
    Pair<PagePosition, PagedMessage> moveNext() throws Exception;
 
    void ack(PagePosition position) throws Exception;
@@ -85,4 +93,6 @@ public interface PageCursor
     * @return
     */
    boolean isComplete(long minPage);
+
+   void flushExecutors();
 }

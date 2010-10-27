@@ -13,7 +13,6 @@
 
 package org.hornetq.core.paging.impl;
 
-import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagingStore;
 
 /**
@@ -23,10 +22,4 @@ import org.hornetq.core.paging.PagingStore;
  */
 public interface TestSupportPageStore extends PagingStore
 {
-   void forceAnotherPage() throws Exception;
-
-   /** @return true if paging was started, or false if paging was already started before this call */
-   boolean startPaging() throws Exception;
-
-   Page getCurrentPage();
 }

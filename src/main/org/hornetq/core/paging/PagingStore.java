@@ -83,12 +83,21 @@ public interface PagingStore extends HornetQComponent
    Page depage() throws Exception;
 
 
+   void forceAnotherPage() throws Exception;
+
+   Page getCurrentPage();
+
 
    /**
     * @return false if a thread was already started, or if not in page mode
     * @throws Exception 
     */
    boolean startDepaging();
+   
+   /** @return true if paging was started, or false if paging was already started before this call */
+   boolean startPaging() throws Exception;
+
+   void stopPaging() throws Exception;
 
    void addSize(int size);
    
@@ -103,4 +112,8 @@ public interface PagingStore extends HornetQComponent
     * 
     */
     void unlock();
+
+    /** This is used mostly by tests.
+     *  We will wait any pending runnable to finish its execution */
+    void flushExecutors();
 }

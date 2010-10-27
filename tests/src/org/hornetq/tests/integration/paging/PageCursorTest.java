@@ -132,6 +132,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -219,6 +220,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -283,6 +285,12 @@ public class PageCursorTest extends ServiceTestBase
          }
       }
       cursorProvider.printDebug();
+      
+
+      server.getStorageManager().waitOnOperations();
+      lookupPageStore(ADDRESS).flushExecutors();
+
+
 
       // needs to clear the context since we are using the same thread over two distinct servers
       // otherwise we will get the old executor on the factory
@@ -312,9 +320,15 @@ public class PageCursorTest extends ServiceTestBase
 
       OperationContextImpl.getContext(null).waitCompletion();
       ((PageCursorImpl)cursor).printDebug();
+      
+      lookupPageStore(ADDRESS).flushExecutors();
+      
+      assertFalse(lookupPageStore(ADDRESS).isPaging());
 
       server.stop();
       createServer();
+      assertFalse(lookupPageStore(ADDRESS).isPaging());
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -379,6 +393,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -450,6 +465,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -558,13 +574,13 @@ public class PageCursorTest extends ServiceTestBase
          if (i % 100 == 0)
             System.out.println("Paged " + i);
 
-         if (i >= NUM_MESSAGES * 2)
+         if (i >= NUM_MESSAGES * 2 - 1)
          {
 
             HornetQBuffer buffer = RandomUtil.randomBuffer(messageSize, i + 1l);
 
             ServerMessage msg = new ServerMessageImpl(i, buffer.writerIndex());
-            msg.putIntProperty("key", i);
+            msg.putIntProperty("key", i + 1);
 
             msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
@@ -579,11 +595,45 @@ public class PageCursorTest extends ServiceTestBase
 
          assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
       }
+      
+      Pair<PagePosition, PagedMessage> readMessage = cursor.moveNext();
+      
+      assertEquals(NUM_MESSAGES * 3, readMessage.b.getMessage().getIntProperty("key").intValue());
+      
+      cursor.ack(readMessage.a);
+      
+      server.getStorageManager().waitOnOperations();
+
+      pageStore.flushExecutors();
+      
+      assertFalse(pageStore.isPaging());
 
       server.stop();
       createServer();
-      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+      
+      assertFalse(pageStore.isPaging());
 
+      waitCleanup();
+      
+      assertFalse(lookupPageStore(ADDRESS).isPaging());
+
+   }
+
+   /**
+    * @throws Exception
+    * @throws InterruptedException
+    */
+   private void waitCleanup() throws Exception, InterruptedException
+   {
+      // The cleanup is done asynchronously, so we need to wait some time
+      long timeout = System.currentTimeMillis() + 10000;
+      
+      while (System.currentTimeMillis() < timeout && lookupPageStore(ADDRESS).getNumberOfPages() != 1)
+      {
+         Thread.sleep(100);
+      }
+
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
    }
 
    public void testPrepareScenarios() throws Exception
@@ -663,6 +713,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -707,6 +758,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }
@@ -754,6 +806,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
    }
 
@@ -815,6 +868,7 @@ public class PageCursorTest extends ServiceTestBase
 
       server.stop();
       createServer();
+      waitCleanup();
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }

@@ -113,18 +113,15 @@ public class PagingStoreImpl implements TestSupportPageStore
    private volatile int currentPageId;
 
    private volatile Page currentPage;
-
-   private final ReentrantLock writeLock = new ReentrantLock();
+   
+   private volatile boolean paging = false;
 
    /** duplicate cache used at this address */
    private final DuplicateIDCache duplicateCache;
-   
+
    private final PageCursorProvider cursorProvider;
 
-   /** 
-    * We need to perform checks on currentPage with minimal locking
-    * */
-   private final ReadWriteLock currentPageLock = new ReentrantReadWriteLock();
+   private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
    private volatile boolean running = false;
 
@@ -193,7 +190,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       this.storeFactory = storeFactory;
 
       this.syncNonTransactional = syncNonTransactional;
-      
+
       this.cursorProvider = new PageCursorProviderImpl(this, this.storageManager, executorFactory);
 
       // Post office could be null on the backup node
@@ -209,34 +206,34 @@ public class PagingStoreImpl implements TestSupportPageStore
    }
 
    // Public --------------------------------------------------------
-   
+
    public String toString()
    {
       return "PagingStoreImpl(" + this.address + ")";
    }
 
    // PagingStore implementation ------------------------------------
-   
+
    public void lock()
    {
-      writeLock.lock();
+      lock.writeLock().lock();
    }
-   
+
    public void unlock()
    {
-      writeLock.unlock();
+      lock.writeLock().unlock();
    }
-   
+
    public PageCursorProvider getCursorProvier()
    {
       return cursorProvider;
    }
-   
+
    public long getFirstPage()
    {
       return firstPageId;
    }
-   
+
    public long getTopPage()
    {
       return currentPageId;
@@ -269,7 +266,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    public boolean isPaging()
    {
-      currentPageLock.readLock().lock();
+      lock.readLock().lock();
 
       try
       {
@@ -283,12 +280,12 @@ public class PagingStoreImpl implements TestSupportPageStore
          }
          else
          {
-            return currentPage != null;
+            return paging;
          }
       }
       finally
       {
-         currentPageLock.readLock().unlock();
+         lock.readLock().unlock();
       }
    }
 
@@ -296,7 +293,7 @@ public class PagingStoreImpl implements TestSupportPageStore
    {
       return numberOfPages;
    }
-   
+
    public int getCurrentWritingPage()
    {
       return currentPageId;
@@ -322,7 +319,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    public void sync() throws Exception
    {
-      currentPageLock.readLock().lock();
+      lock.readLock().lock();
 
       try
       {
@@ -333,18 +330,17 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
       finally
       {
-         currentPageLock.readLock().unlock();
+         lock.readLock().unlock();
       }
    }
 
    public boolean startDepaging()
    {
-      
+
       // Disabled for now
-      
+
       return false;
-      
-      
+
       /*
       if (!running)
       {
@@ -384,7 +380,6 @@ public class PagingStoreImpl implements TestSupportPageStore
          currentPageLock.readLock().unlock();
       } */
    }
-   
 
    public void processReload() throws Exception
    {
@@ -398,7 +393,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // HornetQComponent implementation
 
-   public synchronized boolean isStarted()
+   public boolean isStarted()
    {
       return running;
    }
@@ -407,20 +402,12 @@ public class PagingStoreImpl implements TestSupportPageStore
    {
       if (running)
       {
-         
+
          cursorProvider.stop();
 
          running = false;
 
-         Future future = new Future();
-
-         executor.execute(future);
-
-         if (!future.await(60000))
-         {
-            PagingStoreImpl.log.warn("Timed out on waiting PagingStore " + address + " to shutdown");
-         }
-         
+         flushExecutors();
 
          if (currentPage != null)
          {
@@ -429,10 +416,24 @@ public class PagingStoreImpl implements TestSupportPageStore
          }
       }
    }
+   
+   public void flushExecutors()
+   {
+      cursorProvider.flushExecutors();
+      
+      Future future = new Future();
+
+      executor.execute(future);
+
+      if (!future.await(60000))
+      {
+         PagingStoreImpl.log.warn("Timed out on waiting PagingStore " + address + " to shutdown");
+      }
+   }
 
    public void start() throws Exception
    {
-      writeLock.lock();
+      lock.writeLock().lock();
 
       try
       {
@@ -448,79 +449,77 @@ public class PagingStoreImpl implements TestSupportPageStore
          }
          else
          {
-            currentPageLock.writeLock().lock();
+            running = true;
+            firstPageId = Integer.MAX_VALUE;
 
-            try
+            // There are no files yet on this Storage. We will just return it empty
+            if (fileFactory != null)
             {
-               running = true;
-               firstPageId = Integer.MAX_VALUE;
 
-               // There are no files yet on this Storage. We will just return it empty
-               if (fileFactory != null)
+               currentPageId = 0;
+               currentPage = null;
+
+               List<String> files = fileFactory.listFiles("page");
+
+               numberOfPages = files.size();
+
+               for (String fileName : files)
                {
+                  final int fileId = PagingStoreImpl.getPageIdFromFileName(fileName);
 
-                  currentPageId = 0;
-                  currentPage = null;
-
-                  List<String> files = fileFactory.listFiles("page");
-
-                  numberOfPages = files.size();
-
-                  for (String fileName : files)
+                  if (fileId > currentPageId)
                   {
-                     final int fileId = PagingStoreImpl.getPageIdFromFileName(fileName);
-
-                     if (fileId > currentPageId)
-                     {
-                        currentPageId = fileId;
-                     }
-
-                     if (fileId < firstPageId)
-                     {
-                        firstPageId = fileId;
-                     }
+                     currentPageId = fileId;
                   }
-                  
-                  if (currentPageId != 0)
+
+                  if (fileId < firstPageId)
                   {
-                     currentPage = createPage(currentPageId);
-                     currentPage.open();
-                     
-                     List<PagedMessage> messages = currentPage.read();
-                     
-                     LivePageCache pageCache = new LivePageCacheImpl(currentPage);
-                     
-                     for (PagedMessage msg : messages)
-                     {
-                        msg.initMessage(storageManager);
-                        pageCache.addLiveMessage(msg);
-                     }
-                     
-                     currentPage.setLiveCache(pageCache);
-                     
-                     currentPageSize.set(currentPage.getSize());
-                     
-                     cursorProvider.addPageCache(pageCache);
-                  }
-                  
-                  if (currentPage != null)
-                  {
-                     
-                     startPaging();
+                     firstPageId = fileId;
                   }
                }
-            }
-            finally
-            {
-               currentPageLock.writeLock().unlock();
+
+               if (currentPageId != 0)
+               {
+                  currentPage = createPage(currentPageId);
+                  currentPage.open();
+
+                  List<PagedMessage> messages = currentPage.read();
+
+                  LivePageCache pageCache = new LivePageCacheImpl(currentPage);
+
+                  for (PagedMessage msg : messages)
+                  {
+                     msg.initMessage(storageManager);
+                     pageCache.addLiveMessage(msg);
+                  }
+
+                  currentPage.setLiveCache(pageCache);
+
+                  currentPageSize.set(currentPage.getSize());
+
+                  cursorProvider.addPageCache(pageCache);
+               }
+               
+               // We will not mark it for paging if there's only a single empty file
+               if (currentPage != null && !(numberOfPages == 1 && currentPage.getSize() == 0))
+               {
+                  startPaging();
+               }
             }
          }
 
       }
       finally
       {
-         writeLock.unlock();
+         lock.writeLock().unlock();
       }
+   }
+   
+   public void stopPaging()
+   {
+      lock.writeLock().lock();
+      paging = false;
+      lock.writeLock().unlock();
    }
 
    public boolean startPaging()
@@ -530,28 +529,30 @@ public class PagingStoreImpl implements TestSupportPageStore
          return false;
       }
 
-      // First check without any global locks.
-      // (Faster)
-      currentPageLock.readLock().lock();
+      lock.readLock().lock();
       try
       {
-         // Already paging, nothing to be done
-         if (currentPage != null)
+         if (paging)
          {
             return false;
          }
       }
       finally
       {
-         currentPageLock.readLock().unlock();
+         lock.readLock().unlock();
       }
 
       // if the first check failed, we do it again under a global currentPageLock
       // (writeLock) this time
-      writeLock.lock();
+      lock.writeLock().lock();
 
       try
       {
+         if (paging)
+         {
+            return false;
+         }
+         
          if (currentPage == null)
          {
             try
@@ -565,17 +566,15 @@ public class PagingStoreImpl implements TestSupportPageStore
                PagingStoreImpl.log.warn("IO Error, impossible to start paging", e);
                return false;
             }
+         }
 
-            return true;
-         }
-         else
-         {
-            return false;
-         }
+         paging = true;
+         
+         return true;
       }
       finally
       {
-         writeLock.unlock();
+         lock.writeLock().unlock();
       }
    }
 
@@ -594,21 +593,18 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
 
       SequentialFile file = fileFactory.createSequentialFile(fileName, 1000);
-      
+
       Page page = new PageImpl(storeName, storageManager, fileFactory, file, pageNumber);
 
-      // To create the file 
+      // To create the file
       file.open();
 
       file.position(0);
 
       file.close();
-      
 
       return page;
    }
-
-   // TestSupportPageStore ------------------------------------------
 
    public void forceAnotherPage() throws Exception
    {
@@ -625,9 +621,7 @@ public class PagingStoreImpl implements TestSupportPageStore
     * */
    public Page depage() throws Exception
    {
-      writeLock.lock();
-
-      currentPageLock.writeLock().lock(); // Make sure no checks are done on currentPage while we are depaging
+      lock.writeLock().lock(); // Make sure no checks are done on currentPage while we are depaging
       try
       {
          if (!running)
@@ -689,8 +683,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
       finally
       {
-         currentPageLock.writeLock().unlock();
-         writeLock.unlock();
+         lock.writeLock().unlock();
       }
 
    }
@@ -922,26 +915,26 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
 
       // We need to ensure a read lock, as depage could change the paging state
-      currentPageLock.readLock().lock();
+      lock.readLock().lock();
 
       try
       {
          // First check done concurrently, to avoid synchronization and increase throughput
-         if (currentPage == null)
+         if (!paging)
          {
             return false;
          }
       }
       finally
       {
-         currentPageLock.readLock().unlock();
+         lock.readLock().unlock();
       }
 
-      writeLock.lock();
+      lock.writeLock().lock();
 
       try
       {
-         if (currentPage == null)
+         if (!paging)
          {
             return false;
          }
@@ -971,42 +964,17 @@ public class PagingStoreImpl implements TestSupportPageStore
             if (currentPageSize.addAndGet(bytesToWrite) > pageSize && currentPage.getNumberOfMessages() > 0)
             {
                // Make sure nothing is currently validating or using currentPage
-               currentPageLock.writeLock().lock();
-               try
-               {
-                  openNewPage();
-
-                  // openNewPage will set currentPageSize to zero, we need to set it again
-                  currentPageSize.addAndGet(bytesToWrite);
-               }
-               finally
-               {
-                  currentPageLock.writeLock().unlock();
-               }
+               openNewPage();
             }
 
-            currentPageLock.readLock().lock();
-
-            try
-            {
-               currentPage.write(pagedMessage);
- 
-               if (sync)
-               {
-                  currentPage.sync();
-               }
-            }
-            finally
-            {
-               currentPageLock.readLock().unlock();
-            }
+            currentPage.write(pagedMessage);
          }
 
          return true;
       }
       finally
       {
-         writeLock.unlock();
+         lock.writeLock().unlock();
       }
 
    }
@@ -1177,51 +1145,11 @@ public class PagingStoreImpl implements TestSupportPageStore
       return duplicateIdForPage;
    }
 
-   /**
-    * @return
-    */
-   private boolean isAddressFull(final long nextPageSize)
-   {
-      return maxSize > 0 && getAddressSize() + nextPageSize > maxSize;
-   }
-
-   /**
-    * startDepaging and clearDepage needs to be atomic.
-    * We can't use writeLock to this operation as writeLock would still be used by another thread, and still being a valid usage
-    * @return true if the depage status was cleared
-    */
-   private synchronized boolean clearDepage()
-   {
-      final boolean addressFull = isAddressFull(getPageSizeBytes());
-
-      if (PagingStoreImpl.isTrace)
-      {
-         PagingStoreImpl.trace("Clear Depage on Address = " + getStoreName() +
-                               " addressSize = " +
-                               getAddressSize() +
-                               " addressMax " +
-                               maxSize +
-                               " isPaging = " +
-                               isPaging() +
-                               " addressFull = " +
-                               addressFull);
-      }
-
-      // It should stop the executor when the address is full or when there is nothing else to be depaged
-      if (addressFull || !isPaging())
-      {
-         depaging.set(false);
-         return true;
-      }
-      else
-      {
-         return false;
-      }
-   }
+   
 
    private void openNewPage() throws Exception
    {
-      currentPageLock.writeLock().lock();
+      lock.writeLock().lock();
 
       try
       {
@@ -1240,20 +1168,20 @@ public class PagingStoreImpl implements TestSupportPageStore
          }
 
          currentPage = createPage(currentPageId);
-         
+
          LivePageCache pageCache = new LivePageCacheImpl(currentPage);
-         
+
          currentPage.setLiveCache(pageCache);
 
          cursorProvider.addPageCache(pageCache);
-         
+
          currentPageSize.set(0);
 
          currentPage.open();
       }
       finally
       {
-         currentPageLock.writeLock().unlock();
+         lock.writeLock().unlock();
       }
    }
 
@@ -1282,39 +1210,39 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    // Inner classes -------------------------------------------------
 
-/*   private class DepageRunnable implements Runnable
-   {
-      private final Executor followingExecutor;
-
-      public DepageRunnable(final Executor followingExecutor)
+   /*   private class DepageRunnable implements Runnable
       {
-         this.followingExecutor = followingExecutor;
-      }
+         private final Executor followingExecutor;
 
-      public void run()
-      {
-         try
+         public DepageRunnable(final Executor followingExecutor)
          {
-            if (running)
-            {
-               if (!isAddressFull(getPageSizeBytes()))
-               {
-                  readPage();
-               }
+            this.followingExecutor = followingExecutor;
+         }
 
-               // Note: clearDepage is an atomic operation, it needs to be done even if readPage was not executed
-               // however clearDepage shouldn't be executed if the page-store is being stopped, as stop will be holding
-               // the lock and this would dead lock
-               if (running && !clearDepage())
+         public void run()
+         {
+            try
+            {
+               if (running)
                {
-                  followingExecutor.execute(this);
+                  if (!isAddressFull(getPageSizeBytes()))
+                  {
+                     readPage();
+                  }
+
+                  // Note: clearDepage is an atomic operation, it needs to be done even if readPage was not executed
+                  // however clearDepage shouldn't be executed if the page-store is being stopped, as stop will be holding
+                  // the lock and this would dead lock
+                  if (running && !clearDepage())
+                  {
+                     followingExecutor.execute(this);
+                  }
                }
             }
+            catch (Throwable e)
+            {
+               PagingStoreImpl.log.error(e, e);
+            }
          }
-         catch (Throwable e)
-         {
-            PagingStoreImpl.log.error(e, e);
-         }
-      }
-   } */
+      } */
 }

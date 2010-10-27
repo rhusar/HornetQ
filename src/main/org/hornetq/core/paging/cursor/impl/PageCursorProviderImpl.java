@@ -264,6 +264,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
       {
          cursor.processReload();
       }
+
+      cleanup();
+
    }
 
    public void stop()
@@ -276,6 +279,29 @@ public class PageCursorProviderImpl implements PageCursorProvider
       for (PageCursor cursor : nonPersistentCursors)
       {
          cursor.stop();
+      }
+
+      Future future = new Future();
+
+      executor.execute(future);
+
+      while (!future.await(10000))
+      {
+         log.warn("Waiting cursor provider " + this + " to finish executors");
+      }
+
+   }
+
+   public void flushExecutors()
+   {
+      for (PageCursor cursor : activeCursors.values())
+      {
+         cursor.flushExecutors();
+      }
+
+      for (PageCursor cursor : nonPersistentCursors)
+      {
+         cursor.flushExecutors();
       }
 
       Future future = new Future();
@@ -318,7 +344,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       });
    }
 
-   private void cleanup()
+   public void cleanup()
    {
       ArrayList<Page> depagedPages = new ArrayList<Page>();
 
@@ -328,17 +354,22 @@ public class PageCursorProviderImpl implements PageCursorProvider
       {
          try
          {
+            if (!pagingStore.isStarted())
+            {
+               return;
+            }
+
             ArrayList<PageCursor> cursorList = new ArrayList<PageCursor>();
             cursorList.addAll(activeCursors.values());
             cursorList.addAll(nonPersistentCursors);
 
             long minPage = checkMinPage(cursorList);
-            
-            if (minPage == pagingStore.getCurrentWritingPage())
+
+            if (minPage == pagingStore.getCurrentWritingPage() && pagingStore.getCurrentPage().getNumberOfMessages() > 0)
             {
                boolean complete = true;
-               
-               for (PageCursor cursor: cursorList)
+
+               for (PageCursor cursor : cursorList)
                {
                   if (!cursor.isComplete(minPage))
                   {
@@ -346,18 +377,58 @@ public class PageCursorProviderImpl implements PageCursorProvider
                      break;
                   }
                }
-               
+
                if (complete)
                {
-                  System.out.println("Depaging complete now. We can leave page state at this point!");
-                  // move every cursor away from the main page, clearing every cursor's old pages while only keeping a bookmark for the next page case it happens again
+
+                  System.out.println("Disabling depage!");
+                  pagingStore.forceAnotherPage();
+
+                  Page currentPage = pagingStore.getCurrentPage();
+
+                  try
+                  {
+                     // First step: Move every cursor to the next bookmarked page (that was just created)
+                     for (PageCursor cursor : cursorList)
+                     {
+                        cursor.ack(new PagePositionImpl(currentPage.getPageId(), -1));
+                     }
+
+                     storageManager.waitOnOperations();
+                  }
+                  finally
+                  {
+                     for (PageCursor cursor : cursorList)
+                     {
+                        cursor.enableAutoCleanup();
+                     }
+                  }
+
+                  pagingStore.stopPaging();
+
+                  // This has to be called after we stopped paging
+                  for (PageCursor cursor : cursorList)
+                  {
+                     cursor.scheduleCleanupCheck();
+                  }
+
                }
             }
 
             for (long i = pagingStore.getFirstPage(); i < minPage; i++)
             {
                Page page = pagingStore.depage();
+               if (page == null)
+               {
+                  break;
+               }
                depagedPages.add(page);
+            }
+
+            if (pagingStore.getNumberOfPages() == 0 || pagingStore.getNumberOfPages() == 1 &&
+                pagingStore.getCurrentPage().getNumberOfMessages() == 0)
+            {
+               pagingStore.stopPaging();
             }
          }
          catch (Exception ex)
@@ -412,11 +483,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
     */
    private long checkMinPage(List<PageCursor> cursorList)
    {
-      if (cursorList.size() == 0)
-      {
-         return 0l;
-      }
-
       long minPage = Long.MAX_VALUE;
 
       for (PageCursor cursor : cursorList)
