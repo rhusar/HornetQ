@@ -17,6 +17,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -44,6 +45,8 @@ import org.hornetq.core.transaction.TransactionOperationAbstract;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.Future;
+import org.hornetq.utils.LinkedListImpl;
+import org.hornetq.utils.LinkedListIterator;
 
 /**
  * A PageCursorImpl
@@ -91,7 +94,7 @@ public class PageCursorImpl implements PageCursor
    private final SortedMap<Long, PageCursorInfo> consumedPages = Collections.synchronizedSortedMap(new TreeMap<Long, PageCursorInfo>());
 
    // We only store the position for redeliveries. They will be read from the SoftCache again during delivery.
-   private final ConcurrentLinkedQueue<PagePosition> redeliveries = new ConcurrentLinkedQueue<PagePosition>();
+   private final org.hornetq.utils.LinkedList<PagePosition> redeliveries = new LinkedListImpl<PagePosition>();
 
    // Static --------------------------------------------------------
 
@@ -147,11 +150,80 @@ public class PageCursorImpl implements PageCursor
 
       ack(position);
    }
+   
+   
+   class LocalIterator implements LinkedListIterator<Pair<PagePosition, PagedMessage>>
+   {
+      PagePosition position = getLastPosition();
+      
+      PagePosition lastOperation = null;
+      
+      LinkedListIterator<PagePosition> redeliveryIterator = redeliveries.iterator();
+
+      boolean isredelivery = false;
+      
+      
+      public void repeat()
+      {
+         if (isredelivery)
+         {
+            redeliveryIterator.repeat();
+         }
+         else
+         {
+            if (lastOperation == null)
+            {
+               position = getLastPosition();
+            }
+            else
+            {
+               position = lastOperation;
+            }
+         }
+      }
+      
+      /* (non-Javadoc)
+       * @see java.util.Iterator#next()
+       */
+      public Pair<PagePosition, PagedMessage> next()
+      {
+         try
+         {
+             Pair<PagePosition, PagedMessage> nextPos = moveNext(position);
+             lastOperation = position;
+             position = nextPos.a;
+             return nextPos;
+         }
+         catch (Exception e)
+         {
+            throw new RuntimeException(e.getMessage(), e);
+         }
+      }
+
+      public boolean hasNext()
+      {
+         return true;
+      }
+
+      /* (non-Javadoc)
+       * @see java.util.Iterator#remove()
+       */
+      public void remove()
+      {
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.utils.LinkedListIterator#close()
+       */
+      public void close()
+      {
+      }
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
-   public synchronized Pair<PagePosition, PagedMessage> moveNext() throws Exception
+   public synchronized Pair<PagePosition, PagedMessage> moveNext(PagePosition posision) throws Exception
    {
       PagePosition redeliveryPos = null;
 
@@ -161,20 +233,13 @@ public class PageCursorImpl implements PageCursor
          return new Pair<PagePosition, PagedMessage>(redeliveryPos, cursorProvider.getMessage(redeliveryPos));
       }
 
-      if (lastPosition == null)
-      {
-         // it will start at the first available page
-         long firstPage = pageStore.getFirstPage();
-         lastPosition = new PagePositionImpl(firstPage, -1);
-      }
-
       boolean match = false;
 
       Pair<PagePosition, PagedMessage> message = null;
 
       do
       {
-         message = cursorProvider.getNext(this, lastPosition);
+         message = cursorProvider.getNext(this, posision);
 
          if (message != null)
          {
@@ -192,6 +257,21 @@ public class PageCursorImpl implements PageCursor
       while (message != null && !match);
 
       return message;
+   }
+
+   /**
+    * 
+    */
+   private PagePosition getLastPosition()
+   {
+      if (lastPosition == null)
+      {
+         // it will start at the first available page
+         long firstPage = pageStore.getFirstPage();
+         lastPosition = new PagePositionImpl(firstPage, -1);
+      }
+      
+      return lastPosition;
    }
 
    /* (non-Javadoc)
@@ -251,7 +331,7 @@ public class PageCursorImpl implements PageCursor
     */
    public synchronized void redeliver(final PagePosition position)
    {
-      redeliveries.add(position);
+      redeliveries.addTail(position);
    }
 
    /** 

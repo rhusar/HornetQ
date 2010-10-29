@@ -321,7 +321,15 @@ public class ClientConsumerImpl implements ClientConsumerInternal
 
    public ClientMessage receive(final long timeout) throws HornetQException
    {
-      return receive(timeout, false);
+      if (isBrowseOnly())
+      {
+         log.warn("receive timeout is not effective on browsing, ignoring timeout");
+         return receive(0, true);
+      }
+      else
+      {
+         return receive(timeout, false);
+      }
    }
 
    public ClientMessage receive() throws HornetQException

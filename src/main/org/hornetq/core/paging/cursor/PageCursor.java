@@ -47,8 +47,6 @@ public interface PageCursor
    void disableAutoCleanup();
    
    void enableAutoCleanup();
-   
-   Pair<PagePosition, PagedMessage> moveNext() throws Exception;
 
    void ack(PagePosition position) throws Exception;
 
