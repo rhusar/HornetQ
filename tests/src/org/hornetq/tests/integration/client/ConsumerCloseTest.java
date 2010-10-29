@@ -48,6 +48,7 @@ public class ConsumerCloseTest extends ServiceTestBase
    private SimpleString queue;
 
    private SimpleString address;
+   private ServerLocator locator;
 
    // Static --------------------------------------------------------
 
@@ -156,7 +157,7 @@ public class ConsumerCloseTest extends ServiceTestBase
       address = RandomUtil.randomSimpleString();
       queue = RandomUtil.randomSimpleString();
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
       sf = locator.createSessionFactory();
 
@@ -175,6 +176,8 @@ public class ConsumerCloseTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       server.stop();
 

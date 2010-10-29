@@ -38,6 +38,7 @@ public class ExpiryAddressTest extends UnitTestCase
    private HornetQServer server;
 
    private ClientSession clientSession;
+   private ServerLocator locator;
 
    public void testBasicSend() throws Exception
    {
@@ -194,6 +195,8 @@ public class ExpiryAddressTest extends UnitTestCase
 
       sendSession.close();
 
+      locator.close();
+
    }
 
    public void testExpireWithDefaultAddressSettings() throws Exception
@@ -310,7 +313,7 @@ public class ExpiryAddressTest extends UnitTestCase
       // start the server
       server.start();
       // then we create a client as normal
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
       locator.setBlockOnAcknowledge(true); 
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
@@ -344,6 +347,7 @@ public class ExpiryAddressTest extends UnitTestCase
             //
          }
       }
+      locator.close();
       server = null;
       clientSession = null;
 

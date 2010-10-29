@@ -214,6 +214,13 @@ public class ClusterManagerImpl implements ClusterManager
 
       bridges.clear();
 
+      if(backupSessionFactory != null)
+      {
+         backupSessionFactory.close();
+         backupSessionFactory.getServerLocator().close();
+         backupSessionFactory = null;
+      }
+
       started = false;
    }
 

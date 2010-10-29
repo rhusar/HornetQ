@@ -52,6 +52,7 @@ public class IncompatibleVersionTest extends ServiceTestBase
    private HornetQServer server;
 
    private CoreRemotingConnection connection;
+   private ServerLocator locator;
 
    // Static --------------------------------------------------------
 
@@ -66,7 +67,7 @@ public class IncompatibleVersionTest extends ServiceTestBase
       server.getConfiguration().setConnectionTTLOverride(500);
       server.start();
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
       ClientSessionFactory csf = locator.createSessionFactory();
 
       connection = csf.getConnection();
@@ -76,6 +77,8 @@ public class IncompatibleVersionTest extends ServiceTestBase
    protected void tearDown() throws Exception
    {
       connection.destroy();
+
+      locator.close();
 
       server.stop();
    }

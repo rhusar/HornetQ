@@ -95,6 +95,10 @@ public class FailureDeadlockTest extends UnitTestCase
 
       }
 
+      cf1.close();
+
+      cf2.close();
+      
       server = null;
 
       jmsServer = null;

@@ -49,6 +49,7 @@ public class MessagePriorityTest extends UnitTestCase
    private ClientSession session;
 
    private ClientSessionFactory sf;
+   private ServerLocator locator;
 
    // Static --------------------------------------------------------
 
@@ -274,7 +275,7 @@ public class MessagePriorityTest extends UnitTestCase
       config.setSecurityEnabled(false);
       server = HornetQServers.newHornetQServer(config, false);
       server.start();
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       sf = locator.createSessionFactory();
@@ -287,6 +288,8 @@ public class MessagePriorityTest extends UnitTestCase
       sf.close();
 
       session.close();
+
+      locator.close();
 
       server.stop();
 

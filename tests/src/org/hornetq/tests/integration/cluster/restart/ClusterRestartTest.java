@@ -98,6 +98,8 @@ public class ClusterRestartTest extends ClusterTestBase
 
          closeAllSessionFactories();
 
+         closeAllServerLocatorsFactories();
+
          stopServers(0, 1);
       }
    }
@@ -170,6 +172,8 @@ public class ClusterRestartTest extends ClusterTestBase
          closeAllConsumers();
 
          closeAllSessionFactories();
+
+         closeAllServerLocatorsFactories();
 
          stopServers(0, 1);
       }

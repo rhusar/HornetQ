@@ -159,6 +159,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private TransportConfiguration clusterTransportConfiguration;
 
    private boolean backup;
+   private final Exception e = new Exception();
 
    private static synchronized ExecutorService getGlobalThreadPool()
    {
@@ -303,6 +304,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                              final int discoveryPort,
                              final TransportConfiguration[] transportConfigs)
    {
+      e.fillInStackTrace();
+
       this.ha = useHA;
 
       this.discoveryAddress = discoveryAddress;
@@ -1310,11 +1313,25 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
       }
 
+       public void finalize() throws Throwable
+      {
+         if (!closed)
+         {
+            log.warn("I'm closing a core ServerLocator you left open. Please make sure you close all ServerLocators explicitly " + "before letting them go out of scope! " +
+                                       System.identityHashCode(this));
 
+            log.warn("The ServerLocator you didn't close was created here:", e);
+
+            close();
+         }
+
+         super.finalize();
+      }
+      
       class Connector implements Callable<ClientSessionFactory>
       {
          private TransportConfiguration initialConnector;
-         private ClientSessionFactoryInternal factory;
+         private volatile ClientSessionFactoryInternal factory;
          private boolean isConnected = false;
          private boolean interrupted = false;
          private Exception e;
@@ -1327,6 +1344,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          public ClientSessionFactory call() throws HornetQException
          {
             factory = getFactory();
+            if(factory == null)
+            {
+               return null;
+            }
             try
             {
                factory.connect(reconnectAttempts, failoverOnInitialConnection);
@@ -1337,6 +1358,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                {
                   this.e = e;
                   throw e;
+               }
+               if(factory != null)
+               {
+                  factory.close();
+                  factory = null;
                }
                return null;
             }
@@ -1356,29 +1382,24 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             return isConnected;
          }
 
-         public void disconnect()
+         public synchronized void disconnect()
          {
             interrupted = true;
-            try
+            
+            if (factory != null)
             {
-               ClientSessionFactoryInternal factory = getFactory();
-               if (factory != null)
-               {
-                  factory.causeExit();
-               }
-               else
-               {
-                  System.out.println("ServerLocatorImpl$StaticConnector$Connector.disconnect");
-               }
-            }
-            catch (HornetQException e1)
-            {
-               log.debug("exception closing factory");
+               factory.causeExit();
+               factory.close();
+               factory = null;
             }
          }
 
          private synchronized ClientSessionFactoryInternal getFactory() throws HornetQException
          {
+            if(interrupted)
+            {
+               return null;
+            }
             if (factory == null)
             {
                try

@@ -310,6 +310,8 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
 
       closeAllSessionFactories();
 
+      closeAllServerLocatorsFactories();
+
       stopServers(0, 1, 2, 3, 4, 5);
    }
 

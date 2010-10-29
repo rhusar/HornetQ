@@ -141,7 +141,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private volatile boolean stopPingingAfterOne;
 
    private volatile boolean closed;
-   
+
+   public final Exception e = new Exception();
+
+   private final Object waitLock = new Object();
+
+   public static List<ClientSessionFactoryImpl> factories = new ArrayList<ClientSessionFactoryImpl>();
+
    // Static
    // ---------------------------------------------------------------------------------------
 
@@ -161,6 +167,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                    final ScheduledExecutorService scheduledThreadPool,
                                    final List<Interceptor> interceptors) throws HornetQException
    {
+
+      e.fillInStackTrace();
+
       this.serverLocator = serverLocator;
 
       this.connectorConfig = connectorConfig;
@@ -390,6 +399,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    public void causeExit()
    {
       exitLoop = true;
+      synchronized (waitLock)
+      {
+         waitLock.notify();
+      }
    }
 
    public void close()
@@ -867,58 +880,68 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       long interval = retryInterval;
 
       int count = 0;
-
-      while (true)
+      factories.add(this);
+      try
       {
-         if (exitLoop)
+         synchronized (waitLock)
          {
-            return;
+            while (true)
+               {
+                  if (exitLoop)
+                  {
+                     return;
+                  }
+
+                  getConnection();
+
+                  if (connection == null)
+                  {
+                     // Failed to get connection
+
+                     if (reconnectAttempts != 0)
+                     {
+                        count++;
+
+                        if (reconnectAttempts != -1 && count == reconnectAttempts)
+                        {
+                           log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up.");
+
+                           return;
+                        }
+
+                        try
+                        {
+                           waitLock.wait(interval);
+                        }
+                        catch (InterruptedException ignore)
+                        {
+                        }
+
+                        // Exponential back-off
+                        long newInterval = (long)(interval * retryIntervalMultiplier);
+
+                        if (newInterval > maxRetryInterval)
+                        {
+                           newInterval = maxRetryInterval;
+                        }
+
+                        interval = newInterval;
+                     }
+                     else
+                     {
+                        return;
+                     }
+                  }
+                  else
+                  {
+                     return;
+                  }
+               }
          }
-
-         getConnection();
-
-         if (connection == null)
-         {
-            // Failed to get connection
-
-            if (reconnectAttempts != 0)
-            {
-               count++;
-
-               if (reconnectAttempts != -1 && count == reconnectAttempts)
-               {
-                  log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up.");
-
-                  return;
-               }
-
-               try
-               {
-                  Thread.sleep(interval);
-               }
-               catch (InterruptedException ignore)
-               {
-               }
-
-               // Exponential back-off
-               long newInterval = (long)(interval * retryIntervalMultiplier);
-
-               if (newInterval > maxRetryInterval)
-               {
-                  newInterval = maxRetryInterval;
-               }
-
-               interval = newInterval;
-            }
-            else
-            {
-               return;
-            }
-         }
-         else
-         {
-            return;
-         }
+      }
+      finally
+      {
+         factories.remove(this);
       }
    }
 
@@ -1082,6 +1105,21 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       return connection;
+   }
+
+   public void finalize() throws Throwable
+   {
+      if (!closed)
+      {
+         log.warn("I'm closing a core ClientSessionFactory you left open. Please make sure you close all ClientSessionFactories explicitly " + "before letting them go out of scope! " +
+                                    System.identityHashCode(this));
+
+         log.warn("The ClientSessionFactory you didn't close was created here:", e);
+
+         close();
+      }
+
+      super.finalize();
    }
 
    private ConnectorFactory instantiateConnectorFactory(final String connectorFactoryClassName)

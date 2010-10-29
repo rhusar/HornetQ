@@ -110,6 +110,8 @@ public class SymmetricClusterTest extends ClusterTestBase
 
          closeAllSessionFactories();
 
+         closeAllServerLocatorsFactories();
+
          stopServers(0, 1, 2, 3, 4);
 
          startServers();
@@ -1770,6 +1772,8 @@ public class SymmetricClusterTest extends ClusterTestBase
       closeAllConsumers();
 
       closeAllSessionFactories();
+
+      closeAllServerLocatorsFactories();
 
       stopServers(0, 1, 2, 3, 4);
    }

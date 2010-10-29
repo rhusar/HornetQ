@@ -664,6 +664,8 @@ public class MessageRedistributionTest extends ClusterTestBase
 
       closeAllSessionFactories();
 
+      closeAllServerLocatorsFactories();
+
       stopServers(0, 1, 2);
 
       clearServer(0, 1, 2);

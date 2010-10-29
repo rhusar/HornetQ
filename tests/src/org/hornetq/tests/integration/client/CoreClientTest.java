@@ -119,6 +119,8 @@ public class CoreClientTest extends UnitTestCase
 
       session.close();
 
+      locator.close();
+
       server.stop();
    }
 

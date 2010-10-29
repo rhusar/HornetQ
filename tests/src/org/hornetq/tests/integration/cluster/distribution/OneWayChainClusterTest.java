@@ -53,6 +53,8 @@ public class OneWayChainClusterTest extends ClusterTestBase
 
       closeAllSessionFactories();
 
+      closeAllServerLocatorsFactories();
+
       stopServers(0, 1, 2, 3, 4);
 
       super.tearDown();

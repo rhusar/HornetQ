@@ -115,6 +115,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testSimpleDuplicateDetectionWithString() throws Exception
@@ -183,6 +185,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+      
+      locator.close();
    }
 
    public void testCacheSize() throws Exception
@@ -340,6 +344,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testTransactedDuplicateDetection1() throws Exception
@@ -390,6 +396,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testTransactedDuplicateDetection2() throws Exception
@@ -434,6 +442,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testTransactedDuplicateDetection3() throws Exception
@@ -490,6 +500,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    /*
@@ -553,6 +565,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testXADuplicateDetection1() throws Exception
@@ -630,6 +644,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testXADuplicateDetection2() throws Exception
@@ -709,6 +725,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testXADuplicateDetection3() throws Exception
@@ -787,6 +805,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    public void testXADuplicateDetection4() throws Exception
@@ -867,6 +887,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
    }
 
    private ClientMessage createMessage(final ClientSession session, final int i)
@@ -958,6 +980,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
 
       sf.close();
 
+      locator.close();
+
       messagingService2.stop();
    }
 
@@ -1036,6 +1060,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1127,6 +1153,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1229,6 +1257,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
 
       sf.close();
 
+      locator.close();
+
       messagingService2.stop();
    }
 
@@ -1313,6 +1343,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1402,6 +1434,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1493,6 +1527,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1597,6 +1633,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
 
       sf.close();
 
+      locator.close();
+
       messagingService2.stop();
    }
 
@@ -1695,6 +1733,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }
@@ -1797,6 +1837,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
 
       sf.close();
 
+      locator.close();
+
       messagingService2.stop();
    }
 
@@ -1896,6 +1938,8 @@ public class DuplicateDetectionTest extends ServiceTestBase
       session.close();
 
       sf.close();
+
+      locator.close();
 
       messagingService2.stop();
    }

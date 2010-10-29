@@ -28,6 +28,7 @@ import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
+import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.config.*;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
@@ -97,6 +98,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
          nodeManagers[i] = new InVMNodeManager();
       }
 
+      locators = new ServerLocator[ClusterTestBase.MAX_SERVERS];
+
    }
 
    @Override
@@ -150,6 +153,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
    protected HornetQServer[] servers;
 
    protected NodeManager[] nodeManagers;
+
+   protected ServerLocator[] locators;
 
    protected ClientSessionFactory[] sfs;
 
@@ -427,6 +432,21 @@ public abstract class ClusterTestBase extends ServiceTestBase
             sf.close();
 
             sfs[i] = null;
+         }
+      }
+   }
+
+   protected void closeAllServerLocatorsFactories() throws Exception
+   {
+      for (int i = 0; i < locators.length; i++)
+      {
+         ServerLocator sf = locators[i];
+
+         if (sf != null)
+         {
+            sf.close();
+
+            locators[i] = null;
          }
       }
    }
@@ -1134,11 +1154,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
          serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
       }
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      locators[node] = HornetQClient.createServerLocatorWithoutHA(serverTotc);
 
-      locator.setBlockOnNonDurableSend(true);
-      locator.setBlockOnDurableSend(true);
-      ClientSessionFactory sf = locator.createSessionFactory();
+      locators[node].setBlockOnNonDurableSend(true);
+      locators[node].setBlockOnDurableSend(true);
+      ClientSessionFactory sf = locators[node].createSessionFactory();
 
       sfs[node] = sf;
    }

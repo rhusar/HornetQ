@@ -122,6 +122,8 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          closeAllSessionFactories();
 
+         closeAllServerLocatorsFactories();
+
          stopServers(0, 1, 2);
       }
    }
@@ -224,6 +226,8 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
          closeAllConsumers();
 
          closeAllSessionFactories();
+
+         closeAllServerLocatorsFactories();
 
          stopServers(0, 1, 2);
       }

@@ -187,6 +187,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       session0.close();
       session2.close();
 
+      locator.close();
+
       server0.stop();
       server1.stop();
       service2.stop();
@@ -315,6 +317,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       session0.close();
       session2.close();
 
+      locator.close();
+
       server0.stop();
       server1.stop();
       service2.stop();
@@ -434,6 +438,8 @@ public class BridgeReconnectTest extends BridgeTestBase
 
       session0.close();
       session1.close();
+
+      locator.close();
 
       server0.stop();
       server1.stop();
@@ -572,6 +578,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       session0.close();
       session1.close();
 
+      locator.close();
+
       server0.stop();
       server1.stop();
 
@@ -704,6 +712,8 @@ public class BridgeReconnectTest extends BridgeTestBase
 
       session0.close();
       session1.close();
+
+      locator.close();
 
       server0.stop();
       server1.stop();

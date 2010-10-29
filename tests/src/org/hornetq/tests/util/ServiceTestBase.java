@@ -15,7 +15,9 @@ package org.hornetq.tests.util;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.management.MBeanServer;
@@ -69,6 +71,33 @@ public abstract class ServiceTestBase extends UnitTestCase
    protected static final String NETTY_ACCEPTOR_FACTORY = NettyAcceptorFactory.class.getCanonicalName();
 
    protected static final String NETTY_CONNECTOR_FACTORY = NettyConnectorFactory.class.getCanonicalName();
+
+   private List<ServerLocator> locators = new ArrayList<ServerLocator>();
+
+   @Override
+   protected void tearDown() throws Exception
+   {
+      for (ServerLocator locator : locators)
+      {
+         try
+         {
+            locator.close();
+         }
+         catch (Exception e)
+         {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+         }
+      }
+      locators.clear();
+      if(!ClientSessionFactoryImpl.factories.isEmpty())
+      {
+         for (ClientSessionFactoryImpl factory : ClientSessionFactoryImpl.factories)
+         {
+            //factory.e.printStackTrace();
+         }
+      }
+      super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
+   }
 
    protected static Map<String, Object> generateParams(final int node, final boolean netty)
    {
@@ -421,12 +450,16 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    protected ServerLocator createInVMNonHALocator()
    {
-      return HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      ServerLocator locatorWithoutHA = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      locators.add(locatorWithoutHA);
+      return locatorWithoutHA;
    }
 
    protected ServerLocator createNettyNonHALocator()
    {
-      return HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NETTY_CONNECTOR_FACTORY));
+      ServerLocator serverLocatorWithoutHA = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NETTY_CONNECTOR_FACTORY));
+      locators.add(serverLocatorWithoutHA);
+      return serverLocatorWithoutHA;
    }
 
    protected ClientSessionFactoryImpl createFactory(final String connectorClass) throws Exception
