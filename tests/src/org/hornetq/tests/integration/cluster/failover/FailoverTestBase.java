@@ -137,6 +137,9 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
       ArrayList<String> staticConnectors = new ArrayList<String>();
       staticConnectors.add(liveConnector.getName());
+      ClusterConnectionConfiguration cccLive = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
+               staticConnectors);
+      backupConfig.getClusterConfigurations().add(cccLive);
       backupServer = createBackupServer();
       
       // FIXME
@@ -254,7 +257,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
         sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
 
-        assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
+        boolean ok = countDownLatch.await(5, TimeUnit.SECONDS);
+        assertTrue(ok);
         return sf;
      }
 
