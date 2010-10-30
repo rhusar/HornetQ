@@ -16,6 +16,7 @@ package org.hornetq.core.paging.cursor;
 import org.hornetq.api.core.Pair;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.transaction.Transaction;
+import org.hornetq.utils.LinkedListIterator;
 
 /**
  * A PageCursor
@@ -36,6 +37,8 @@ public interface PageCursor
    
    /** It will be 0 if non persistent cursor */
    public long getId();
+   
+   public LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator();
    
    // To be called when the cursor is closed for good. Most likely when the queue is deleted
    void close() throws Exception;

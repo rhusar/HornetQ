@@ -152,7 +152,7 @@ public class PageCursorImpl implements PageCursor
    }
    
    
-   class LocalIterator implements LinkedListIterator<Pair<PagePosition, PagedMessage>>
+   class CursorIterator implements LinkedListIterator<Pair<PagePosition, PagedMessage>>
    {
       PagePosition position = getLastPosition();
       
@@ -191,7 +191,14 @@ public class PageCursorImpl implements PageCursor
          {
              Pair<PagePosition, PagedMessage> nextPos = moveNext(position);
              lastOperation = position;
-             position = nextPos.a;
+             if (nextPos == null)
+             {
+                position = null;
+             }
+             else
+             {
+                position = nextPos.a;
+             }
              return nextPos;
          }
          catch (Exception e)
@@ -219,6 +226,18 @@ public class PageCursorImpl implements PageCursor
       {
       }
    }
+   
+   
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageCursor#iterator()
+    */
+   public LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator()
+   {
+      return new CursorIterator();
+   }
+
+
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
@@ -923,5 +942,4 @@ public class PageCursorImpl implements PageCursor
       }
 
    }
-
 }
