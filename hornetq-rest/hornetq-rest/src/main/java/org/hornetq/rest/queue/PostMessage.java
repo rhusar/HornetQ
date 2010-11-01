@@ -6,6 +6,7 @@ import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.rest.util.HttpMessageHelper;
+import org.hornetq.api.core.Message;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -218,7 +219,7 @@ public class PostMessage
 
    protected ClientMessage createHornetQMessage(HttpHeaders headers, byte[] body, boolean durable, ClientSession session) throws Exception
    {
-      ClientMessage message = session.createMessage(durable);
+      ClientMessage message = session.createMessage(Message.BYTES_TYPE, durable);
       HttpMessageHelper.writeHttpMessage(headers, body, message);
       return message;
    }
