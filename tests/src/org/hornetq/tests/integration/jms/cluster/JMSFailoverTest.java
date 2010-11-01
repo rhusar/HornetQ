@@ -118,7 +118,7 @@ public class JMSFailoverTest extends UnitTestCase
 
       jbcf.setReconnectAttempts(-1);
 
-      Connection conn = jbcf.createConnection();
+      Connection conn = JMSUtil.createConnectionAndWaitForTopology(jbcf, 2, 5);
 
       Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -140,7 +140,7 @@ public class JMSFailoverTest extends UnitTestCase
 
       jbcf.setReconnectAttempts(-1);
 
-      Connection conn = jbcf.createConnection();
+      Connection conn = JMSUtil.createConnectionAndWaitForTopology(jbcf, 2, 5);
 
       Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -168,7 +168,7 @@ public class JMSFailoverTest extends UnitTestCase
 
       jbcf.setConsumerWindowSize(numMessages * bodySize / 10);
 
-      Connection conn = jbcf.createConnection();
+      Connection conn = JMSUtil.createConnectionAndWaitForTopology(jbcf, 2, 5);
 
       MyExceptionListener listener = new MyExceptionListener();
 
@@ -336,7 +336,10 @@ public class JMSFailoverTest extends UnitTestCase
       backupConf.getConnectorConfigurations().put(backuptc.getName(), backuptc);
       ArrayList<String> staticConnectors = new ArrayList<String>();
       staticConnectors.add(livetc.getName());
+      ClusterConnectionConfiguration cccBackup = new ClusterConnectionConfiguration("cluster1", "jms", backuptc.getName(), -1, false, false, 1, 1,
+               staticConnectors);
 
+      backupConf.getClusterConfigurations().add(cccBackup);
       backupConf.setSecurityEnabled(false);
       backupConf.setJournalType(getDefaultJournalType());
       backupParams.put(TransportConstants.SERVER_ID_PROP_NAME, 1);

@@ -27,11 +27,16 @@ import javax.jms.TopicSubscriber;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ClusterTopologyListener;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
+import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
+import org.hornetq.jms.client.HornetQConnection;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
@@ -39,6 +44,8 @@ import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.tests.util.RandomUtil;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,10 +54,8 @@ import java.util.concurrent.TimeUnit;
  * A JMSUtil
  *
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
- * 
- * Created 14 nov. 2008 13:48:08
- *
- *
+ *         <p/>
+ *         Created 14 nov. 2008 13:48:08
  */
 public class JMSUtil
 {
@@ -181,25 +186,25 @@ public class JMSUtil
       }
    }
 
-    public static void waitForServer(HornetQServer server)
+   public static void waitForServer(HornetQServer server)
          throws InterruptedException
    {
-      long timetowait =System.currentTimeMillis() + 5000;
-      while(!server.isStarted())
+      long timetowait = System.currentTimeMillis() + 5000;
+      while (!server.isStarted())
       {
          Thread.sleep(100);
-         if(server.isStarted())
+         if (server.isStarted())
          {
             break;
          }
-         else if(System.currentTimeMillis() > timetowait)
+         else if (System.currentTimeMillis() > timetowait)
          {
             throw new IllegalStateException("server didnt start");
          }
       }
    }
 
-    public static void crash(HornetQServer server, ClientSession... sessions) throws Exception
+   public static void crash(HornetQServer server, ClientSession... sessions) throws Exception
    {
       final CountDownLatch latch = new CountDownLatch(sessions.length);
 
@@ -219,21 +224,16 @@ public class JMSUtil
       {
          session.addFailureListener(new MyListener());
       }
-      Set<RemotingConnection> connections = server.getRemotingService().getConnections();
+      /*Set<RemotingConnection> connections = server.getRemotingService().getConnections();
       for (RemotingConnection remotingConnection : connections)
       {
          remotingConnection.destroy();
          server.getRemotingService().removeConnection(remotingConnection.getID());
-      }
+      }*/
 
       ClusterManagerImpl clusterManager = (ClusterManagerImpl) server.getClusterManager();
       clusterManager.clear();
       server.kill();
-      // recreate the live.lock file (since it was deleted by the
-      // clean stop
-      File lockFile = new File(server.getConfiguration().getJournalDirectory(), "live.lock");
-      Assert.assertFalse(lockFile.exists());
-      lockFile.createNewFile();
 
 
       // Wait to be informed of failure
@@ -254,4 +254,55 @@ public class JMSUtil
 
    // Inner classes -------------------------------------------------
 
+   public static HornetQConnection createConnectionAndWaitForTopology(HornetQConnectionFactory factory, int topologyMembers, int timeout) throws Exception
+   {
+      HornetQConnection conn;
+      CountDownLatch countDownLatch = new CountDownLatch(topologyMembers);
+
+      ServerLocator locator = factory.getServerLocator();
+
+      locator.addClusterTopologyListener(new LatchClusterTopologyListener(countDownLatch));
+
+      conn = (HornetQConnection) factory.createConnection();
+
+      boolean ok = countDownLatch.await(timeout, TimeUnit.SECONDS);
+      if (!ok)
+      {
+         throw new IllegalStateException("timed out waiting for topology");
+      }
+      return conn;
+   }
+
+   static class LatchClusterTopologyListener implements ClusterTopologyListener
+   {
+      final CountDownLatch latch;
+      int liveNodes = 0;
+      int backUpNodes = 0;
+      List<String> liveNode = new ArrayList<String>();
+      List<String> backupNode = new ArrayList<String>();
+
+      public LatchClusterTopologyListener(CountDownLatch latch)
+      {
+         this.latch = latch;
+      }
+
+      public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
+      {
+         if (connectorPair.a != null && !liveNode.contains(connectorPair.a.getName()))
+         {
+            liveNode.add(connectorPair.a.getName());
+            latch.countDown();
+         }
+         if (connectorPair.b != null && !backupNode.contains(connectorPair.b.getName()))
+         {
+            backupNode.add(connectorPair.b.getName());
+            latch.countDown();
+         }
+      }
+
+      public void nodeDown(String nodeID)
+      {
+         //To change body of implemented methods use File | Settings | File Templates.
+      }
+   }
 }
