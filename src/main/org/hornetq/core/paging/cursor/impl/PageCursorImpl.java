@@ -242,7 +242,7 @@ public class PageCursorImpl implements PageCursor
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
-   public synchronized Pair<PagePosition, PagedMessage> moveNext(PagePosition posision) throws Exception
+   public synchronized Pair<PagePosition, PagedMessage> moveNext(PagePosition position) throws Exception
    {
       PagePosition redeliveryPos = null;
 
@@ -255,14 +255,16 @@ public class PageCursorImpl implements PageCursor
       boolean match = false;
 
       Pair<PagePosition, PagedMessage> message = null;
+      
+      PagePosition tmpPosition = position;
 
       do
       {
-         message = cursorProvider.getNext(this, posision);
-
+         message = cursorProvider.getNext(this, tmpPosition);
+         
          if (message != null)
          {
-            lastPosition = message.a;
+            tmpPosition = message.a;
 
             match = match(message.b.getMessage());
 
