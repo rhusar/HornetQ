@@ -297,6 +297,7 @@ public class PageSubscriptionImpl implements PageSubscription
             PageCursorInfo info = getPageInfo(message.a, false);
             if (info != null && info.isRemoved(message.a))
             {
+               tmpPosition = message.a;
                valid = false;
             }
          }
@@ -907,8 +908,7 @@ public class PageSubscriptionImpl implements PageSubscription
       
       public boolean isRemoved(final PagePosition pos)
       {
-         return false;
-         //return removedReferences.contains(pos);
+         return removedReferences.contains(pos);
       }
       
       public void remove(final PagePosition position)
