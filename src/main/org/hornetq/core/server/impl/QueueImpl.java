@@ -32,6 +32,7 @@ import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
@@ -89,6 +90,8 @@ public class QueueImpl implements Queue
    private final boolean temporary;
 
    private final PostOffice postOffice;
+   
+   private final PageSubscription pageSubscription;
 
    private final ConcurrentLinkedQueue<MessageReference> concurrentQueue = new ConcurrentLinkedQueue<MessageReference>();
 
@@ -141,11 +144,39 @@ public class QueueImpl implements Queue
    private volatile boolean checkDirect;
 
    private volatile boolean directDeliver = true;
+   
+   public QueueImpl(final long id,
+                    final SimpleString address,
+                    final SimpleString name,
+                    final Filter filter,
+                    final boolean durable,
+                    final boolean temporary,
+                    final ScheduledExecutorService scheduledExecutor,
+                    final PostOffice postOffice,
+                    final StorageManager storageManager,
+                    final HierarchicalRepository<AddressSettings> addressSettingsRepository,
+                    final Executor executor)
+   {
+      this(id,
+          address,
+          name,
+          filter,
+          null,
+          durable,
+          temporary,
+          scheduledExecutor,
+          postOffice,
+          storageManager,
+          addressSettingsRepository,
+          executor);
+   }
+
 
    public QueueImpl(final long id,
                     final SimpleString address,
                     final SimpleString name,
                     final Filter filter,
+                    final PageSubscription pageSubscription,
                     final boolean durable,
                     final boolean temporary,
                     final ScheduledExecutorService scheduledExecutor,
@@ -161,6 +192,8 @@ public class QueueImpl implements Queue
       this.name = name;
 
       this.filter = filter;
+      
+      this.pageSubscription = pageSubscription;
 
       this.durable = durable;
 
@@ -244,6 +277,11 @@ public class QueueImpl implements Queue
       return id;
    }
 
+   public PageSubscription getPageSubscription()
+   {
+      return pageSubscription;
+   }
+   
    public Filter getFilter()
    {
       return filter;

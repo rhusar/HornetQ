@@ -61,6 +61,7 @@ import org.hornetq.core.journal.impl.SyncSpeedTest;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.management.impl.HornetQServerControlImpl;
 import org.hornetq.core.paging.PagingManager;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.persistence.GroupingInfo;
@@ -712,6 +713,8 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       Queue queue = (Queue)binding.getBindable();
+      
+      queue.getPageSubscription().close();
 
       if (queue.getConsumerCount() != 0)
       {
@@ -1198,10 +1201,13 @@ public class HornetQServerImpl implements HornetQServer
          
          Filter filter = FilterImpl.createFilter(queueBindingInfo.getFilterString());
 
+         PageSubscription subscription = pagingManager.getPageStore(queueBindingInfo.getAddress()).getCursorProvier().createSubscription(queueBindingInfo.getId(), filter, true);
+         
          Queue queue = queueFactory.createQueue(queueBindingInfo.getId(),
                                                 queueBindingInfo.getAddress(),
                                                 queueBindingInfo.getQueueName(),
                                                 filter,
+                                                subscription,
                                                 true,
                                                 false);
 
@@ -1214,7 +1220,7 @@ public class HornetQServerImpl implements HornetQServer
          managementService.registerAddress(queueBindingInfo.getAddress());
          managementService.registerQueue(queue, queueBindingInfo.getAddress(), storageManager);
          
-         pagingManager.getPageStore(queueBindingInfo.getAddress()).getCursorProvier().createPersistentSubscription(queue.getID(), filter);
+         
       }
 
       for (GroupingInfo groupingInfo : groupingInfos)
@@ -1336,11 +1342,16 @@ public class HornetQServerImpl implements HornetQServer
       }
 
       Filter filter = FilterImpl.createFilter(filterString);
+      
+      long queueID = storageManager.generateUniqueID();
 
-      final Queue queue = queueFactory.createQueue(storageManager.generateUniqueID(),
+      PageSubscription pageSubscription = pagingManager.getPageStore(address).getCursorProvier().createSubscription(queueID, filter, durable);
+
+      final Queue queue = queueFactory.createQueue(queueID,
                                                    address,
                                                    queueName,
                                                    filter,
+                                                   pageSubscription,
                                                    durable,
                                                    temporary);
 

@@ -29,56 +29,58 @@ public interface PageSubscription
 {
 
    // Cursor query operations --------------------------------------
-   
+
    // To be called before the server is down
    void stop();
-   
+
    void bookmark(PagePosition position) throws Exception;
-   
-   /** It will be 0 if non persistent cursor */
-   public long getId();
-   
+
+   long getId();
+
+   boolean isPersistent();
+
    public LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator();
-   
+
    // To be called when the cursor is closed for good. Most likely when the queue is deleted
    void close() throws Exception;
-   
+
    void scheduleCleanupCheck();
-   
+
    void cleanupEntries() throws Exception;
-   
+
    void disableAutoCleanup();
-   
+
    void enableAutoCleanup();
 
    void ack(PagePosition position) throws Exception;
 
    void ackTx(Transaction tx, PagePosition position) throws Exception;
+
    /**
     * 
     * @return the first page in use or MAX_LONG if none is in use
     */
    long getFirstPage();
-   
+
    // Reload operations
-   
+
    /**
     * @param position
     */
    void reloadACK(PagePosition position);
-   
+
    /**
     * To be called when the cursor decided to ignore a position.
     * @param position
     */
    void positionIgnored(PagePosition position);
-   
+
    /**
     * To be used to avoid a redelivery of a prepared ACK after load
     * @param position
     */
    void reloadPreparedACK(Transaction tx, PagePosition position);
-   
+
    void processReload() throws Exception;
 
    /**
@@ -86,7 +88,7 @@ public interface PageSubscription
     * @param position
     */
    void redeliver(PagePosition position);
-   
+
    void printDebug();
 
    /**

@@ -76,6 +76,8 @@ public class PageSubscriptionImpl implements PageSubscription
    private final StorageManager store;
 
    private final long cursorId;
+   
+   private final boolean persistent;
 
    private final Filter filter;
 
@@ -105,7 +107,8 @@ public class PageSubscriptionImpl implements PageSubscription
                          final StorageManager store,
                          final Executor executor,
                          final Filter filter,
-                         final long cursorId)
+                         final long cursorId,
+                         final boolean persistent)
    {
       this.pageStore = pageStore;
       this.store = store;
@@ -113,6 +116,7 @@ public class PageSubscriptionImpl implements PageSubscription
       this.cursorId = cursorId;
       this.executor = executor;
       this.filter = filter;
+      this.persistent = persistent;
    }
 
    // Public --------------------------------------------------------
@@ -317,7 +321,7 @@ public class PageSubscriptionImpl implements PageSubscription
    {
 
       // if we are dealing with a persistent cursor
-      if (cursorId != 0)
+      if (persistent)
       {
          store.storeCursorAcknowledge(cursorId, position);
       }
@@ -339,7 +343,7 @@ public class PageSubscriptionImpl implements PageSubscription
    public void ackTx(final Transaction tx, final PagePosition position) throws Exception
    {
       // if the cursor is persistent
-      if (cursorId != 0)
+      if (persistent)
       {
          store.storeCursorAcknowledgeTransactional(tx.getID(), cursorId, position);
       }
@@ -489,6 +493,11 @@ public class PageSubscriptionImpl implements PageSubscription
    public long getId()
    {
       return cursorId;
+   }
+   
+   public boolean isPersistent()
+   {
+      return persistent;
    }
 
    public void processReload() throws Exception

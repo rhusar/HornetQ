@@ -21,6 +21,7 @@ import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.MessageReference;
@@ -49,6 +50,7 @@ public class LastValueQueue extends QueueImpl
                          final SimpleString address,
                          final SimpleString name,
                          final Filter filter,
+                         final PageSubscription pageSubscription,
                          final boolean durable,
                          final boolean temporary,
                          final ScheduledExecutorService scheduledExecutor,
@@ -61,6 +63,7 @@ public class LastValueQueue extends QueueImpl
             address,
             name,
             filter,
+            pageSubscription,
             durable,
             temporary,
             scheduledExecutor,

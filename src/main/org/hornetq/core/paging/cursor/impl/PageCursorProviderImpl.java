@@ -72,8 +72,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    private ConcurrentMap<Long, PageSubscription> activeCursors = new ConcurrentHashMap<Long, PageSubscription>();
 
-   private ConcurrentSet<PageSubscription> nonPersistentCursors = new ConcurrentHashSet<PageSubscription>();
-
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -96,7 +94,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return pagingStore;
    }
 
-   public synchronized PageSubscription createPersistentSubscription(long cursorID, Filter filter)
+   public synchronized PageSubscription createSubscription(long cursorID, Filter filter, boolean persistent)
    {
       PageSubscription activeCursor = activeCursors.get(cursorID);
       if (activeCursor != null)
@@ -109,7 +107,8 @@ public class PageCursorProviderImpl implements PageCursorProvider
                                         storageManager,
                                         executorFactory.getExecutor(),
                                         filter,
-                                        cursorID);
+                                        cursorID,
+                                        persistent);
       activeCursors.put(cursorID, activeCursor);
       return activeCursor;
    }
@@ -117,24 +116,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
-   public synchronized PageSubscription getPersistentCursor(long cursorID)
+   public synchronized PageSubscription getSubscription(long cursorID)
    {
       return activeCursors.get(cursorID);
-   }
-
-   /**
-    * this will create a non-persistent cursor
-    */
-   public synchronized PageSubscription createNonPersistentSubscription(Filter filter)
-   {
-      PageSubscription cursor = new PageSubscriptionImpl(this,
-                                             pagingStore,
-                                             storageManager,
-                                             executorFactory.getExecutor(),
-                                             filter,
-                                             0);
-      nonPersistentCursors.add(cursor);
-      return cursor;
    }
 
    /* (non-Javadoc)
@@ -276,11 +260,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
          cursor.stop();
       }
 
-      for (PageSubscription cursor : nonPersistentCursors)
-      {
-         cursor.stop();
-      }
-
       Future future = new Future();
 
       executor.execute(future);
@@ -299,11 +278,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
          cursor.flushExecutors();
       }
 
-      for (PageSubscription cursor : nonPersistentCursors)
-      {
-         cursor.flushExecutors();
-      }
-
       Future future = new Future();
 
       executor.execute(future);
@@ -317,14 +291,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void close(PageSubscription cursor)
    {
-      if (cursor.getId() != 0)
-      {
-         activeCursors.remove(cursor.getId());
-      }
-      else
-      {
-         nonPersistentCursors.remove(cursor);
-      }
+      activeCursors.remove(cursor.getId());
 
       scheduleCleanup();
    }
@@ -361,7 +328,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
             ArrayList<PageSubscription> cursorList = new ArrayList<PageSubscription>();
             cursorList.addAll(activeCursors.values());
-            cursorList.addAll(nonPersistentCursors);
 
             long minPage = checkMinPage(cursorList);
 

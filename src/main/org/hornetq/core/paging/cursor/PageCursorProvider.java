@@ -49,16 +49,10 @@ public interface PageCursorProvider
     * @param queueId The cursorID should be the same as the queueId associated for persistance
     * @return
     */
-   PageSubscription getPersistentCursor(long queueId);
+   PageSubscription getSubscription(long queueId);
    
-   PageSubscription createPersistentSubscription(long queueId, Filter filter);
+   PageSubscription createSubscription(long queueId, Filter filter, boolean durable);
    
-   /**
-    * Create a non persistent cursor, usually associated with browsing
-    * @return
-    */
-   PageSubscription createNonPersistentSubscription(Filter filter);
-
    Pair<PagePosition, PagedMessage> getNext(PageSubscription cursor, PagePosition pos) throws Exception;
    
    PagedMessage getMessage(PagePosition pos) throws Exception;

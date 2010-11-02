@@ -20,6 +20,7 @@ import java.util.concurrent.Executor;
 
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.filter.Filter;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.server.Consumer;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -589,6 +590,15 @@ public class FakeQueue implements Queue
    {
       // TODO Auto-generated method stub
       
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.Queue#getPageSubscription()
+    */
+   public PageSubscription getPageSubscription()
+   {
+      // TODO Auto-generated method stub
+      return null;
    }
 
 }
