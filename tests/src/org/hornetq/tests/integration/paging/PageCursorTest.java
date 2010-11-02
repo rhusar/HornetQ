@@ -757,8 +757,8 @@ public class PageCursorTest extends ServiceTestBase
 
       PageCursorProvider cursorProvider = lookupCursorProvider();
 
-      PageSubscription cursor = cursorProvider.createSubscription(1, null, false);
-      PageSubscriptionImpl cursor2 = (PageSubscriptionImpl)cursorProvider.createSubscription(2, null, false);
+      PageSubscription cursor = cursorProvider.createSubscription(11, null, false);
+      PageSubscriptionImpl cursor2 = (PageSubscriptionImpl)cursorProvider.createSubscription(12, null, false);
       
       queue.getPageSubscription().close();
 
@@ -776,8 +776,6 @@ public class PageCursorTest extends ServiceTestBase
 
       forceGC();
 
-      //assertTrue(cursorProvider.getCacheSize() < numberOfPages);
-
       for (int i = 0; i < 10; i++)
       {
          msg = iterator2.next();
@@ -788,6 +786,7 @@ public class PageCursorTest extends ServiceTestBase
 
       cursor2.close();
       
+       
       lookupPageStore(ADDRESS).flushExecutors();
 
       server.stop();

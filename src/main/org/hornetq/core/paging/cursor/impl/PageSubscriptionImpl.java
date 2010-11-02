@@ -17,10 +17,12 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -44,6 +46,7 @@ import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.TransactionOperationAbstract;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.LinkedListImpl;
 import org.hornetq.utils.LinkedListIterator;
@@ -243,6 +246,7 @@ public class PageSubscriptionImpl implements PageSubscription
        */
       public void remove()
       {
+         PageSubscriptionImpl.this.getPageInfo(position).remove(position);
       }
 
       /* (non-Javadoc)
@@ -265,6 +269,8 @@ public class PageSubscriptionImpl implements PageSubscription
    {
       return new CursorIterator();
    }
+   
+   int validCount = 0;
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
@@ -280,8 +286,21 @@ public class PageSubscriptionImpl implements PageSubscription
       do
       {
          message = cursorProvider.getNext(this, tmpPosition);
-
-         if (message != null)
+         
+         boolean valid = true;
+         if (message == null)
+         {
+            valid = false;
+         }
+         else
+         {
+            PageCursorInfo info = getPageInfo(message.a, false);
+            if (info != null && info.isRemoved(message.a))
+            {
+               valid = false;
+            }
+         }
+         if (valid)
          {
             tmpPosition = message.a;
 
@@ -603,16 +622,21 @@ public class PageSubscriptionImpl implements PageSubscription
          System.out.println(info);
       }
    }
+  
+   private synchronized PageCursorInfo getPageInfo(final PagePosition pos)
+   {
+      return getPageInfo(pos, true);
+   }
 
    /**
     * @param page
     * @return
     */
-   private synchronized PageCursorInfo getPageInfo(final PagePosition pos)
+   private synchronized PageCursorInfo getPageInfo(final PagePosition pos, boolean create)
    {
       PageCursorInfo pageInfo = consumedPages.get(pos.getPageNr());
 
-      if (pageInfo == null)
+      if (create && pageInfo == null)
       {
          PageCache cache = cursorProvider.getPageCache(pos);
          pageInfo = new PageCursorInfo(pos.getPageNr(), cache.getNumberOfMessages(), cache);
@@ -822,6 +846,8 @@ public class PageSubscriptionImpl implements PageSubscription
       private final List<PagePosition> acks = Collections.synchronizedList(new LinkedList<PagePosition>());
 
       private WeakReference<PageCache> cache;
+      
+      private Set<PagePosition> removedReferences = new ConcurrentHashSet<PagePosition>();
 
       // The page was live at the time of the creation
       private final boolean wasLive;
@@ -877,6 +903,17 @@ public class PageSubscriptionImpl implements PageSubscription
       public long getPageId()
       {
          return pageId;
+      }
+      
+      public boolean isRemoved(final PagePosition pos)
+      {
+         return false;
+         //return removedReferences.contains(pos);
+      }
+      
+      public void remove(final PagePosition position)
+      {
+         removedReferences.add(position);
       }
 
       public void addACK(final PagePosition posACK)
