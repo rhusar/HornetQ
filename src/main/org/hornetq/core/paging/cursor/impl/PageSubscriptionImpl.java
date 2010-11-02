@@ -160,6 +160,10 @@ public class PageSubscriptionImpl implements PageSubscription
       LinkedListIterator<PagePosition> redeliveryIterator = redeliveries.iterator();
 
       boolean isredelivery = false;
+      
+      /** next element taken on hasNext test.
+       *  it has to be delivered on next next operation */
+      Pair<PagePosition, PagedMessage> cachedNext;
 
       public void repeat()
       {
@@ -185,6 +189,13 @@ public class PageSubscriptionImpl implements PageSubscription
        */
       public Pair<PagePosition, PagedMessage> next()
       {
+         
+         if (cachedNext != null)
+         {
+            Pair<PagePosition, PagedMessage> retPos = cachedNext;
+            cachedNext = null;
+            return retPos;
+         }
          try
          {
             if (redeliveryIterator.hasNext())
@@ -212,7 +223,15 @@ public class PageSubscriptionImpl implements PageSubscription
 
       public boolean hasNext()
       {
-         return true;
+         // if an unbehaved program called hasNext twice before next, we only cache it once.
+         if (cachedNext != null)
+         {
+            return true;
+         }
+         
+         cachedNext = next();
+
+         return cachedNext != null;
       }
 
       /* (non-Javadoc)
