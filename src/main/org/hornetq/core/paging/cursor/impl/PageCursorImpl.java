@@ -150,19 +150,17 @@ public class PageCursorImpl implements PageCursor
 
       ack(position);
    }
-   
-   
+
    class CursorIterator implements LinkedListIterator<Pair<PagePosition, PagedMessage>>
    {
       PagePosition position = getLastPosition();
-      
+
       PagePosition lastOperation = null;
-      
+
       LinkedListIterator<PagePosition> redeliveryIterator = redeliveries.iterator();
 
       boolean isredelivery = false;
-      
-      
+
       public void repeat()
       {
          if (isredelivery)
@@ -181,7 +179,7 @@ public class PageCursorImpl implements PageCursor
             }
          }
       }
-      
+
       /* (non-Javadoc)
        * @see java.util.Iterator#next()
        */
@@ -189,17 +187,22 @@ public class PageCursorImpl implements PageCursor
       {
          try
          {
-             Pair<PagePosition, PagedMessage> nextPos = moveNext(position);
-             lastOperation = position;
-             if (nextPos == null)
-             {
-                position = null;
-             }
-             else
-             {
-                position = nextPos.a;
-             }
-             return nextPos;
+            if (redeliveryIterator.hasNext())
+            {
+               isredelivery = true;
+               return getMessage(redeliveryIterator.next());
+            }
+            else
+            {
+               isredelivery = false;
+            }
+
+            Pair<PagePosition, PagedMessage> nextPos = moveNext(position);
+            if (nextPos != null)
+            {
+               position = nextPos.a;
+            }
+            return nextPos;
          }
          catch (Exception e)
          {
@@ -226,8 +229,11 @@ public class PageCursorImpl implements PageCursor
       {
       }
    }
-   
-   
+
+   private Pair<PagePosition, PagedMessage> getMessage(PagePosition pos) throws Exception
+   {
+      return new Pair<PagePosition, PagedMessage>(pos, cursorProvider.getMessage(pos));
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#iterator()
@@ -237,31 +243,21 @@ public class PageCursorImpl implements PageCursor
       return new CursorIterator();
    }
 
-
-
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
    public synchronized Pair<PagePosition, PagedMessage> moveNext(PagePosition position) throws Exception
    {
-      PagePosition redeliveryPos = null;
-
-      // Redeliveries will take precedence
-      if ((redeliveryPos = redeliveries.poll()) != null)
-      {
-         return new Pair<PagePosition, PagedMessage>(redeliveryPos, cursorProvider.getMessage(redeliveryPos));
-      }
-
       boolean match = false;
 
       Pair<PagePosition, PagedMessage> message = null;
-      
+
       PagePosition tmpPosition = position;
 
       do
       {
          message = cursorProvider.getNext(this, tmpPosition);
-         
+
          if (message != null)
          {
             tmpPosition = message.a;
@@ -291,7 +287,7 @@ public class PageCursorImpl implements PageCursor
          long firstPage = pageStore.getFirstPage();
          lastPosition = new PagePositionImpl(firstPage, -1);
       }
-      
+
       return lastPosition;
    }
 
