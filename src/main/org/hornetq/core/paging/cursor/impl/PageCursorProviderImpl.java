@@ -29,7 +29,7 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
@@ -70,9 +70,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    private Map<Long, PageCache> softCache = new SoftValueHashMap<Long, PageCache>();
 
-   private ConcurrentMap<Long, PageCursor> activeCursors = new ConcurrentHashMap<Long, PageCursor>();
+   private ConcurrentMap<Long, PageSubscription> activeCursors = new ConcurrentHashMap<Long, PageSubscription>();
 
-   private ConcurrentSet<PageCursor> nonPersistentCursors = new ConcurrentHashSet<PageCursor>();
+   private ConcurrentSet<PageSubscription> nonPersistentCursors = new ConcurrentHashSet<PageSubscription>();
 
    // Static --------------------------------------------------------
 
@@ -96,15 +96,15 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return pagingStore;
    }
 
-   public synchronized PageCursor createPersistentCursor(long cursorID, Filter filter)
+   public synchronized PageSubscription createPersistentSubscription(long cursorID, Filter filter)
    {
-      PageCursor activeCursor = activeCursors.get(cursorID);
+      PageSubscription activeCursor = activeCursors.get(cursorID);
       if (activeCursor != null)
       {
          throw new IllegalStateException("Cursor " + cursorID + " had already been created");
       }
 
-      activeCursor = new PageCursorImpl(this,
+      activeCursor = new PageSubscriptionImpl(this,
                                         pagingStore,
                                         storageManager,
                                         executorFactory.getExecutor(),
@@ -117,7 +117,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#createCursor()
     */
-   public synchronized PageCursor getPersistentCursor(long cursorID)
+   public synchronized PageSubscription getPersistentCursor(long cursorID)
    {
       return activeCursors.get(cursorID);
    }
@@ -125,9 +125,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /**
     * this will create a non-persistent cursor
     */
-   public synchronized PageCursor createNonPersistentCursor(Filter filter)
+   public synchronized PageSubscription createNonPersistentSubscription(Filter filter)
    {
-      PageCursor cursor = new PageCursorImpl(this,
+      PageSubscription cursor = new PageSubscriptionImpl(this,
                                              pagingStore,
                                              storageManager,
                                              executorFactory.getExecutor(),
@@ -140,7 +140,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public Pair<PagePosition, PagedMessage> getNext(final PageCursor cursor, PagePosition cursorPos) throws Exception
+   public Pair<PagePosition, PagedMessage> getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
    {
 
       while (true)
@@ -260,7 +260,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void processReload() throws Exception
    {
-      for (PageCursor cursor : this.activeCursors.values())
+      for (PageSubscription cursor : this.activeCursors.values())
       {
          cursor.processReload();
       }
@@ -271,12 +271,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void stop()
    {
-      for (PageCursor cursor : activeCursors.values())
+      for (PageSubscription cursor : activeCursors.values())
       {
          cursor.stop();
       }
 
-      for (PageCursor cursor : nonPersistentCursors)
+      for (PageSubscription cursor : nonPersistentCursors)
       {
          cursor.stop();
       }
@@ -294,12 +294,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    public void flushExecutors()
    {
-      for (PageCursor cursor : activeCursors.values())
+      for (PageSubscription cursor : activeCursors.values())
       {
          cursor.flushExecutors();
       }
 
-      for (PageCursor cursor : nonPersistentCursors)
+      for (PageSubscription cursor : nonPersistentCursors)
       {
          cursor.flushExecutors();
       }
@@ -315,7 +315,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    }
 
-   public void close(PageCursor cursor)
+   public void close(PageSubscription cursor)
    {
       if (cursor.getId() != 0)
       {
@@ -359,7 +359,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
                return;
             }
 
-            ArrayList<PageCursor> cursorList = new ArrayList<PageCursor>();
+            ArrayList<PageSubscription> cursorList = new ArrayList<PageSubscription>();
             cursorList.addAll(activeCursors.values());
             cursorList.addAll(nonPersistentCursors);
 
@@ -369,7 +369,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
             {
                boolean complete = true;
 
-               for (PageCursor cursor : cursorList)
+               for (PageSubscription cursor : cursorList)
                {
                   if (!cursor.isComplete(minPage))
                   {
@@ -389,7 +389,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
                   try
                   {
                      // First step: Move every cursor to the next bookmarked page (that was just created)
-                     for (PageCursor cursor : cursorList)
+                     for (PageSubscription cursor : cursorList)
                      {
                         cursor.ack(new PagePositionImpl(currentPage.getPageId(), -1));
                      }
@@ -398,7 +398,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
                   }
                   finally
                   {
-                     for (PageCursor cursor : cursorList)
+                     for (PageSubscription cursor : cursorList)
                      {
                         cursor.enableAutoCleanup();
                      }
@@ -407,7 +407,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
                   pagingStore.stopPaging();
 
                   // This has to be called after we stopped paging
-                  for (PageCursor cursor : cursorList)
+                  for (PageSubscription cursor : cursorList)
                   {
                      cursor.scheduleCleanupCheck();
                   }
@@ -481,11 +481,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /**
     * This method is synchronized because we want it to be atomic with the cursors being used
     */
-   private long checkMinPage(List<PageCursor> cursorList)
+   private long checkMinPage(List<PageSubscription> cursorList)
    {
       long minPage = Long.MAX_VALUE;
 
-      for (PageCursor cursor : cursorList)
+      for (PageSubscription cursor : cursorList)
       {
          long firstPage = cursor.getFirstPage();
          if (firstPage < minPage)

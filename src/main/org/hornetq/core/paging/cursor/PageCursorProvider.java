@@ -49,17 +49,17 @@ public interface PageCursorProvider
     * @param queueId The cursorID should be the same as the queueId associated for persistance
     * @return
     */
-   PageCursor getPersistentCursor(long queueId);
+   PageSubscription getPersistentCursor(long queueId);
    
-   PageCursor createPersistentCursor(long queueId, Filter filter);
+   PageSubscription createPersistentSubscription(long queueId, Filter filter);
    
    /**
     * Create a non persistent cursor, usually associated with browsing
     * @return
     */
-   PageCursor createNonPersistentCursor(Filter filter);
+   PageSubscription createNonPersistentSubscription(Filter filter);
 
-   Pair<PagePosition, PagedMessage> getNext(PageCursor cursor, PagePosition pos) throws Exception;
+   Pair<PagePosition, PagedMessage> getNext(PageSubscription cursor, PagePosition pos) throws Exception;
    
    PagedMessage getMessage(PagePosition pos) throws Exception;
 
@@ -77,7 +77,7 @@ public interface PageCursorProvider
    /**
     * @param pageCursorImpl
     */
-   void close(PageCursor pageCursorImpl);
+   void close(PageSubscription pageCursorImpl);
    
    // to be used on tests -------------------------------------------
    

@@ -14,7 +14,7 @@
 package org.hornetq.core.paging;
 
 import org.hornetq.core.journal.EncodingSupport;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.transaction.Transaction;
@@ -58,5 +58,5 @@ public interface PageTransactionInfo extends EncodingSupport
     * @param cursorPos
     * @return true if the message will be delivered later, false if it should be delivered right away
     */
-   boolean deliverAfterCommit(PageCursor cursor, PagePosition cursorPos);
+   boolean deliverAfterCommit(PageSubscription cursor, PagePosition cursorPos);
 }

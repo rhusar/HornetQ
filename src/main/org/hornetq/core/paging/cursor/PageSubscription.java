@@ -25,7 +25,7 @@ import org.hornetq.utils.LinkedListIterator;
  *
  *
  */
-public interface PageCursor
+public interface PageSubscription
 {
 
    // Cursor query operations --------------------------------------

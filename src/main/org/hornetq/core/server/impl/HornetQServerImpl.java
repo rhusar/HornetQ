@@ -1214,7 +1214,7 @@ public class HornetQServerImpl implements HornetQServer
          managementService.registerAddress(queueBindingInfo.getAddress());
          managementService.registerQueue(queue, queueBindingInfo.getAddress(), storageManager);
          
-         pagingManager.getPageStore(queueBindingInfo.getAddress()).getCursorProvier().createPersistentCursor(queue.getID(), filter);
+         pagingManager.getPageStore(queueBindingInfo.getAddress()).getCursorProvier().createPersistentSubscription(queue.getID(), filter);
       }
 
       for (GroupingInfo groupingInfo : groupingInfos)

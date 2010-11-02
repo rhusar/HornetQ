@@ -35,7 +35,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
@@ -56,10 +56,10 @@ import org.hornetq.utils.LinkedListIterator;
  *
  * 
  */
-public class PageCursorImpl implements PageCursor
+public class PageSubscriptionImpl implements PageSubscription
 {
    // Constants -----------------------------------------------------
-   private static final Logger log = Logger.getLogger(PageCursorImpl.class);
+   private static final Logger log = Logger.getLogger(PageSubscriptionImpl.class);
 
    // Attributes ----------------------------------------------------
 
@@ -100,7 +100,7 @@ public class PageCursorImpl implements PageCursor
 
    // Constructors --------------------------------------------------
 
-   public PageCursorImpl(final PageCursorProvider cursorProvider,
+   public PageSubscriptionImpl(final PageCursorProvider cursorProvider,
                          final PagingStore pageStore,
                          final StorageManager store,
                          final Executor executor,
@@ -413,7 +413,7 @@ public class PageCursorImpl implements PageCursor
          {
             try
             {
-               synchronized (PageCursorImpl.this)
+               synchronized (PageSubscriptionImpl.this)
                {
                   for (PageCursorInfo cursor : consumedPages.values())
                   {
@@ -431,7 +431,7 @@ public class PageCursorImpl implements PageCursor
             catch (Exception e)
             {
                ex.add(e);
-               PageCursorImpl.log.warn(e.getMessage(), e);
+               PageSubscriptionImpl.log.warn(e.getMessage(), e);
             }
          }
       });
@@ -442,7 +442,7 @@ public class PageCursorImpl implements PageCursor
 
       while (!future.await(5000))
       {
-         PageCursorImpl.log.warn("Timeout on waiting cursor " + this + " to be closed");
+         PageSubscriptionImpl.log.warn("Timeout on waiting cursor " + this + " to be closed");
       }
 
       if (isPersistent.get())
@@ -478,7 +478,7 @@ public class PageCursorImpl implements PageCursor
       {
          if (isTrace)
          {
-            PageCursorImpl.trace("********** processing reload!!!!!!!");
+            PageSubscriptionImpl.trace("********** processing reload!!!!!!!");
          }
          Collections.sort(recoveredACK);
 
@@ -553,7 +553,7 @@ public class PageCursorImpl implements PageCursor
       executor.execute(future);
       while (!future.await(1000))
       {
-         PageCursorImpl.log.warn("Waiting page cursor to finish executors - " + this);
+         PageSubscriptionImpl.log.warn("Waiting page cursor to finish executors - " + this);
       }
    }
 
@@ -685,7 +685,7 @@ public class PageCursorImpl implements PageCursor
                }
                catch (Exception e)
                {
-                  PageCursorImpl.log.warn("Error on cleaning up cursor pages", e);
+                  PageSubscriptionImpl.log.warn("Error on cleaning up cursor pages", e);
                }
             }
          });
@@ -713,7 +713,7 @@ public class PageCursorImpl implements PageCursor
             {
                if (entry.getKey() == lastAckedPosition.getPageNr())
                {
-                  PageCursorImpl.trace("We can't clear page " + entry.getKey() + " now since it's the current page");
+                  PageSubscriptionImpl.trace("We can't clear page " + entry.getKey() + " now since it's the current page");
                }
                else
                {
@@ -754,17 +754,17 @@ public class PageCursorImpl implements PageCursor
 
                public void run()
                {
-                  synchronized (PageCursorImpl.this)
+                  synchronized (PageSubscriptionImpl.this)
                   {
                      for (PageCursorInfo completePage : completedPages)
                      {
                         if (isTrace)
                         {
-                           PageCursorImpl.trace("Removing page " + completePage.getPageId());
+                           PageSubscriptionImpl.trace("Removing page " + completePage.getPageId());
                         }
                         if (consumedPages.remove(completePage.getPageId()) == null)
                         {
-                           PageCursorImpl.log.warn("Couldn't remove page " + completePage.getPageId() +
+                           PageSubscriptionImpl.log.warn("Couldn't remove page " + completePage.getPageId() +
                                                    " from consumed pages on cursor for address " +
                                                    pageStore.getAddress());
                         }
@@ -861,7 +861,7 @@ public class PageCursorImpl implements PageCursor
 
          if (isTrace)
          {
-            PageCursorImpl.trace("numberOfMessages =  " + getNumberOfMessages() +
+            PageSubscriptionImpl.trace("numberOfMessages =  " + getNumberOfMessages() +
                                  " confirmed =  " +
                                  (confirmed.get() + 1) +
                                  ", page = " +
@@ -904,9 +904,9 @@ public class PageCursorImpl implements PageCursor
 
    static class PageCursorTX extends TransactionOperationAbstract
    {
-      HashMap<PageCursorImpl, List<PagePosition>> pendingPositions = new HashMap<PageCursorImpl, List<PagePosition>>();
+      HashMap<PageSubscriptionImpl, List<PagePosition>> pendingPositions = new HashMap<PageSubscriptionImpl, List<PagePosition>>();
 
-      public void addPositionConfirmation(final PageCursorImpl cursor, final PagePosition position)
+      public void addPositionConfirmation(final PageSubscriptionImpl cursor, final PagePosition position)
       {
          List<PagePosition> list = pendingPositions.get(cursor);
 
@@ -925,9 +925,9 @@ public class PageCursorImpl implements PageCursor
       @Override
       public void afterCommit(final Transaction tx)
       {
-         for (Entry<PageCursorImpl, List<PagePosition>> entry : pendingPositions.entrySet())
+         for (Entry<PageSubscriptionImpl, List<PagePosition>> entry : pendingPositions.entrySet())
          {
-            PageCursorImpl cursor = entry.getKey();
+            PageSubscriptionImpl cursor = entry.getKey();
 
             List<PagePosition> positions = entry.getValue();
 

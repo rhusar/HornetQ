@@ -51,7 +51,7 @@ import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
@@ -1028,7 +1028,7 @@ public class JournalStorageManager implements StorageManager
                {
                   SimpleString address = queueInfo.getAddress();
                   PagingStore store = pagingManager.getPageStore(address);
-                  PageCursor cursor = store.getCursorProvier().getPersistentCursor(encoding.queueID);
+                  PageSubscription cursor = store.getCursorProvier().getPersistentCursor(encoding.queueID);
                   cursor.reloadACK(encoding.position);
                }
                else

@@ -29,10 +29,10 @@ import org.hornetq.core.filter.Filter;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
-import org.hornetq.core.paging.cursor.impl.PageCursorImpl;
+import org.hornetq.core.paging.cursor.impl.PageSubscriptionImpl;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
@@ -117,7 +117,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursor cursor = createNonPersistentCursor();
+      PageSubscription cursor = createNonPersistentCursor();
 
       Pair<PagePosition, PagedMessage> msg;
 
@@ -157,7 +157,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursor cursorEven = createNonPersistentCursor(new Filter()
+      PageSubscription cursorEven = createNonPersistentCursor(new Filter()
       {
 
          public boolean match(ServerMessage message)
@@ -180,7 +180,7 @@ public class PageCursorTest extends ServiceTestBase
 
       });
 
-      PageCursor cursorOdd = createNonPersistentCursor(new Filter()
+      PageSubscription cursorOdd = createNonPersistentCursor(new Filter()
       {
 
          public boolean match(ServerMessage message)
@@ -273,10 +273,10 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = this.server.getPagingManager()
+      PageSubscription cursor = this.server.getPagingManager()
                                      .getPageStore(ADDRESS)
                                      .getCursorProvier()
-                                     .createPersistentCursor(queue.getID(), null);
+                                     .createPersistentSubscription(queue.getID(), null);
 
       PageCache firstPage = cursorProvider.getPageCache(new PagePositionImpl(server.getPagingManager()
                                                                                    .getPageStore(ADDRESS)
@@ -370,10 +370,10 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = this.server.getPagingManager()
+      PageSubscription cursor = this.server.getPagingManager()
                                      .getPageStore(ADDRESS)
                                      .getCursorProvier()
-                                     .createPersistentCursor(queue.getID(), null);
+                                     .createPersistentSubscription(queue.getID(), null);
 
       System.out.println("Cursor: " + cursor);
       LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
@@ -436,10 +436,10 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = this.server.getPagingManager()
+      PageSubscription cursor = this.server.getPagingManager()
                                      .getPageStore(ADDRESS)
                                      .getCursorProvier()
-                                     .createPersistentCursor(queue.getID(), null);
+                                     .createPersistentSubscription(queue.getID(), null);
 
       System.out.println("Cursor: " + cursor);
 
@@ -514,10 +514,10 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = this.server.getPagingManager()
+      PageSubscription cursor = this.server.getPagingManager()
                                      .getPageStore(ADDRESS)
                                      .getCursorProvier()
-                                     .createPersistentCursor(queue.getID(), null);
+                                     .createPersistentSubscription(queue.getID(), null);
 
       System.out.println("Cursor: " + cursor);
 
@@ -684,10 +684,10 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = this.server.getPagingManager()
+      PageSubscription cursor = this.server.getPagingManager()
                                      .getPageStore(ADDRESS)
                                      .getCursorProvier()
-                                     .createPersistentCursor(queue.getID(), null);
+                                     .createPersistentSubscription(queue.getID(), null);
       LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
 
       System.out.println("Cursor: " + cursor);
@@ -760,8 +760,8 @@ public class PageCursorTest extends ServiceTestBase
 
       PageCursorProvider cursorProvider = lookupCursorProvider();
 
-      PageCursor cursor = cursorProvider.createNonPersistentCursor(null);
-      PageCursorImpl cursor2 = (PageCursorImpl)cursorProvider.createNonPersistentCursor(null);
+      PageSubscription cursor = cursorProvider.createNonPersistentSubscription(null);
+      PageSubscriptionImpl cursor2 = (PageSubscriptionImpl)cursorProvider.createNonPersistentSubscription(null);
 
       Pair<PagePosition, PagedMessage> msg;
       LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
@@ -832,7 +832,7 @@ public class PageCursorTest extends ServiceTestBase
 
       PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(5, 0));
 
-      PageCursor cursor = cursorProvider.createNonPersistentCursor(null);
+      PageSubscription cursor = cursorProvider.createNonPersistentSubscription(null);
       PagePosition startingPos = new PagePositionImpl(5, cache.getNumberOfMessages() / 2);
       cursor.bookmark(startingPos);
       PagedMessage msg = cache.getMessage(startingPos.getMessageNr() + 1);
@@ -880,7 +880,7 @@ public class PageCursorTest extends ServiceTestBase
       // need to change this after some integration
       // PageCursor cursor =
       // this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier().getPersistentCursor(queue.getID());
-      PageCursor cursor = cursorProvider.createPersistentCursor(queue.getID(), null);
+      PageSubscription cursor = cursorProvider.createPersistentSubscription(queue.getID(), null);
       PagePosition startingPos = new PagePositionImpl(5, cache.getNumberOfMessages() / 2);
       cursor.bookmark(startingPos);
       PagedMessage msg = cache.getMessage(startingPos.getMessageNr() + 1);
@@ -1013,18 +1013,18 @@ public class PageCursorTest extends ServiceTestBase
     * @return
     * @throws Exception
     */
-   private PageCursor createNonPersistentCursor() throws Exception
+   private PageSubscription createNonPersistentCursor() throws Exception
    {
-      return lookupCursorProvider().createNonPersistentCursor(null);
+      return lookupCursorProvider().createNonPersistentSubscription(null);
    }
 
    /**
     * @return
     * @throws Exception
     */
-   private PageCursor createNonPersistentCursor(Filter filter) throws Exception
+   private PageSubscription createNonPersistentCursor(Filter filter) throws Exception
    {
-      return lookupCursorProvider().createNonPersistentCursor(filter);
+      return lookupCursorProvider().createNonPersistentSubscription(filter);
    }
 
    /**

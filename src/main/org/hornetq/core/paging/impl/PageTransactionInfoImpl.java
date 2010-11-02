@@ -22,7 +22,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagingManager;
-import org.hornetq.core.paging.cursor.PageCursor;
+import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.transaction.Transaction;
@@ -52,7 +52,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
 
    private AtomicInteger numberOfMessages = new AtomicInteger(0);
    
-   private List<Pair<PageCursor, PagePosition>> lateDeliveries;
+   private List<Pair<PageSubscription, PagePosition>> lateDeliveries;
 
    // Static --------------------------------------------------------
 
@@ -141,7 +141,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       committed = true;
       if (lateDeliveries != null)
       {
-         for (Pair<PageCursor, PagePosition> pos : lateDeliveries)
+         for (Pair<PageSubscription, PagePosition> pos : lateDeliveries)
          {
             pos.a.redeliver(pos.b);
          }
@@ -210,7 +210,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
 
       if (lateDeliveries != null)
       {
-         for (Pair<PageCursor, PagePosition> pos : lateDeliveries)
+         for (Pair<PageSubscription, PagePosition> pos : lateDeliveries)
          {
             pos.a.positionIgnored(pos.b);
          }
@@ -230,7 +230,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.PageTransactionInfo#deliverAfterCommit(org.hornetq.core.paging.cursor.PageCursor, org.hornetq.core.paging.cursor.PagePosition)
     */
-   public synchronized boolean deliverAfterCommit(PageCursor cursor, PagePosition cursorPos)
+   public synchronized boolean deliverAfterCommit(PageSubscription cursor, PagePosition cursorPos)
    {
       if (committed)
       {
@@ -246,9 +246,9 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       {
          if (lateDeliveries == null)
          {
-            lateDeliveries = new LinkedList<Pair<PageCursor, PagePosition>>();
+            lateDeliveries = new LinkedList<Pair<PageSubscription, PagePosition>>();
          }
-         lateDeliveries.add(new Pair<PageCursor, PagePosition>(cursor, cursorPos));
+         lateDeliveries.add(new Pair<PageSubscription, PagePosition>(cursor, cursorPos));
          return true;
       }
    }
