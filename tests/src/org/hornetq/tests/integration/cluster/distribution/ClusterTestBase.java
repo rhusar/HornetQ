@@ -1163,6 +1163,36 @@ public abstract class ClusterTestBase extends ServiceTestBase
       sfs[node] = sf;
    }
 
+   protected void setupSessionFactory(final int node, final boolean netty, int reconnectAttempts) throws Exception
+   {
+      if (sfs[node] != null)
+      {
+         throw new IllegalArgumentException("Already a server at " + node);
+      }
+
+      Map<String, Object> params = generateParams(node, netty);
+
+      TransportConfiguration serverTotc;
+
+      if (netty)
+      {
+         serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
+      }
+      else
+      {
+         serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
+      }
+
+      locators[node] = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+
+      locators[node].setBlockOnNonDurableSend(true);
+      locators[node].setBlockOnDurableSend(true);
+      locators[node].setReconnectAttempts(reconnectAttempts);
+      ClientSessionFactory sf = locators[node].createSessionFactory();
+
+      sfs[node] = sf;
+   }
+
    protected void setupSessionFactory(final int node, final int backupNode, final boolean netty, final boolean blocking) throws Exception
    {
       if (sfs[node] != null)
@@ -1184,14 +1214,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
 
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithHA(serverTotc);
-      locator.setRetryInterval(100);
-      locator.setRetryIntervalMultiplier(1d);
-      locator.setReconnectAttempts(-1);
-      locator.setBlockOnNonDurableSend(blocking);
-      locator.setBlockOnDurableSend(blocking);
+      locators[node] = HornetQClient.createServerLocatorWithHA(serverTotc);
+      locators[node].setRetryInterval(100);
+      locators[node].setRetryIntervalMultiplier(1d);
+      locators[node].setReconnectAttempts(-1);
+      locators[node].setBlockOnNonDurableSend(blocking);
+      locators[node].setBlockOnDurableSend(blocking);
 
-      ClientSessionFactory sf = locator.createSessionFactory();
+      ClientSessionFactory sf = locators[node].createSessionFactory();
       sfs[node] = sf;
    }
 
