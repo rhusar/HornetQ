@@ -13,7 +13,6 @@
 
 package org.hornetq.core.paging.cursor;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
