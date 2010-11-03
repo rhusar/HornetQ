@@ -215,6 +215,7 @@ public class PageSubscriptionImpl implements PageSubscription
             PagedReferenceImpl nextPos = moveNext(position);
             if (nextPos != null)
             {
+               lastOperation = position;
                position = nextPos.getPosition();
             }
             return nextPos;

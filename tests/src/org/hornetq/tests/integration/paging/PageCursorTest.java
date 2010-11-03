@@ -902,9 +902,9 @@ public class PageCursorTest extends ServiceTestBase
 
       PageSubscription cursor = cursorProvider.getSubscription(queue.getID());
 
-      Iterator<PagedReferenceImpl> iter = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iter = cursor.iterator();
       
-      Iterator<PagedReferenceImpl> iter2 = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iter2 = cursor.iterator();
       
       assertTrue(iter.hasNext());
       
@@ -925,6 +925,26 @@ public class PageCursorTest extends ServiceTestBase
       msg2 = iter2.next();
       
       assertEquals(2, tstProperty(msg2.getMessage()));
+      
+      iter2.repeat();
+      
+      msg2 = iter2.next();
+      
+      assertEquals(2, tstProperty(msg2.getMessage()));
+      
+      iter2.repeat();
+      
+      assertEquals(2, tstProperty(msg2.getMessage()));
+      
+      msg1 = iter.next();
+      
+      assertEquals(2, tstProperty(msg1.getMessage()));
+      
+      iter.repeat();
+      
+      msg1 = iter.next();
+      
+      assertEquals(2, tstProperty(msg1.getMessage()));
       
       assertTrue(iter2.hasNext());
       
