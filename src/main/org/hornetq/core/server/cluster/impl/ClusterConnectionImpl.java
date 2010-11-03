@@ -238,7 +238,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return;
       }
-      
+
       if (serverLocator != null)
       {
          serverLocator.removeClusterTopologyListener(this);
@@ -259,9 +259,9 @@ public class ClusterConnectionImpl implements ClusterConnection
 
          if (serverLocator != null)
          {
+            //serverLocator.removeClusterTopologyListener(this);
             serverLocator.close();
          }
-
 
          if (managementService != null)
          {
@@ -331,14 +331,13 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       //Remove the flow record for that node
       
-      MessageFlowRecord record = records.remove(nodeID);
+      MessageFlowRecord record = records.get(nodeID);
 
       if (record != null)
       {
          try
          {
             record.reset();
-            //record.close();
          }
          catch (Exception e)
          {

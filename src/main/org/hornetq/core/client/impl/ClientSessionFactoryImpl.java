@@ -165,7 +165,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                    final int reconnectAttempts,
                                    final ExecutorService threadPool,
                                    final ScheduledExecutorService scheduledThreadPool,
-                                   final List<Interceptor> interceptors) throws HornetQException
+                                   final List<Interceptor> interceptors)
    {
 
       e.fillInStackTrace();
@@ -613,15 +613,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             connection = null;
          }
 
-         callFailureListeners(me, true, connection != null);
 
          if (connection == null)
          {
             sessionsToClose = new HashSet<ClientSessionInternal>(sessions);
+            callFailureListeners(me, true, false);
          }
       }
 
       // This needs to be outside the failover lock to prevent deadlock
+      if(connection != null)
+      {
+         callFailureListeners(me, true, true);  
+      }
       if (sessionsToClose != null)
       {
          // If connection is null it means we didn't succeed in failing over or reconnecting
@@ -1191,18 +1195,24 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          if (type == PacketImpl.DISCONNECT)
          {
             final DisconnectMessage msg = (DisconnectMessage)packet;
+            if (msg.getNodeID() != null)
+                  {
+                     System.out.println("received disconnect from node " + msg.getNodeID());
+                  }
             closeExecutor.execute(new Runnable()
             {
                // Must be executed on new thread since cannot block the netty thread for a long time and fail can
                // cause reconnect loop
                public void run()
                {
-                  conn.fail(new HornetQException(msg.isFailoverOnServerShutdown()?HornetQException.NOT_CONNECTED:HornetQException.DISCONNECTED,
-                                                 "The connection was disconnected because of server shutdown"));
                   if (msg.getNodeID() != null)
                   {
                      serverLocator.notifyNodeDown(msg.getNodeID().toString());
                   }
+
+                  conn.fail(new HornetQException(msg.isFailoverOnServerShutdown()?HornetQException.NOT_CONNECTED:HornetQException.DISCONNECTED,
+                                                 "The connection was disconnected because of server shutdown"));
+
                }
             });
          }

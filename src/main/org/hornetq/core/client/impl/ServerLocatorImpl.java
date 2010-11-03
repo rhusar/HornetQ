@@ -1297,7 +1297,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          connectors = new ArrayList<Connector>();
          for (TransportConfiguration initialConnector : initialConnectors)
          {
-            connectors.add(new Connector(initialConnector));
+            ClientSessionFactoryInternal factory = new ClientSessionFactoryImpl(ServerLocatorImpl.this,
+                     initialConnector,
+                     callTimeout,
+                     clientFailureCheckPeriod,
+                     connectionTTL,
+                     retryInterval,
+                     retryIntervalMultiplier,
+                     maxRetryInterval,
+                     reconnectAttempts,
+                     threadPool,
+                     scheduledThreadPool,
+                     interceptors);
+            connectors.add(new Connector(initialConnector, factory));
          }
       }
 
@@ -1336,18 +1348,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          private boolean interrupted = false;
          private Exception e;
 
-         public Connector(TransportConfiguration initialConnector)
+         public Connector(TransportConfiguration initialConnector, ClientSessionFactoryInternal factory)
          {
             this.initialConnector = initialConnector;
+            this.factory = factory;
          }
 
          public ClientSessionFactory call() throws HornetQException
          {
-            factory = getFactory();
-            if(factory == null)
-            {
-               return null;
-            }
             try
             {
                factory.connect(reconnectAttempts, failoverOnInitialConnection);
@@ -1359,11 +1367,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   this.e = e;
                   throw e;
                }
-               if(factory != null)
+               /*if(factory != null)
                {
                   factory.close();
                   factory = null;
-               }
+               }*/
                return null;
             }
             isConnected = true;
@@ -1382,7 +1390,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             return isConnected;
          }
 
-         public synchronized void disconnect()
+         public void disconnect()
          {
             interrupted = true;
             
@@ -1392,39 +1400,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                factory.close();
                factory = null;
             }
-         }
-
-         private synchronized ClientSessionFactoryInternal getFactory() throws HornetQException
-         {
-            if(interrupted)
-            {
-               return null;
-            }
-            if (factory == null)
-            {
-               try
-              {
-                 initialise();
-              }
-              catch (Exception e)
-              {
-                 throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
-              }
-
-               factory = new ClientSessionFactoryImpl(ServerLocatorImpl.this,
-                     initialConnector,
-                     callTimeout,
-                     clientFailureCheckPeriod,
-                     connectionTTL,
-                     retryInterval,
-                     retryIntervalMultiplier,
-                     maxRetryInterval,
-                     reconnectAttempts,
-                     threadPool,
-                     scheduledThreadPool,
-                     interceptors);
-            }
-            return factory;
          }
       }
    }

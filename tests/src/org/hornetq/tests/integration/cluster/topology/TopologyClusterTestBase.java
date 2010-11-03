@@ -59,7 +59,7 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
 
    private static final Logger log = Logger.getLogger(TopologyClusterTestBase.class);
 
-   private static final long WAIT_TIMEOUT = 30000;
+   private static final long WAIT_TIMEOUT = 5000;
 
    abstract protected ServerLocator createHAServerLocator();
 
@@ -238,8 +238,6 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
       waitForClusterConnections(4, 4);
 
       stopServers(2, 3, 1, 4);
-
-      waitForClusterConnections(0, 0);
 
       assertTrue("Was not notified that all servers are DOWN", downLatch.await(10, SECONDS));
       checkContains(new int[] { 0 }, nodeIDs, nodes);

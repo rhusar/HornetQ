@@ -93,7 +93,9 @@ public abstract class ServiceTestBase extends UnitTestCase
       {
          for (ClientSessionFactoryImpl factory : ClientSessionFactoryImpl.factories)
          {
+          //  System.out.println(threadDump("oops"));
             //factory.e.printStackTrace();
+           // System.exit(0);
          }
       }
       super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
