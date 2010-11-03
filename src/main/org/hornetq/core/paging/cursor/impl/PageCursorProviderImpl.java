@@ -14,13 +14,11 @@
 package org.hornetq.core.paging.cursor.impl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.Page;
@@ -29,12 +27,11 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
+import org.hornetq.core.paging.cursor.PageSubscription;
+import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.utils.ConcurrentHashSet;
-import org.hornetq.utils.ConcurrentSet;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.SoftValueHashMap;
@@ -124,12 +121,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public Pair<PagePosition, PagedMessage> getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
+   public PagedReferenceImpl getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
    {
 
       while (true)
       {
-         Pair<PagePosition, PagedMessage> retPos = internalGetNext(cursorPos);
+         PagedReferenceImpl retPos = internalGetNext(cursorPos);
 
          if (retPos == null)
          {
@@ -137,15 +134,15 @@ public class PageCursorProviderImpl implements PageCursorProvider
          }
          else if (retPos != null)
          {
-            cursorPos = retPos.a;
-            if (retPos.b.getTransactionID() != 0)
+            cursorPos = retPos.getPosition();
+            if (retPos.getPagedMessage().getTransactionID() != 0)
             {
-               PageTransactionInfo tx = pagingManager.getTransaction(retPos.b.getTransactionID());
+               PageTransactionInfo tx = pagingManager.getTransaction(retPos.getPagedMessage().getTransactionID());
                if (tx == null)
                {
-                  log.warn("Couldn't locate page transaction " + retPos.b.getTransactionID() +
+                  log.warn("Couldn't locate page transaction " + retPos.getPagedMessage().getTransactionID() +
                            ", ignoring message on position " +
-                           retPos.a);
+                           retPos.getPosition());
                   cursor.positionIgnored(cursorPos);
                }
                else
@@ -164,7 +161,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
    }
 
-   private Pair<PagePosition, PagedMessage> internalGetNext(final PagePosition pos)
+   private PagedReferenceImpl internalGetNext(final PagePosition pos)
    {
       PagePosition retPos = pos.nextMessage();
 
@@ -191,7 +188,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       if (serverMessage != null)
       {
-         return new Pair<PagePosition, PagedMessage>(retPos, cache.getMessage(retPos.getMessageNr()));
+         return new PagedReferenceImpl(retPos, cache.getMessage(retPos.getMessageNr()));
       }
       else
       {

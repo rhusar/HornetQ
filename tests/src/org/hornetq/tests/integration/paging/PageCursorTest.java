@@ -21,7 +21,6 @@ import java.util.List;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
@@ -30,12 +29,13 @@ import org.hornetq.core.filter.Filter;
 import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
-import org.hornetq.core.paging.cursor.impl.PageSubscriptionImpl;
+import org.hornetq.core.paging.cursor.PageSubscription;
+import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
+import org.hornetq.core.paging.cursor.impl.PageSubscriptionImpl;
 import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -120,14 +120,14 @@ public class PageCursorTest extends ServiceTestBase
 
       PageSubscription cursor = lookupPageStore(ADDRESS).getCursorProvier().getSubscription(queue.getID());
 
-      Pair<PagePosition, PagedMessage> msg;
+      PagedReferenceImpl msg;
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
       int key = 0;
       while ((msg = iterator.next()) != null)
       {
-         assertEquals(key++, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         assertEquals(key++, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msg.getPosition());
       }
       assertEquals(NUM_MESSAGES, key);
 
@@ -205,30 +205,30 @@ public class PageCursorTest extends ServiceTestBase
 
       queue.getPageSubscription().close();
 
-      Pair<PagePosition, PagedMessage> msg;
+      PagedReferenceImpl msg;
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iteratorEven = cursorEven.iterator();
+      LinkedListIterator<PagedReferenceImpl> iteratorEven = cursorEven.iterator();
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iteratorOdd = cursorOdd.iterator();
+      LinkedListIterator<PagedReferenceImpl> iteratorOdd = cursorOdd.iterator();
 
       int key = 0;
       while ((msg = iteratorEven.next()) != null)
       {
          System.out.println("Received" + msg);
-         assertEquals(key, msg.b.getMessage().getIntProperty("key").intValue());
-         assertTrue(msg.b.getMessage().getBooleanProperty("even").booleanValue());
+         assertEquals(key, msg.getMessage().getIntProperty("key").intValue());
+         assertTrue(msg.getMessage().getBooleanProperty("even").booleanValue());
          key += 2;
-         cursorEven.ack(msg.a);
+         cursorEven.ack(msg.getPosition());
       }
       assertEquals(NUM_MESSAGES, key);
 
       key = 1;
       while ((msg = iteratorOdd.next()) != null)
       {
-         assertEquals(key, msg.b.getMessage().getIntProperty("key").intValue());
-         assertFalse(msg.b.getMessage().getBooleanProperty("even").booleanValue());
+         assertEquals(key, msg.getMessage().getIntProperty("key").intValue());
+         assertFalse(msg.getMessage().getBooleanProperty("even").booleanValue());
          key += 2;
-         cursorOdd.ack(msg.a);
+         cursorOdd.ack(msg.getPosition());
       }
       assertEquals(NUM_MESSAGES + 1, key);
 
@@ -285,18 +285,18 @@ public class PageCursorTest extends ServiceTestBase
       System.out.println("Cursor: " + cursor);
       cursorProvider.printDebug();
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
       for (int i = 0; i < 1000; i++)
       {
          System.out.println("Reading Msg : " + i);
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
+         PagedReferenceImpl msg = iterator.next();
          assertNotNull(msg);
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
 
          if (i < firstPageSize)
          {
-            cursor.ack(msg.a);
+            cursor.ack(msg);
          }
       }
       cursorProvider.printDebug();
@@ -319,11 +319,11 @@ public class PageCursorTest extends ServiceTestBase
       for (int i = firstPageSize; i < NUM_MESSAGES; i++)
       {
          System.out.println("Received " + i);
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
+         PagedReferenceImpl msg = iterator.next();
          assertNotNull(msg);
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
 
-         cursor.ack(msg.a);
+         cursor.ack(msg);
 
          OperationContextImpl.getContext(null).waitCompletion();
 
@@ -361,14 +361,14 @@ public class PageCursorTest extends ServiceTestBase
                                            .getSubscription(queue.getID());
 
       System.out.println("Cursor: " + cursor);
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
       for (int i = 0; i < 100; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
          if (i < 10 || i > 20)
          {
-            cursor.ack(msg.a);
+            cursor.ack(msg);
          }
       }
 
@@ -383,16 +383,16 @@ public class PageCursorTest extends ServiceTestBase
 
       for (int i = 10; i <= 20; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msg);
       }
 
       for (int i = 100; i < NUM_MESSAGES; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msg);
       }
 
       server.stop();
@@ -422,15 +422,15 @@ public class PageCursorTest extends ServiceTestBase
 
       Transaction tx = new TransactionImpl(server.getStorageManager(), 60 * 1000);
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
       for (int i = 0; i < 100; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
          if (i < 10 || i > 20)
          {
-            cursor.ackTx(tx, msg.a);
+            cursor.ackTx(tx, msg);
          }
       }
 
@@ -449,16 +449,16 @@ public class PageCursorTest extends ServiceTestBase
 
       for (int i = 10; i <= 20; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ackTx(tx, msg.a);
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ackTx(tx, msg);
       }
 
       for (int i = 100; i < NUM_MESSAGES; i++)
       {
-         Pair<PagePosition, PagedMessage> msg = iterator.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ackTx(tx, msg.a);
+         PagedReferenceImpl msg = iterator.next();
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ackTx(tx, msg);
       }
 
       tx.commit();
@@ -490,7 +490,7 @@ public class PageCursorTest extends ServiceTestBase
 
       System.out.println("Cursor: " + cursor);
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
       for (int i = 0; i < NUM_MESSAGES; i++)
       {
@@ -506,11 +506,11 @@ public class PageCursorTest extends ServiceTestBase
 
          Assert.assertTrue(pageStore.page(msg));
 
-         Pair<PagePosition, PagedMessage> readMessage = iterator.next();
+         PagedReferenceImpl readMessage = iterator.next();
 
          assertNotNull(readMessage);
 
-         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, readMessage.getMessage().getIntProperty("key").intValue());
 
          assertNull(iterator.next());
       }
@@ -544,11 +544,11 @@ public class PageCursorTest extends ServiceTestBase
             Assert.assertTrue(pageStore.page(msg));
          }
 
-         Pair<PagePosition, PagedMessage> readMessage = iterator.next();
+         PagedReferenceImpl readMessage = iterator.next();
 
          assertNotNull(readMessage);
 
-         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, readMessage.getMessage().getIntProperty("key").intValue());
       }
 
       server.stop();
@@ -580,20 +580,20 @@ public class PageCursorTest extends ServiceTestBase
             Assert.assertTrue(pageStore.page(msg));
          }
 
-         Pair<PagePosition, PagedMessage> readMessage = iterator.next();
+         PagedReferenceImpl readMessage = iterator.next();
 
          assertNotNull(readMessage);
 
-         cursor.ack(readMessage.a);
+         cursor.ack(readMessage);
 
-         assertEquals(i, readMessage.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, readMessage.getMessage().getIntProperty("key").intValue());
       }
 
-      Pair<PagePosition, PagedMessage> readMessage = iterator.next();
+      PagedReferenceImpl readMessage = iterator.next();
 
-      assertEquals(NUM_MESSAGES * 3, readMessage.b.getMessage().getIntProperty("key").intValue());
+      assertEquals(NUM_MESSAGES * 3, readMessage.getMessage().getIntProperty("key").intValue());
 
-      cursor.ack(readMessage.a);
+      cursor.ack(readMessage);
 
       server.getStorageManager().waitOnOperations();
 
@@ -647,7 +647,7 @@ public class PageCursorTest extends ServiceTestBase
                                            .getPageStore(ADDRESS)
                                            .getCursorProvier()
                                            .getSubscription(queue.getID());
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
       System.out.println("Cursor: " + cursor);
 
@@ -676,10 +676,10 @@ public class PageCursorTest extends ServiceTestBase
       // First consume what's already there without any tx as nothing was committed
       for (int i = 300; i < 400; i++)
       {
-         Pair<PagePosition, PagedMessage> pos = iterator.next();
+         PagedReferenceImpl pos = iterator.next();
          assertNotNull("Null at position " + i, pos);
-         assertEquals(i, pos.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(pos.a);
+         assertEquals(i, pos.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos);
       }
 
       assertNull(iterator.next());
@@ -693,10 +693,10 @@ public class PageCursorTest extends ServiceTestBase
       // Second:after pgtxCommit was done
       for (int i = 200; i < 300; i++)
       {
-         Pair<PagePosition, PagedMessage> pos = iterator.next();
+         PagedReferenceImpl pos = iterator.next();
          assertNotNull(pos);
-         assertEquals(i, pos.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(pos.a);
+         assertEquals(i, pos.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos);
       }
 
       assertNull(iterator.next());
@@ -724,15 +724,15 @@ public class PageCursorTest extends ServiceTestBase
 
       queue.getPageSubscription().close();
 
-      Pair<PagePosition, PagedMessage> msg;
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator2 = cursor.iterator();
+      PagedReferenceImpl msg;
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator2 = cursor.iterator();
 
       int key = 0;
       while ((msg = iterator.next()) != null)
       {
-         assertEquals(key++, msg.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msg.a);
+         assertEquals(key++, msg.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msg);
       }
       assertEquals(NUM_MESSAGES, key);
 
@@ -741,7 +741,7 @@ public class PageCursorTest extends ServiceTestBase
       for (int i = 0; i < 10; i++)
       {
          msg = iterator2.next();
-         assertEquals(i, msg.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
       }
 
       assertSame(cursor2.getProvider(), cursorProvider);
@@ -803,13 +803,13 @@ public class PageCursorTest extends ServiceTestBase
       msg = null;
 
       cache = null;
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
-      Pair<PagePosition, PagedMessage> msgCursor = null;
+      PagedReferenceImpl msgCursor = null;
       while ((msgCursor = iterator.next()) != null)
       {
-         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msgCursor.a);
+         assertEquals(key++, msgCursor.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msgCursor);
       }
       assertEquals(NUM_MESSAGES, key);
 
@@ -848,12 +848,12 @@ public class PageCursorTest extends ServiceTestBase
 
       cache = null;
 
-      LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator = cursor.iterator();
+      LinkedListIterator<PagedReferenceImpl> iterator = cursor.iterator();
 
-      Pair<PagePosition, PagedMessage> msgCursor = null;
+      PagedReferenceImpl msgCursor = null;
       while ((msgCursor = iterator.next()) != null)
       {
-         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
+         assertEquals(key++, msgCursor.getMessage().getIntProperty("key").intValue());
       }
       assertEquals(NUM_MESSAGES, key);
 
@@ -869,8 +869,8 @@ public class PageCursorTest extends ServiceTestBase
       iterator = cursor.iterator();
       while ((msgCursor = iterator.next()) != null)
       {
-         assertEquals(key++, msgCursor.b.getMessage().getIntProperty("key").intValue());
-         cursor.ack(msgCursor.a);
+         assertEquals(key++, msgCursor.getMessage().getIntProperty("key").intValue());
+         cursor.ack(msgCursor);
       }
 
       forceGC();
@@ -902,29 +902,29 @@ public class PageCursorTest extends ServiceTestBase
 
       PageSubscription cursor = cursorProvider.getSubscription(queue.getID());
 
-      Iterator<Pair<PagePosition, PagedMessage>> iter = cursor.iterator();
+      Iterator<PagedReferenceImpl> iter = cursor.iterator();
       
-      Iterator<Pair<PagePosition, PagedMessage>> iter2 = cursor.iterator();
+      Iterator<PagedReferenceImpl> iter2 = cursor.iterator();
       
       assertTrue(iter.hasNext());
       
-      Pair<PagePosition, PagedMessage> msg1 = iter.next();
+      PagedReferenceImpl msg1 = iter.next();
       
-      Pair<PagePosition, PagedMessage> msg2 = iter2.next();
+      PagedReferenceImpl msg2 = iter2.next();
       
-      assertEquals(tstProperty(msg1.b.getMessage()), tstProperty(msg2.b.getMessage()));
+      assertEquals(tstProperty(msg1.getMessage()), tstProperty(msg2.getMessage()));
       
-      System.out.println("property = " + tstProperty(msg1.b.getMessage()));
+      System.out.println("property = " + tstProperty(msg1.getMessage()));
 
       msg1 = iter.next();
       
-      assertEquals(1, tstProperty(msg1.b.getMessage()));
+      assertEquals(1, tstProperty(msg1.getMessage()));
       
       iter.remove();
       
       msg2 = iter2.next();
       
-      assertEquals(2, tstProperty(msg2.b.getMessage()));
+      assertEquals(2, tstProperty(msg2.getMessage()));
       
       assertTrue(iter2.hasNext());
       

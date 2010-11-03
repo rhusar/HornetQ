@@ -53,7 +53,7 @@ public interface PageCursorProvider
    
    PageSubscription createSubscription(long queueId, Filter filter, boolean durable);
    
-   Pair<PagePosition, PagedMessage> getNext(PageSubscription cursor, PagePosition pos) throws Exception;
+   PagedReferenceImpl getNext(PageSubscription cursor, PagePosition pos) throws Exception;
    
    PagedMessage getMessage(PagePosition pos) throws Exception;
 

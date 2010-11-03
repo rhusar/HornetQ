@@ -39,7 +39,7 @@ public interface PageSubscription
 
    boolean isPersistent();
 
-   public LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator();
+   public LinkedListIterator<PagedReferenceImpl> iterator();
 
    // To be called when the cursor is closed for good. Most likely when the queue is deleted
    void close() throws Exception;
@@ -52,8 +52,14 @@ public interface PageSubscription
 
    void enableAutoCleanup();
 
-   void ack(PagePosition position) throws Exception;
+   void ack(PagedReference ref) throws Exception;
 
+   // for internal (cursor) classes
+   void ack(PagePosition ref) throws Exception;
+
+   void ackTx(Transaction tx, PagedReference position) throws Exception;
+
+   // for internal (cursor) classes
    void ackTx(Transaction tx, PagePosition position) throws Exception;
 
    /**

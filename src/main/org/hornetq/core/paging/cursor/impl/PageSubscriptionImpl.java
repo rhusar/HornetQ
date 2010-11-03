@@ -17,29 +17,26 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
-import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
+import org.hornetq.core.paging.cursor.PageSubscription;
+import org.hornetq.core.paging.cursor.PagedReference;
+import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
@@ -158,7 +155,7 @@ public class PageSubscriptionImpl implements PageSubscription
       ack(position);
    }
 
-   class CursorIterator implements LinkedListIterator<Pair<PagePosition, PagedMessage>>
+   class CursorIterator implements LinkedListIterator<PagedReferenceImpl>
    {
       PagePosition position = getLastPosition();
 
@@ -170,7 +167,7 @@ public class PageSubscriptionImpl implements PageSubscription
       
       /** next element taken on hasNext test.
        *  it has to be delivered on next next operation */
-      Pair<PagePosition, PagedMessage> cachedNext;
+      PagedReferenceImpl cachedNext;
 
       public void repeat()
       {
@@ -194,12 +191,12 @@ public class PageSubscriptionImpl implements PageSubscription
       /* (non-Javadoc)
        * @see java.util.Iterator#next()
        */
-      public Pair<PagePosition, PagedMessage> next()
+      public PagedReferenceImpl next()
       {
          
          if (cachedNext != null)
          {
-            Pair<PagePosition, PagedMessage> retPos = cachedNext;
+            PagedReferenceImpl retPos = cachedNext;
             cachedNext = null;
             return retPos;
          }
@@ -215,10 +212,10 @@ public class PageSubscriptionImpl implements PageSubscription
                isredelivery = false;
             }
 
-            Pair<PagePosition, PagedMessage> nextPos = moveNext(position);
+            PagedReferenceImpl nextPos = moveNext(position);
             if (nextPos != null)
             {
-               position = nextPos.a;
+               position = nextPos.getPosition();
             }
             return nextPos;
          }
@@ -257,15 +254,15 @@ public class PageSubscriptionImpl implements PageSubscription
       }
    }
 
-   private Pair<PagePosition, PagedMessage> getMessage(PagePosition pos) throws Exception
+   private PagedReferenceImpl getMessage(PagePosition pos) throws Exception
    {
-      return new Pair<PagePosition, PagedMessage>(pos, cursorProvider.getMessage(pos));
+      return new PagedReferenceImpl(pos, cursorProvider.getMessage(pos));
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#iterator()
     */
-   public LinkedListIterator<Pair<PagePosition, PagedMessage>> iterator()
+   public LinkedListIterator<PagedReferenceImpl> iterator()
    {
       return new CursorIterator();
    }
@@ -275,11 +272,11 @@ public class PageSubscriptionImpl implements PageSubscription
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
-   public synchronized Pair<PagePosition, PagedMessage> moveNext(PagePosition position) throws Exception
+   public synchronized PagedReferenceImpl moveNext(PagePosition position) throws Exception
    {
       boolean match = false;
 
-      Pair<PagePosition, PagedMessage> message = null;
+      PagedReferenceImpl message = null;
 
       PagePosition tmpPosition = position;
 
@@ -294,25 +291,24 @@ public class PageSubscriptionImpl implements PageSubscription
          }
          else
          {
-            PageCursorInfo info = getPageInfo(message.a, false);
-            if (info != null && info.isRemoved(message.a))
+            PageCursorInfo info = getPageInfo(message.getPosition(), false);
+            if (info != null && info.isRemoved(message.getPosition()))
             {
-               tmpPosition = message.a;
+               tmpPosition = message.getPosition();
                valid = false;
             }
          }
          if (valid)
          {
-            tmpPosition = message.a;
+            tmpPosition = message.getPosition();
 
-            match = match(message.b.getMessage());
+            match = match(message.getMessage());
 
             if (!match)
             {
-               processACK(message.a);
+               processACK(message.getPosition());
             }
          }
-
       }
       while (message != null && !match);
 
@@ -337,9 +333,13 @@ public class PageSubscriptionImpl implements PageSubscription
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#confirm(org.hornetq.core.paging.cursor.PagePosition)
     */
+   public void ack(final PagedReference position) throws Exception
+   {
+      ack(position.getPosition());
+   }
+   
    public void ack(final PagePosition position) throws Exception
    {
-
       // if we are dealing with a persistent cursor
       if (persistent)
       {
@@ -369,6 +369,12 @@ public class PageSubscriptionImpl implements PageSubscription
       }
       installTXCallback(tx, position);
 
+   }
+
+
+   public void ackTx(final Transaction tx, final PagedReference position) throws Exception
+   {
+      ackTx(tx, position.getPosition());
    }
 
    /* (non-Javadoc)
@@ -556,21 +562,21 @@ public class PageSubscriptionImpl implements PageSubscription
                   // looking for holes on the ack list for redelivery
                   while (true)
                   {
-                     Pair<PagePosition, PagedMessage> msgCheck = cursorProvider.getNext(this, tmpPos);
+                     PagedReferenceImpl msgCheck = cursorProvider.getNext(this, tmpPos);
 
                      positions = getPageInfo(tmpPos);
 
                      // end of the hole, we can finish processing here
                      // It may be also that the next was just a next page, so we just ignore it
-                     if (msgCheck == null || msgCheck.a.equals(pos))
+                     if (msgCheck == null || msgCheck.getPosition().equals(pos))
                      {
                         break;
                      }
                      else
                      {
-                        if (match(msgCheck.b.getMessage()))
+                        if (match(msgCheck.getMessage()))
                         {
-                           redeliver(msgCheck.a);
+                           redeliver(msgCheck.getPosition());
                         }
                         else
                         {
@@ -580,7 +586,7 @@ public class PageSubscriptionImpl implements PageSubscription
                            positions.confirmed.incrementAndGet();
                         }
                      }
-                     tmpPos = msgCheck.a;
+                     tmpPos = msgCheck.getPosition();
                   }
                }
             }
