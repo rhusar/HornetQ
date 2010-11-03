@@ -88,12 +88,12 @@ public class SameProcessHornetQServer implements TestableServer
       {
          session.addFailureListener(new MyListener());
       }
-      Set<RemotingConnection> connections = server.getRemotingService().getConnections();
+      /*Set<RemotingConnection> connections = server.getRemotingService().getConnections();
       for (RemotingConnection remotingConnection : connections)
       {
          remotingConnection.destroy();
          server.getRemotingService().removeConnection(remotingConnection.getID());
-      }
+      }*/
 
       ClusterManagerImpl clusterManager = (ClusterManagerImpl) server.getClusterManager();
       clusterManager.clear();

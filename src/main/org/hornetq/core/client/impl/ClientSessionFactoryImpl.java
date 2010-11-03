@@ -26,10 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.api.core.HornetQException;
-import org.hornetq.api.core.Interceptor;
-import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.*;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
@@ -87,6 +84,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private final ServerLocatorInternal serverLocator;
 
    private TransportConfiguration connectorConfig;
+
+   private TransportConfiguration backupConfig;
 
    private ConnectorFactory connectorFactory;
 
@@ -514,8 +513,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          // We will try to failover if there is a backup connector factory, but we don't do this if the server
          // has been shutdown cleanly unless failoverOnServerShutdown is true
-         TransportConfiguration backupConfig = serverLocator.getBackup(connectorConfig);
-         
          boolean attemptFailover = (backupConfig != null) && !serverShutdown;
 
          boolean attemptReconnect;
@@ -592,6 +589,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                // Now try failing over to backup
 
                this.connectorConfig = backupConfig;
+
+               backupConfig = null;
                
                connectorFactory = instantiateConnectorFactory(connectorConfig.getFactoryClassName());
 
@@ -1205,8 +1204,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                // cause reconnect loop
                public void run()
                {
-                  if (msg.getNodeID() != null)
+                  SimpleString nodeID = msg.getNodeID();
+                  if (nodeID != null)
                   {
+                     backupConfig = serverLocator.getBackup(connectorConfig);
                      serverLocator.notifyNodeDown(msg.getNodeID().toString());
                   }
 
