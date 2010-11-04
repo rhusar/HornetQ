@@ -140,11 +140,10 @@ public class ServerLocatorConnectTest extends ServiceTestBase
       Thread t = new Thread(target);
       t.start();
       //let them get started
-      Thread.sleep(1500);
+      Thread.sleep(500);
       locator.close();
       assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
-      assertTrue(target.e instanceof HornetQException);
-      assertEquals(((HornetQException)target.e).getCode(), HornetQException.NOT_CONNECTED);
+      assertNull(target.csf);
    }
 
    public boolean isNetty()
@@ -155,6 +154,7 @@ public class ServerLocatorConnectTest extends ServiceTestBase
    static class Connector implements Runnable
    {
       private ServerLocatorInternal locator;
+      ClientSessionFactory csf = null;
       CountDownLatch latch;
       Exception e;
       public Connector(ServerLocatorInternal locator, CountDownLatch latch)
@@ -167,7 +167,7 @@ public class ServerLocatorConnectTest extends ServiceTestBase
       {
          try
          {
-            locator.connect();
+            csf = locator.connect();
          }
          catch (Exception e)
          {
