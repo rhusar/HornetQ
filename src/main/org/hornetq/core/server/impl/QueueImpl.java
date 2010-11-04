@@ -33,6 +33,7 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.cursor.PageSubscription;
+import org.hornetq.core.paging.cursor.PagedReference;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
@@ -92,6 +93,8 @@ public class QueueImpl implements Queue
    private final PostOffice postOffice;
    
    private final PageSubscription pageSubscription;
+   
+   private final LinkedListIterator<PagedReference> pageIterator;
 
    private final ConcurrentLinkedQueue<MessageReference> concurrentQueue = new ConcurrentLinkedQueue<MessageReference>();
 
@@ -108,6 +111,8 @@ public class QueueImpl implements Queue
    private boolean paused;
 
    private final Runnable deliverRunner = new DeliverRunner();
+
+   private final Runnable depageRunner = new DepageRunner();
 
    private final StorageManager storageManager;
 
@@ -221,6 +226,11 @@ public class QueueImpl implements Queue
       if (pageSubscription != null)
       {
          pageSubscription.setQueue(this);
+         this.pageIterator = pageSubscription.iterator();
+      }
+      else
+      {
+         this.pageIterator = null;
       }
 
       this.executor = executor;
@@ -339,7 +349,7 @@ public class QueueImpl implements Queue
       // We don't recompute it on every delivery since executing isEmpty is expensive for a ConcurrentQueue
       if (checkDirect)
       {
-         if (direct && !directDeliver && concurrentQueue.isEmpty() && messageReferences.isEmpty())
+         if (direct && !directDeliver && concurrentQueue.isEmpty() && messageReferences.isEmpty() && !pageIterator.hasNext() && !pageSubscription.isPaging())
          {
             // We must block on the executor to ensure any async deliveries have completed or we might get out of order
             // deliveries
@@ -1225,6 +1235,29 @@ public class QueueImpl implements Queue
             pos = 0;
          }
       }
+      
+      if (messageReferences.size() == 0 && pageIterator.hasNext())
+      {
+         scheduleDepage();
+      }
+   }
+   
+   private void scheduleDepage()
+   {
+      executor.execute(depageRunner);
+   }
+   
+   private void depage()
+   {
+      int nmessages = 0;
+      while (nmessages < MAX_DELIVERIES_IN_LOOP && pageIterator.hasNext())
+      {
+         nmessages ++;
+         addTail(pageIterator.next(), false);
+         pageIterator.remove();
+      }
+      
+      deliverAsync();
    }
 
    private void internalAddRedistributor(final Executor executor)
@@ -1708,6 +1741,21 @@ public class QueueImpl implements Queue
          try
          {
             deliver();
+         }
+         catch (Exception e)
+         {
+            log.error("Failed to deliver", e);
+         }
+      }
+   }
+
+   private class DepageRunner implements Runnable
+   {
+      public void run()
+      {
+         try
+         {
+            depage();
          }
          catch (Exception e)
          {

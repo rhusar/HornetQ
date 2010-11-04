@@ -129,6 +129,11 @@ public class PageSubscriptionImpl implements PageSubscription
       return queue;
    }
    
+   public boolean isPaging()
+   {
+      return pageStore.isPaging();
+   }
+   
    public void setQueue(Queue queue)
    {
       this.queue = queue;
@@ -168,7 +173,7 @@ public class PageSubscriptionImpl implements PageSubscription
       ack(position);
    }
 
-   class CursorIterator implements LinkedListIterator<PagedReferenceImpl>
+   class CursorIterator implements LinkedListIterator<PagedReference>
    {
       PagePosition position = getLastPosition();
 
@@ -204,7 +209,7 @@ public class PageSubscriptionImpl implements PageSubscription
       /* (non-Javadoc)
        * @see java.util.Iterator#next()
        */
-      public PagedReferenceImpl next()
+      public synchronized PagedReferenceImpl next()
       {
          
          if (cachedNext != null)
@@ -239,12 +244,19 @@ public class PageSubscriptionImpl implements PageSubscription
          }
       }
 
-      public boolean hasNext()
+      /** QueueImpl::deliver could be calling hasNext while QueueImpl.depage could be using next and hasNext as well. 
+       *  It would be a rare race condition but I would prefer avoiding that scenario */
+      public synchronized boolean hasNext()
       {
          // if an unbehaved program called hasNext twice before next, we only cache it once.
          if (cachedNext != null)
          {
             return true;
+         }
+         
+         if (!pageStore.isPaging())
+         {
+            return false;
          }
          
          cachedNext = next();
@@ -276,7 +288,7 @@ public class PageSubscriptionImpl implements PageSubscription
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#iterator()
     */
-   public LinkedListIterator<PagedReferenceImpl> iterator()
+   public LinkedListIterator<PagedReference> iterator()
    {
       return new CursorIterator();
    }

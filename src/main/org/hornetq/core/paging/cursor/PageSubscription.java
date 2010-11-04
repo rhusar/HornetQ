@@ -37,8 +37,11 @@ public interface PageSubscription
    long getId();
 
    boolean isPersistent();
+   
+   /** Used as a delegate method to pageStore.isPaging() */
+   boolean isPaging();
 
-   public LinkedListIterator<PagedReferenceImpl> iterator();
+   public LinkedListIterator<PagedReference> iterator();
 
    // To be called when the cursor is closed for good. Most likely when the queue is deleted
    void close() throws Exception;
