@@ -282,8 +282,8 @@ public class SessionCloseOnGCTest extends ServiceTestBase
       UnitTestCase.checkWeakReferences(wses);
 
       Assert.assertEquals(0, sf.numSessions());
-      Assert.assertEquals(0, sf.numConnections());
-      Assert.assertEquals(0, server.getRemotingService().getConnections().size());
+      Assert.assertEquals(1, sf.numConnections());
+      Assert.assertEquals(1, server.getRemotingService().getConnections().size());
    }
 
    public void testCloseSeveralSessionOnGC() throws Exception
@@ -307,8 +307,8 @@ public class SessionCloseOnGCTest extends ServiceTestBase
       UnitTestCase.checkWeakReferences(ref1, ref2, ref3);
 
       Assert.assertEquals(0, sf.numSessions());
-      Assert.assertEquals(0, sf.numConnections());
-      Assert.assertEquals(0, server.getRemotingService().getConnections().size());
+      Assert.assertEquals(1, sf.numConnections());
+      Assert.assertEquals(1, server.getRemotingService().getConnections().size());
    }
 
 }
