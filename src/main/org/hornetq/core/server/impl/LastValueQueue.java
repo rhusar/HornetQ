@@ -228,5 +228,10 @@ public class LastValueQueue extends QueueImpl
       {
          ref.setScheduledDeliveryTime(scheduledDeliveryTime);
       }
+      
+      public boolean isPaged()
+      {
+         return false;
+      }
    }
 }

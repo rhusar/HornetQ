@@ -26,6 +26,9 @@ package org.hornetq.core.server;
  */
 public interface MessageReference
 {
+   
+   boolean isPaged();
+   
    ServerMessage getMessage();
 
    MessageReference copy(Queue queue);

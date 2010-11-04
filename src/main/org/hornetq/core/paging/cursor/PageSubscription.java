@@ -13,8 +13,7 @@
 
 package org.hornetq.core.paging.cursor;
 
-import org.hornetq.api.core.Pair;
-import org.hornetq.core.paging.PagedMessage;
+import org.hornetq.core.server.Queue;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.LinkedListIterator;
 
@@ -89,7 +88,7 @@ public interface PageSubscription
 
    void processReload() throws Exception;
 
-   /**
+   /**      
     * To be used on redeliveries
     * @param position
     */
@@ -101,7 +100,12 @@ public interface PageSubscription
     * @param minPage
     * @return
     */
-   boolean isComplete(long minPage);
+   boolean isComplete(long page);
 
+   /** wait all the scheduled runnables to finish their current execution */
    void flushExecutors();
+   
+   void setQueue(Queue queue);
+   
+   Queue getQueue();
 }

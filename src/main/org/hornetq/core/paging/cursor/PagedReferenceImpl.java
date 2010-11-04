@@ -54,6 +54,11 @@ public class PagedReferenceImpl implements PagedReference
       this.a = a;
       this.b = b;
    }
+   
+   public boolean isPaged()
+   {
+      return true;
+   }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.server.MessageReference#copy(org.hornetq.core.server.Queue)

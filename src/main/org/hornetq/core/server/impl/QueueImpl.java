@@ -217,6 +217,11 @@ public class QueueImpl implements Queue
       {
          expiryAddress = null;
       }
+      
+      if (pageSubscription != null)
+      {
+         pageSubscription.setQueue(this);
+      }
 
       this.executor = executor;
 

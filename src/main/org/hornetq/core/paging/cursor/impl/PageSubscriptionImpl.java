@@ -38,6 +38,7 @@ import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagedReference;
 import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.TransactionOperationAbstract;
@@ -76,6 +77,8 @@ public class PageSubscriptionImpl implements PageSubscription
    private final StorageManager store;
 
    private final long cursorId;
+   
+   private Queue queue;
    
    private final boolean persistent;
 
@@ -121,6 +124,16 @@ public class PageSubscriptionImpl implements PageSubscription
 
    // Public --------------------------------------------------------
 
+   public Queue getQueue()
+   {
+      return queue;
+   }
+   
+   public void setQueue(Queue queue)
+   {
+      this.queue = queue;
+   }
+   
    public void disableAutoCleanup()
    {
       autoCleanup = false;
@@ -267,8 +280,6 @@ public class PageSubscriptionImpl implements PageSubscription
    {
       return new CursorIterator();
    }
-   
-   int validCount = 0;
 
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()

@@ -144,6 +144,11 @@ public class MessageReferenceImpl implements MessageReference
    {
       queue.referenceHandled();
    }
+   
+   public boolean isPaged()
+   {
+      return false;
+   }
 
    // Public --------------------------------------------------------
 
