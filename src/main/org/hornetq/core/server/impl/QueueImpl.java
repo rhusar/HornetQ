@@ -1249,6 +1249,11 @@ public class QueueImpl implements Queue
    
    private void depage()
    {
+      if (paused || consumerList.isEmpty())
+      {
+         return;
+      }
+
       int nmessages = 0;
       while (nmessages < MAX_DELIVERIES_IN_LOOP && pageIterator.hasNext())
       {

@@ -1025,6 +1025,7 @@ public class PageCursorTest extends ServiceTestBase
       try
       {
          queue = server.createQueue(ADDRESS, ADDRESS, null, true, false);
+         queue.pause();
       }
       catch (Exception ignored)
       {
