@@ -271,7 +271,7 @@ public class ReplicatedDistributionTest extends ClusterTestBase
       setupBackupServer(2, 1, true, isShared(), true);
       setupBackupServer(3, 1, true, isShared(), true);
 
-      setupClusterConnectionWithBackups("test", "test", false, 1, true, 1, new int[] { 3 }, new int[] { 2 });
+      setupClusterConnectionWithBackups("test", "test", false, 1, true, 1, new int[] { 3 });
 
       AddressSettings as = new AddressSettings();
       as.setRedistributionDelay(0);

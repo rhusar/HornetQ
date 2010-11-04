@@ -45,7 +45,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1);
 
-      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 }, new int[] { 2 });
+      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 });
 
       setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 1);
 
@@ -138,7 +138,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1);
 
-      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 }, new int[] { 2 });
+      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 });
 
       setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 1);
 

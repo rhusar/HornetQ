@@ -1429,8 +1429,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.getConnectorConfigurations().put(liveConfig.getName(), liveConfig);
       TransportConfiguration backupConfig = createTransportConfiguration(netty, false, generateParams(node, netty));
       configuration.getConnectorConfigurations().put(backupConfig.getName(), backupConfig);
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(liveConfig.getName());
 
       HornetQServer server;
 
@@ -1651,8 +1649,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                     final int maxHops,
                                                     final boolean netty,
                                                     final int nodeFrom,
-                                                    final int[] nodesTo,
-                                                    final int[] backupsTo)
+                                                    final int[] nodesTo)
    {
       HornetQServer serverFrom = servers[nodeFrom];
 

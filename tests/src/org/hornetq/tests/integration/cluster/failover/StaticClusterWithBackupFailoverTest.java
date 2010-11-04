@@ -41,8 +41,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         0,
-                                        new int[] { 1, 2 },
-                                        new int[] { 4, 5 });
+                                        new int[] { 1, 2 });
 
       setupClusterConnectionWithBackups("cluster1",
                                         "queues",
@@ -50,8 +49,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         1,
-                                        new int[] { 0, 2 },
-                                        new int[] { 3, 5 });
+                                        new int[] { 0, 2 });
 
       setupClusterConnectionWithBackups("cluster2",
                                         "queues",
@@ -59,8 +57,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         2,
-                                        new int[] { 0, 1 },
-                                        new int[] { 3, 4 });
+                                        new int[] { 0, 1 });
 
       setupClusterConnectionWithBackups("cluster0",
                                         "queues",
@@ -68,8 +65,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         3,
-                                        new int[] { 1, 2 },
-                                        new int[] { 4, 5 });
+                                        new int[] { 1, 2 });
 
       setupClusterConnectionWithBackups("cluster1",
                                         "queues",
@@ -77,8 +73,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         4,
-                                        new int[] { 0, 2 },
-                                        new int[] { 3, 5 });
+                                        new int[] { 0, 2 });
 
       setupClusterConnectionWithBackups("cluster2",
                                         "queues",
@@ -86,8 +81,7 @@ public class StaticClusterWithBackupFailoverTest extends ClusterWithBackupFailov
                                         1,
                                         isNetty(),
                                         5,
-                                        new int[] { 0, 1 },
-                                        new int[] { 3, 4 });
+                                        new int[] { 0, 1 });
    }
 
    @Override
