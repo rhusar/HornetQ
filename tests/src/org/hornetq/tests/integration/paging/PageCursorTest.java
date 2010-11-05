@@ -730,11 +730,14 @@ public class PageCursorTest extends ServiceTestBase
 
       PagedReference msg;
       LinkedListIterator<PagedReference> iterator = cursor.iterator();
-      LinkedListIterator<PagedReference> iterator2 = cursor.iterator();
+      LinkedListIterator<PagedReference> iterator2 = cursor2.iterator();
+      
+      cursor2.bookmark(new PagePositionImpl(1, -1));
 
       int key = 0;
       while ((msg = iterator.next()) != null)
       {
+         System.out.println("key = " + key);
          assertEquals(key++, msg.getMessage().getIntProperty("key").intValue());
          cursor.ack(msg);
       }
@@ -744,6 +747,7 @@ public class PageCursorTest extends ServiceTestBase
 
       for (int i = 0; i < 10; i++)
       {
+         assertTrue(iterator2.hasNext());
          msg = iterator2.next();
          assertEquals(i, msg.getMessage().getIntProperty("key").intValue());
       }
