@@ -15,6 +15,7 @@ package org.hornetq.tests.integration.paging;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -113,11 +114,13 @@ public class PageCursorTest extends ServiceTestBase
 
       final int NUM_MESSAGES = 100;
 
+      PageSubscription cursor = lookupPageStore(ADDRESS).getCursorProvier().getSubscription(queue.getID());
+      
+      Iterator<PagedReference> iterEmpty = cursor.iterator();
+
       int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
 
       System.out.println("NumberOfPages = " + numberOfPages);
-
-      PageSubscription cursor = lookupPageStore(ADDRESS).getCursorProvier().getSubscription(queue.getID());
 
       PagedReference msg;
 

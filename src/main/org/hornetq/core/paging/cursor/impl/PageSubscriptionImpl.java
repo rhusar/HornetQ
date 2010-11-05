@@ -346,12 +346,12 @@ public class PageSubscriptionImpl implements PageSubscription
    {
       if (lastPosition == null)
       {
-         // it will start at the first available page
-         long firstPage = pageStore.getFirstPage();
-         lastPosition = new PagePositionImpl(firstPage, -1);
+         return new PagePositionImpl(pageStore.getFirstPage(), -1);
       }
-
-      return lastPosition;
+      else
+      {
+         return lastPosition;
+      }
    }
 
    /* (non-Javadoc)
