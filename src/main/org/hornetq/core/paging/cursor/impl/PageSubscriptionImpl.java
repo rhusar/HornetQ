@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
@@ -90,8 +91,6 @@ public class PageSubscriptionImpl implements PageSubscription
 
    private final Executor executor;
 
-   private volatile PagePosition lastPosition;
-
    private volatile PagePosition lastAckedPosition;
 
    private List<PagePosition> recoveredACK;
@@ -156,13 +155,6 @@ public class PageSubscriptionImpl implements PageSubscription
 
    public void bookmark(PagePosition position) throws Exception
    {
-      if (lastPosition != null)
-      {
-         throw new RuntimeException("Bookmark can only be done at the time of the cursor's creation");
-      }
-
-      lastPosition = position;
-
       PageCursorInfo cursorInfo = getPageInfo(position);
 
       if (position.getMessageNr() > 0)
@@ -175,7 +167,7 @@ public class PageSubscriptionImpl implements PageSubscription
 
    class CursorIterator implements LinkedListIterator<PagedReference>
    {
-      PagePosition position = getLastPosition();
+      PagePosition position = null;
 
       PagePosition lastOperation = null;
 
@@ -197,7 +189,7 @@ public class PageSubscriptionImpl implements PageSubscription
          {
             if (lastOperation == null)
             {
-               position = getLastPosition();
+               position = null;
             }
             else
             {
@@ -218,6 +210,7 @@ public class PageSubscriptionImpl implements PageSubscription
             cachedNext = null;
             return retPos;
          }
+         
          try
          {
             if (redeliveryIterator.hasNext())
@@ -228,6 +221,11 @@ public class PageSubscriptionImpl implements PageSubscription
             else
             {
                isredelivery = false;
+            }
+            
+            if (position == null)
+            {
+               position = getStartPosition();
             }
 
             PagedReferenceImpl nextPos = moveNext(position);
@@ -342,16 +340,38 @@ public class PageSubscriptionImpl implements PageSubscription
    /**
     * 
     */
-   private PagePosition getLastPosition()
+   private synchronized PagePosition getStartPosition()
    {
-      if (lastPosition == null)
+      // Get the first page not marked for deletion
+      // It's important to verify if it's not marked for deletion as you may have a pending request on the queue
+      for (Map.Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())
       {
-         return new PagePositionImpl(pageStore.getFirstPage(), -1);
+         if (!entry.getValue().isPendingDelete())
+         {
+            if (entry.getValue().acks.isEmpty())
+            {
+               return new PagePositionImpl(entry.getKey(), -1);
+            }
+            else
+            {
+               // The list is not ordered...
+               // This is only done at creation of the queue, so we just scan instead of keeping the list ordened
+               PagePosition retValue = null;
+               
+               for (PagePosition pos : entry.getValue().acks)
+               {
+                  if (retValue == null || retValue.getMessageNr() < pos.getMessageNr())
+                  {
+                     retValue = pos;
+                  }
+               }
+               
+               return retValue;
+            }
+         }
       }
-      else
-      {
-         return lastPosition;
-      }
+
+      return new PagePositionImpl(pageStore.getFirstPage(), -1);
    }
 
    /* (non-Javadoc)
@@ -561,10 +581,10 @@ public class PageSubscriptionImpl implements PageSubscription
          Collections.sort(recoveredACK);
 
          boolean first = true;
-
-         PagePosition previousPos = null;
+         
          for (PagePosition pos : recoveredACK)
          {
+            lastAckedPosition = pos;
             PageCursorInfo positions = getPageInfo(pos);
             if (first)
             {
@@ -576,49 +596,7 @@ public class PageSubscriptionImpl implements PageSubscription
             }
 
             positions.addACK(pos);
-
-            lastPosition = pos;
-            if (previousPos != null)
-            {
-               if (!previousPos.isRightAfter(previousPos))
-               {
-                  PagePosition tmpPos = previousPos;
-                  // looking for holes on the ack list for redelivery
-                  while (true)
-                  {
-                     PagedReferenceImpl msgCheck = cursorProvider.getNext(this, tmpPos);
-
-                     positions = getPageInfo(tmpPos);
-
-                     // end of the hole, we can finish processing here
-                     // It may be also that the next was just a next page, so we just ignore it
-                     if (msgCheck == null || msgCheck.getPosition().equals(pos))
-                     {
-                        break;
-                     }
-                     else
-                     {
-                        if (match(msgCheck.getMessage()))
-                        {
-                           redeliver(msgCheck.getPosition());
-                        }
-                        else
-                        {
-                           // The reference was ignored. But we must take a count from the reference count
-                           // otherwise the page will never be deleted hence we would never leave paging even if
-                           // everything was consumed
-                           positions.confirmed.incrementAndGet();
-                        }
-                     }
-                     tmpPos = msgCheck.getPosition();
-                  }
-               }
-            }
-
-            previousPos = pos;
          }
-
-         lastAckedPosition = lastPosition;
 
          recoveredACK.clear();
          recoveredACK = null;
@@ -948,11 +926,8 @@ public class PageSubscriptionImpl implements PageSubscription
 
       public void addACK(final PagePosition posACK)
       {
-         if (posACK.getRecordID() > 0)
-         {
-            // We store these elements for later cleanup
-            acks.add(posACK);
-         }
+         removedReferences.add(posACK);
+         acks.add(posACK);
 
          if (isTrace)
          {

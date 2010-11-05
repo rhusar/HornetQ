@@ -373,6 +373,8 @@ public class PageCursorTest extends ServiceTestBase
             cursor.ack(msg);
          }
       }
+      
+      server.getStorageManager().waitOnOperations();
 
       server.stop();
 
@@ -841,6 +843,10 @@ public class PageCursorTest extends ServiceTestBase
       PageSubscription cursor = cursorProvider.getSubscription(queue.getID());
       PagePosition startingPos = new PagePositionImpl(5, cache.getNumberOfMessages() / 2);
       cursor.bookmark(startingPos);
+
+      // We can't proceed until the operation has finished
+      server.getStorageManager().waitOnOperations();
+      
       PagedMessage msg = cache.getMessage(startingPos.getMessageNr() + 1);
       msg.initMessage(server.getStorageManager());
       int initialKey = msg.getMessage().getIntProperty("key").intValue();
