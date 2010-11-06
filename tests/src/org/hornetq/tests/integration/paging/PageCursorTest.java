@@ -712,6 +712,72 @@ public class PageCursorTest extends ServiceTestBase
 
    }
 
+
+   public void testLazyCommit() throws Exception
+   {
+      PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
+
+      pageStore.startPaging();
+
+      final int NUM_MESSAGES = 100;
+
+      final int messageSize = 100 * 1024;
+
+      PageCursorProvider cursorProvider = this.server.getPagingManager().getPageStore(ADDRESS).getCursorProvier();
+      System.out.println("cursorProvider = " + cursorProvider);
+
+      PageSubscription cursor = this.server.getPagingManager()
+                                           .getPageStore(ADDRESS)
+                                           .getCursorProvier()
+                                           .getSubscription(queue.getID());
+      LinkedListIterator<PagedReference> iterator = cursor.iterator();
+
+      System.out.println("Cursor: " + cursor);
+
+      StorageManager storage = this.server.getStorageManager();
+
+      PageTransactionInfoImpl txLazy = new PageTransactionInfoImpl(storage.generateUniqueID());
+      
+      server.getPagingManager().addTransaction(txLazy);
+
+      pgMessages(storage, pageStore, txLazy, 0, NUM_MESSAGES, messageSize);
+
+      addMessages(100, NUM_MESSAGES, messageSize);
+
+      System.out.println("Number of pages - " + pageStore.getNumberOfPages());
+
+      // First consume what's already there without any tx as nothing was committed
+      for (int i = 100; i < 200; i++)
+      {
+         PagedReference pos = iterator.next();
+         assertNotNull("Null at position " + i, pos);
+         assertEquals(i, pos.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos);
+      }
+
+      assertNull(iterator.next());
+      
+      txLazy.commit();
+
+      for (int i = 0; i < 100; i++)
+      {
+         PagedReference pos = iterator.next();
+         assertNotNull("Null at position " + i, pos);
+         assertEquals(i, pos.getMessage().getIntProperty("key").intValue());
+         cursor.ack(pos);
+      }
+
+      assertNull(iterator.next());
+
+      waitCleanup();
+
+      server.stop();
+      createServer();
+      waitCleanup();
+      assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
+
+   }
+
    public void testCloseNonPersistentConsumer() throws Exception
    {
 

@@ -19,7 +19,6 @@ import java.util.List;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.LivePageCache;
-import org.hornetq.core.server.ServerMessage;
 
 /**
  * This is the same as PageCache, however this is for the page that's being currently written.

@@ -145,8 +145,8 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
          {
             pos.a.redeliver(pos.b);
          }
+         lateDeliveries.clear();
       }
-      lateDeliveries.clear();
       lateDeliveries = null;
    }
 

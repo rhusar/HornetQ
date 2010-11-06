@@ -322,6 +322,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
             {
                return;
             }
+            
+            if (pagingStore.getNumberOfPages() == 0)
+            {
+               return;
+            }
 
             ArrayList<PageSubscription> cursorList = new ArrayList<PageSubscription>();
             cursorList.addAll(activeCursors.values());
@@ -498,7 +503,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
                List<PagedMessage> pgdMessages = page.read();
 
-               int i = 0;
                for (PagedMessage pdgMessage : pgdMessages)
                {
                   pdgMessage.initMessage(storageManager);

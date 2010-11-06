@@ -619,7 +619,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          boolean depage = tx.getProperty(TransactionPropertyIndexes.IS_DEPAGE) != null;
 
-         // if the TX paged at least one message on a give address, all the other message on the same address should also go towards
+         // if the TX paged at least one message on a given address, all the other message on the same address should also go towards
          // paging cache now
          boolean alreadyPaging = false;
 
