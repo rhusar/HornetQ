@@ -1062,7 +1062,7 @@ public class PagingTest extends ServiceTestBase
             super(directory, executorFactory, syncNonTransactional);
          }
 
-         public synchronized PagingStore newStore(final SimpleString address, final AddressSettings settings) throws Exception
+         public synchronized PagingStore newStore(final SimpleString address, final AddressSettings settings)
          {
 
             return new HackPagingStore(address,

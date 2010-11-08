@@ -1588,7 +1588,7 @@ public class PagingStoreImplTest extends UnitTestCase
       /* (non-Javadoc)
        * @see org.hornetq.core.paging.PagingStoreFactory#newStore(org.hornetq.utils.SimpleString, org.hornetq.core.settings.impl.AddressSettings)
        */
-      public PagingStore newStore(final SimpleString destinationName, final AddressSettings addressSettings) throws Exception
+      public PagingStore newStore(final SimpleString destinationName, final AddressSettings addressSettings)
       {
          return null;
       }

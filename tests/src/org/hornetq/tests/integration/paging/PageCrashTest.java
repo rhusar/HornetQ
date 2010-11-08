@@ -287,13 +287,21 @@ public class PageCrashTest extends ServiceTestBase
          // Public --------------------------------------------------------
 
          @Override
-         public synchronized PagingStore newStore(final SimpleString destinationName, final AddressSettings settings) throws Exception
+         public synchronized PagingStore newStore(final SimpleString destinationName, final AddressSettings settings)
          {
-            Field factoryField = PagingStoreFactoryNIO.class.getDeclaredField("executorFactory");
-            factoryField.setAccessible(true);
-
-            OrderedExecutorFactory factory = (org.hornetq.utils.OrderedExecutorFactory)factoryField.get(this);
-            return new FailingPagingStore(destinationName, settings, factory, syncNonTransactional);
+            try
+            {
+               Field factoryField = PagingStoreFactoryNIO.class.getDeclaredField("executorFactory");
+               factoryField.setAccessible(true);
+   
+               OrderedExecutorFactory factory = (org.hornetq.utils.OrderedExecutorFactory)factoryField.get(this);
+               return new FailingPagingStore(destinationName, settings, factory, syncNonTransactional);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();// >> junit report
+               return null;
+            }
          }
 
          // Package protected ---------------------------------------------

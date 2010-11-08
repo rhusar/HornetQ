@@ -508,13 +508,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return binding;
    }
 
-   public Bindings getBindingsForAddress(final SimpleString address)
+   public Bindings getBindingsForAddress(final SimpleString address) throws Exception
    {
       Bindings bindings = addressManager.getBindingsForRoutingAddress(address);
 
       if (bindings == null)
       {
-         bindings = createBindings();
+         bindings = createBindings(address);
       }
 
       return bindings;
@@ -525,7 +525,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return addressManager.getBinding(name);
    }
 
-   public Bindings getMatchingBindings(final SimpleString address)
+   public Bindings getMatchingBindings(final SimpleString address) throws Exception
    {
       return addressManager.getMatchingBindings(address);
    }
@@ -606,47 +606,13 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          cache.addToCache(duplicateIDBytes, context.getTransaction());
       }
 
-      if (context.getTransaction() == null)
-      {
-         if (message.page())
-         {
-            return;
-         }
-      }
-      else
-      {
-         Transaction tx = context.getTransaction();
-
-         boolean depage = tx.getProperty(TransactionPropertyIndexes.IS_DEPAGE) != null;
-
-         // if the TX paged at least one message on a given address, all the other message on the same address should also go towards
-         // paging cache now
-         boolean alreadyPaging = false;
-
-         if (tx.isPaging())
-         {
-            alreadyPaging = getPageOperation(tx).isPaging(message.getAddress());
-         }
-
-         if (!depage && message.storeIsPaging() || alreadyPaging)
-         {
-            tx.setPaging(true);
-            getPageOperation(tx).addMessageToPage(message);
-            if (startedTx)
-            {
-               tx.commit();
-            }
-
-            return;
-         }
-      }
-
       Bindings bindings = addressManager.getBindingsForRoutingAddress(address);
 
       if (bindings != null)
       {
          bindings.route(message, context);
       }
+
       if (context.getQueueCount() == 0)
       {
          // Send to DLA if appropriate
@@ -1014,27 +980,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       return message;
    }
 
-   private final PageMessageOperation getPageOperation(final Transaction tx)
-   {
-      // you could have races on the case two sessions using the same XID
-      // so this whole operation needs to be atomic per TX
-      synchronized (tx)
-      {
-         PageMessageOperation oper = (PageMessageOperation)tx.getProperty(TransactionPropertyIndexes.PAGE_MESSAGES_OPERATION);
-
-         if (oper == null)
-         {
-            oper = new PageMessageOperation();
-
-            tx.putProperty(TransactionPropertyIndexes.PAGE_MESSAGES_OPERATION, oper);
-
-            tx.addOperation(oper);
-         }
-
-         return oper;
-      }
-   }
-
    private class Reaper implements Runnable
    {
       private volatile boolean closed = false;
@@ -1114,184 +1059,6 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
    }
 
-   private class PageMessageOperation implements TransactionOperation
-   {
-      private final HashMap<SimpleString, Pair<PagingStore, List<ServerMessage>>> pagingData = new HashMap<SimpleString, Pair<PagingStore, List<ServerMessage>>>();
-
-      private Transaction subTX = null;
-
-      void addMessageToPage(final ServerMessage message)
-      {
-         Pair<PagingStore, List<ServerMessage>> pagePair = pagingData.get(message.getAddress());
-         if (pagePair == null)
-         {
-            pagePair = new Pair<PagingStore, List<ServerMessage>>(message.getPagingStore(),
-                                                                  new ArrayList<ServerMessage>());
-            pagingData.put(message.getAddress(), pagePair);
-         }
-
-         pagePair.b.add(message);
-      }
-
-      boolean isPaging(final SimpleString address)
-      {
-         return pagingData.get(address) != null;
-      }
-
-      public void afterCommit(final Transaction tx)
-      {
-         // If part of the transaction goes to the queue, and part goes to paging, we can't let depage start for the
-         // transaction until all the messages were added to the queue
-         // or else we could deliver the messages out of order
-
-         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
-
-         if (pageTransaction != null)
-         {
-            pageTransaction.commit();
-         }
-
-         if (subTX != null)
-         {
-            subTX.afterCommit();
-         }
-      }
-
-      public void afterPrepare(final Transaction tx)
-      {
-         if (subTX != null)
-         {
-            subTX.afterPrepare();
-         }
-      }
-
-      public void afterRollback(final Transaction tx)
-      {
-         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
-
-         if (tx.getState() == State.PREPARED && pageTransaction != null)
-         {
-            pageTransaction.rollback();
-         }
-
-         if (subTX != null)
-         {
-            subTX.afterRollback();
-         }
-      }
-
-      public void beforeCommit(final Transaction tx) throws Exception
-      {
-         if (tx.getState() != Transaction.State.PREPARED)
-         {
-            pageMessages(tx);
-         }
-
-         if (subTX != null)
-         {
-            subTX.beforeCommit();
-         }
-
-      }
-
-      public void beforePrepare(final Transaction tx) throws Exception
-      {
-         pageMessages(tx);
-
-         if (subTX != null)
-         {
-            subTX.beforePrepare();
-         }
-      }
-
-      public void beforeRollback(final Transaction tx) throws Exception
-      {
-         if (subTX != null)
-         {
-            subTX.beforeRollback();
-         }
-      }
-
-      private void pageMessages(final Transaction tx) throws Exception
-      {
-         if (!pagingData.isEmpty())
-         {
-            PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
-
-            if (pageTransaction == null)
-            {
-               pageTransaction = new PageTransactionInfoImpl(tx.getID());
-
-               tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pageTransaction);
-
-               // To avoid a race condition where depage happens before the transaction is completed, we need to inform
-               // the pager about this transaction is being processed
-               pagingManager.addTransaction(pageTransaction);
-            }
-
-            boolean pagingPersistent = false;
-
-            ArrayList<ServerMessage> nonPagedMessages = null;
-
-            for (Pair<PagingStore, List<ServerMessage>> pair : pagingData.values())
-            {
-               
-               if (!pair.a.page(pair.b, tx.getID()))
-               {
-                  if (nonPagedMessages == null)
-                  {
-                     nonPagedMessages = new ArrayList<ServerMessage>();
-                  }
-                  nonPagedMessages.addAll(pair.b);
-               }
-               
-               for (ServerMessage msg : pair.b)
-               {
-                  if (msg.isDurable())
-                  {
-                     pageTransaction.increment();
-                     pagingPersistent = true;
-                  }
-               }
-            }
-
-            if (nonPagedMessages != null)
-            {
-               for (ServerMessage message : nonPagedMessages)
-               {
-                  // This could happen when the PageStore left the pageState
-                  // we create a copy of the transaction so that messages are routed with the same tx ID.
-                  // but we can not use directly the tx as it has already its own set of TransactionOperations
-                  if (subTX == null)
-                  {
-                     subTX = tx.copy();
-                  }
-
-                  route(message, subTX, false);
-
-                  if (subTX.isContainsPersistent())
-                  {
-                     // The route wouldn't be able to update the persistent flag on the main TX
-                     // If we don't do this we would eventually miss a commit record
-                     tx.setContainsPersistent();
-                  }
-               }
-            }
-
-            if (pagingPersistent)
-            {
-               tx.setContainsPersistent();
-               for (Pair<PagingStore, List<ServerMessage>> pair : pagingData.values())
-               {
-                  pair.a.sync();
-               }
-
-               pageTransaction.store(storageManager, pagingManager, tx);
-            }
-         }
-      }
-   }
-
    private class AddOperation implements TransactionOperation
    {
       private final List<MessageReference> refs;
@@ -1343,8 +1110,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       }
    }
 
-   public Bindings createBindings()
+   public Bindings createBindings(final SimpleString address) throws Exception
    {
-      return new BindingsImpl(server.getGroupingHandler());
+      return new BindingsImpl(server.getGroupingHandler(), pagingManager.getPageStore(address));
    }
 }
