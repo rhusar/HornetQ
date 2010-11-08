@@ -42,11 +42,14 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.Queue;
+import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.impl.RoutingContextImpl;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.impl.TransactionImpl;
+import org.hornetq.tests.unit.core.postoffice.impl.FakeQueue;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.LinkedListIterator;
@@ -70,6 +73,8 @@ public class PageCursorTest extends ServiceTestBase
    private HornetQServer server;
 
    private Queue queue;
+   
+   private List<Queue> queueList;
 
    private static final int PAGE_MAX = -1;
 
@@ -155,10 +160,6 @@ public class PageCursorTest extends ServiceTestBase
 
       final int NUM_MESSAGES = 100;
 
-      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
-
-      System.out.println("NumberOfPages = " + numberOfPages);
-
       PageSubscription cursorEven = createNonPersistentCursor(new Filter()
       {
 
@@ -204,6 +205,10 @@ public class PageCursorTest extends ServiceTestBase
          }
 
       });
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
 
       queue.getPageSubscription().close();
 
@@ -493,6 +498,8 @@ public class PageCursorTest extends ServiceTestBase
                                            .getSubscription(queue.getID());
 
       System.out.println("Cursor: " + cursor);
+      
+      RoutingContextImpl ctx = generateCTX();
 
       LinkedListIterator<PagedReference> iterator = cursor.iterator();
 
@@ -508,7 +515,7 @@ public class PageCursorTest extends ServiceTestBase
 
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-         Assert.assertTrue(pageStore.page(msg));
+         Assert.assertTrue(pageStore.page(msg, ctx));
 
          PagedReference readMessage = iterator.next();
 
@@ -545,7 +552,7 @@ public class PageCursorTest extends ServiceTestBase
 
             msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-            Assert.assertTrue(pageStore.page(msg));
+            Assert.assertTrue(pageStore.page(msg, ctx));
          }
 
          PagedReference readMessage = iterator.next();
@@ -581,7 +588,7 @@ public class PageCursorTest extends ServiceTestBase
 
             msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-            Assert.assertTrue(pageStore.page(msg));
+            Assert.assertTrue(pageStore.page(msg, ctx));
          }
 
          PagedReference readMessage = iterator.next();
@@ -614,6 +621,24 @@ public class PageCursorTest extends ServiceTestBase
 
       assertFalse(lookupPageStore(ADDRESS).isPaging());
 
+   }
+   
+   private RoutingContextImpl generateCTX()
+   {
+      return generateCTX(null);
+   }
+   
+   private RoutingContextImpl generateCTX(Transaction tx)
+   {
+      RoutingContextImpl ctx = new RoutingContextImpl(tx);
+      ctx.addDurableQueue(queue);
+      
+      for (Queue q : this.queueList)
+      {
+         ctx.addQueue(q);
+      }
+      
+      return ctx;
    }
 
    /**
@@ -783,14 +808,18 @@ public class PageCursorTest extends ServiceTestBase
 
       final int NUM_MESSAGES = 100;
 
-      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
-
-      System.out.println("NumberOfPages = " + numberOfPages);
-
       PageCursorProvider cursorProvider = lookupCursorProvider();
 
       PageSubscription cursor = cursorProvider.createSubscription(11, null, false);
       PageSubscriptionImpl cursor2 = (PageSubscriptionImpl)cursorProvider.createSubscription(12, null, false);
+      
+      this.queueList.add(new FakeQueue(new SimpleString("a"), 11));
+      
+      this.queueList.add(new FakeQueue(new SimpleString("b"), 12));
+
+      int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
+
+      System.out.println("NumberOfPages = " + numberOfPages);
 
       queue.getPageSubscription().close();
 
@@ -856,15 +885,17 @@ public class PageCursorTest extends ServiceTestBase
 
       final int NUM_MESSAGES = 100;
 
+      PageCursorProvider cursorProvider = lookupCursorProvider();
+
+      PageSubscription cursor = cursorProvider.createSubscription(2, null, false);
+      
+      queueList.add(new FakeQueue(new SimpleString("tmp"), 2));
+
       int numberOfPages = addMessages(NUM_MESSAGES, 1024 * 1024);
 
       System.out.println("NumberOfPages = " + numberOfPages);
 
-      PageCursorProvider cursorProvider = lookupCursorProvider();
-
       PageCache cache = cursorProvider.getPageCache(new PagePositionImpl(5, 0));
-
-      PageSubscription cursor = cursorProvider.createSubscription(2, null, false);
 
       queue.getPageSubscription().close();
 
@@ -1044,6 +1075,8 @@ public class PageCursorTest extends ServiceTestBase
       PagingStoreImpl pageStore = lookupPageStore(ADDRESS);
 
       pageStore.startPaging();
+      
+      RoutingContext ctx = generateCTX();
 
       for (int i = start; i < start + numMessages; i++)
       {
@@ -1058,7 +1091,7 @@ public class PageCursorTest extends ServiceTestBase
 
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-         Assert.assertTrue(pageStore.page(msg));
+         Assert.assertTrue(pageStore.page(msg, ctx));
       }
 
       return pageStore.getNumberOfPages();
@@ -1077,12 +1110,23 @@ public class PageCursorTest extends ServiceTestBase
 
    // Protected -----------------------------------------------------
 
+   protected void tearDown() throws Exception
+   {
+      server.stop();
+      server = null;
+      queue = null;
+      queueList = null;
+      super.tearDown();
+   }
+
    protected void setUp() throws Exception
    {
       super.setUp();
       OperationContextImpl.clearContext();
       System.out.println("Tmp:" + getTemporaryDir());
 
+      queueList = new ArrayList<Queue>();
+      
       createServer();
    }
 
@@ -1117,7 +1161,9 @@ public class PageCursorTest extends ServiceTestBase
     */
    private PageSubscription createNonPersistentCursor(Filter filter) throws Exception
    {
-      return lookupCursorProvider().createSubscription(server.getStorageManager().generateUniqueID(), filter, false);
+      long id = server.getStorageManager().generateUniqueID();
+      queueList.add(new FakeQueue(new SimpleString(filter.toString()), id));
+      return lookupCursorProvider().createSubscription(id, filter, false);
    }
 
    /**
@@ -1145,7 +1191,10 @@ public class PageCursorTest extends ServiceTestBase
                            final int NUM_MESSAGES,
                            final int messageSize) throws Exception
    {
-      List<ServerMessage> messages = new ArrayList<ServerMessage>();
+      
+      TransactionImpl txImpl = new TransactionImpl(pgParameter.getTransactionID(), null, null);
+      
+      RoutingContext ctx = generateCTX(txImpl);
 
       for (int i = start; i < start + NUM_MESSAGES; i++)
       {
@@ -1153,18 +1202,9 @@ public class PageCursorTest extends ServiceTestBase
          ServerMessage msg = new ServerMessageImpl(storage.generateUniqueID(), buffer.writerIndex());
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
          msg.putIntProperty("key", i);
-         messages.add(msg);
+         pageStore.page(msg, ctx);
       }
 
-      pageStore.page(messages, pgParameter.getTransactionID());
-   }
-
-   protected void tearDown() throws Exception
-   {
-      server.stop();
-      server = null;
-      queue = null;
-      super.tearDown();
    }
 
    // Private -------------------------------------------------------

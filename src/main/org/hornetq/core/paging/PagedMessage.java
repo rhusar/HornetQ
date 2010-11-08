@@ -30,6 +30,9 @@ public interface PagedMessage extends EncodingSupport
 {
    ServerMessage getMessage();
    
+   /** The queues that were routed during paging */
+   long[] getQueueIDs();
+   
    void initMessage(StorageManager storageManager);
 
    long getTransactionID();

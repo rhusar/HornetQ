@@ -288,7 +288,7 @@ public class ReplicationTest extends ServiceTestBase
 
          replicatedJournal.appendAddRecordTransactional(23, 24, (byte)1, new FakeData());
 
-         PagedMessage pgmsg = new PagedMessageImpl(msg, -1);
+         PagedMessage pgmsg = new PagedMessageImpl(msg, new long[0]);
          manager.pageWrite(pgmsg, 1);
          manager.pageWrite(pgmsg, 2);
          manager.pageWrite(pgmsg, 3);

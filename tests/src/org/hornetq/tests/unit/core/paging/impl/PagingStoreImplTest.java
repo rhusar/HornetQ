@@ -64,6 +64,7 @@ import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.group.impl.GroupBinding;
+import org.hornetq.core.server.impl.RoutingContextImpl;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
@@ -202,7 +203,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       Assert.assertTrue(storeImpl.isPaging());
 
-      Assert.assertTrue(storeImpl.page(msg));
+      Assert.assertTrue(storeImpl.page(msg, new RoutingContextImpl(null)));
 
       Assert.assertEquals(1, storeImpl.getNumberOfPages());
 
@@ -265,7 +266,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
          ServerMessage msg = createMessage(i, storeImpl, destination, buffer);
 
-         Assert.assertTrue(storeImpl.page(msg));
+         Assert.assertTrue(storeImpl.page(msg, new RoutingContextImpl(null)));
       }
 
       Assert.assertEquals(1, storeImpl.getNumberOfPages());
@@ -345,7 +346,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
          ServerMessage msg = createMessage(i, storeImpl, destination, buffer);
 
-         Assert.assertTrue(storeImpl.page(msg));
+         Assert.assertTrue(storeImpl.page(msg, new RoutingContextImpl(null)));
       }
 
       Assert.assertEquals(2, storeImpl.getNumberOfPages());
@@ -381,7 +382,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       ServerMessage msg = createMessage(1, storeImpl, destination, buffers.get(0));
 
-      Assert.assertTrue(storeImpl.page(msg));
+      Assert.assertTrue(storeImpl.page(msg, new RoutingContextImpl(null)));
 
       Page newPage = storeImpl.depage();
 
@@ -399,11 +400,11 @@ public class PagingStoreImplTest extends UnitTestCase
 
       Assert.assertFalse(storeImpl.isPaging());
 
-      Assert.assertFalse(storeImpl.page(msg));
+      Assert.assertFalse(storeImpl.page(msg, new RoutingContextImpl(null)));
 
       storeImpl.startPaging();
 
-      Assert.assertTrue(storeImpl.page(msg));
+      Assert.assertTrue(storeImpl.page(msg, new RoutingContextImpl(null)));
 
       Page page = storeImpl.depage();
 
@@ -499,7 +500,7 @@ public class PagingStoreImplTest extends UnitTestCase
                   // This is possible because the depage thread is not actually reading the pages.
                   // Just using the internal API to remove it from the page file system
                   ServerMessage msg = createMessage(id, storeImpl, destination, createRandomBuffer(id, 5));
-                  if (storeImpl.page(msg))
+                  if (storeImpl.page(msg, new RoutingContextImpl(null)))
                   {
                      buffers.put(id, msg);
                   }
@@ -644,7 +645,7 @@ public class PagingStoreImplTest extends UnitTestCase
       long lastMessageId = messageIdGenerator.incrementAndGet();
       ServerMessage lastMsg = createMessage(lastMessageId, storeImpl, destination, createRandomBuffer(lastMessageId, 5));
 
-      storeImpl2.page(lastMsg);
+      storeImpl2.page(lastMsg, new RoutingContextImpl(null));
       buffers2.put(lastMessageId, lastMsg);
 
       Page lastPage = null;
@@ -752,7 +753,7 @@ public class PagingStoreImplTest extends UnitTestCase
                   // Just using the internal API to remove it from the page file system
                   ServerMessage msg = createMessage(i, storeImpl, destination, createRandomBuffer(i, 1024));
                   msg.putLongProperty("count", i);
-                  while (!storeImpl.page(msg))
+                  while (!storeImpl.page(msg, new RoutingContextImpl(null)))
                   {
                      storeImpl.startPaging();
                   }

@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.hornetq.api.core.SimpleString;
@@ -46,6 +45,7 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.LargeServerMessage;
+import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -304,17 +304,11 @@ public class PagingStoreImpl implements TestSupportPageStore
       return storeName;
    }
 
-   public boolean page(final List<ServerMessage> message, final long transactionID) throws Exception
+   public boolean page(final ServerMessage message, final RoutingContext ctx) throws Exception
    {
       // The sync on transactions is done on commit only
-      return page(message, transactionID, false);
-   }
-
-   public boolean page(final ServerMessage message) throws Exception
-   {
-      // If non Durable, there is no need to sync as there is no requirement for persistence for those messages in case
-      // of crash
-      return page(Arrays.asList(message), -1, syncNonTransactional && message.isDurable());
+      // TODO: sync on paging
+      return page(message, ctx, false);
    }
 
    public void sync() throws Exception
@@ -881,7 +875,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    }
 
-   protected boolean page(final List<ServerMessage> messages, final long transactionID, final boolean sync) throws Exception
+   protected boolean page(ServerMessage message, final RoutingContext ctx, final boolean sync) throws Exception
    {
       if (!running)
       {
@@ -939,36 +933,26 @@ public class PagingStoreImpl implements TestSupportPageStore
             return false;
          }
 
-         for (ServerMessage message : messages)
+         PagedMessage pagedMessage;
+
+         if (!message.isDurable())
          {
-            PagedMessage pagedMessage;
-
-            if (!message.isDurable())
-            {
-               // The address should never be transient when paging (even for non-persistent messages when paging)
-               // This will force everything to be persisted
-               message.bodyChanged();
-            }
-
-            if (transactionID != -1)
-            {
-               pagedMessage = new PagedMessageImpl(message, transactionID);
-            }
-            else
-            {
-               pagedMessage = new PagedMessageImpl(message);
-            }
-
-            int bytesToWrite = pagedMessage.getEncodeSize() + PageImpl.SIZE_RECORD;
-
-            if (currentPageSize.addAndGet(bytesToWrite) > pageSize && currentPage.getNumberOfMessages() > 0)
-            {
-               // Make sure nothing is currently validating or using currentPage
-               openNewPage();
-            }
-
-            currentPage.write(pagedMessage);
+            // The address should never be transient when paging (even for non-persistent messages when paging)
+            // This will force everything to be persisted
+            message.bodyChanged();
          }
+
+         pagedMessage = new PagedMessageImpl(message, getQueueIDs(ctx), getTransactionID(ctx));
+
+         int bytesToWrite = pagedMessage.getEncodeSize() + PageImpl.SIZE_RECORD;
+
+         if (currentPageSize.addAndGet(bytesToWrite) > pageSize && currentPage.getNumberOfMessages() > 0)
+         {
+            // Make sure nothing is currently validating or using currentPage
+            openNewPage();
+         }
+
+         currentPage.write(pagedMessage);
 
          return true;
       }
@@ -977,6 +961,36 @@ public class PagingStoreImpl implements TestSupportPageStore
          lock.writeLock().unlock();
       }
 
+   }
+
+   private long[] getQueueIDs(RoutingContext ctx)
+   {
+      long ids[] = new long [ctx.getDurableQueues().size() + ctx.getNonDurableQueues().size()];
+      int i = 0;
+      
+      for (org.hornetq.core.server.Queue q : ctx.getDurableQueues())
+      {
+         ids[i++] = q.getID();
+      }
+      
+      for (org.hornetq.core.server.Queue q : ctx.getNonDurableQueues())
+      {
+         ids[i++] = q.getID();
+      }
+      return ids;
+   }
+   
+   private long getTransactionID(RoutingContext ctx)
+   {
+      Transaction tx = ctx.getTransaction();
+      if (tx == null)
+      {
+         return 0l;
+      }
+      else
+      {
+         return tx.getID();
+      }
    }
 
    /**

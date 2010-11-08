@@ -32,6 +32,7 @@ import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
+import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.SoftValueHashMap;
@@ -135,6 +136,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
          else if (retPos != null)
          {
             cursorPos = retPos.getPosition();
+            
+            if (!routed(retPos.getPagedMessage(), cursor))
+            {
+               cursor.positionIgnored(cursorPos);
+            }
+            else
             if (retPos.getPagedMessage().getTransactionID() != 0)
             {
                PageTransactionInfo tx = pagingManager.getTransaction(retPos.getPagedMessage().getTransactionID());
@@ -159,6 +166,20 @@ public class PageCursorProviderImpl implements PageCursorProvider
             }
          }
       }
+   }
+   
+   private boolean routed(PagedMessage message, PageSubscription subs)
+   {
+      long id = subs.getId();
+      
+      for (long qid : message.getQueueIDs())
+      {
+         if (qid == id)
+         {
+            return true;
+         }
+      }
+      return false;
    }
 
    private PagedReferenceImpl internalGetNext(final PagePosition pos)

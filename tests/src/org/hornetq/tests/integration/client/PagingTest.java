@@ -1014,9 +1014,9 @@ public class PagingTest extends ServiceTestBase
                   syncNonTransactional);
          }
 
-         protected boolean page(final List<ServerMessage> messages, final long transactionID, final boolean sync) throws Exception
+         protected boolean page(ServerMessage message, org.hornetq.core.server.RoutingContext ctx, boolean sync) throws Exception
          {
-            boolean paged = super.page(messages, transactionID, sync);
+            boolean paged = super.page(message, ctx, sync);
 
             if (paged)
             {

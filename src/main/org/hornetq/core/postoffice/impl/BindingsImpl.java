@@ -227,16 +227,6 @@ public class BindingsImpl implements Bindings
    {
       return pageStore;
    }
-
-   public void paged(final ServerMessage message)
-   {
-      
-   }
-
-   public boolean page(final ServerMessage message) throws Exception
-   {
-      return pageStore.page(message);
-   }
    
    public void route(final ServerMessage message, final RoutingContext context) throws Exception
    {

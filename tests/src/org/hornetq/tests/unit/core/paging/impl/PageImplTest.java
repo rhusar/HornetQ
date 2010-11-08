@@ -223,7 +223,7 @@ public class PageImplTest extends UnitTestCase
 
          msg.setAddress(simpleDestination);
 
-         page.write(new PagedMessageImpl(msg));
+         page.write(new PagedMessageImpl(msg, new long [0]));
 
          Assert.assertEquals(initialNumberOfMessages + i + 1, page.getNumberOfMessages());
       }

@@ -92,10 +92,18 @@ public class FakeQueue implements Queue
    }
 
    private final SimpleString name;
+   
+   private final long id;
 
    public FakeQueue(final SimpleString name)
    {
+      this(name, 0);
+   }
+   
+   public FakeQueue(final SimpleString name, final long id)
+   {
       this.name = name;
+      this.id = id;
    }
 
    /* (non-Javadoc)
@@ -354,8 +362,7 @@ public class FakeQueue implements Queue
     */
    public long getID()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      return id;
    }
 
    /* (non-Javadoc)

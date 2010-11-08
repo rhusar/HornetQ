@@ -49,17 +49,20 @@ public class PagedMessageImpl implements PagedMessage
    private byte[] largeMessageLazyData;
 
    private ServerMessage message;
+   
+   private long queueIDs[];
 
    private long transactionID = 0;
 
-   public PagedMessageImpl(final ServerMessage message, final long transactionID)
+   public PagedMessageImpl(final ServerMessage message, final long[] queueIDs, final long transactionID)
    {
-      this.message = message;
+      this(message, queueIDs);
       this.transactionID = transactionID;
    }
 
-   public PagedMessageImpl(final ServerMessage message)
+   public PagedMessageImpl(final ServerMessage message, final long[] queueIDs)
    {
+      this.queueIDs = queueIDs;
       this.message = message;
    }
 
@@ -87,6 +90,11 @@ public class PagedMessageImpl implements PagedMessage
    {
       return transactionID;
    }
+   
+   public long[] getQueueIDs()
+   {
+      return queueIDs;
+   }
 
    // EncodingSupport implementation --------------------------------
 
@@ -112,6 +120,15 @@ public class PagedMessageImpl implements PagedMessage
 
          message.decode(buffer);
       }
+      
+      int queueIDsSize = buffer.readInt();
+      
+      queueIDs = new long[queueIDsSize];
+      
+      for (int i = 0 ; i < queueIDsSize; i++)
+      {
+         queueIDs[i] = buffer.readLong();
+      }
    }
 
    public void encode(final HornetQBuffer buffer)
@@ -123,11 +140,19 @@ public class PagedMessageImpl implements PagedMessage
       buffer.writeInt(message.getEncodeSize());
 
       message.encode(buffer);
+      
+      buffer.writeInt(queueIDs.length);
+      
+      for (int i = 0 ; i < queueIDs.length; i++)
+      {
+         buffer.writeLong(queueIDs[i]);
+      }
    }
 
    public int getEncodeSize()
    {
-      return DataConstants.SIZE_LONG + DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + message.getEncodeSize();
+      return DataConstants.SIZE_LONG + DataConstants.SIZE_BYTE + DataConstants.SIZE_INT + message.getEncodeSize() + 
+             DataConstants.SIZE_INT + queueIDs.length * DataConstants.SIZE_LONG;
    }
 
    // Package protected ---------------------------------------------

@@ -13,11 +13,10 @@
 
 package org.hornetq.core.paging;
 
-import java.util.List;
-
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.server.HornetQComponent;
+import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 
@@ -59,9 +58,7 @@ public interface PagingStore extends HornetQComponent
 
    void sync() throws Exception;
 
-   boolean page(List<ServerMessage> messages, long transactionId) throws Exception;
-
-   boolean page(ServerMessage message) throws Exception;
+   boolean page(ServerMessage message, RoutingContext ctx) throws Exception;
 
    Page createPage(final int page) throws Exception;
    
