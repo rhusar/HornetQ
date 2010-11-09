@@ -315,6 +315,8 @@ public class PagingTest extends ServiceTestBase
 
    private void internaltestSendReceivePaging(final boolean persistentMessages) throws Exception
    {
+      
+      System.out.println("PageDir:" + getPageDir());
       clearData();
 
       Configuration config = createDefaultConfig();

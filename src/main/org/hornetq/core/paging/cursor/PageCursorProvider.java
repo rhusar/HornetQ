@@ -39,6 +39,8 @@ public interface PageCursorProvider
 
    PageCache getPageCache(PagePosition pos);
    
+   PagedReference newReference(final PagePosition pos, final PagedMessage msg);
+   
    void addPageCache(PageCache cache);
 
    PagingStore getAssociatedStore();
@@ -52,7 +54,7 @@ public interface PageCursorProvider
    
    PageSubscription createSubscription(long queueId, Filter filter, boolean durable);
    
-   PagedReferenceImpl getNext(PageSubscription cursor, PagePosition pos) throws Exception;
+   PagedReference getNext(PageSubscription cursor, PagePosition pos) throws Exception;
    
    PagedMessage getMessage(PagePosition pos) throws Exception;
 

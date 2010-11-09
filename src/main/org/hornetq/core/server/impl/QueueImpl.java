@@ -675,32 +675,46 @@ public class QueueImpl implements Queue
 
    public void acknowledge(final MessageReference ref) throws Exception
    {
-      ServerMessage message = ref.getMessage();
-
-      boolean durableRef = message.isDurable() && durable;
-
-      if (durableRef)
+      if (ref.isPaged())
       {
-         storageManager.storeAcknowledge(id, message.getMessageID());
+         pageSubscription.ack((PagedReference)ref);
+      }
+      else
+      {
+         ServerMessage message = ref.getMessage();
+   
+         boolean durableRef = message.isDurable() && durable;
+   
+         if (durableRef)
+         {
+            storageManager.storeAcknowledge(id, message.getMessageID());
+         }
+         postAcknowledge(ref);
       }
 
-      postAcknowledge(ref);
    }
 
    public void acknowledge(final Transaction tx, final MessageReference ref) throws Exception
    {
-      ServerMessage message = ref.getMessage();
-
-      boolean durableRef = message.isDurable() && durable;
-
-      if (durableRef)
+      if (ref.isPaged())
       {
-         storageManager.storeAcknowledgeTransactional(tx.getID(), id, message.getMessageID());
-
-         tx.setContainsPersistent();
+         pageSubscription.ackTx(tx, (PagedReference)ref);
       }
-
-      getRefsOperation(tx).addAck(ref);
+      else
+      {
+         ServerMessage message = ref.getMessage();
+   
+         boolean durableRef = message.isDurable() && durable;
+   
+         if (durableRef)
+         {
+            storageManager.storeAcknowledgeTransactional(tx.getID(), id, message.getMessageID());
+   
+            tx.setContainsPersistent();
+         }
+   
+         getRefsOperation(tx).addAck(ref);
+      }
    }
 
    public void reacknowledge(final Transaction tx, final MessageReference ref) throws Exception

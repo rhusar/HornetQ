@@ -17,6 +17,7 @@ import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.transaction.Transaction;
 
 /**
  * A InternalReference
@@ -32,6 +33,10 @@ public class PagedReferenceImpl implements PagedReference
 
    private PagePosition a;
    private PagedMessage b;
+   
+   private Queue queue;
+   
+   private PageSubscription subscription;
    
    
    public ServerMessage getMessage()
@@ -136,6 +141,24 @@ public class PagedReferenceImpl implements PagedReference
     * @see org.hornetq.core.server.MessageReference#handled()
     */
    public void handled()
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.MessageReference#acknowledge()
+    */
+   public void acknowledge() throws Exception
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.server.MessageReference#acknowledge(org.hornetq.core.transaction.Transaction)
+    */
+   public void acknowledge(Transaction tx) throws Exception
    {
       // TODO Auto-generated method stub
       

@@ -177,7 +177,7 @@ public class PageSubscriptionImpl implements PageSubscription
       
       /** next element taken on hasNext test.
        *  it has to be delivered on next next operation */
-      PagedReferenceImpl cachedNext;
+      PagedReference cachedNext;
 
       public void repeat()
       {
@@ -201,13 +201,14 @@ public class PageSubscriptionImpl implements PageSubscription
       /* (non-Javadoc)
        * @see java.util.Iterator#next()
        */
-      public synchronized PagedReferenceImpl next()
+      public synchronized PagedReference next()
       {
          
          if (cachedNext != null)
          {
-            PagedReferenceImpl retPos = cachedNext;
+            PagedReference retPos = cachedNext;
             cachedNext = null;
+            System.out.println("Returning cached next " + retPos);
             return retPos;
          }
          
@@ -215,8 +216,9 @@ public class PageSubscriptionImpl implements PageSubscription
          {
             if (redeliveryIterator.hasNext())
             {
+               // There's a redelivery pending, we will get it out of that pool instead
                isredelivery = true;
-               return getMessage(redeliveryIterator.next());
+               return getReference(redeliveryIterator.next());
             }
             else
             {
@@ -228,7 +230,7 @@ public class PageSubscriptionImpl implements PageSubscription
                position = getStartPosition();
             }
 
-            PagedReferenceImpl nextPos = moveNext(position);
+            PagedReference nextPos = moveNext(position);
             if (nextPos != null)
             {
                lastOperation = position;
@@ -278,9 +280,9 @@ public class PageSubscriptionImpl implements PageSubscription
       }
    }
 
-   private PagedReferenceImpl getMessage(PagePosition pos) throws Exception
+   private PagedReference getReference(PagePosition pos) throws Exception
    {
-      return new PagedReferenceImpl(pos, cursorProvider.getMessage(pos));
+      return cursorProvider.newReference(pos, cursorProvider.getMessage(pos));
    }
 
    /* (non-Javadoc)
@@ -294,11 +296,11 @@ public class PageSubscriptionImpl implements PageSubscription
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
     */
-   public synchronized PagedReferenceImpl moveNext(PagePosition position) throws Exception
+   public synchronized PagedReference moveNext(PagePosition position) throws Exception
    {
       boolean match = false;
 
-      PagedReferenceImpl message = null;
+      PagedReference message = null;
 
       PagePosition tmpPosition = position;
 
@@ -307,12 +309,16 @@ public class PageSubscriptionImpl implements PageSubscription
          message = cursorProvider.getNext(this, tmpPosition);
          
          boolean valid = true;
+         
          if (message == null)
          {
             valid = false;
          }
          else
          {
+            // We don't create a PageCursorInfo unless we are doing a write operation (ack or removing)
+            // Say you have a Browser that will only read the files... there's no need to control PageCursors is nothing 
+            // is being changed. That's why the false is passed as a parameter here
             PageCursorInfo info = getPageInfo(message.getPosition(), false);
             if (info != null && info.isRemoved(message.getPosition()))
             {
@@ -847,6 +853,11 @@ public class PageSubscriptionImpl implements PageSubscription
 
    // Inner classes -------------------------------------------------
 
+   /** 
+    * This will hold information about the pending ACKs towards a page.
+    * This instance will be released as soon as the entire page is consumed, releasing the memory at that point
+    * The ref counts are increased also when a message is ignored for any reason.
+    * */
    private class PageCursorInfo
    {
       // Number of messages existent on this page

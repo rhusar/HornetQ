@@ -29,6 +29,7 @@ import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.core.transaction.Transaction;
 
 /**
  * A queue that will discard messages if a newer message with the same MessageImpl.HDR_LAST_VALUE_NAME property value.
@@ -92,7 +93,7 @@ public class LastValueQueue extends QueueImpl
 
             try
             {
-               super.acknowledge(oldRef);
+               oldRef.acknowledge();
             }
             catch (Exception e)
             {
@@ -232,6 +233,22 @@ public class LastValueQueue extends QueueImpl
       public boolean isPaged()
       {
          return false;
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.MessageReference#acknowledge(org.hornetq.core.server.MessageReference)
+       */
+      public void acknowledge() throws Exception
+      {
+         ref.acknowledge();
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.server.MessageReference#acknowledge(org.hornetq.core.transaction.Transaction, org.hornetq.core.server.MessageReference)
+       */
+      public void acknowledge(Transaction tx) throws Exception
+      {
+         ref.acknowledge(tx);
       }
    }
 }

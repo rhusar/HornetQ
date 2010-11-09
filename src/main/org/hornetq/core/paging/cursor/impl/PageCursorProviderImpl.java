@@ -30,6 +30,7 @@ import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.PageSubscription;
+import org.hornetq.core.paging.cursor.PagedReference;
 import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.ServerMessage;
@@ -122,12 +123,12 @@ public class PageCursorProviderImpl implements PageCursorProvider
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public PagedReferenceImpl getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
+   public PagedReference getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
    {
 
       while (true)
       {
-         PagedReferenceImpl retPos = internalGetNext(cursorPos);
+         PagedReference retPos = internalGetNext(cursorPos);
 
          if (retPos == null)
          {
@@ -182,7 +183,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return false;
    }
 
-   private PagedReferenceImpl internalGetNext(final PagePosition pos)
+   private PagedReference internalGetNext(final PagePosition pos)
    {
       PagePosition retPos = pos.nextMessage();
 
@@ -209,7 +210,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       if (serverMessage != null)
       {
-         return new PagedReferenceImpl(retPos, cache.getMessage(retPos.getMessageNr()));
+         return newReference(retPos, serverMessage);
       }
       else
       {
@@ -228,6 +229,11 @@ public class PageCursorProviderImpl implements PageCursorProvider
       }
 
       return cache.getMessage(pos.getMessageNr());
+   }
+   
+   public PagedReference newReference(final PagePosition pos, final PagedMessage msg)
+   {
+      return new PagedReferenceImpl(pos, msg);
    }
 
    /**
