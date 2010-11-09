@@ -14,6 +14,7 @@
 package org.hornetq.core.server;
 
 import java.util.List;
+import java.util.Map;
 
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
@@ -35,7 +36,9 @@ public interface RoutingContext
 
    void addQueue(SimpleString address, Queue queue);
 
-   Pair<SimpleString, RouteContextList> getContexListing();
+   Map<SimpleString, RouteContextList> getContexListing();
+   
+   RouteContextList getContextListing(SimpleString address);
    
    List<Queue> getNonDurableQueues(SimpleString address);
 

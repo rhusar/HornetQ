@@ -17,12 +17,10 @@ import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,11 +40,9 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.DivertConfiguration;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.PagingStoreFactory;
-import org.hornetq.core.paging.impl.PageImpl;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
@@ -1014,9 +1010,9 @@ public class PagingTest extends ServiceTestBase
                   syncNonTransactional);
          }
 
-         protected boolean page(ServerMessage message, org.hornetq.core.server.RoutingContext ctx, boolean sync) throws Exception
+         protected boolean page(ServerMessage message, org.hornetq.core.server.RoutingContext ctx,  org.hornetq.core.server.RouteContextList listCtx, boolean sync) throws Exception
          {
-            boolean paged = super.page(message, ctx, sync);
+            boolean paged = super.page(message, ctx, listCtx, sync);
 
             if (paged)
             {

@@ -47,6 +47,7 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
+import org.hornetq.core.server.RouteContextList;
 import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.RoutingContextImpl;
@@ -840,12 +841,17 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       Transaction tx = context.getTransaction();
       
-      for (SimpleString add: context.getAddresses())
+      
+      for (Map.Entry<SimpleString, RouteContextList> entry: context.getContexListing().entrySet())
       {
+         PagingStore store = pagingManager.getPageStore(entry.getKey());
          
-         PagingStore store = pagingManager.getPageStore(add);
+         if (store.page(message, context, entry.getValue()))
+         {
+            continue;
+         }
    
-         for (Queue queue : context.getNonDurableQueues(add))
+         for (Queue queue : entry.getValue().getNonDurableQueues())
          {
             MessageReference reference = message.createReference(queue);
    
@@ -861,7 +867,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             message.incrementRefCount();
          }
    
-         Iterator<Queue> iter = context.getDurableQueues(add).iterator();
+         Iterator<Queue> iter = entry.getValue().getDurableQueues().iterator();
    
          while (iter.hasNext())
          {

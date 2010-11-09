@@ -45,6 +45,7 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.server.LargeServerMessage;
+import org.hornetq.core.server.RouteContextList;
 import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
@@ -303,12 +304,17 @@ public class PagingStoreImpl implements TestSupportPageStore
    {
       return storeName;
    }
-
+   
    public boolean page(final ServerMessage message, final RoutingContext ctx) throws Exception
+   {
+      return page(message, ctx, ctx.getContextListing(storeName));
+   }
+
+   public boolean page(final ServerMessage message, final RoutingContext ctx, RouteContextList listCtx) throws Exception
    {
       // The sync on transactions is done on commit only
       // TODO: sync on paging
-      return page(message, ctx, false);
+      return page(message, ctx, listCtx, false);
    }
 
    public void sync() throws Exception
@@ -875,7 +881,7 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    }
 
-   protected boolean page(ServerMessage message, final RoutingContext ctx, final boolean sync) throws Exception
+   protected boolean page(ServerMessage message, final RoutingContext ctx, RouteContextList listCtx, final boolean sync) throws Exception
    {
       if (!running)
       {
@@ -942,7 +948,7 @@ public class PagingStoreImpl implements TestSupportPageStore
             message.bodyChanged();
          }
 
-         pagedMessage = new PagedMessageImpl(message, getQueueIDs(ctx), getTransactionID(ctx));
+         pagedMessage = new PagedMessageImpl(message, getQueueIDs(listCtx), getTransactionID(ctx));
 
          int bytesToWrite = pagedMessage.getEncodeSize() + PageImpl.SIZE_RECORD;
 
@@ -963,10 +969,10 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    }
 
-   private long[] getQueueIDs(RoutingContext ctx)
+   private long[] getQueueIDs(RouteContextList ctx)
    {
-      List<org.hornetq.core.server.Queue> durableQueues = ctx.getDurableQueues(address);
-      List<org.hornetq.core.server.Queue> nonDurableQueues = ctx.getDurableQueues(address);
+      List<org.hornetq.core.server.Queue> durableQueues = ctx.getDurableQueues();
+      List<org.hornetq.core.server.Queue> nonDurableQueues = ctx.getDurableQueues();
       long ids[] = new long [durableQueues.size() + nonDurableQueues.size()];
       int i = 0;
       

@@ -16,6 +16,7 @@ package org.hornetq.core.paging;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.server.HornetQComponent;
+import org.hornetq.core.server.RouteContextList;
 import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
@@ -59,6 +60,8 @@ public interface PagingStore extends HornetQComponent
    void sync() throws Exception;
 
    boolean page(ServerMessage message, RoutingContext ctx) throws Exception;
+
+   boolean page(ServerMessage message, RoutingContext ctx, RouteContextList listCtx) throws Exception;
 
    Page createPage(final int page) throws Exception;
    

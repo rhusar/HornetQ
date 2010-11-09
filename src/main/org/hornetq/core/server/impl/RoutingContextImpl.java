@@ -37,7 +37,7 @@ public class RoutingContextImpl implements RoutingContext
 {
    
    // The pair here is Durable and NonDurable
-   private Map<SimpleString, ContextListing> map = new HashMap<SimpleString, ContextListing>();
+   private Map<SimpleString, RouteContextList> map = new HashMap<SimpleString, RouteContextList>();
 
    private Transaction transaction;
 
@@ -60,23 +60,23 @@ public class RoutingContextImpl implements RoutingContext
    public void addQueue(final SimpleString address, final Queue queue)
    {
 
-      ContextListing listing = getContextListing(address);
+      RouteContextList listing = getContextListing(address);
       
       if (queue.isDurable())
       {
-         listing.durableQueues.add(queue);
+         listing.getDurableQueues().add(queue);
       }
       else
       {
-         listing.durableQueues.add(queue);
+         listing.getNonDurableQueues().add(queue);
       }
 
       queueCount++;
    }
    
-   private ContextListing getContextListing(SimpleString address)
+   public RouteContextList getContextListing(SimpleString address)
    {
-      ContextListing listing = map.get(address);
+      RouteContextList listing = map.get(address);
       if (listing == null)
       {
          listing = new ContextListing();
@@ -97,12 +97,12 @@ public class RoutingContextImpl implements RoutingContext
 
    public List<Queue> getNonDurableQueues(SimpleString address)
    {
-      return getContextListing(address).nonDurableQueues;
+      return getContextListing(address).getNonDurableQueues();
    }
 
    public List<Queue> getDurableQueues(SimpleString address)
    {
-      return getContextListing(address).durableQueues;
+      return getContextListing(address).getDurableQueues();
    }
 
    public int getQueueCount()
@@ -113,14 +113,9 @@ public class RoutingContextImpl implements RoutingContext
    /* (non-Javadoc)
     * @see org.hornetq.core.server.RoutingContext#getAddresses()
     */
-   public Pair<SimpleString, ContextListing>[] getAddresses()
+   public Map<SimpleString, RouteContextList> getContexListing()
    {
-      Object x = new Pair(a, b);
-      
-      
-      Pair<SimpleString, ContextListing> [] contextListing = new Pair<SimpleString, ContextListing>[1]; 
-      // TODO Auto-generated method stub
-      return null;
+      return this.map;
    }
    
    

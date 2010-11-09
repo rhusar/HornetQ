@@ -515,7 +515,7 @@ public class PageCursorTest extends ServiceTestBase
 
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-         Assert.assertTrue(pageStore.page(msg, ctx));
+         Assert.assertTrue(pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS)));
 
          PagedReference readMessage = iterator.next();
 
@@ -552,7 +552,7 @@ public class PageCursorTest extends ServiceTestBase
 
             msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-            Assert.assertTrue(pageStore.page(msg, ctx));
+            Assert.assertTrue(pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS)));
          }
 
          PagedReference readMessage = iterator.next();
@@ -588,7 +588,7 @@ public class PageCursorTest extends ServiceTestBase
 
             msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-            Assert.assertTrue(pageStore.page(msg, ctx));
+            Assert.assertTrue(pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS)));
          }
 
          PagedReference readMessage = iterator.next();
@@ -1091,7 +1091,7 @@ public class PageCursorTest extends ServiceTestBase
 
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
 
-         Assert.assertTrue(pageStore.page(msg, ctx));
+         Assert.assertTrue(pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS)));
       }
 
       return pageStore.getNumberOfPages();
@@ -1202,7 +1202,7 @@ public class PageCursorTest extends ServiceTestBase
          ServerMessage msg = new ServerMessageImpl(storage.generateUniqueID(), buffer.writerIndex());
          msg.getBodyBuffer().writeBytes(buffer, 0, buffer.writerIndex());
          msg.putIntProperty("key", i);
-         pageStore.page(msg, ctx);
+         pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS));
       }
 
    }
