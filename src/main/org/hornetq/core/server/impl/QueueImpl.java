@@ -1267,13 +1267,20 @@ public class QueueImpl implements Queue
       {
          return;
       }
-
-      int nmessages = 0;
-      while (nmessages < MAX_DELIVERIES_IN_LOOP && pageIterator.hasNext())
+      
+      int msgsToDeliver = MAX_DELIVERIES_IN_LOOP - (messageReferences.size() + getScheduledCount() + concurrentQueue.size());
+      
+      if (msgsToDeliver > 0)
       {
-         nmessages ++;
-         addTail(pageIterator.next(), false);
-         pageIterator.remove();
+         System.out.println("Depaging " + msgsToDeliver + " messages");
+   
+         int nmessages = 0;
+         while (nmessages < msgsToDeliver && pageIterator.hasNext())
+         {
+            nmessages ++;
+            addTail(pageIterator.next(), false);
+            pageIterator.remove();
+         }
       }
       
       deliverAsync();

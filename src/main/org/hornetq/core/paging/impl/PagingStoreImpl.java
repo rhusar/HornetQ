@@ -51,6 +51,7 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
+import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
@@ -988,7 +989,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       return ids;
    }
    
-   private long getTransactionID(RoutingContext ctx)
+   private long getTransactionID(RoutingContext ctx) throws Exception
    {
       Transaction tx = ctx.getTransaction();
       if (tx == null)
@@ -997,8 +998,66 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
       else
       {
+         if (tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION) == null)
+         {
+            PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
+            System.out.println("Creating pageTransaction " + pgTX.getTransactionID());
+            storageManager.storePageTransaction(tx.getID(), pgTX);
+            pagingManager.addTransaction(pgTX);
+            tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pgTX);
+            tx.addOperation(new FinishPageMessageOperation());
+            
+            tx.setContainsPersistent();
+         }
+         
          return tx.getID();
       }
+   }
+
+   
+   private static class FinishPageMessageOperation implements TransactionOperation
+   {
+
+      public void afterCommit(final Transaction tx)
+      {
+         // If part of the transaction goes to the queue, and part goes to paging, we can't let depage start for the
+         // transaction until all the messages were added to the queue
+         // or else we could deliver the messages out of order
+
+         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+
+         if (pageTransaction != null)
+         {
+            pageTransaction.commit();
+         }
+      }
+
+      public void afterPrepare(final Transaction tx)
+      {
+      }
+
+      public void afterRollback(final Transaction tx)
+      {
+         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+
+         if (tx.getState() == State.PREPARED && pageTransaction != null)
+         {
+            pageTransaction.rollback();
+         }
+      }
+
+      public void beforeCommit(final Transaction tx) throws Exception
+      {
+      }
+
+      public void beforePrepare(final Transaction tx) throws Exception
+      {
+      }
+
+      public void beforeRollback(final Transaction tx) throws Exception
+      {
+      }
+
    }
 
    /**
