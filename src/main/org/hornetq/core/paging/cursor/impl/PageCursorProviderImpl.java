@@ -128,7 +128,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       while (true)
       {
-         PagedReference retPos = internalGetNext(cursorPos);
+         PagedReference retPos = internalGetNext(cursorPos, cursor);
 
          if (retPos == null)
          {
@@ -183,7 +183,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return false;
    }
 
-   private PagedReference internalGetNext(final PagePosition pos)
+   private PagedReference internalGetNext(final PagePosition pos, final PageSubscription sub)
    {
       PagePosition retPos = pos.nextMessage();
 
@@ -210,7 +210,7 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
       if (serverMessage != null)
       {
-         return newReference(retPos, serverMessage);
+         return newReference(retPos, serverMessage, sub);
       }
       else
       {
@@ -231,9 +231,9 @@ public class PageCursorProviderImpl implements PageCursorProvider
       return cache.getMessage(pos.getMessageNr());
    }
    
-   public PagedReference newReference(final PagePosition pos, final PagedMessage msg)
+   public PagedReference newReference(final PagePosition pos, final PagedMessage msg, final PageSubscription subscription)
    {
-      return new PagedReferenceImpl(pos, msg);
+      return new PagedReferenceImpl(pos, msg, subscription);
    }
 
    /**

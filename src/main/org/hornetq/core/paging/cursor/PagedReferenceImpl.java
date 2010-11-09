@@ -28,38 +28,37 @@ import org.hornetq.core.transaction.Transaction;
  */
 public class PagedReferenceImpl implements PagedReference
 {
-   
+
    private static final long serialVersionUID = -8640232251318264710L;
 
-   private PagePosition a;
-   private PagedMessage b;
+   private final PagePosition position;
+
+   private final PagedMessage message;
    
-   private Queue queue;
-   
-   private PageSubscription subscription;
-   
-   
+   private final PageSubscription subscription;
+
    public ServerMessage getMessage()
    {
-      return b.getMessage();
-   }
-   
-   public PagedMessage getPagedMessage()
-   {
-      return b;
-   }
-   
-   public PagePosition getPosition()
-   {
-      return a;
+      return message.getMessage();
    }
 
-   public PagedReferenceImpl(PagePosition a, PagedMessage b)
+   public PagedMessage getPagedMessage()
    {
-      this.a = a;
-      this.b = b;
+      return message;
    }
-   
+
+   public PagePosition getPosition()
+   {
+      return position;
+   }
+
+   public PagedReferenceImpl(final PagePosition position, final PagedMessage message, final PageSubscription subscription)
+   {
+      this.position = position;
+      this.message = message;
+      this.subscription = subscription;
+   }
+
    public boolean isPaged()
    {
       return true;
@@ -68,7 +67,7 @@ public class PagedReferenceImpl implements PagedReference
    /* (non-Javadoc)
     * @see org.hornetq.core.server.MessageReference#copy(org.hornetq.core.server.Queue)
     */
-   public MessageReference copy(Queue queue)
+   public MessageReference copy(final Queue queue)
    {
       // TODO Auto-generated method stub
       return null;
@@ -86,10 +85,10 @@ public class PagedReferenceImpl implements PagedReference
    /* (non-Javadoc)
     * @see org.hornetq.core.server.MessageReference#setScheduledDeliveryTime(long)
     */
-   public void setScheduledDeliveryTime(long scheduledDeliveryTime)
+   public void setScheduledDeliveryTime(final long scheduledDeliveryTime)
    {
       // TODO Auto-generated method stub
-      
+
    }
 
    /* (non-Javadoc)
@@ -104,10 +103,10 @@ public class PagedReferenceImpl implements PagedReference
    /* (non-Javadoc)
     * @see org.hornetq.core.server.MessageReference#setDeliveryCount(int)
     */
-   public void setDeliveryCount(int deliveryCount)
+   public void setDeliveryCount(final int deliveryCount)
    {
       // TODO Auto-generated method stub
-      
+
    }
 
    /* (non-Javadoc)
@@ -116,7 +115,7 @@ public class PagedReferenceImpl implements PagedReference
    public void incrementDeliveryCount()
    {
       // TODO Auto-generated method stub
-      
+
    }
 
    /* (non-Javadoc)
@@ -125,7 +124,7 @@ public class PagedReferenceImpl implements PagedReference
    public void decrementDeliveryCount()
    {
       // TODO Auto-generated method stub
-      
+
    }
 
    /* (non-Javadoc)
@@ -133,8 +132,7 @@ public class PagedReferenceImpl implements PagedReference
     */
    public Queue getQueue()
    {
-      // TODO Auto-generated method stub
-      return null;
+      return subscription.getQueue();
    }
 
    /* (non-Javadoc)
@@ -142,8 +140,7 @@ public class PagedReferenceImpl implements PagedReference
     */
    public void handled()
    {
-      // TODO Auto-generated method stub
-      
+      getQueue().referenceHandled();
    }
 
    /* (non-Javadoc)
@@ -151,16 +148,14 @@ public class PagedReferenceImpl implements PagedReference
     */
    public void acknowledge() throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      subscription.ack(this);
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.server.MessageReference#acknowledge(org.hornetq.core.transaction.Transaction)
     */
-   public void acknowledge(Transaction tx) throws Exception
+   public void acknowledge(final Transaction tx) throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      subscription.ackTx(tx, this);
    }
 }

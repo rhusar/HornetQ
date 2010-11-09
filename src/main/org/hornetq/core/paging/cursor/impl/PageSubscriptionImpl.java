@@ -282,7 +282,7 @@ public class PageSubscriptionImpl implements PageSubscription
 
    private PagedReference getReference(PagePosition pos) throws Exception
    {
-      return cursorProvider.newReference(pos, cursorProvider.getMessage(pos));
+      return cursorProvider.newReference(pos, cursorProvider.getMessage(pos), this);
    }
 
    /* (non-Javadoc)
