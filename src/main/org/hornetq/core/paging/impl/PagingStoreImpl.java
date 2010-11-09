@@ -972,7 +972,7 @@ public class PagingStoreImpl implements TestSupportPageStore
    private long[] getQueueIDs(RouteContextList ctx)
    {
       List<org.hornetq.core.server.Queue> durableQueues = ctx.getDurableQueues();
-      List<org.hornetq.core.server.Queue> nonDurableQueues = ctx.getDurableQueues();
+      List<org.hornetq.core.server.Queue> nonDurableQueues = ctx.getNonDurableQueues();
       long ids[] = new long [durableQueues.size() + nonDurableQueues.size()];
       int i = 0;
       
