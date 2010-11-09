@@ -204,7 +204,7 @@ public class RemoteQueueBindingImpl implements RemoteQueueBinding
       {
          // There can be many remote bindings for the same node, we only want to add the message once to
          // the s & f queue for that node
-         context.addQueue(storeAndForwardQueue);
+         context.addQueue(address, storeAndForwardQueue);
       }
    }
 

@@ -267,7 +267,7 @@ public class QueueImpl implements Queue
 
    public void route(final ServerMessage message, final RoutingContext context) throws Exception
    {
-      context.addQueue(this);
+      context.addQueue(address, this);
    }
 
    // Queue implementation ----------------------------------------------------------------------------------------

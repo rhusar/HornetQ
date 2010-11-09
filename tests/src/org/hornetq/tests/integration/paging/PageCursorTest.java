@@ -631,11 +631,11 @@ public class PageCursorTest extends ServiceTestBase
    private RoutingContextImpl generateCTX(Transaction tx)
    {
       RoutingContextImpl ctx = new RoutingContextImpl(tx);
-      ctx.addDurableQueue(queue);
+      ctx.addQueue(ADDRESS, queue);
       
       for (Queue q : this.queueList)
       {
-         ctx.addQueue(q);
+         ctx.addQueue(ADDRESS, q);
       }
       
       return ctx;

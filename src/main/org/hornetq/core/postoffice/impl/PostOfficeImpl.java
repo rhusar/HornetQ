@@ -839,83 +839,89 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       final List<MessageReference> refs = new ArrayList<MessageReference>();
 
       Transaction tx = context.getTransaction();
-
-      for (Queue queue : context.getNonDurableQueues())
+      
+      for (SimpleString add: context.getAddresses())
       {
-         MessageReference reference = message.createReference(queue);
-
-         refs.add(reference);
-
-         if (message.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
+         
+         PagingStore store = pagingManager.getPageStore(add);
+   
+         for (Queue queue : context.getNonDurableQueues(add))
          {
-            Long scheduledDeliveryTime = message.getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
-
-            reference.setScheduledDeliveryTime(scheduledDeliveryTime);
-         }
-
-         message.incrementRefCount();
-      }
-
-      Iterator<Queue> iter = context.getDurableQueues().iterator();
-
-      while (iter.hasNext())
-      {
-         Queue queue = iter.next();
-
-         MessageReference reference = message.createReference(queue);
-
-         refs.add(reference);
-
-         if (message.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
-         {
-            Long scheduledDeliveryTime = message.getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
-
-            reference.setScheduledDeliveryTime(scheduledDeliveryTime);
-         }
-
-         if (message.isDurable())
-         {
-            int durableRefCount = message.incrementDurableRefCount();
-
-            if (durableRefCount == 1)
-            {
-               if (tx != null)
-               {
-                  storageManager.storeMessageTransactional(tx.getID(), message);
-               }
-               else
-               {
-                  storageManager.storeMessage(message);
-               }
-            }
-
-            if (tx != null)
-            {
-               storageManager.storeReferenceTransactional(tx.getID(), queue.getID(), message.getMessageID());
-
-               tx.setContainsPersistent();
-            }
-            else
-            {
-               storageManager.storeReference(queue.getID(), message.getMessageID(), !iter.hasNext());
-            }
-
+            MessageReference reference = message.createReference(queue);
+   
+            refs.add(reference);
+   
             if (message.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
             {
+               Long scheduledDeliveryTime = message.getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
+   
+               reference.setScheduledDeliveryTime(scheduledDeliveryTime);
+            }
+   
+            message.incrementRefCount();
+         }
+   
+         Iterator<Queue> iter = context.getDurableQueues(add).iterator();
+   
+         while (iter.hasNext())
+         {
+            Queue queue = iter.next();
+   
+            MessageReference reference = message.createReference(queue);
+   
+            refs.add(reference);
+   
+            if (message.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
+            {
+               Long scheduledDeliveryTime = message.getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
+   
+               reference.setScheduledDeliveryTime(scheduledDeliveryTime);
+            }
+   
+            if (message.isDurable())
+            {
+               int durableRefCount = message.incrementDurableRefCount();
+   
+               if (durableRefCount == 1)
+               {
+                  if (tx != null)
+                  {
+                     storageManager.storeMessageTransactional(tx.getID(), message);
+                  }
+                  else
+                  {
+                     storageManager.storeMessage(message);
+                  }
+               }
+   
                if (tx != null)
                {
-                  storageManager.updateScheduledDeliveryTimeTransactional(tx.getID(), reference);
+                  storageManager.storeReferenceTransactional(tx.getID(), queue.getID(), message.getMessageID());
+   
+                  tx.setContainsPersistent();
                }
                else
                {
-                  storageManager.updateScheduledDeliveryTime(reference);
+                  storageManager.storeReference(queue.getID(), message.getMessageID(), !iter.hasNext());
+               }
+   
+               if (message.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
+               {
+                  if (tx != null)
+                  {
+                     storageManager.updateScheduledDeliveryTimeTransactional(tx.getID(), reference);
+                  }
+                  else
+                  {
+                     storageManager.updateScheduledDeliveryTime(reference);
+                  }
                }
             }
+   
+            message.incrementRefCount();
          }
-
-         message.incrementRefCount();
       }
-
+      
       if (tx != null)
       {
          tx.addOperation(new AddOperation(refs));

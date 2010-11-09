@@ -965,15 +965,17 @@ public class PagingStoreImpl implements TestSupportPageStore
 
    private long[] getQueueIDs(RoutingContext ctx)
    {
-      long ids[] = new long [ctx.getDurableQueues().size() + ctx.getNonDurableQueues().size()];
+      List<org.hornetq.core.server.Queue> durableQueues = ctx.getDurableQueues(address);
+      List<org.hornetq.core.server.Queue> nonDurableQueues = ctx.getDurableQueues(address);
+      long ids[] = new long [durableQueues.size() + nonDurableQueues.size()];
       int i = 0;
       
-      for (org.hornetq.core.server.Queue q : ctx.getDurableQueues())
+      for (org.hornetq.core.server.Queue q : durableQueues)
       {
          ids[i++] = q.getID();
       }
       
-      for (org.hornetq.core.server.Queue q : ctx.getNonDurableQueues())
+      for (org.hornetq.core.server.Queue q : nonDurableQueues)
       {
          ids[i++] = q.getID();
       }

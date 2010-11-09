@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Red Hat, Inc.
+ * Copyright 2010 Red Hat, Inc.
  * Red Hat licenses this file to you under the Apache License, version
  * 2.0 (the "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
@@ -15,36 +15,18 @@ package org.hornetq.core.server;
 
 import java.util.List;
 
-import org.hornetq.api.core.Pair;
-import org.hornetq.api.core.SimpleString;
-import org.hornetq.core.transaction.Transaction;
-
 /**
- * A RoutingContext
+ * This is a simple datatype containing the list of a routing context
  *
- * @author Tim Fox
- * @author Clebert Suconic
+ * @author clebertsuconic
  *
  *
  */
-public interface RoutingContext
+public interface RouteContextList
 {
-   Transaction getTransaction();
 
-   void setTransaction(Transaction transaction);
-
-   void addQueue(SimpleString address, Queue queue);
-
-   Pair<SimpleString, RouteContextList> getContexListing();
+   List<Queue> getDurableQueues();
    
-   List<Queue> getNonDurableQueues(SimpleString address);
-
-   List<Queue> getDurableQueues(SimpleString address);
-
-   int getQueueCount();
-
-   void clear();
-   
-   
+   List<Queue> getNonDurableQueues();
 
 }
