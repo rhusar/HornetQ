@@ -15,9 +15,11 @@ package org.hornetq.core.postoffice.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -59,6 +61,7 @@ import org.hornetq.core.settings.HierarchicalRepository;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.TransactionOperation;
+import org.hornetq.core.transaction.TransactionOperationAbstract;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.impl.TransactionImpl;
@@ -834,6 +837,28 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          processRoute(message, context, false);
       }
    }
+   
+   
+   private class PageDelivery extends TransactionOperationAbstract
+   {
+      private Set<Queue> queues = new HashSet<Queue>();
+      
+      public void addQueues(List<Queue> queueList)
+      {
+         queues.addAll(queueList);
+      }
+      
+      public void afterCommit(Transaction tx)
+      {
+         // We need to try delivering async after paging, or nothing may start a delivery after paging since nothing is going towards the queues
+         // The queue will try to depage case it's empty
+         for (Queue queue : queues)
+         {
+            queue.deliverAsync();
+         }
+      }
+      
+   }
 
    private void processRoute(final ServerMessage message, final RoutingContext context, final boolean direct) throws Exception
    {
@@ -848,6 +873,50 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          
          if (store.page(message, context, entry.getValue()))
          {
+            
+            if (tx != null)
+            {
+               PageDelivery delivery = (PageDelivery)tx.getProperty(TransactionPropertyIndexes.PAGE_DELIVERY);
+               if (delivery == null)
+               {
+                  delivery = new PageDelivery();
+                  tx.putProperty(TransactionPropertyIndexes.PAGE_DELIVERY, delivery);
+                  tx.addOperation(delivery);
+               }
+               
+               delivery.addQueues(entry.getValue().getDurableQueues());
+               delivery.addQueues(entry.getValue().getNonDurableQueues());
+            }
+            else
+            {
+
+               List<Queue> durableQueues = entry.getValue().getDurableQueues();
+               List<Queue> nonDurableQueues = entry.getValue().getNonDurableQueues();
+               
+               final List<Queue> queues = new ArrayList<Queue>(durableQueues.size() + nonDurableQueues.size());
+               
+               queues.addAll(durableQueues);
+               queues.addAll(nonDurableQueues);
+
+               storageManager.afterCompleteOperations(new IOAsyncTask()
+               {
+                  
+                  public void onError(int errorCode, String errorMessage)
+                  {
+                  }
+                  
+                  public void done()
+                  {
+                     for (Queue queue : queues)
+                     {
+                        // in case of paging, we need to kick asynchronous delivery to try delivering
+                        queue.deliverAsync();
+                     }
+                  }
+               });
+            }
+            
+            
             continue;
          }
    

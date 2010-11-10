@@ -50,16 +50,16 @@ public abstract class TransactionOperationAbstract implements TransactionOperati
    /** After commit shouldn't throw any exception. Any verification has to be done on before commit */
    public void afterCommit(Transaction tx)
    {
-   };
+   }
 
    public void beforeRollback(Transaction tx) throws Exception
    {
-   };
+   }
 
    /** After rollback shouldn't throw any exception. Any verification has to be done on before rollback */
    public void afterRollback(Transaction tx)
    {
-   };
+   }
 
    // Package protected ---------------------------------------------
 

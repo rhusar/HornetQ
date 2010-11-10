@@ -948,8 +948,10 @@ public class PagingStoreImpl implements TestSupportPageStore
             // This will force everything to be persisted
             message.bodyChanged();
          }
+         
+         Transaction tx = ctx.getTransaction();
 
-         pagedMessage = new PagedMessageImpl(message, getQueueIDs(listCtx), getTransactionID(ctx));
+         pagedMessage = new PagedMessageImpl(message, getQueueIDs(listCtx), getTransactionID(tx));
 
          int bytesToWrite = pagedMessage.getEncodeSize() + PageImpl.SIZE_RECORD;
 
@@ -989,9 +991,8 @@ public class PagingStoreImpl implements TestSupportPageStore
       return ids;
    }
    
-   private long getTransactionID(RoutingContext ctx) throws Exception
+   private long getTransactionID(Transaction tx) throws Exception
    {
-      Transaction tx = ctx.getTransaction();
       if (tx == null)
       {
          return 0l;
