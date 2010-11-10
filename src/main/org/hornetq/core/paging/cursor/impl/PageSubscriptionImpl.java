@@ -37,7 +37,6 @@ import org.hornetq.core.paging.cursor.PageCursorProvider;
 import org.hornetq.core.paging.cursor.PagePosition;
 import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagedReference;
-import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
@@ -220,7 +219,6 @@ public class PageSubscriptionImpl implements PageSubscription
          {
             PagedReference retPos = cachedNext;
             cachedNext = null;
-            System.out.println("Returning cached next " + retPos);
             return retPos;
          }
          
