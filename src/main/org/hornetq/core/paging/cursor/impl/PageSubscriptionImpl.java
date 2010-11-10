@@ -167,23 +167,35 @@ public class PageSubscriptionImpl implements PageSubscription
 
    class CursorIterator implements LinkedListIterator<PagedReference>
    {
-      PagePosition position = null;
+      private PagePosition position = null;
 
-      PagePosition lastOperation = null;
+      private PagePosition lastOperation = null;
 
-      LinkedListIterator<PagePosition> redeliveryIterator = redeliveries.iterator();
+      private final LinkedListIterator<PagePosition> redeliveryIterator;
 
-      boolean isredelivery = false;
+      private volatile boolean isredelivery = false;
       
       /** next element taken on hasNext test.
        *  it has to be delivered on next next operation */
-      PagedReference cachedNext;
+      private volatile PagedReference cachedNext;
+      
+      public CursorIterator()
+      {
+         synchronized (redeliveries)
+         {
+            redeliveryIterator = redeliveries.iterator();
+         }
+      }
+      
 
       public void repeat()
       {
          if (isredelivery)
          {
-            redeliveryIterator.repeat();
+            synchronized (redeliveries)
+            {
+               redeliveryIterator.repeat();
+            }
          }
          else
          {
@@ -214,15 +226,18 @@ public class PageSubscriptionImpl implements PageSubscription
          
          try
          {
-            if (redeliveryIterator.hasNext())
+            synchronized (redeliveries)
             {
-               // There's a redelivery pending, we will get it out of that pool instead
-               isredelivery = true;
-               return getReference(redeliveryIterator.next());
-            }
-            else
-            {
-               isredelivery = false;
+               if (redeliveryIterator.hasNext())
+               {
+                  // There's a redelivery pending, we will get it out of that pool instead
+                  isredelivery = true;
+                  return getReference(redeliveryIterator.next());
+               }
+               else
+               {
+                  isredelivery = false;
+               }
             }
             
             if (position == null)
@@ -448,9 +463,12 @@ public class PageSubscriptionImpl implements PageSubscription
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#returnElement(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public synchronized void redeliver(final PagePosition position)
+   public void redeliver(final PagePosition position)
    {
-      redeliveries.addTail(position);
+      synchronized (redeliveries)
+      {
+         redeliveries.addTail(position);
+      }
    }
 
    /** 
