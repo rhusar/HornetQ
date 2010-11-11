@@ -874,49 +874,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
          if (store.page(message, context, entry.getValue()))
          {
             
-            if (tx != null)
-            {
-               PageDelivery delivery = (PageDelivery)tx.getProperty(TransactionPropertyIndexes.PAGE_DELIVERY);
-               if (delivery == null)
-               {
-                  delivery = new PageDelivery();
-                  tx.putProperty(TransactionPropertyIndexes.PAGE_DELIVERY, delivery);
-                  tx.addOperation(delivery);
-               }
-               
-               delivery.addQueues(entry.getValue().getDurableQueues());
-               delivery.addQueues(entry.getValue().getNonDurableQueues());
-            }
-            else
-            {
-
-               List<Queue> durableQueues = entry.getValue().getDurableQueues();
-               List<Queue> nonDurableQueues = entry.getValue().getNonDurableQueues();
-               
-               final List<Queue> queues = new ArrayList<Queue>(durableQueues.size() + nonDurableQueues.size());
-               
-               queues.addAll(durableQueues);
-               queues.addAll(nonDurableQueues);
-
-               storageManager.afterCompleteOperations(new IOAsyncTask()
-               {
-                  
-                  public void onError(int errorCode, String errorMessage)
-                  {
-                  }
-                  
-                  public void done()
-                  {
-                     for (Queue queue : queues)
-                     {
-                        // in case of paging, we need to kick asynchronous delivery to try delivering
-                        queue.deliverAsync();
-                     }
-                  }
-               });
-            }
-            
-            
+            // We need to kick delivery so the Queues may check for the cursors case they are empty
+            schedulePageDelivery(tx, entry);
             continue;
          }
    
@@ -1017,6 +976,56 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
             public void done()
             {
                addReferences(refs, direct);
+            }
+         });
+      }
+   }
+
+   /**
+    * This will kick a delivery async on the queue, so the queue may have a chance to depage messages
+    * @param tx
+    * @param entry
+    */
+   private void schedulePageDelivery(Transaction tx, Map.Entry<SimpleString, RouteContextList> entry)
+   {
+      if (tx != null)
+      {
+         PageDelivery delivery = (PageDelivery)tx.getProperty(TransactionPropertyIndexes.PAGE_DELIVERY);
+         if (delivery == null)
+         {
+            delivery = new PageDelivery();
+            tx.putProperty(TransactionPropertyIndexes.PAGE_DELIVERY, delivery);
+            tx.addOperation(delivery);
+         }
+         
+         delivery.addQueues(entry.getValue().getDurableQueues());
+         delivery.addQueues(entry.getValue().getNonDurableQueues());
+      }
+      else
+      {
+
+         List<Queue> durableQueues = entry.getValue().getDurableQueues();
+         List<Queue> nonDurableQueues = entry.getValue().getNonDurableQueues();
+         
+         final List<Queue> queues = new ArrayList<Queue>(durableQueues.size() + nonDurableQueues.size());
+         
+         queues.addAll(durableQueues);
+         queues.addAll(nonDurableQueues);
+
+         storageManager.afterCompleteOperations(new IOAsyncTask()
+         {
+            
+            public void onError(int errorCode, String errorMessage)
+            {
+            }
+            
+            public void done()
+            {
+               for (Queue queue : queues)
+               {
+                  // in case of paging, we need to kick asynchronous delivery to try delivering
+                  queue.deliverAsync();
+               }
             }
          });
       }

@@ -32,6 +32,7 @@ import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.PageTransactionInfo;
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
@@ -463,6 +464,23 @@ public class PageSubscriptionImpl implements PageSubscription
          redeliveries.addTail(position);
       }
    }
+
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.paging.cursor.PageSubscription#queryMessage(org.hornetq.core.paging.cursor.PagePosition)
+    */
+   public PagedMessage queryMessage(PagePosition pos)
+   {
+      try
+      {
+         return cursorProvider.getMessage(pos);
+      }
+      catch (Exception e)
+      {
+         throw new RuntimeException(e.getMessage(), e);
+      }
+   }
+
 
    /** 
     * Theres no need to synchronize this method as it's only called from journal load on startup

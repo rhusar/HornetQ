@@ -13,6 +13,7 @@
 
 package org.hornetq.core.paging.cursor;
 
+import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.transaction.Transaction;
 import org.hornetq.utils.LinkedListIterator;
@@ -111,4 +112,11 @@ public interface PageSubscription
    void setQueue(Queue queue);
    
    Queue getQueue();
+   
+   /**
+    * To be used to requery the reference case the Garbage Collection removed it from the PagedReference as it's using WeakReferences
+    * @param pos
+    * @return
+    */
+   PagedMessage queryMessage(PagePosition pos);
 }

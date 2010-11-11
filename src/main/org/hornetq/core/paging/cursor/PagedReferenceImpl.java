@@ -13,6 +13,9 @@
 
 package org.hornetq.core.paging.cursor;
 
+import java.lang.ref.WeakReference;
+
+import org.hornetq.api.core.Message;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
@@ -33,18 +36,32 @@ public class PagedReferenceImpl implements PagedReference
 
    private final PagePosition position;
 
-   private final PagedMessage message;
+   private WeakReference<PagedMessage> message;
+   
+   private Long deliveryTime = null;
    
    private final PageSubscription subscription;
 
    public ServerMessage getMessage()
    {
-      return message.getMessage();
+      return getPagedMessage().getMessage();
    }
 
-   public PagedMessage getPagedMessage()
+   public synchronized PagedMessage getPagedMessage()
    {
-      return message;
+      PagedMessage returnMessage = message.get();
+      
+      // We only keep a few references on the Queue from paging...
+      // Besides those references are SoftReferenced on page cache...
+      // So, this will unlikely be null, 
+      // unless the Queue has stalled for some time after paging
+      if (returnMessage == null)
+      {
+         // reference is gone, we will reconstruct it
+         returnMessage = subscription.queryMessage(position);
+         message = new WeakReference<PagedMessage>(returnMessage);
+      }
+      return returnMessage;
    }
 
    public PagePosition getPosition()
@@ -55,7 +72,7 @@ public class PagedReferenceImpl implements PagedReference
    public PagedReferenceImpl(final PagePosition position, final PagedMessage message, final PageSubscription subscription)
    {
       this.position = position;
-      this.message = message;
+      this.message = new WeakReference<PagedMessage>(message);
       this.subscription = subscription;
    }
 
@@ -78,8 +95,19 @@ public class PagedReferenceImpl implements PagedReference
     */
    public long getScheduledDeliveryTime()
    {
-      // TODO Auto-generated method stub
-      return 0;
+      if (deliveryTime == null)
+      {
+         ServerMessage msg = getMessage();
+         if (msg.containsProperty(Message.HDR_SCHEDULED_DELIVERY_TIME))
+         {
+            deliveryTime = getMessage().getLongProperty(Message.HDR_SCHEDULED_DELIVERY_TIME);
+         }
+         else
+         {
+            deliveryTime = 0l;
+         }
+      }
+      return deliveryTime;
    }
 
    /* (non-Javadoc)
@@ -87,8 +115,7 @@ public class PagedReferenceImpl implements PagedReference
     */
    public void setScheduledDeliveryTime(final long scheduledDeliveryTime)
    {
-      // TODO Auto-generated method stub
-
+      deliveryTime = scheduledDeliveryTime;
    }
 
    /* (non-Javadoc)

@@ -522,9 +522,10 @@ public class PageCursorProviderImpl implements PageCursorProvider
          // the page stays locked until the entire reading is finished
          if (needToRead)
          {
+            Page page = null;
             try
             {
-               Page page = pagingStore.createPage((int)pageId);
+               page = pagingStore.createPage((int)pageId);
 
                page.open();
 
@@ -540,6 +541,16 @@ public class PageCursorProviderImpl implements PageCursorProvider
             }
             finally
             {
+               try
+               {
+                  if (page != null)
+                  {
+                     page.close();
+                  }
+               }
+               catch (Throwable ignored)
+               {
+               }
                cache.unlock();
             }
          }
