@@ -16,7 +16,6 @@ package org.hornetq.utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,8 +25,6 @@ import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -183,7 +180,7 @@ public class GZipUtil
       private List<byte[]> writeBuffer;
       private int bufferSize;
       private int counter, index;
-      private int readIndex, nextIndex;
+      private int readIndex;
       private boolean closed;
       
       public DynamicOutputStream(int size, int cache)
@@ -197,7 +194,6 @@ public class GZipUtil
          counter = 0;
          index = 0;
          readIndex = 0;
-         nextIndex = 1;
          closed = false;
       }
 
@@ -206,8 +202,7 @@ public class GZipUtil
          writeBuffer.get(index)[counter++] = (byte)b;
          if (counter == bufferSize)
          {
-            index = nextIndex;
-            nextIndex++;
+            index++;
             if (index == writeBuffer.size())
             {
                writeBuffer.add(new byte[bufferSize]);
@@ -224,8 +219,7 @@ public class GZipUtil
       /*
        * logic: 
        * if index > readIndex, return readIndex, then readIndex++
-       * if index == readIndex, then return zero length byte[]. adjust nextIndex; if closed, return the remaining.
-       * if index < readIndex, then return readIndex, readIndex = 0
+       * if index == readIndex, then return zero length byte[]; if closed, return the remaining.
        * 
        * if closed and no more data, returns null.
        */
@@ -252,11 +246,6 @@ public class GZipUtil
                   counter = 0;
                }
             }
-         }
-         else if (index < readIndex)
-         {
-            result = writeBuffer.get(readIndex);
-            readIndex = 0;
          }
          return result;
       }
