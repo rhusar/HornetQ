@@ -411,7 +411,8 @@ public class ClientProducerImpl implements ClientProducerInternal
 
       if (session.isCompressLargeMessages())
       {
-         input = GZipUtil.pipeGZip(inputStreamParameter, true, session.getThreadPool());
+         //input = GZipUtil.pipeGZip(inputStreamParameter, true, session.getThreadPool());
+         input = GZipUtil.createZipInputStream(inputStreamParameter);
       }
 
       while (!lastPacket)
