@@ -113,6 +113,16 @@ public class PagingTest extends ServiceTestBase
 
    public void testWithDiverts() throws Exception
    {
+      internalMultiQueuesTest(true);
+   }
+   
+   public void testWithMultiQueues() throws Exception
+   {
+      internalMultiQueuesTest(false);
+   }
+   
+   public void internalMultiQueuesTest(final boolean divert) throws Exception
+   {
       clearData();
 
       Configuration config = createDefaultConfig();
@@ -123,27 +133,30 @@ public class PagingTest extends ServiceTestBase
                                           PagingTest.PAGE_MAX,
                                           new HashMap<String, AddressSettings>());
 
-      DivertConfiguration divert1 = new DivertConfiguration("dv1",
-                                                            "nm1",
-                                                            PagingTest.ADDRESS.toString(),
-                                                            PagingTest.ADDRESS.toString() + "-1",
-                                                            true,
-                                                            null,
-                                                            null);
-
-      DivertConfiguration divert2 = new DivertConfiguration("dv2",
-                                                            "nm2",
-                                                            PagingTest.ADDRESS.toString(),
-                                                            PagingTest.ADDRESS.toString() + "-2",
-                                                            true,
-                                                            null,
-                                                            null);
-
-      ArrayList<DivertConfiguration> divertList = new ArrayList<DivertConfiguration>();
-      divertList.add(divert1);
-      divertList.add(divert2);
-
-      config.setDivertConfigurations(divertList);
+      if (divert)
+      {   
+         DivertConfiguration divert1 = new DivertConfiguration("dv1",
+                                                               "nm1",
+                                                               PagingTest.ADDRESS.toString(),
+                                                               PagingTest.ADDRESS.toString() + "-1",
+                                                               true,
+                                                               null,
+                                                               null);
+   
+         DivertConfiguration divert2 = new DivertConfiguration("dv2",
+                                                               "nm2",
+                                                               PagingTest.ADDRESS.toString(),
+                                                               PagingTest.ADDRESS.toString() + "-2",
+                                                               true,
+                                                               null,
+                                                               null);
+   
+         ArrayList<DivertConfiguration> divertList = new ArrayList<DivertConfiguration>();
+         divertList.add(divert1);
+         divertList.add(divert2);
+   
+         config.setDivertConfigurations(divertList);
+      }
 
       server.start();
 
@@ -171,9 +184,18 @@ public class PagingTest extends ServiceTestBase
 
             ClientSession session = sf.createSession(false, false, false);
 
-            session.createQueue(PagingTest.ADDRESS + "-1", PagingTest.ADDRESS + "-1", null, true);
+            if (divert)
+            {
+               session.createQueue(PagingTest.ADDRESS + "-1", PagingTest.ADDRESS + "-1", null, true);
 
-            session.createQueue(PagingTest.ADDRESS + "-2", PagingTest.ADDRESS + "-2", null, true);
+               session.createQueue(PagingTest.ADDRESS + "-2", PagingTest.ADDRESS + "-2", null, true);
+            }
+            else
+            {
+               session.createQueue(PagingTest.ADDRESS.toString(), PagingTest.ADDRESS + "-1", null, true);
+
+               session.createQueue(PagingTest.ADDRESS.toString(), PagingTest.ADDRESS + "-2", null, true);
+            }
 
             ClientProducer producer = session.createProducer(PagingTest.ADDRESS);
 
