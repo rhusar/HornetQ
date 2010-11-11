@@ -15,12 +15,19 @@ package org.hornetq.utils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -99,7 +106,7 @@ public class GZipUtil
                }
                while ((size = input.read(readBytes)) > 0)
                {
-                  System.out.println("Read " + size + " bytes on compressing thread");
+//                  System.out.println("Read " + size + " bytes on compressing thread");
                   out.write(readBytes, 0, size);
                }
                System.out.println("Finished compressing");
@@ -163,5 +170,212 @@ public class GZipUtil
       });
    }
 
+   /*
+    * we keep a list of byte arrays. when writing, we start with the first array.
+    * when getBuffer() is called, the returned value is subject to the following rules:
+    * 
+    * 1. if not closed, return the last full array. then update flags and pointers.
+    * 2. if closed, return all the remaining.
+    */
+   public static class DynamicOutputStream extends OutputStream
+   {
+
+      private List<byte[]> writeBuffer;
+      private int bufferSize;
+      private int counter, index;
+      private int readIndex, nextIndex;
+      private boolean closed;
+      
+      public DynamicOutputStream(int size, int cache)
+      {
+         bufferSize = size;
+         writeBuffer = new ArrayList<byte[]>(cache);
+         for (int i = 0; i < cache; i++)
+         {
+            writeBuffer.add(new byte[size]);
+         }
+         counter = 0;
+         index = 0;
+         readIndex = 0;
+         nextIndex = 1;
+         closed = false;
+      }
+
+      public void write(int b) throws IOException
+      {
+         writeBuffer.get(index)[counter++] = (byte)b;
+         if (counter == bufferSize)
+         {
+            index = nextIndex;
+            nextIndex++;
+            if (index == writeBuffer.size())
+            {
+               writeBuffer.add(new byte[bufferSize]);
+            }
+            counter = 0;
+         }
+      }
+      
+      public void close() throws IOException
+      {
+         closed = true;
+      }
+
+      /*
+       * logic: 
+       * if index > readIndex, return readIndex, then readIndex++
+       * if index == readIndex, then return zero length byte[]. adjust nextIndex; if closed, return the remaining.
+       * if index < readIndex, then return readIndex, readIndex = 0
+       * 
+       * if closed and no more data, returns null.
+       */
+      public byte[] getBuffer()
+      {
+         byte[] result = new byte[0];
+         if (index > readIndex)
+         {
+            result = writeBuffer.get(readIndex);
+            readIndex++;
+         }
+         else if (index == readIndex)
+         {
+            if (closed)
+            {
+               if (counter == 0)
+               {
+                  result = null;
+               }
+               else
+               {
+                  result = new byte[counter];
+                  System.arraycopy(writeBuffer.get(index), 0, result, 0, result.length);
+                  counter = 0;
+               }
+            }
+         }
+         else if (index < readIndex)
+         {
+            result = writeBuffer.get(readIndex);
+            readIndex = 0;
+         }
+         return result;
+      }
+
+   }
+   
+   public static class GZipPipe
+   {
+      private InputStream input;
+      private byte[] readBuffer;
+      private GZIPOutputStream zipOut;
+      private DynamicOutputStream receiver;
+      
+      public GZipPipe(InputStream raw, int size) throws IOException
+      {
+         input = raw;
+         readBuffer = new byte[size];
+         receiver = new DynamicOutputStream(size, 50);
+         zipOut = new GZIPOutputStream(receiver);
+      }
+      
+      public byte[] read() throws IOException
+      {
+         byte[] result = receiver.getBuffer();
+         if (result == null)
+         {
+            return null;
+         }
+         else if (result.length > 0)
+         {
+            return result;
+         }
+         
+         int n = input.read(readBuffer);
+         while (true)
+         {
+            if (n > 0)
+            {
+               zipOut.write(readBuffer, 0, n);
+               result = receiver.getBuffer();
+               if ((result != null) && (result.length > 0))
+               {
+                  break;
+               }
+               n = input.read(readBuffer);
+            }
+            else
+            {
+               zipOut.close();
+               result = receiver.getBuffer();
+               break;
+            }
+         }
+         return result;
+      }
+   }
+
+   public static void main(String[] args) throws HornetQException, IOException
+   {
+      long begin = System.currentTimeMillis();
+/*
+      FileInputStream input = new FileInputStream("/home/howard/tmp/jbm.log.1");
+      FileOutputStream output = new FileOutputStream("/home/howard/tmp/output3.zip");
+      GZIPOutputStream zipOut = new GZIPOutputStream(output);
+      
+      byte[] buffer = new byte[1024];
+      
+      int n = input.read(buffer);
+      
+      int counter = 0;
+      
+      while (n > 0)
+      {
+         zipOut.write(buffer, 0, n);
+         counter += n;
+         n = input.read(buffer);
+      }
+      zipOut.close();
+      
+      System.out.println("----total output: " + counter);
+*/
+
+      FileInputStream input = new FileInputStream("/home/howard/tmp/jbm.log.1");
+      FileOutputStream output = new FileOutputStream("/home/howard/tmp/myzip.zip");
+      GZipPipe pipe = new GZipPipe(input, 2048);
+      
+      byte[] buffer;
+      
+      buffer = pipe.read();
+      
+      while (buffer != null)
+      {
+         //System.out.println("buffer size: " + buffer.length);
+         output.write(buffer);
+         buffer = pipe.read();
+      }
+
+      output.close();
+
+/*
+      FileInputStream input = new FileInputStream("/home/howard/tmp/jbm.log.1");
+      FileOutputStream output = new FileOutputStream("/home/howard/tmp/output.zip");
+      ExecutorService service = Executors.newCachedThreadPool();
+      InputStream result = GZipUtil.pipeGZip(input, true, service);
+      
+      byte[] buffer = new byte[2048];
+      int n = result.read(buffer);
+      System.out.println("got first data");
+      
+      while (n > 0)
+      {
+         output.write(buffer);
+         n = result.read(buffer);
+      }
+*/
+      long end = System.currentTimeMillis();
+      
+      
+      System.out.println("done. time: " + (end - begin));
+   }
 
 }
