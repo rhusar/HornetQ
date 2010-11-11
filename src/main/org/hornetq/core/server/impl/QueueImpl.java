@@ -1272,7 +1272,8 @@ public class QueueImpl implements Queue
       
       if (msgsToDeliver > 0)
       {
-         System.out.println("Depaging " + msgsToDeliver + " messages");
+         //System.out.println("Depaging " + msgsToDeliver + " messages");
+         System.out.println("Depage "  + msgsToDeliver + " now.. there are msgRef = " + messageReferences.size() + " scheduled = " + getScheduledCount() + " concurrentQueue.size() = " + concurrentQueue.size());
    
          int nmessages = 0;
          while (nmessages < msgsToDeliver && pageIterator.hasNext())
@@ -1281,6 +1282,12 @@ public class QueueImpl implements Queue
             addTail(pageIterator.next(), false);
             pageIterator.remove();
          }
+         
+         System.out.println("Depaged " + nmessages);
+      }
+      else
+      {
+         System.out.println("Depaging not being done now.. there are msgRef = " + messageReferences.size() + " scheduled = " + getScheduledCount() + " concurrentQueue.size() = " + concurrentQueue.size());
       }
       
       deliverAsync();

@@ -606,6 +606,16 @@ public class JournalStorageManager implements StorageManager
                                                                               depages));
    }
 
+   public void updatePageTransaction(final PageTransactionInfo pageTransaction, final int depages) throws Exception
+   {
+      messageJournal.appendUpdateRecord(pageTransaction.getRecordID(),
+                                        JournalStorageManager.PAGE_TRANSACTION,
+                                        new PageUpdateTXEncoding(pageTransaction.getTransactionID(),
+                                                                 depages),
+                                        syncNonTransactional,
+                                        getContext(syncNonTransactional));
+   }
+
    public void storeReferenceTransactional(final long txID, final long queueID, final long messageID) throws Exception
    {
       messageJournal.appendUpdateRecordTransactional(txID,

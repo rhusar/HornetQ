@@ -142,6 +142,8 @@ public interface StorageManager extends HornetQComponent
    void storePageTransaction(long txID, PageTransactionInfo pageTransaction) throws Exception;
    
    void updatePageTransaction(long txID, PageTransactionInfo pageTransaction,  int depage) throws Exception;
+   
+   void updatePageTransaction(PageTransactionInfo pageTransaction,  int depage) throws Exception;
 
    void deletePageTransactional(long recordID) throws Exception;
 

@@ -124,6 +124,11 @@ public class RoutingContextImpl implements RoutingContext
       private List<Queue> durableQueue = new ArrayList<Queue>(1);
       
       private List<Queue> nonDurableQueue = new ArrayList<Queue>(1);
+      
+      public int getNumberOfQueues()
+      {
+         return durableQueue.size() + nonDurableQueue.size();
+      }
 
       /* (non-Javadoc)
        * @see org.hornetq.core.server.RouteContextList#getDurableQueues()

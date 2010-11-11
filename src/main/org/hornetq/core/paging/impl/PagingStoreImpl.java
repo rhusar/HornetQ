@@ -14,7 +14,6 @@
 package org.hornetq.core.paging.impl;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +50,8 @@ import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.core.transaction.Transaction;
-import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.Transaction.State;
+import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.ExecutorFactory;
@@ -700,59 +699,6 @@ public class PagingStoreImpl implements TestSupportPageStore
     * @return
     * @throws Exception
     */
-   protected boolean readPage() throws Exception
-   {
-      Page page = depage();
-
-      // It's important that only depage should happen while locked
-      // or we would be holding a lock for a long time
-      // The reading (IO part) should happen outside of any locks
-
-      if (page == null)
-      {
-         return false;
-      }
-
-      page.open();
-
-      List<PagedMessage> messages = null;
-
-      try
-      {
-         messages = page.read();
-      }
-      finally
-      {
-         try
-         {
-            page.close();
-         }
-         catch (Throwable ignored)
-         {
-         }
-      }
-
-      if (onDepage(page.getPageId(), storeName, messages))
-      {
-         if (page.delete())
-         {
-            // DuplicateCache could be null during replication
-            // however the deletes on the journal will happen through replicated journal
-            if (duplicateCache != null)
-            {
-               duplicateCache.deleteFromCache(generateDuplicateID(page.getPageId()));
-            }
-         }
-
-         return true;
-      }
-      else
-      {
-         return false;
-      }
-
-   }
-
    private Queue<OurRunnable> onMemoryFreedRunnables = new ConcurrentLinkedQueue<OurRunnable>();
 
    private class MemoryFreedRunnablesExecutor implements Runnable
@@ -951,7 +897,7 @@ public class PagingStoreImpl implements TestSupportPageStore
          
          Transaction tx = ctx.getTransaction();
 
-         pagedMessage = new PagedMessageImpl(message, getQueueIDs(listCtx), getTransactionID(tx));
+         pagedMessage = new PagedMessageImpl(message, getQueueIDs(listCtx), getTransactionID(tx, listCtx));
 
          int bytesToWrite = pagedMessage.getEncodeSize() + PageImpl.SIZE_RECORD;
 
@@ -991,7 +937,7 @@ public class PagingStoreImpl implements TestSupportPageStore
       return ids;
    }
    
-   private long getTransactionID(Transaction tx) throws Exception
+   private long getTransactionID(final Transaction tx, final RouteContextList listCtx) throws Exception
    {
       if (tx == null)
       {
@@ -999,33 +945,41 @@ public class PagingStoreImpl implements TestSupportPageStore
       }
       else
       {
-         if (tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION) == null)
+         PageTransactionInfo pgTX = (PageTransactionInfo) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+         if (pgTX == null)
          {
-            PageTransactionInfo pgTX = new PageTransactionInfoImpl(tx.getID());
+            pgTX = new PageTransactionInfoImpl(tx.getID());
             System.out.println("Creating pageTransaction " + pgTX.getTransactionID());
-            storageManager.storePageTransaction(tx.getID(), pgTX);
             pagingManager.addTransaction(pgTX);
             tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pgTX);
-            tx.addOperation(new FinishPageMessageOperation());
+            tx.addOperation(new FinishPageMessageOperation(pgTX));
             
             tx.setContainsPersistent();
          }
+         
+         pgTX.increment(listCtx.getNumberOfQueues());
          
          return tx.getID();
       }
    }
 
    
-   private static class FinishPageMessageOperation implements TransactionOperation
+   private class FinishPageMessageOperation implements TransactionOperation
    {
+      private final PageTransactionInfo pageTransaction;
+      
+      private boolean stored = false;
 
+      public FinishPageMessageOperation(final PageTransactionInfo pageTransaction)
+      {
+         this.pageTransaction = pageTransaction;
+      }
+      
       public void afterCommit(final Transaction tx)
       {
          // If part of the transaction goes to the queue, and part goes to paging, we can't let depage start for the
          // transaction until all the messages were added to the queue
          // or else we could deliver the messages out of order
-
-         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 
          if (pageTransaction != null)
          {
@@ -1039,8 +993,6 @@ public class PagingStoreImpl implements TestSupportPageStore
 
       public void afterRollback(final Transaction tx)
       {
-         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
-
          if (tx.getState() == State.PREPARED && pageTransaction != null)
          {
             pageTransaction.rollback();
@@ -1049,10 +1001,21 @@ public class PagingStoreImpl implements TestSupportPageStore
 
       public void beforeCommit(final Transaction tx) throws Exception
       {
+         storePageTX(tx);
       }
 
       public void beforePrepare(final Transaction tx) throws Exception
       {
+         storePageTX(tx);
+      }
+      
+      private void storePageTX(final Transaction tx) throws Exception
+      {
+         if (!stored)
+         {
+            storageManager.storePageTransaction(tx.getID(), pageTransaction);
+            stored = true;
+         }
       }
 
       public void beforeRollback(final Transaction tx) throws Exception
@@ -1067,157 +1030,7 @@ public class PagingStoreImpl implements TestSupportPageStore
     * If persistent messages are also used, it will update eventual PageTransactions
     */
 
-   private boolean onDepage(final int pageId, final SimpleString address, final List<PagedMessage> pagedMessages) throws Exception
-   {
-      if (PagingStoreImpl.isTrace)
-      {
-         PagingStoreImpl.trace("Depaging....");
-      }
-
-      if (pagedMessages.size() == 0)
-      {
-         // nothing to be done on this case.
-         return true;
-      }
-
-      // Depage has to be done atomically, in case of failure it should be
-      // back to where it was
-
-      byte[] duplicateIdForPage = generateDuplicateID(pageId);
-
-      Transaction depageTransaction = new TransactionImpl(storageManager);
-
-      // DuplicateCache could be null during replication
-      if (duplicateCache != null)
-      {
-         if (duplicateCache.contains(duplicateIdForPage))
-         {
-            log.warn("Page " + pageId +
-                     " had been processed already but the file wasn't removed as a crash happened. Ignoring this page");
-            return true;
-         }
-
-         duplicateCache.addToCache(duplicateIdForPage, depageTransaction);
-      }
-
-      depageTransaction.putProperty(TransactionPropertyIndexes.IS_DEPAGE, Boolean.valueOf(true));
-
-      HashMap<PageTransactionInfo, AtomicInteger> pageTransactionsToUpdate = new HashMap<PageTransactionInfo, AtomicInteger>();
-
-      for (PagedMessage pagedMessage : pagedMessages)
-      {
-         ServerMessage message = pagedMessage.getMessage();
-
-         if (message.isLargeMessage())
-         {
-            LargeServerMessage largeMsg = (LargeServerMessage)message;
-            if (!largeMsg.isFileExists())
-            {
-               PagingStoreImpl.log.warn("File for large message " + largeMsg.getMessageID() +
-                                        " doesn't exist, so ignoring depage for this large message");
-               continue;
-            }
-         }
-
-         final long transactionIdDuringPaging = pagedMessage.getTransactionID();
-
-         PageTransactionInfo pageUserTransaction = null;
-         AtomicInteger countPageTX = null;
-
-         if (transactionIdDuringPaging >= 0)
-         {
-            pageUserTransaction = pagingManager.getTransaction(transactionIdDuringPaging);
-
-            if (pageUserTransaction == null)
-            {
-               // This is not supposed to happen
-               PagingStoreImpl.log.warn("Transaction " + pagedMessage.getTransactionID() +
-                                        " used during paging not found");
-               continue;
-            }
-            else
-            {
-               countPageTX = pageTransactionsToUpdate.get(pageUserTransaction);
-               if (countPageTX == null)
-               {
-                  countPageTX = new AtomicInteger();
-                  pageTransactionsToUpdate.put(pageUserTransaction, countPageTX);
-               }
-
-               // This is to avoid a race condition where messages are depaged
-               // before the commit arrived
-
-               while (running)
-               {
-                  // This is just to give us a chance to interrupt the process..
-                  // if we start a shutdown in the middle of transactions, the commit/rollback may never come, delaying
-                  // the shutdown of the server
-                  if (PagingStoreImpl.isTrace)
-                  {
-                     PagingStoreImpl.trace("Waiting pageTransaction to complete");
-                  }
-               }
-
-               if (!running)
-               {
-                  break;
-               }
-
-               if (!pageUserTransaction.isCommit())
-               {
-                  if (PagingStoreImpl.isTrace)
-                  {
-                     PagingStoreImpl.trace("Rollback was called after prepare, ignoring message " + message);
-                  }
-                  continue;
-               }
-            }
-
-         }
-
-         postOffice.route(message, depageTransaction, false);
-
-         // This means the page is duplicated. So we need to ignore this
-         if (depageTransaction.getState() == State.ROLLBACK_ONLY)
-         {
-            break;
-         }
-
-         // Update information about transactions
-         // This needs to be done after routing because of duplication detection
-         if (pageUserTransaction != null && message.isDurable())
-         {
-            countPageTX.incrementAndGet();
-         }
-      }
-
-      if (!running)
-      {
-         depageTransaction.rollback();
-         return false;
-      }
-
-      for (Map.Entry<PageTransactionInfo, AtomicInteger> entry : pageTransactionsToUpdate.entrySet())
-      {
-         // This will set the journal transaction to commit;
-         depageTransaction.setContainsPersistent();
-
-         entry.getKey().storeUpdate(storageManager, this.pagingManager, depageTransaction, entry.getValue().intValue());
-      }
-
-      depageTransaction.commit();
-
-      storageManager.waitOnOperations();
-
-      if (PagingStoreImpl.isTrace)
-      {
-         PagingStoreImpl.trace("Depage committed, running = " + running);
-      }
-
-      return true;
-   }
-
-   /**
+    /**
     * @param pageId
     * @return
     */

@@ -1012,37 +1012,6 @@ public class PagingTest extends ServiceTestBase
                   syncNonTransactional);
          }
 
-         protected boolean page(ServerMessage message, org.hornetq.core.server.RoutingContext ctx,  org.hornetq.core.server.RouteContextList listCtx, boolean sync) throws Exception
-         {
-            boolean paged = super.page(message, ctx, listCtx, sync);
-
-            if (paged)
-            {
-
-               if (countDepage.incrementAndGet() == 1)
-               {
-                  countDepage.set(0);
-
-                  executor.execute(new Runnable()
-                  {
-                     public void run()
-                     {
-                        try
-                        {
-                           while (isStarted() && readPage());
-                        }
-                        catch (Exception e)
-                        {
-                           e.printStackTrace();
-                        }
-                     }
-                  });
-               }
-            }
-
-            return paged;
-         }
-
          public boolean startDepaging()
          {
             // do nothing, we are hacking depage right in between paging
@@ -1306,8 +1275,9 @@ public class PagingTest extends ServiceTestBase
 
          for (int i = 0; i < numberOfMessages; i++)
          {
-            ClientMessage msg = consumer.receive(500000);
+            ClientMessage msg = consumer.receive(5000);
             assertNotNull(msg);
+            System.out.println("Received " + i);
             assertEquals(i, msg.getIntProperty("count").intValue());
             msg.acknowledge();
          }

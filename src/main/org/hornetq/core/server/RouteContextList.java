@@ -24,6 +24,8 @@ import java.util.List;
  */
 public interface RouteContextList
 {
+   
+   int getNumberOfQueues();
 
    List<Queue> getDurableQueues();
    

@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagingStore;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
@@ -164,133 +165,115 @@ public class PageSubscriptionImpl implements PageSubscription
       ack(position);
    }
 
-   class CursorIterator implements LinkedListIterator<PagedReference>
+   public void scheduleCleanupCheck()
    {
-      private PagePosition position = null;
-
-      private PagePosition lastOperation = null;
-
-      private final LinkedListIterator<PagePosition> redeliveryIterator;
-
-      private volatile boolean isredelivery = false;
-      
-      /** next element taken on hasNext test.
-       *  it has to be delivered on next next operation */
-      private volatile PagedReference cachedNext;
-      
-      public CursorIterator()
+      if (autoCleanup)
       {
-         synchronized (redeliveries)
+         executor.execute(new Runnable()
          {
-            redeliveryIterator = redeliveries.iterator();
-         }
-      }
-      
 
-      public void repeat()
-      {
-         if (isredelivery)
-         {
-            synchronized (redeliveries)
+            public void run()
             {
-               redeliveryIterator.repeat();
-            }
-         }
-         else
-         {
-            if (lastOperation == null)
-            {
-               position = null;
-            }
-            else
-            {
-               position = lastOperation;
-            }
-         }
-      }
-
-      /* (non-Javadoc)
-       * @see java.util.Iterator#next()
-       */
-      public synchronized PagedReference next()
-      {
-         
-         if (cachedNext != null)
-         {
-            PagedReference retPos = cachedNext;
-            cachedNext = null;
-            return retPos;
-         }
-         
-         try
-         {
-            synchronized (redeliveries)
-            {
-               if (redeliveryIterator.hasNext())
+               try
                {
-                  // There's a redelivery pending, we will get it out of that pool instead
-                  isredelivery = true;
-                  return getReference(redeliveryIterator.next());
+                  cleanupEntries();
+               }
+               catch (Exception e)
+               {
+                  PageSubscriptionImpl.log.warn("Error on cleaning up cursor pages", e);
+               }
+            }
+         });
+      }
+   }
+
+   /** 
+    * It will cleanup all the records for completed pages
+    * */
+   public void cleanupEntries() throws Exception
+   {
+      Transaction tx = new TransactionImpl(store);
+
+      boolean persist = false;
+
+      final ArrayList<PageCursorInfo> completedPages = new ArrayList<PageCursorInfo>();
+
+      // First get the completed pages using a lock
+      synchronized (this)
+      {
+         for (Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())
+         {
+            PageCursorInfo info = entry.getValue();
+            if (info.isDone() && !info.isPendingDelete() && lastAckedPosition != null)
+            {
+               if (entry.getKey() == lastAckedPosition.getPageNr())
+               {
+                  PageSubscriptionImpl.trace("We can't clear page " + entry.getKey() + " now since it's the current page");
                }
                else
                {
-                  isredelivery = false;
+                  info.setPendingDelete();
+                  completedPages.add(entry.getValue());
                }
             }
-            
-            if (position == null)
+         }
+      }
+
+      for (int i = 0; i < completedPages.size(); i++)
+      {
+         PageCursorInfo info = completedPages.get(i);
+
+         for (PagePosition pos : info.acks)
+         {
+            if (pos.getRecordID() > 0)
             {
-               position = getStartPosition();
+               store.deleteCursorAcknowledgeTransactional(tx.getID(), pos.getRecordID());
+               if (!persist)
+               {
+                  // only need to set it once
+                  tx.setContainsPersistent();
+                  persist = true;
+               }
             }
+         }
+      }
 
-            PagedReference nextPos = moveNext(position);
-            if (nextPos != null)
+      tx.addOperation(new TransactionOperationAbstract()
+      {
+
+         @Override
+         public void afterCommit(final Transaction tx)
+         {
+            executor.execute(new Runnable()
             {
-               lastOperation = position;
-               position = nextPos.getPosition();
-            }
-            return nextPos;
-         }
-         catch (Exception e)
-         {
-            throw new RuntimeException(e.getMessage(), e);
-         }
-      }
 
-      /** QueueImpl::deliver could be calling hasNext while QueueImpl.depage could be using next and hasNext as well. 
-       *  It would be a rare race condition but I would prefer avoiding that scenario */
-      public synchronized boolean hasNext()
-      {
-         // if an unbehaved program called hasNext twice before next, we only cache it once.
-         if (cachedNext != null)
-         {
-            return true;
+               public void run()
+               {
+                  synchronized (PageSubscriptionImpl.this)
+                  {
+                     for (PageCursorInfo completePage : completedPages)
+                     {
+                        if (isTrace)
+                        {
+                           PageSubscriptionImpl.trace("Removing page " + completePage.getPageId());
+                        }
+                        if (consumedPages.remove(completePage.getPageId()) == null)
+                        {
+                           PageSubscriptionImpl.log.warn("Couldn't remove page " + completePage.getPageId() +
+                                                   " from consumed pages on cursor for address " +
+                                                   pageStore.getAddress());
+                        }
+                     }
+                  }
+
+                  cursorProvider.scheduleCleanup();
+               }
+            });
          }
-         
-         if (!pageStore.isPaging())
-         {
-            return false;
-         }
-         
-         cachedNext = next();
+      });
 
-         return cachedNext != null;
-      }
+      tx.commit();
 
-      /* (non-Javadoc)
-       * @see java.util.Iterator#remove()
-       */
-      public void remove()
-      {
-         PageSubscriptionImpl.this.getPageInfo(position).remove(position);
-      }
-
-      /* (non-Javadoc)
-       * @see org.hornetq.utils.LinkedListIterator#close()
-       */
-      public void close()
-      {
-      }
    }
 
    private PagedReference getReference(PagePosition pos) throws Exception
@@ -396,12 +379,41 @@ public class PageSubscriptionImpl implements PageSubscription
       return new PagePositionImpl(pageStore.getFirstPage(), -1);
    }
 
+   public void ackTx(final Transaction tx, final PagePosition position) throws Exception
+   {
+      // if the cursor is persistent
+      if (persistent)
+      {
+         store.storeCursorAcknowledgeTransactional(tx.getID(), cursorId, position);
+      }
+      installTXCallback(tx, position);
+
+   }
+
+
+   public void ackTx(final Transaction tx, final PagedReference reference) throws Exception
+   {
+      ackTx(tx, reference.getPosition());
+      
+      PageTransactionInfo txInfo = getPageTransaction(reference);
+      if (txInfo != null)
+      {
+         txInfo.storeUpdate(store, pageStore.getPagingManager(), tx);
+      }
+   }
+
+
    /* (non-Javadoc)
     * @see org.hornetq.core.paging.cursor.PageCursor#confirm(org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void ack(final PagedReference position) throws Exception
+   public void ack(final PagedReference reference) throws Exception
    {
-      ack(position.getPosition());
+      ack(reference.getPosition());
+      PageTransactionInfo txInfo = getPageTransaction(reference);
+      if (txInfo != null)
+      {
+         txInfo.storeUpdate(this.store, pageStore.getPagingManager());
+      }
    }
    
    public void ack(final PagePosition position) throws Exception
@@ -424,23 +436,6 @@ public class PageSubscriptionImpl implements PageSubscription
             processACK(position);
          }
       });
-   }
-
-   public void ackTx(final Transaction tx, final PagePosition position) throws Exception
-   {
-      // if the cursor is persistent
-      if (persistent)
-      {
-         store.storeCursorAcknowledgeTransactional(tx.getID(), cursorId, position);
-      }
-      installTXCallback(tx, position);
-
-   }
-
-
-   public void ackTx(final Transaction tx, final PagedReference position) throws Exception
-   {
-      ackTx(tx, position.getPosition());
    }
 
    /* (non-Javadoc)
@@ -743,6 +738,18 @@ public class PageSubscriptionImpl implements PageSubscription
       cursorTX.addPositionConfirmation(this, position);
 
    }
+   
+   private PageTransactionInfo getPageTransaction(final PagedReference reference)
+   {
+      if (reference.getPagedMessage().getTransactionID() != 0)
+      {
+         return pageStore.getPagingManager().getTransaction(reference.getPagedMessage().getTransactionID());
+      }
+      else
+      {
+         return null;
+      }
+   }
 
    /**
     *  A callback from the PageCursorInfo. It will be called when all the messages on a page have been acked
@@ -755,118 +762,6 @@ public class PageSubscriptionImpl implements PageSubscription
          scheduleCleanupCheck();
       }
    }
-
-   public void scheduleCleanupCheck()
-   {
-      if (autoCleanup)
-      {
-         executor.execute(new Runnable()
-         {
-
-            public void run()
-            {
-               try
-               {
-                  cleanupEntries();
-               }
-               catch (Exception e)
-               {
-                  PageSubscriptionImpl.log.warn("Error on cleaning up cursor pages", e);
-               }
-            }
-         });
-      }
-   }
-
-   /** 
-    * It will cleanup all the records for completed pages
-    * */
-   public void cleanupEntries() throws Exception
-   {
-      Transaction tx = new TransactionImpl(store);
-
-      boolean persist = false;
-
-      final ArrayList<PageCursorInfo> completedPages = new ArrayList<PageCursorInfo>();
-
-      // First get the completed pages using a lock
-      synchronized (this)
-      {
-         for (Entry<Long, PageCursorInfo> entry : consumedPages.entrySet())
-         {
-            PageCursorInfo info = entry.getValue();
-            if (info.isDone() && !info.isPendingDelete() && lastAckedPosition != null)
-            {
-               if (entry.getKey() == lastAckedPosition.getPageNr())
-               {
-                  PageSubscriptionImpl.trace("We can't clear page " + entry.getKey() + " now since it's the current page");
-               }
-               else
-               {
-                  info.setPendingDelete();
-                  completedPages.add(entry.getValue());
-               }
-            }
-         }
-      }
-
-      for (int i = 0; i < completedPages.size(); i++)
-      {
-         PageCursorInfo info = completedPages.get(i);
-
-         for (PagePosition pos : info.acks)
-         {
-            if (pos.getRecordID() > 0)
-            {
-               store.deleteCursorAcknowledgeTransactional(tx.getID(), pos.getRecordID());
-               if (!persist)
-               {
-                  // only need to set it once
-                  tx.setContainsPersistent();
-                  persist = true;
-               }
-            }
-         }
-      }
-
-      tx.addOperation(new TransactionOperationAbstract()
-      {
-
-         @Override
-         public void afterCommit(final Transaction tx)
-         {
-            executor.execute(new Runnable()
-            {
-
-               public void run()
-               {
-                  synchronized (PageSubscriptionImpl.this)
-                  {
-                     for (PageCursorInfo completePage : completedPages)
-                     {
-                        if (isTrace)
-                        {
-                           PageSubscriptionImpl.trace("Removing page " + completePage.getPageId());
-                        }
-                        if (consumedPages.remove(completePage.getPageId()) == null)
-                        {
-                           PageSubscriptionImpl.log.warn("Couldn't remove page " + completePage.getPageId() +
-                                                   " from consumed pages on cursor for address " +
-                                                   pageStore.getAddress());
-                        }
-                     }
-                  }
-
-                  cursorProvider.scheduleCleanup();
-               }
-            });
-         }
-      });
-
-      tx.commit();
-
-   }
-
    // Inner classes -------------------------------------------------
 
    /** 
@@ -1038,6 +933,137 @@ public class PageSubscriptionImpl implements PageSubscription
 
          }
       }
-
    }
+   
+
+   class CursorIterator implements LinkedListIterator<PagedReference>
+   {
+      private PagePosition position = null;
+
+      private PagePosition lastOperation = null;
+
+      private final LinkedListIterator<PagePosition> redeliveryIterator;
+
+      private volatile boolean isredelivery = false;
+      
+      /** next element taken on hasNext test.
+       *  it has to be delivered on next next operation */
+      private volatile PagedReference cachedNext;
+      
+      public CursorIterator()
+      {
+         synchronized (redeliveries)
+         {
+            redeliveryIterator = redeliveries.iterator();
+         }
+      }
+      
+
+      public void repeat()
+      {
+         if (isredelivery)
+         {
+            synchronized (redeliveries)
+            {
+               redeliveryIterator.repeat();
+            }
+         }
+         else
+         {
+            if (lastOperation == null)
+            {
+               position = null;
+            }
+            else
+            {
+               position = lastOperation;
+            }
+         }
+      }
+
+      /* (non-Javadoc)
+       * @see java.util.Iterator#next()
+       */
+      public synchronized PagedReference next()
+      {
+         
+         if (cachedNext != null)
+         {
+            PagedReference retPos = cachedNext;
+            cachedNext = null;
+            return retPos;
+         }
+         
+         try
+         {
+            synchronized (redeliveries)
+            {
+               if (redeliveryIterator.hasNext())
+               {
+                  // There's a redelivery pending, we will get it out of that pool instead
+                  isredelivery = true;
+                  return getReference(redeliveryIterator.next());
+               }
+               else
+               {
+                  isredelivery = false;
+               }
+            }
+            
+            if (position == null)
+            {
+               position = getStartPosition();
+            }
+
+            PagedReference nextPos = moveNext(position);
+            if (nextPos != null)
+            {
+               lastOperation = position;
+               position = nextPos.getPosition();
+            }
+            return nextPos;
+         }
+         catch (Exception e)
+         {
+            throw new RuntimeException(e.getMessage(), e);
+         }
+      }
+
+      /** QueueImpl::deliver could be calling hasNext while QueueImpl.depage could be using next and hasNext as well. 
+       *  It would be a rare race condition but I would prefer avoiding that scenario */
+      public synchronized boolean hasNext()
+      {
+         // if an unbehaved program called hasNext twice before next, we only cache it once.
+         if (cachedNext != null)
+         {
+            return true;
+         }
+         
+         if (!pageStore.isPaging())
+         {
+            return false;
+         }
+         
+         cachedNext = next();
+
+         return cachedNext != null;
+      }
+
+      /* (non-Javadoc)
+       * @see java.util.Iterator#remove()
+       */
+      public void remove()
+      {
+         PageSubscriptionImpl.this.getPageInfo(position).remove(position);
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.utils.LinkedListIterator#close()
+       */
+      public void close()
+      {
+      }
+   }
+
+   
 }

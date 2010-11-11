@@ -1553,6 +1553,15 @@ public class PagingStoreImplTest extends UnitTestCase
          
       }
 
+      /* (non-Javadoc)
+       * @see org.hornetq.core.persistence.StorageManager#updatePageTransaction(org.hornetq.core.paging.PageTransactionInfo, int)
+       */
+      public void updatePageTransaction(PageTransactionInfo pageTransaction, int depage) throws Exception
+      {
+         // TODO Auto-generated method stub
+         
+      }
+
    }
 
    class FakeStoreFactory implements PagingStoreFactory
