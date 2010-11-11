@@ -176,6 +176,8 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
          tx.addOperation(pgtxUpdate);
       }
       
+      tx.setContainsPersistent();
+      
       pgtxUpdate.addUpdate(this);
    }
    

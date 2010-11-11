@@ -953,8 +953,6 @@ public class PagingStoreImpl implements TestSupportPageStore
             pagingManager.addTransaction(pgTX);
             tx.putProperty(TransactionPropertyIndexes.PAGE_TRANSACTION, pgTX);
             tx.addOperation(new FinishPageMessageOperation(pgTX));
-            
-            tx.setContainsPersistent();
          }
          
          pgTX.increment(listCtx.getNumberOfQueues());
@@ -1013,7 +1011,8 @@ public class PagingStoreImpl implements TestSupportPageStore
       {
          if (!stored)
          {
-            storageManager.storePageTransaction(tx.getID(), pageTransaction);
+            tx.setContainsPersistent();
+            pageTransaction.store(storageManager, pagingManager, tx);
             stored = true;
          }
       }

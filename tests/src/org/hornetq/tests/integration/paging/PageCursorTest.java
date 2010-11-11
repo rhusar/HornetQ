@@ -682,20 +682,15 @@ public class PageCursorTest extends ServiceTestBase
 
       StorageManager storage = this.server.getStorageManager();
 
-      PageTransactionInfoImpl pgtxRollback = new PageTransactionInfoImpl(storage.generateUniqueID());
-      PageTransactionInfoImpl pgtxForgotten = new PageTransactionInfoImpl(storage.generateUniqueID());
-      PageTransactionInfoImpl pgtxCommit = new PageTransactionInfoImpl(storage.generateUniqueID());
+      long pgtxRollback = storage.generateUniqueID();
+      long pgtxForgotten = storage.generateUniqueID();
+      long pgtxCommit = storage.generateUniqueID();
 
-      System.out.println("Forgetting tx " + pgtxForgotten.getTransactionID());
-
-      this.server.getPagingManager().addTransaction(pgtxRollback);
-      this.server.getPagingManager().addTransaction(pgtxCommit);
-
-      pgMessages(storage, pageStore, pgtxRollback, 0, NUM_MESSAGES, messageSize);
+      Transaction txRollback = pgMessages(storage, pageStore, pgtxRollback, 0, NUM_MESSAGES, messageSize);
       pageStore.forceAnotherPage();
-      pgMessages(storage, pageStore, pgtxForgotten, 100, NUM_MESSAGES, messageSize);
+      Transaction txForgotten = pgMessages(storage, pageStore, pgtxForgotten, 100, NUM_MESSAGES, messageSize);
       pageStore.forceAnotherPage();
-      pgMessages(storage, pageStore, pgtxCommit, 200, NUM_MESSAGES, messageSize);
+      Transaction txCommit = pgMessages(storage, pageStore, pgtxCommit, 200, NUM_MESSAGES, messageSize);
       pageStore.forceAnotherPage();
 
       addMessages(300, NUM_MESSAGES, messageSize);
@@ -714,10 +709,12 @@ public class PageCursorTest extends ServiceTestBase
       assertNull(iterator.next());
 
       cursor.printDebug();
-      pgtxRollback.rollback();
+ 
+      txCommit.commit();
 
-      this.server.getPagingManager().removeTransaction(pgtxRollback.getTransactionID());
-      pgtxCommit.commit();
+      txRollback.rollback();
+      
+      storage.waitOnOperations();
 
       // Second:after pgtxCommit was done
       for (int i = 200; i < 300; i++)
@@ -761,11 +758,9 @@ public class PageCursorTest extends ServiceTestBase
 
       StorageManager storage = this.server.getStorageManager();
 
-      PageTransactionInfoImpl txLazy = new PageTransactionInfoImpl(storage.generateUniqueID());
-      
-      server.getPagingManager().addTransaction(txLazy);
+      long pgtxLazy = storage.generateUniqueID();
 
-      pgMessages(storage, pageStore, txLazy, 0, NUM_MESSAGES, messageSize);
+      Transaction txLazy = pgMessages(storage, pageStore, pgtxLazy, 0, NUM_MESSAGES, messageSize);
 
       addMessages(100, NUM_MESSAGES, messageSize);
 
@@ -783,6 +778,8 @@ public class PageCursorTest extends ServiceTestBase
       assertNull(iterator.next());
       
       txLazy.commit();
+      
+      storage.waitOnOperations();
 
       for (int i = 0; i < 100; i++)
       {
@@ -1184,15 +1181,15 @@ public class PageCursorTest extends ServiceTestBase
     * @param messageSize
     * @throws Exception
     */
-   private void pgMessages(StorageManager storage,
+   private Transaction pgMessages(StorageManager storage,
                            PagingStoreImpl pageStore,
-                           PageTransactionInfo pgParameter,
+                           long pgParameter,
                            int start,
                            final int NUM_MESSAGES,
                            final int messageSize) throws Exception
    {
       
-      TransactionImpl txImpl = new TransactionImpl(pgParameter.getTransactionID(), null, null);
+      TransactionImpl txImpl = new TransactionImpl(pgParameter, null, storage);
       
       RoutingContext ctx = generateCTX(txImpl);
 
@@ -1204,6 +1201,8 @@ public class PageCursorTest extends ServiceTestBase
          msg.putIntProperty("key", i);
          pageStore.page(msg, ctx, ctx.getContextListing(ADDRESS));
       }
+      
+      return txImpl;
 
    }
 
