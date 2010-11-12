@@ -144,7 +144,6 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
 
    public synchronized void commit()
    {
-      committed = true;
       if (lateDeliveries != null)
       {
          for (Pair<PageSubscription, PagePosition> pos : lateDeliveries)
@@ -153,6 +152,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
          }
          lateDeliveries.clear();
       }
+      committed = true;
       lateDeliveries = null;
    }
 

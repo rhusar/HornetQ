@@ -296,7 +296,7 @@ public class PageSubscriptionImpl implements PageSubscription
       PagePosition retPos = pos.nextMessage();
 
       PageCache cache = cursorProvider.getPageCache(pos);
-      
+
       if (cache == null)
       {
          return null;
@@ -1014,6 +1014,33 @@ public class PageSubscriptionImpl implements PageSubscription
 
          try
          {
+            if (position == null)
+            {
+               position = getStartPosition();
+            }
+
+            return moveNext();
+         }
+         catch (Exception e)
+         {
+            throw new RuntimeException(e.getMessage(), e);
+         }
+      }
+
+      /* (non-Javadoc)
+       * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
+       */
+      public synchronized PagedReference moveNext() throws Exception
+      {
+         boolean match = false;
+
+         PagedReference message = null;
+
+         PagePosition lastPosition = position;
+         PagePosition tmpPosition = position;
+
+         do
+         {
             synchronized (redeliveries)
             {
                if (redeliveryIterator.hasNext())
@@ -1026,49 +1053,15 @@ public class PageSubscriptionImpl implements PageSubscription
                {
                   isredelivery = false;
                }
+
+               message = internalGetNext(tmpPosition);
             }
-
-            if (position == null)
-            {
-               position = getStartPosition();
-            }
-
-            PagePosition previousPos = position;
-            PagedReference nextPos = moveNext();
-            if (nextPos != null)
-            {
-               lastOperation = previousPos;
-               position = nextPos.getPosition();
-            }
-            return nextPos;
-         }
-         catch (Exception e)
-         {
-            throw new RuntimeException(e.getMessage(), e);
-         }
-      }
-      
-      /* (non-Javadoc)
-       * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
-       */
-      public synchronized PagedReference moveNext() throws Exception
-      {
-         boolean match = false;
-
-         PagedReference message = null;
-
-         PagePosition tmpPosition = position;
-
-         do
-         {
-            message = internalGetNext(tmpPosition);
-            
 
             if (message == null)
             {
                break;
             }
-            
+
             tmpPosition = message.getPosition();
 
             boolean valid = true;
@@ -1079,13 +1072,14 @@ public class PageSubscriptionImpl implements PageSubscription
             // 1st... is it routed?
 
             valid = routed(message.getPagedMessage());
-            if (!valid) ignored = true;
+            if (!valid)
+               ignored = true;
 
             // 2nd ... if TX, is it committed?
             if (valid && message.getPagedMessage().getTransactionID() != 0)
             {
                PageTransactionInfo tx = pageStore.getPagingManager().getTransaction(message.getPagedMessage()
-                                                                                          .getTransactionID());
+                                                                                           .getTransactionID());
                if (tx == null)
                {
                   log.warn("Couldn't locate page transaction " + message.getPagedMessage().getTransactionID() +
@@ -1108,7 +1102,8 @@ public class PageSubscriptionImpl implements PageSubscription
             if (valid)
             {
                // We don't create a PageCursorInfo unless we are doing a write operation (ack or removing)
-               // Say you have a Browser that will only read the files... there's no need to control PageCursors is nothing
+               // Say you have a Browser that will only read the files... there's no need to control PageCursors is
+               // nothing
                // is being changed. That's why the false is passed as a parameter here
                PageCursorInfo info = getPageInfo(message.getPosition(), false);
                if (info != null && info.isRemoved(message.getPosition()))
@@ -1116,7 +1111,7 @@ public class PageSubscriptionImpl implements PageSubscription
                   valid = false;
                }
             }
-            
+
             if (!ignored)
             {
                position = message.getPosition();
@@ -1138,9 +1133,13 @@ public class PageSubscriptionImpl implements PageSubscription
          }
          while (message != null && !match);
 
+         if (message != null)
+         {
+            lastOperation = lastPosition;
+         }
+
          return message;
       }
-
 
       /** QueueImpl::deliver could be calling hasNext while QueueImpl.depage could be using next and hasNext as well. 
        *  It would be a rare race condition but I would prefer avoiding that scenario */

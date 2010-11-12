@@ -922,7 +922,7 @@ public class PagingTest extends ServiceTestBase
                      msg.putIntProperty("count", i);
                      producer.send(msg);
 
-                     if (i % 50 == 0 && i != 0)
+                     if (i % 100 == 0 && i != 0)
                      {
                         sessionProducer.commit();
                         // Thread.sleep(500);
@@ -967,16 +967,16 @@ public class PagingTest extends ServiceTestBase
 
          for (int i = 0; i < numberOfMessages; i++)
          {
-            ClientMessage msg = consumer.receive(500000);
+            ClientMessage msg = consumer.receive(5000);
             assertNotNull(msg);
             assertEquals(i, msg.getIntProperty("count").intValue());
             msg.acknowledge();
             if (i > 0 && i % 10 == 0)
             {
-               // session.commit();
+              session.commit();
             }
          }
-         // session.commit();
+         session.commit();
 
          session.close();
 
