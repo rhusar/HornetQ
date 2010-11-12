@@ -61,7 +61,7 @@ public class HornetQBufferInputStream extends InputStream
       }
       else
       {
-         return bb.readByte();
+         return bb.readByte() & 0xFF;
       }
    }
 

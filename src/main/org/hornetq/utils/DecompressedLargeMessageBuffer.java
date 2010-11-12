@@ -162,7 +162,7 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
          {
             InputStream input = new HornetQBufferInputStream(bufferDelegate);
             
-            dataInput = new DataInputStream(GZipUtil.pipeGZip(input, false, threadPool));
+            dataInput = new DataInputStream(GZipUtil.createUnZipInputStream(input));
          }
          catch (Exception e)
          {

@@ -179,6 +179,18 @@ public class GZipUtil
          throw new HornetQException(HornetQException.LARGE_MESSAGE_ERROR_BODY, e.getMessage(), e);
       }
    }
+   
+   public static InputStream createUnZipInputStream(InputStream input) throws HornetQException
+   {
+      try
+      {
+         return new GZIPInputStream(input);
+      }
+      catch (IOException e)
+      {
+         throw new HornetQException(HornetQException.LARGE_MESSAGE_ERROR_BODY, e.getMessage(), e);
+      }
+   }
 
    /*
     * we keep a list of byte arrays. when writing, we start with the first array.
