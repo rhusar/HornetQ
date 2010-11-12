@@ -2697,6 +2697,7 @@ public class LargeMessageTest extends LargeMessageTestBase
          server.start();
 
          ClientSessionFactory sf = createFactory(isNetty());
+         sf.setCompressLargeMessages(true);
 
          session = sf.createSession(false, false, false);
 
@@ -2714,20 +2715,21 @@ public class LargeMessageTest extends LargeMessageTestBase
 
          ClientConsumer consumer = session.createConsumer(LargeMessageTest.ADDRESS);
          ClientMessage msg1 = consumer.receive(1000);
+         Assert.assertNotNull(msg1);
+         
+         for (int i = 0 ; i < messageSize; i++)
+         {
+            //System.out.print(msg1.getBodyBuffer().readByte() + "  ");
+            //if (i % 100 == 0) System.out.println();
+            byte b = msg1.getBodyBuffer().readByte();
+            //System.out.println("Byte read: " + (char)b + " i " + i);
+            assertEquals("position = "  + i, getSamplebyte(i), b);
+         }
+
          msg1.acknowledge();
          session.commit();
-         Assert.assertNotNull(msg1);
 
          consumer.close();
-
-         try
-         {
-            msg1.getBodyBuffer().readByte();
-            Assert.fail("Exception was expected");
-         }
-         catch (Throwable ignored)
-         {
-         }
 
          session.close();
 
