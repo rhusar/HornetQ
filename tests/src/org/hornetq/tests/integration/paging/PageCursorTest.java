@@ -26,7 +26,6 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.filter.Filter;
-import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.cursor.PageCache;
 import org.hornetq.core.paging.cursor.PageCursorProvider;
@@ -36,7 +35,6 @@ import org.hornetq.core.paging.cursor.PagedReference;
 import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.paging.cursor.impl.PagePositionImpl;
 import org.hornetq.core.paging.cursor.impl.PageSubscriptionImpl;
-import org.hornetq.core.paging.impl.PageTransactionInfoImpl;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
@@ -55,7 +53,7 @@ import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.utils.LinkedListIterator;
 
 /**
- * A PageCacheTest
+ * A PageCursorTest
  *
  * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
@@ -726,10 +724,18 @@ public class PageCursorTest extends ServiceTestBase
       }
 
       assertNull(iterator.next());
+      
+      server.getStorageManager().waitOnOperations();
 
       server.stop();
       createServer();
-      waitCleanup();
+
+      long timeout = System.currentTimeMillis() + 10000;
+
+      while (System.currentTimeMillis() < timeout && lookupPageStore(ADDRESS).getNumberOfPages() != 1)
+      {
+         Thread.sleep(500);
+      }
       assertEquals(1, lookupPageStore(ADDRESS).getNumberOfPages());
 
    }

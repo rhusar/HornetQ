@@ -54,8 +54,6 @@ public interface PageCursorProvider
    
    PageSubscription createSubscription(long queueId, Filter filter, boolean durable);
    
-   PagedReference getNext(PageSubscription cursor, PagePosition pos) throws Exception;
-   
    PagedMessage getMessage(PagePosition pos) throws Exception;
 
    void processReload() throws Exception;

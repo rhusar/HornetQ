@@ -22,7 +22,6 @@ import java.util.concurrent.Executor;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.paging.Page;
-import org.hornetq.core.paging.PageTransactionInfo;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
@@ -33,7 +32,6 @@ import org.hornetq.core.paging.cursor.PageSubscription;
 import org.hornetq.core.paging.cursor.PagedReference;
 import org.hornetq.core.paging.cursor.PagedReferenceImpl;
 import org.hornetq.core.persistence.StorageManager;
-import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.SoftValueHashMap;
@@ -59,8 +57,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
 
    private final PagingStore pagingStore;
 
-   private final PagingManager pagingManager;
-
    private final StorageManager storageManager;
 
    private final ExecutorFactory executorFactory;
@@ -80,7 +76,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
                                  final ExecutorFactory executorFactory)
    {
       this.pagingStore = pagingStore;
-      this.pagingManager = pagingStore.getPagingManager();
       this.storageManager = storageManager;
       this.executorFactory = executorFactory;
       this.executor = executorFactory.getExecutor();
@@ -118,104 +113,6 @@ public class PageCursorProviderImpl implements PageCursorProvider
    public synchronized PageSubscription getSubscription(long cursorID)
    {
       return activeCursors.get(cursorID);
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.paging.cursor.PageCursorProvider#getAfter(org.hornetq.core.paging.cursor.PagePosition)
-    */
-   public PagedReference getNext(final PageSubscription cursor, PagePosition cursorPos) throws Exception
-   {
-
-      while (true)
-      {
-         PagedReference retPos = internalGetNext(cursorPos, cursor);
-
-         if (retPos == null)
-         {
-            return null;
-         }
-         else if (retPos != null)
-         {
-            cursorPos = retPos.getPosition();
-            
-            if (!routed(retPos.getPagedMessage(), cursor))
-            {
-               cursor.positionIgnored(cursorPos);
-            }
-            else
-            if (retPos.getPagedMessage().getTransactionID() != 0)
-            {
-               PageTransactionInfo tx = pagingManager.getTransaction(retPos.getPagedMessage().getTransactionID());
-               if (tx == null)
-               {
-                  log.warn("Couldn't locate page transaction " + retPos.getPagedMessage().getTransactionID() +
-                           ", ignoring message on position " +
-                           retPos.getPosition());
-                  cursor.positionIgnored(cursorPos);
-               }
-               else
-               {
-                  if (!tx.deliverAfterCommit(cursor, cursorPos))
-                  {
-                     return retPos;
-                  }
-               }
-            }
-            else
-            {
-               return retPos;
-            }
-         }
-      }
-   }
-   
-   private boolean routed(PagedMessage message, PageSubscription subs)
-   {
-      long id = subs.getId();
-      
-      for (long qid : message.getQueueIDs())
-      {
-         if (qid == id)
-         {
-            return true;
-         }
-      }
-      return false;
-   }
-
-   private PagedReference internalGetNext(final PagePosition pos, final PageSubscription sub)
-   {
-      PagePosition retPos = pos.nextMessage();
-
-      PageCache cache = getPageCache(pos);
-
-      if (!cache.isLive() && retPos.getMessageNr() >= cache.getNumberOfMessages())
-      {
-         retPos = pos.nextPage();
-
-         cache = getPageCache(retPos);
-
-         if (cache == null)
-         {
-            return null;
-         }
-
-         if (retPos.getMessageNr() >= cache.getNumberOfMessages())
-         {
-            return null;
-         }
-      }
-
-      PagedMessage serverMessage = cache.getMessage(retPos.getMessageNr());
-
-      if (serverMessage != null)
-      {
-         return newReference(retPos, serverMessage, sub);
-      }
-      else
-      {
-         return null;
-      }
    }
 
    public PagedMessage getMessage(final PagePosition pos) throws Exception
