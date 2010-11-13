@@ -467,7 +467,7 @@ public class PagingTest extends ServiceTestBase
 
       UnitTestCase.assertEqualsByteArrays(body, other);
    }
-
+   
    /**
     * - Make a destination in page mode
     * - Add stuff to a transaction
@@ -998,7 +998,7 @@ public class PagingTest extends ServiceTestBase
    }
 
    // This test will force a depage thread as soon as the first message hits the page
-   public void testDepageOnTX5() throws Exception
+   public void testDepageDuringTransaction5() throws Exception
    {
       clearData();
 
