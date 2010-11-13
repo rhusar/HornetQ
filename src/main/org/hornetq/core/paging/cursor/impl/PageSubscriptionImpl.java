@@ -209,8 +209,8 @@ public class PageSubscriptionImpl implements PageSubscription
             {
                if (entry.getKey() == lastAckedPosition.getPageNr())
                {
-                  PageSubscriptionImpl.trace("We can't clear page " + entry.getKey() +
-                                             " now since it's the current page");
+                  // PageSubscriptionImpl.trace("We can't clear page " + entry.getKey() +
+                  // " now since it's the current page");
                }
                else
                {
@@ -1030,115 +1030,120 @@ public class PageSubscriptionImpl implements PageSubscription
       /* (non-Javadoc)
        * @see org.hornetq.core.paging.cursor.PageCursor#moveNext()
        */
-      public synchronized PagedReference moveNext() throws Exception
+      public PagedReference moveNext() throws Exception
       {
-         boolean match = false;
-
-         PagedReference message = null;
-
-         PagePosition lastPosition = position;
-         PagePosition tmpPosition = position;
-
-         do
+         synchronized (PageSubscriptionImpl.this)
          {
-            synchronized (redeliveries)
+            boolean match = false;
+
+            PagedReference message = null;
+
+            PagePosition lastPosition = position;
+            PagePosition tmpPosition = position;
+
+            do
             {
-               if (redeliveryIterator.hasNext())
+               synchronized (redeliveries)
                {
-                  // There's a redelivery pending, we will get it out of that pool instead
-                  isredelivery = true;
-                  return getReference(redeliveryIterator.next());
-               }
-               else
-               {
-                  isredelivery = false;
-               }
-
-               message = internalGetNext(tmpPosition);
-            }
-
-            if (message == null)
-            {
-               break;
-            }
-
-            tmpPosition = message.getPosition();
-
-            boolean valid = true;
-            boolean ignored = false;
-
-            // Validate the scenarios where the message should be considered not valid even to be considered
-
-            // 1st... is it routed?
-
-            valid = routed(message.getPagedMessage());
-            if (!valid)
-               ignored = true;
-
-            // 2nd ... if TX, is it committed?
-            if (valid && message.getPagedMessage().getTransactionID() != 0)
-            {
-               PageTransactionInfo tx = pageStore.getPagingManager().getTransaction(message.getPagedMessage()
-                                                                                           .getTransactionID());
-               if (tx == null)
-               {
-                  log.warn("Couldn't locate page transaction " + message.getPagedMessage().getTransactionID() +
-                           ", ignoring message on position " +
-                           message.getPosition());
-                  valid = false;
-                  ignored = true;
-               }
-               else
-               {
-                  if (tx.deliverAfterCommit(PageSubscriptionImpl.this, message.getPosition()))
+                  if (redeliveryIterator.hasNext())
                   {
+                     // There's a redelivery pending, we will get it out of that pool instead
+                     isredelivery = true;
+                     PagedReference redeliveredMsg = getReference(redeliveryIterator.next());
+
+                     return redeliveredMsg;
+                  }
+                  else
+                  {
+                     isredelivery = false;
+                  }
+
+                  message = internalGetNext(tmpPosition);
+               }
+
+               if (message == null)
+               {
+                  break;
+               }
+
+               tmpPosition = message.getPosition();
+
+               boolean valid = true;
+               boolean ignored = false;
+
+               // Validate the scenarios where the message should be considered not valid even to be considered
+
+               // 1st... is it routed?
+
+               valid = routed(message.getPagedMessage());
+               if (!valid)
+                  ignored = true;
+
+               // 2nd ... if TX, is it committed?
+               if (valid && message.getPagedMessage().getTransactionID() != 0)
+               {
+                  PageTransactionInfo tx = pageStore.getPagingManager().getTransaction(message.getPagedMessage()
+                                                                                              .getTransactionID());
+                  if (tx == null)
+                  {
+                     log.warn("Couldn't locate page transaction " + message.getPagedMessage().getTransactionID() +
+                              ", ignoring message on position " +
+                              message.getPosition());
                      valid = false;
-                     ignored = false;
+                     ignored = true;
+                  }
+                  else
+                  {
+                     if (tx.deliverAfterCommit(PageSubscriptionImpl.this, message.getPosition()))
+                     {
+                        valid = false;
+                        ignored = false;
+                     }
                   }
                }
-            }
 
-            // 3rd... was it previously removed?
-            if (valid)
-            {
-               // We don't create a PageCursorInfo unless we are doing a write operation (ack or removing)
-               // Say you have a Browser that will only read the files... there's no need to control PageCursors is
-               // nothing
-               // is being changed. That's why the false is passed as a parameter here
-               PageCursorInfo info = getPageInfo(message.getPosition(), false);
-               if (info != null && info.isRemoved(message.getPosition()))
+               // 3rd... was it previously removed?
+               if (valid)
                {
-                  valid = false;
+                  // We don't create a PageCursorInfo unless we are doing a write operation (ack or removing)
+                  // Say you have a Browser that will only read the files... there's no need to control PageCursors is
+                  // nothing
+                  // is being changed. That's why the false is passed as a parameter here
+                  PageCursorInfo info = getPageInfo(message.getPosition(), false);
+                  if (info != null && info.isRemoved(message.getPosition()))
+                  {
+                     valid = false;
+                  }
+               }
+
+               if (!ignored)
+               {
+                  position = message.getPosition();
+               }
+
+               if (valid)
+               {
+                  match = match(message.getMessage());
+
+                  if (!match)
+                  {
+                     processACK(message.getPosition());
+                  }
+               }
+               else if (ignored)
+               {
+                  positionIgnored(message.getPosition());
                }
             }
+            while (message != null && !match);
 
-            if (!ignored)
+            if (message != null)
             {
-               position = message.getPosition();
+               lastOperation = lastPosition;
             }
 
-            if (valid)
-            {
-               match = match(message.getMessage());
-
-               if (!match)
-               {
-                  processACK(message.getPosition());
-               }
-            }
-            else if (ignored)
-            {
-               positionIgnored(message.getPosition());
-            }
+            return message;
          }
-         while (message != null && !match);
-
-         if (message != null)
-         {
-            lastOperation = lastPosition;
-         }
-
-         return message;
       }
 
       /** QueueImpl::deliver could be calling hasNext while QueueImpl.depage could be using next and hasNext as well. 

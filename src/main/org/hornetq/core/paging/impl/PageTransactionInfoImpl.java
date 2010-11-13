@@ -51,6 +51,8 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
    private volatile long recordID = -1;
 
    private volatile boolean committed = false;
+   
+   private volatile boolean useRedelivery = false;
 
    private volatile boolean rolledback = false;
 
@@ -237,6 +239,12 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
     */
    public synchronized boolean deliverAfterCommit(PageSubscription cursor, PagePosition cursorPos)
    {
+      if (committed && useRedelivery)
+      {
+         cursor.redeliver(cursorPos);
+         return true;
+      }
+      else
       if (committed)
       {
          return false;
@@ -249,6 +257,7 @@ public class PageTransactionInfoImpl implements PageTransactionInfo
       }
       else
       {
+         useRedelivery = true;
          if (lateDeliveries == null)
          {
             lateDeliveries = new LinkedList<Pair<PageSubscription, PagePosition>>();
