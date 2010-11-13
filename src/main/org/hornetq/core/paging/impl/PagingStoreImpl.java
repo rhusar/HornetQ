@@ -14,9 +14,7 @@
 package org.hornetq.core.paging.impl;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
@@ -43,7 +41,6 @@ import org.hornetq.core.paging.cursor.impl.PageCursorProviderImpl;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
-import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.RouteContextList;
 import org.hornetq.core.server.RoutingContext;
 import org.hornetq.core.server.ServerMessage;
@@ -53,7 +50,6 @@ import org.hornetq.core.transaction.Transaction;
 import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
-import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Future;
 
@@ -1049,19 +1045,14 @@ public class PagingStoreImpl implements TestSupportPageStore
       {
          numberOfPages++;
 
-         currentPageId++;
-
-         if (currentPageId < firstPageId)
-         {
-            firstPageId = currentPageId;
-         }
+         int tmpCurrentPageId = currentPageId + 1;
 
          if (currentPage != null)
          {
             currentPage.close();
          }
 
-         currentPage = createPage(currentPageId);
+         currentPage = createPage(tmpCurrentPageId);
 
          LivePageCache pageCache = new LivePageCacheImpl(currentPage);
 
@@ -1072,6 +1063,13 @@ public class PagingStoreImpl implements TestSupportPageStore
          currentPageSize.set(0);
 
          currentPage.open();
+
+         currentPageId = tmpCurrentPageId;
+
+         if (currentPageId < firstPageId)
+         {
+            firstPageId = currentPageId;
+         }
       }
       finally
       {

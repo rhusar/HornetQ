@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +49,6 @@ import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
 import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.Future;
-import org.hornetq.utils.LinkedListImpl;
 import org.hornetq.utils.LinkedListIterator;
 
 /**
@@ -99,7 +99,7 @@ public class PageSubscriptionImpl implements PageSubscription
    private final SortedMap<Long, PageCursorInfo> consumedPages = Collections.synchronizedSortedMap(new TreeMap<Long, PageCursorInfo>());
 
    // We only store the position for redeliveries. They will be read from the SoftCache again during delivery.
-   private final org.hornetq.utils.LinkedList<PagePosition> redeliveries = new LinkedListImpl<PagePosition>();
+   private final ConcurrentLinkedQueue<PagePosition> redeliveries = new ConcurrentLinkedQueue<PagePosition>();
 
    // Static --------------------------------------------------------
 
@@ -464,7 +464,7 @@ public class PageSubscriptionImpl implements PageSubscription
    {
       synchronized (redeliveries)
       {
-         redeliveries.addTail(position);
+         redeliveries.add(position);
       }
    }
 
@@ -961,9 +961,9 @@ public class PageSubscriptionImpl implements PageSubscription
 
       private PagePosition lastOperation = null;
 
-      private final LinkedListIterator<PagePosition> redeliveryIterator;
-
       private volatile boolean isredelivery = false;
+
+      private volatile PagedReference lastRedelivery = null;
 
       /** next element taken on hasNext test.
        *  it has to be delivered on next next operation */
@@ -971,10 +971,6 @@ public class PageSubscriptionImpl implements PageSubscription
 
       public CursorIterator()
       {
-         synchronized (redeliveries)
-         {
-            redeliveryIterator = redeliveries.iterator();
-         }
       }
 
       public void repeat()
@@ -983,7 +979,7 @@ public class PageSubscriptionImpl implements PageSubscription
          {
             synchronized (redeliveries)
             {
-               redeliveryIterator.repeat();
+               cachedNext = lastRedelivery;
             }
          }
          else
@@ -1045,16 +1041,20 @@ public class PageSubscriptionImpl implements PageSubscription
             {
                synchronized (redeliveries)
                {
-                  if (redeliveryIterator.hasNext())
+                  PagePosition redelivery = redeliveries.poll();
+
+                  if (redelivery != null)
                   {
                      // There's a redelivery pending, we will get it out of that pool instead
                      isredelivery = true;
-                     PagedReference redeliveredMsg = getReference(redeliveryIterator.next());
+                     PagedReference redeliveredMsg = getReference(redelivery);
+                     lastRedelivery = redeliveredMsg;
 
                      return redeliveredMsg;
                   }
                   else
                   {
+                     lastRedelivery = null;
                      isredelivery = false;
                   }
 
@@ -1077,7 +1077,9 @@ public class PageSubscriptionImpl implements PageSubscription
 
                valid = routed(message.getPagedMessage());
                if (!valid)
+               {
                   ignored = true;
+               }
 
                // 2nd ... if TX, is it committed?
                if (valid && message.getPagedMessage().getTransactionID() != 0)
@@ -1171,7 +1173,10 @@ public class PageSubscriptionImpl implements PageSubscription
        */
       public void remove()
       {
-         PageSubscriptionImpl.this.getPageInfo(position).remove(position);
+         if (!isredelivery)
+         {
+            PageSubscriptionImpl.this.getPageInfo(position).remove(position);
+         }
       }
 
       /* (non-Javadoc)

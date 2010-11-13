@@ -966,7 +966,7 @@ public class PagingTest extends ServiceTestBase
          ClientConsumer consumer = session.createConsumer(PagingTest.ADDRESS);
 
          for (int i = 0; i < numberOfMessages; i++)
-         {
+         {  
             ClientMessage msg = consumer.receive(5000);
             assertNotNull(msg);
             assertEquals(i, msg.getIntProperty("count").intValue());
