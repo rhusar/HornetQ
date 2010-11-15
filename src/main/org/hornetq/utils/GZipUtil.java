@@ -16,7 +16,6 @@ package org.hornetq.utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -373,7 +372,7 @@ public class GZipUtil
       
       System.out.println("----total output: " + counter);
 */
-      unzip();
+      zip();
 /*
       FileInputStream input = new FileInputStream("/home/howard/tmp/jbm.log.1");
       FileOutputStream output = new FileOutputStream("/home/howard/tmp/output.zip");
