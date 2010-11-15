@@ -1316,7 +1316,8 @@ public class QueueImpl implements Queue
    {
       ServerMessage message = reference.getMessage();
 
-      if (message.isDurable() && durable)
+      // TODO: DeliveryCount on paging
+      if (message.isDurable() && durable && !reference.isPaged())
       {
          storageManager.updateDeliveryCount(reference);
       }
