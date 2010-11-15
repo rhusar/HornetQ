@@ -654,6 +654,7 @@ public class PagingStoreImpl implements TestSupportPageStore
                // The current page is empty... which means we reached the end of the pages
                if (returnPage.getNumberOfMessages() == 0)
                {
+                  stopPaging();
                   returnPage.open();
                   returnPage.delete();
 

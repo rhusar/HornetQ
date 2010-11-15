@@ -222,7 +222,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       storeImpl.start();
 
-      Assert.assertEquals(2, storeImpl.getNumberOfPages());
+      Assert.assertEquals(1, storeImpl.getNumberOfPages());
 
    }
 
@@ -358,6 +358,8 @@ public class PagingStoreImplTest extends UnitTestCase
       for (int pageNr = 0; pageNr < 2; pageNr++)
       {
          Page page = storeImpl.depage();
+         
+         System.out.println("numberOfPages = " + storeImpl.getNumberOfPages());
 
          page.open();
 
@@ -370,9 +372,7 @@ public class PagingStoreImplTest extends UnitTestCase
          for (int i = 0; i < 5; i++)
          {
             Assert.assertEquals(sequence++, msg.get(i).getMessage().getMessageID());
-            UnitTestCase.assertEqualsBuffers(18, buffers.get(pageNr * 5 + i), msg.get(i)
-                                                                                 .getMessage()
-                                                                                 .getBodyBuffer());
+            UnitTestCase.assertEqualsBuffers(18, buffers.get(pageNr * 5 + i), msg.get(i).getMessage().getBodyBuffer());
          }
       }
 
@@ -644,6 +644,8 @@ public class PagingStoreImplTest extends UnitTestCase
 
       long lastMessageId = messageIdGenerator.incrementAndGet();
       ServerMessage lastMsg = createMessage(lastMessageId, storeImpl, destination, createRandomBuffer(lastMessageId, 5));
+      
+      storeImpl2.forceAnotherPage();
 
       storeImpl2.page(lastMsg, new RoutingContextImpl(null));
       buffers2.put(lastMessageId, lastMsg);
@@ -689,6 +691,46 @@ public class PagingStoreImplTest extends UnitTestCase
       Assert.assertEquals(0, buffers2.size());
 
       Assert.assertEquals(0, storeImpl.getAddressSize());
+   }
+
+   public void testRestartPage() throws Throwable
+   {
+      clearData();
+      SequentialFileFactory factory = new NIOSequentialFileFactory(this.getPageDir());
+
+      PagingStoreFactory storeFactory = new FakeStoreFactory(factory);
+
+      final int MAX_SIZE = 1024 * 10;
+
+      AddressSettings settings = new AddressSettings();
+      settings.setPageSizeBytes(MAX_SIZE);
+      settings.setAddressFullMessagePolicy(AddressFullMessagePolicy.PAGE);
+
+      final TestSupportPageStore storeImpl = new PagingStoreImpl(PagingStoreImplTest.destinationTestName,
+                                                                 createMockManager(),
+                                                                 createStorageManagerMock(),
+                                                                 createPostOfficeMock(),
+                                                                 factory,
+                                                                 storeFactory,
+                                                                 new SimpleString("test"),
+                                                                 settings,
+                                                                 getExecutorFactory(),
+                                                                 true);
+
+      storeImpl.start();
+
+      Assert.assertEquals(0, storeImpl.getNumberOfPages());
+
+      // Marked the store to be paged
+      storeImpl.startPaging();
+
+      storeImpl.depage();
+
+      assertNull(storeImpl.getCurrentPage());
+
+      storeImpl.startPaging();
+
+      assertNotNull(storeImpl.getCurrentPage());
    }
 
    public void testOrderOnPaging() throws Throwable
@@ -794,7 +836,7 @@ public class PagingStoreImplTest extends UnitTestCase
                   {
                      page.open();
                      List<PagedMessage> messages = page.read();
- 
+
                      for (PagedMessage pgmsg : messages)
                      {
                         ServerMessage msg = pgmsg.getMessage();
@@ -803,13 +845,13 @@ public class PagingStoreImplTest extends UnitTestCase
 
                         assertEquals(msg.getMessageID(), msg.getLongProperty("count").longValue());
                      }
- 
+
                      page.close();
                      page.delete();
                   }
                   else
                   {
-                     System.out.println("Depaged!!!!");
+                     System.out.println("Depaged!!!! numerOfMessages = " + msgsRead + " of " + NUMBER_OF_MESSAGES);
                      Thread.sleep(500);
                   }
                }
@@ -833,7 +875,7 @@ public class PagingStoreImplTest extends UnitTestCase
 
       storeImpl.stop();
 
-      for (Throwable e: errors)
+      for (Throwable e : errors)
       {
          throw e;
       }
@@ -856,15 +898,15 @@ public class PagingStoreImplTest extends UnitTestCase
    {
       return new FakePostOffice();
    }
-   
+
    private ExecutorFactory getExecutorFactory()
    {
       return new ExecutorFactory()
       {
-         
+
          public Executor getExecutor()
          {
-             return executor;
+            return executor;
          }
       };
    }
@@ -1047,7 +1089,7 @@ public class PagingStoreImplTest extends UnitTestCase
       public void processReload()
       {
          // TODO Auto-generated method stub
-         
+
       }
 
    }
@@ -1532,7 +1574,7 @@ public class PagingStoreImplTest extends UnitTestCase
       public void storeCursorAcknowledge(long queueID, PagePosition position)
       {
          // TODO Auto-generated method stub
-         
+
       }
 
       /* (non-Javadoc)
@@ -1541,7 +1583,7 @@ public class PagingStoreImplTest extends UnitTestCase
       public void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position)
       {
          // TODO Auto-generated method stub
-         
+
       }
 
       /* (non-Javadoc)
@@ -1550,7 +1592,7 @@ public class PagingStoreImplTest extends UnitTestCase
       public void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception
       {
          // TODO Auto-generated method stub
-         
+
       }
 
       /* (non-Javadoc)
@@ -1559,7 +1601,7 @@ public class PagingStoreImplTest extends UnitTestCase
       public void updatePageTransaction(PageTransactionInfo pageTransaction, int depage) throws Exception
       {
          // TODO Auto-generated method stub
-         
+
       }
 
    }
