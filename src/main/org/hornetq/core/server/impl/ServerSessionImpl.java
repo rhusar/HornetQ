@@ -485,7 +485,7 @@ public class ServerSessionImpl implements ServerSession , FailureListener
       return response;
    }
 
-   public BindingQueryResult executeBindingQuery(final SimpleString address)
+   public BindingQueryResult executeBindingQuery(final SimpleString address) throws Exception
    {
       if (address == null)
       {

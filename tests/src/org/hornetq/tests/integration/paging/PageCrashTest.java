@@ -18,7 +18,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import junit.framework.Assert;
@@ -34,6 +33,7 @@ import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
 import org.hornetq.core.paging.PagingManager;
 import org.hornetq.core.paging.PagingStore;
+import org.hornetq.core.paging.cursor.LivePageCache;
 import org.hornetq.core.paging.impl.PagingManagerImpl;
 import org.hornetq.core.paging.impl.PagingStoreFactoryNIO;
 import org.hornetq.core.paging.impl.PagingStoreImpl;
@@ -43,6 +43,7 @@ import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
 import org.hornetq.spi.core.security.HornetQSecurityManagerImpl;
 import org.hornetq.tests.util.ServiceTestBase;
+import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.OrderedExecutorFactory;
 
 /**
@@ -286,13 +287,21 @@ public class PageCrashTest extends ServiceTestBase
          // Public --------------------------------------------------------
 
          @Override
-         public synchronized PagingStore newStore(final SimpleString destinationName, final AddressSettings settings) throws Exception
+         public synchronized PagingStore newStore(final SimpleString destinationName, final AddressSettings settings)
          {
-            Field factoryField = PagingStoreFactoryNIO.class.getDeclaredField("executorFactory");
-            factoryField.setAccessible(true);
-
-            OrderedExecutorFactory factory = (org.hornetq.utils.OrderedExecutorFactory)factoryField.get(this);
-            return new FailingPagingStore(destinationName, settings, factory.getExecutor(), syncNonTransactional);
+            try
+            {
+               Field factoryField = PagingStoreFactoryNIO.class.getDeclaredField("executorFactory");
+               factoryField.setAccessible(true);
+   
+               OrderedExecutorFactory factory = (org.hornetq.utils.OrderedExecutorFactory)factoryField.get(this);
+               return new FailingPagingStore(destinationName, settings, factory, syncNonTransactional);
+            }
+            catch (Exception e)
+            {
+               e.printStackTrace();// >> junit report
+               return null;
+            }
          }
 
          // Package protected ---------------------------------------------
@@ -312,7 +321,7 @@ public class PageCrashTest extends ServiceTestBase
              */
             public FailingPagingStore(final SimpleString storeName,
                                       final AddressSettings addressSettings,
-                                      final Executor executor,
+                                      final ExecutorFactory executor,
                                       final boolean syncNonTransactional)
             {
                super(storeName,
@@ -432,6 +441,13 @@ public class PageCrashTest extends ServiceTestBase
          public FailingPage(final Page delegatePage)
          {
             delegatedPage = delegatePage;
+         }
+
+         /* (non-Javadoc)
+          * @see org.hornetq.core.paging.Page#setLiveCache(org.hornetq.core.paging.cursor.LivePageCache)
+          */
+         public void setLiveCache(LivePageCache pageCache)
+         {
          }
       }
 
