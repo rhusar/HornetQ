@@ -57,16 +57,13 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    final LargeMessageBufferInternal bufferDelegate;
    
-   final Executor threadPool;
-   
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public DecompressedLargeMessageBuffer(final LargeMessageBufferInternal bufferDelegate, final Executor threadPool)
+   public DecompressedLargeMessageBuffer(final LargeMessageBufferInternal bufferDelegate, Executor executor)
    {
       this.bufferDelegate = bufferDelegate;
-      this.threadPool = threadPool;
    }
 
 
@@ -101,21 +98,7 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    public void setOutputStream(final OutputStream output) throws HornetQException
    {
-      try
-      {
-         PipedOutputStream pipeOut = new PipedOutputStream();
-         PipedInputStream pipeIn = new PipedInputStream();
-         
-         pipeOut.connect(pipeIn);
-         
-         GZipUtil.pipeGZip(pipeIn, false, threadPool);
-         
-         bufferDelegate.setOutputStream(pipeOut);
-      }
-      catch (IOException e)
-      {
-         throw new HornetQException(HornetQException.LARGE_MESSAGE_ERROR_BODY, e.getMessage(), e);
-      }
+      bufferDelegate.setOutputStream(GZipUtil.createZipOutputStream(output));
    }
 
    public synchronized void saveBuffer(final OutputStream output) throws HornetQException

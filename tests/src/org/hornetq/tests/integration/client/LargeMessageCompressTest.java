@@ -13,6 +13,9 @@
 
 package org.hornetq.tests.integration.client;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 
 import javax.transaction.xa.XAResource;
@@ -2634,10 +2637,7 @@ public class LargeMessageCompressTest extends LargeMessageTestBase
          
          for (int i = 0 ; i < messageSize; i++)
          {
-            //System.out.print(msg1.getBodyBuffer().readByte() + "  ");
-            //if (i % 100 == 0) System.out.println();
             byte b = msg1.getBodyBuffer().readByte();
-            //System.out.println("Byte read: " + (char)b + " i " + i);
             assertEquals("position = "  + i, getSamplebyte(i), b);
          }
 
@@ -2648,6 +2648,91 @@ public class LargeMessageCompressTest extends LargeMessageTestBase
 
          session.close();
 
+         validateNoFilesOnLargeDir();
+      }
+      finally
+      {
+         try
+         {
+            server.stop();
+         }
+         catch (Throwable ignored)
+         {
+         }
+
+         try
+         {
+            session.close();
+         }
+         catch (Throwable ignored)
+         {
+         }
+      }
+   }
+
+   public void testLargeMessageCompression2() throws Exception
+   {
+      final int messageSize = (int)(3.5 * HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE);
+
+      ClientSession session = null;
+
+      try
+      {
+         server = createServer(true, isNetty());
+
+         server.start();
+
+         ClientSessionFactory sf = createFactory(isNetty());
+         sf.setCompressLargeMessages(true);
+
+         session = sf.createSession(false, false, false);
+
+         session.createTemporaryQueue(LargeMessageTest.ADDRESS, LargeMessageTest.ADDRESS);
+
+         ClientProducer producer = session.createProducer(LargeMessageTest.ADDRESS);
+
+         Message clientFile = createLargeClientMessage(session, messageSize, true);
+
+         producer.send(clientFile);
+
+         session.commit();
+
+         session.start();
+
+         ClientConsumer consumer = session.createConsumer(LargeMessageTest.ADDRESS);
+         ClientMessage msg1 = consumer.receive(1000);
+         Assert.assertNotNull(msg1);
+         
+         String testDir = this.getTestDir();
+         File testFile = new File(testDir, "async_large_message");
+         FileOutputStream output = new FileOutputStream(testFile);
+         
+         System.out.println("set out");
+         
+         msg1.setOutputStream(output);
+         
+         System.out.println("waiting...");
+         msg1.waitOutputStreamCompletion(0);
+         
+         System.out.println("close output");
+         
+         msg1.acknowledge();
+
+         session.commit();
+
+         consumer.close();
+
+         session.close();
+
+         //verify
+         FileInputStream input = new FileInputStream(testFile);
+         for (int i = 0 ; i < messageSize; i++)
+         {
+            byte b = (byte)input.read();
+            assertEquals("position = "  + i, getSamplebyte(i), b);
+         }
+         
+         testFile.delete();
          validateNoFilesOnLargeDir();
       }
       finally

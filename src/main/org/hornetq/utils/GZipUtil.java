@@ -190,7 +190,114 @@ public class GZipUtil
          throw new HornetQException(HornetQException.LARGE_MESSAGE_ERROR_BODY, e.getMessage(), e);
       }
    }
+   
+   public static OutputStream createZipOutputStream(OutputStream out) throws HornetQException
+   {
+      try
+      {
+         return new GZipOutput(out);
+      }
+      catch (IOException e)
+      {
+         throw new HornetQException(HornetQException.LARGE_MESSAGE_ERROR_BODY, e.getMessage(), e);
+      }      
+   }
 
+   public static class GZipOutput extends OutputStream
+   {
+      private OutputStream target;
+      private GZIPInputStream zipIn;
+      private DynamicInputStream receiver;
+
+      public GZipOutput(OutputStream out) throws IOException
+      {
+         target = out;
+         receiver = new DynamicInputStream(1024, 50);
+      }
+
+      public void write(int b) throws IOException
+      {
+         receiver.writeBuffer(b);
+      }
+      
+      public void close() throws IOException
+      {
+         zipIn = new GZIPInputStream(receiver);
+         int b = zipIn.read();
+         int counter = 0;
+         while (b != -1)
+         {
+            target.write(b);
+            counter++;
+            b = zipIn.read();
+         }
+         target.close();
+         System.err.println(" total write: " + counter);
+      }
+      
+   }
+   
+   public static class DynamicInputStream extends InputStream
+   {
+      private List<byte[]> writeBuffer;
+      private int bufferSize;
+      private int counter, index;
+      private int readIndex, readCounter;
+      
+      public DynamicInputStream(int size, int cache)
+      {
+         bufferSize = size;
+         writeBuffer = new ArrayList<byte[]>(cache);
+         for (int i = 0; i < cache; i++)
+         {
+            writeBuffer.add(new byte[size]);
+         }
+         counter = 0;
+         index = 0;
+         readIndex = 0;
+         readCounter = 0;
+      }
+
+      //read the buffer. If buffer is empty, return -1
+      public int read() throws IOException
+      {
+         int result = -1;
+         
+         if (index > readIndex)
+         {
+            result = writeBuffer.get(readIndex)[readCounter++] & 0xFF;
+            if (readCounter == bufferSize)
+            {
+               readCounter = 0;
+               readIndex ++;
+            }
+         }
+         else if (index == readIndex)
+         {
+            if (counter > readCounter)
+            {
+               result = writeBuffer.get(readIndex)[readCounter++] & 0xFF;
+            }
+         }
+         return result;
+      }
+      
+      public void writeBuffer(int b)
+      {
+         writeBuffer.get(index)[counter++] = (byte)b;
+         if (counter == bufferSize)
+         {
+            index++;
+            if (index == writeBuffer.size())
+            {
+               writeBuffer.add(new byte[bufferSize]);
+            }
+            counter = 0;
+         }
+      }
+      
+   }
+   
    /*
     * we keep a list of byte arrays. when writing, we start with the first array.
     * when getBuffer() is called, the returned value is subject to the following rules:
