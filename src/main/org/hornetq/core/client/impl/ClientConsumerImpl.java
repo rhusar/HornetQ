@@ -323,8 +323,12 @@ public class ClientConsumerImpl implements ClientConsumerInternal
    {
       if (isBrowseOnly())
       {
-         log.warn("receive timeout is not effective on browsing, ignoring timeout");
-         return receive(0, true);
+         ClientMessage msg = receive(timeout, false);
+         if (msg == null)
+         {
+            msg = receive(0, true);
+         }
+         return msg;
       }
       else
       {
