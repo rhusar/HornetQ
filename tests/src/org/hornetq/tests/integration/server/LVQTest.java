@@ -305,11 +305,8 @@ public class LVQTest extends UnitTestCase
       m = consumer.receive(1000);
       Assert.assertNotNull(m);
       m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m3");
-      m = consumer.receive(1000);
-      Assert.assertNotNull(m);
-      m.acknowledge();
-      Assert.assertEquals(m.getBodyBuffer().readString(), "m4");
+      Assert.assertEquals(m.getBodyBuffer().readString(), "m1");
+      Assert.assertNull(consumer.receiveImmediate());
    }
 
    public void testMultipleMessagesInTxSend() throws Exception
