@@ -338,6 +338,10 @@ public class PageCursorProviderImpl implements PageCursorProvider
          for (Page depagedPage : depagedPages)
          {
             depagedPage.delete();
+            synchronized (softCache)
+            {
+               softCache.remove((long)depagedPage.getPageId());
+            }
          }
       }
       catch (Exception ex)
