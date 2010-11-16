@@ -359,6 +359,8 @@ public class JMSServerControl2Test extends ManagementTestBase
 
       System.out.println("queueName is: " + queueName);
       
+      Connection connection = null;
+      
       try
       {
          startHornetQServer(NettyAcceptorFactory.class.getName());
@@ -372,7 +374,7 @@ public class JMSServerControl2Test extends ManagementTestBase
          ConnectionFactory cf1 = JMSUtil.createFactory(NettyConnectorFactory.class.getName(),
                                                        JMSServerControl2Test.CONNECTION_TTL,
                                                        JMSServerControl2Test.PING_PERIOD);
-         Connection connection = cf1.createConnection();
+         connection = cf1.createConnection();
          Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
          
          MessageProducer producer = session.createProducer(queue);
@@ -408,6 +410,7 @@ public class JMSServerControl2Test extends ManagementTestBase
          
          assertTrue(sessInfos.length > 0);
          boolean lastMsgFound = false;
+         Thread.sleep(1000);
          for (JMSSessionInfo sInfo : sessInfos)
          {
             System.out.println("Session name: " + sInfo.getSessionID());
@@ -434,10 +437,22 @@ public class JMSServerControl2Test extends ManagementTestBase
       }
       finally
       {
-         if (serverManager != null)
+         try
          {
-            serverManager.destroyQueue(queueName);
-            serverManager.stop();
+            if (connection != null)
+            {
+               connection.close();
+            }
+            
+            if (serverManager != null)
+            {
+               serverManager.destroyQueue(queueName);
+               serverManager.stop();
+            }
+         }
+         catch (Throwable ignored)
+         {
+            ignored.printStackTrace();
          }
 
          if (server != null)
