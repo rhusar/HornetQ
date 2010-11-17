@@ -46,7 +46,7 @@ public class SoftValueMapTest extends UnitTestCase
       
       SoftValueHashMap<Long, byte[]> softCache = new SoftValueHashMap<Long, byte[]>();
       
-      final int MAX_ELEMENTS = 10000;
+      final int MAX_ELEMENTS = 1000;
       
       for (long i = 0 ; i < MAX_ELEMENTS; i++)
       {
@@ -54,7 +54,7 @@ public class SoftValueMapTest extends UnitTestCase
       }
       
       
-      assertTrue(softCache.size() < 100);
+      assertTrue(softCache.size() < MAX_ELEMENTS);
       
       System.out.println("Soft cache has " + softCache.size() + " elements");
    }
