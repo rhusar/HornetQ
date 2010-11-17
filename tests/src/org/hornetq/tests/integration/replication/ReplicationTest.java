@@ -303,7 +303,7 @@ public class ReplicationTest extends ServiceTestBase
 
          PagingStore store = pagingManager.getPageStore(dummy);
          store.start();
-         Assert.assertEquals(5, store.getNumberOfPages());
+         Assert.assertEquals(4, store.getNumberOfPages());
          store.stop();
 
          manager.pageDeleted(dummy, 1);
