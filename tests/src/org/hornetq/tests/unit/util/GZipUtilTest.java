@@ -16,12 +16,15 @@ package org.hornetq.tests.unit.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.hornetq.core.logging.Logger;
 import org.hornetq.tests.util.UnitTestCase;
+import org.hornetq.utils.GZipUtil;
 import org.hornetq.utils.GZipUtil.GZipPipe;
 
 /**
@@ -115,6 +118,116 @@ public class GZipUtilTest extends UnitTestCase
       
       originalFile.delete();
       zippedFile.delete();
+   }
+   
+   //create a 10M file, zip it into another file
+   //load it into an input stream and feed to the 
+   //GZipOutput. Then compare the result
+   public void testUnzipFunction() throws Exception
+   {
+      this.recreateDirectory(this.getTestDir());
+      
+      File originalFile = new File(this.getTestDir(), "gzipUtilTest_file1.txt");
+      File zippedFile = new File(this.getTestDir(), "gzipUtilTest_file1.zip");
+      File unzippedFile = new File(this.getTestDir(), "gzipUtilTest_unzipped.txt");
+      
+      FileOutputStream originalOut = new FileOutputStream(originalFile);
+      FileOutputStream zippedOut = new FileOutputStream(zippedFile);
+      
+      //now create the file
+      Random r = new Random();
+      final int size = 1024 * 10;
+      byte[] writeBuffer = new byte[1024];
+      
+      for (int i = 0; i < size; i++)
+      {
+         int b = r.nextInt(256);
+         for (int j = 0; j < 1024; j++)
+         {
+            writeBuffer[j] = (byte)b;
+         }
+         originalOut.write(writeBuffer);       
+      }
+      originalOut.close();
+      
+      log.info("file created.");
+      
+      //now zip it
+      GZIPOutputStream gzipOut = new GZIPOutputStream(zippedOut);
+      FileInputStream originalIn = new FileInputStream(originalFile);
+      
+      byte[] buffer = new byte[2048];
+      
+      int n = originalIn.read(buffer);
+      while (n != -1)
+      {
+         if (n > 0)
+         {
+            gzipOut.write(buffer, 0, n);
+         }
+         n = originalIn.read(buffer);
+      }
+      gzipOut.close();
+
+      log.info("file zipped.");
+
+      //get a zipped input stream
+      FileInputStream zippedInput = new FileInputStream(zippedFile);
+      
+      FileOutputStream unzipOut = new FileOutputStream(unzippedFile);
+      
+      OutputStream newOut = GZipUtil.createZipOutputStream(unzipOut);
+      
+      n = zippedInput.read(buffer);
+      while (n != -1)
+      {
+         if (n > 0)
+         {
+            newOut.write(buffer, 0, n);
+         }
+         n = zippedInput.read(buffer);
+      }
+      newOut.close();
+      
+      log.info("file unzipped");
+      
+      //compare original and unzipped
+      FileInputStream originalInput = new FileInputStream(originalFile);
+      FileInputStream unzippedInput = new FileInputStream(unzippedFile);
+      
+      ArrayList<Integer> fromZip = new ArrayList<Integer>();
+      ArrayList<Integer> original = new ArrayList<Integer>();
+      
+      byte[] readBuffer = new byte[2048];
+      int count = originalInput.read(readBuffer);
+      
+      while (count != -1)
+      {
+         for (int i = 0; i < count; i++)
+         {
+            original.add(readBuffer[i] & 0xFF);
+         }
+         count = originalInput.read(readBuffer);
+      }
+      originalInput.close();
+
+      count = unzippedInput.read(readBuffer);
+      
+      while (count != -1)
+      {
+         for (int i = 0; i < count; i++)
+         {
+            fromZip.add(readBuffer[i] & 0xFF);
+         }
+         count = unzippedInput.read(readBuffer);
+      }
+      unzippedInput.close();
+
+      compareByteArray(fromZip, original);
+      
+      originalFile.delete();
+      zippedFile.delete();
+      unzippedFile.delete();
    }
    
    private void compareByteArray(ArrayList<Integer> b1, ArrayList<Integer> b2)
