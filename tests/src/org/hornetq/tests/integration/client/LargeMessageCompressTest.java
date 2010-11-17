@@ -2750,6 +2750,84 @@ public class LargeMessageCompressTest extends LargeMessageTestBase
       }
    }
 
+   public void testLargeMessageCompression3() throws Exception
+   {
+      final int messageSize = (int)(3.5 * HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE);
+
+      ClientSession session = null;
+
+      try
+      {
+         server = createServer(true, isNetty());
+
+         server.start();
+
+         ClientSessionFactory sf = createFactory(isNetty());
+         sf.setCompressLargeMessages(true);
+
+         session = sf.createSession(false, false, false);
+
+         session.createTemporaryQueue(LargeMessageTest.ADDRESS, LargeMessageTest.ADDRESS);
+
+         ClientProducer producer = session.createProducer(LargeMessageTest.ADDRESS);
+
+         Message clientFile = createLargeClientMessage(session, messageSize, true);
+
+         producer.send(clientFile);
+
+         session.commit();
+
+         session.start();
+
+         ClientConsumer consumer = session.createConsumer(LargeMessageTest.ADDRESS);
+         ClientMessage msg1 = consumer.receive(1000);
+         Assert.assertNotNull(msg1);
+         
+         String testDir = this.getTestDir();
+         File testFile = new File(testDir, "async_large_message");
+         FileOutputStream output = new FileOutputStream(testFile);
+
+         msg1.saveToOutputStream(output);
+         
+         msg1.acknowledge();
+
+         session.commit();
+
+         consumer.close();
+
+         session.close();
+
+         //verify
+         FileInputStream input = new FileInputStream(testFile);
+         for (int i = 0 ; i < messageSize; i++)
+         {
+            byte b = (byte)input.read();
+            assertEquals("position = "  + i, getSamplebyte(i), b);
+         }
+         
+         testFile.delete();
+         validateNoFilesOnLargeDir();
+      }
+      finally
+      {
+         try
+         {
+            server.stop();
+         }
+         catch (Throwable ignored)
+         {
+         }
+
+         try
+         {
+            session.close();
+         }
+         catch (Throwable ignored)
+         {
+         }
+      }
+   }
+
    // Package protected ---------------------------------------------
 
    // Protected -----------------------------------------------------
