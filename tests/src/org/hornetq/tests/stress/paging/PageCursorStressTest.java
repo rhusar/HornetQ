@@ -11,7 +11,7 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.tests.integration.paging;
+package org.hornetq.tests.stress.paging;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,7 +60,7 @@ import org.hornetq.utils.LinkedListIterator;
  *
  *
  */
-public class PageCursorTest extends ServiceTestBase
+public class PageCursorStressTest extends ServiceTestBase
 {
 
    // Constants -----------------------------------------------------
