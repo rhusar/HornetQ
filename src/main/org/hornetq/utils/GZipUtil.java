@@ -232,7 +232,6 @@ public class GZipUtil
             b = zipIn.read();
          }
          target.close();
-         System.err.println(" total write: " + counter);
       }
       
    }

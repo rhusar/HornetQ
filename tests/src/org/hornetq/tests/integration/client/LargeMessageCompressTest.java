@@ -2707,14 +2707,9 @@ public class LargeMessageCompressTest extends LargeMessageTestBase
          File testFile = new File(testDir, "async_large_message");
          FileOutputStream output = new FileOutputStream(testFile);
          
-         System.out.println("set out");
-         
          msg1.setOutputStream(output);
-         
-         System.out.println("waiting...");
-         msg1.waitOutputStreamCompletion(0);
-         
-         System.out.println("close output");
+
+         msg1.waitOutputStreamCompletion(0);         
          
          msg1.acknowledge();
 
