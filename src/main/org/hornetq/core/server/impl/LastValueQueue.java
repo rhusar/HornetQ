@@ -240,7 +240,7 @@ public class LastValueQueue extends QueueImpl
        */
       public void acknowledge() throws Exception
       {
-         ref.acknowledge();
+         ref.getQueue().acknowledge(this);
       }
 
       /* (non-Javadoc)
@@ -248,7 +248,7 @@ public class LastValueQueue extends QueueImpl
        */
       public void acknowledge(Transaction tx) throws Exception
       {
-         ref.acknowledge(tx);
+         ref.getQueue().acknowledge(tx, this);
       }
    }
 }
