@@ -29,12 +29,11 @@ import org.hornetq.api.core.HornetQException;
  * A GZipUtil
  *
  * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
- *
+ * @author <a href="mailto:hgao@redhat.com">Howard Gao</a>
  *
  */
 public class GZipUtil
 {
-
    public static InputStream createZipInputStream(InputStream input) throws HornetQException
    {
       try
@@ -229,6 +228,7 @@ public class GZipUtil
          if (index > readIndex)
          {
             result = writeBuffer.get(readIndex);
+            writeBuffer.set(readIndex, null);
             readIndex++;
          }
          else if (index == readIndex)
