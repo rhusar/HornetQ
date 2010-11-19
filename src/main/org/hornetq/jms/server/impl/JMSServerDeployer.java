@@ -63,7 +63,7 @@ public class JMSServerDeployer extends XmlDeployer
 
       this.jmsServerManager = jmsServerManager;
 
-      parser = new JMSServerConfigParserImpl();
+      parser = new JMSServerConfigParserImpl(jmsServerManager.getHornetQServer().getConfiguration());
    }
 
    /**

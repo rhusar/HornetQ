@@ -34,8 +34,10 @@ import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
+import org.hornetq.jms.client.HornetQJMSConnectionFactory;
 import org.hornetq.jms.server.config.impl.JMSConfigurationImpl;
 import org.hornetq.jms.server.config.impl.TopicConfigurationImpl;
+import org.hornetq.jms.server.impl.JMSFactoryType;
 import org.hornetq.jms.server.impl.JMSServerManagerImpl;
 import org.hornetq.tests.integration.cluster.distribution.ClusterTestBase;
 import org.hornetq.tests.unit.util.InVMContext;
@@ -118,9 +120,9 @@ public class JMSClusteredTestBase extends ServiceTestBase
       jmsServer1.start();
       jmsServer1.activated();
 
-      cf1 = HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName(),
+      cf1 = (ConnectionFactory) HornetQJMSClient.createConnectionFactoryWithHA(JMSFactoryType.CF, new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                                 generateInVMParams(1)));
-      cf2 = HornetQJMSClient.createConnectionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName(),
+      cf2 = (ConnectionFactory)HornetQJMSClient.createConnectionFactoryWithHA(JMSFactoryType.CF, new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                                 generateInVMParams(2)));
    }
 
@@ -130,10 +132,10 @@ public class JMSClusteredTestBase extends ServiceTestBase
     */
    private void setupServer2() throws Exception
    {
-      List<Pair<String, String>> toOtherServerPair = new ArrayList<Pair<String, String>>();
-      toOtherServerPair.add(new Pair<String, String>("toServer1", null));
+      List<String> toOtherServerPair = new ArrayList<String>();
+      toOtherServerPair.add("toServer1");
 
-      Configuration conf2 = createDefaultConfig(1, generateInVMParams(2), InVMAcceptorFactory.class.getCanonicalName());
+      Configuration conf2 = createDefaultConfig(2, generateInVMParams(2), InVMAcceptorFactory.class.getCanonicalName());
       conf2.setSecurityEnabled(false);
       conf2.setJMXManagementEnabled(true);
       conf2.setPersistenceEnabled(false);
@@ -146,6 +148,7 @@ public class JMSClusteredTestBase extends ServiceTestBase
       
       conf2.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server1",
                                                                               "jms",
+                                                                                 "toServer1",
                                                                               1000,
                                                                               true,
                                                                               true,
@@ -170,8 +173,8 @@ public class JMSClusteredTestBase extends ServiceTestBase
     */
    private void setupServer1() throws Exception
    {
-      List<Pair<String, String>> toOtherServerPair = new ArrayList<Pair<String, String>>();
-      toOtherServerPair.add(new Pair<String, String>("toServer2", null));
+      List<String> toOtherServerPair = new ArrayList<String>();
+      toOtherServerPair.add("toServer2");
 
       Configuration conf1 = createDefaultConfig(1, generateInVMParams(1), InVMAcceptorFactory.class.getCanonicalName());
       
@@ -189,6 +192,7 @@ public class JMSClusteredTestBase extends ServiceTestBase
 
       conf1.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server2",
                                                                               "jms",
+                                                                              "toServer2",
                                                                               1000,
                                                                               true,
                                                                               true,

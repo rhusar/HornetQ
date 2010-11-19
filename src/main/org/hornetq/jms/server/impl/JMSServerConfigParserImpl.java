@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hornetq.api.core.HornetQException;
-import org.hornetq.api.core.Pair;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.impl.Validators;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.server.JMSServerConfigParser;
@@ -57,11 +59,18 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
 
    // Attributes ----------------------------------------------------
 
+   private final Configuration config;
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
+
+   public JMSServerConfigParserImpl(final Configuration config)
+   {
+      this.config = config;
+   }
 
    /**
     * Parse the JMS Configuration XML as a JMSConfiguration object
@@ -188,6 +197,32 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
       return newQueue(queueName, selectorString, durable, jndiArray);
    }
 
+   // private void lookupDiscovery(final String discoveryGroupName, final ConnectionFactoryConfiguration cfConfig)
+   // throws HornetQException
+   // {
+   // Configuration configuration = server.getConfiguration();
+   //
+   // DiscoveryGroupConfiguration discoveryGroupConfiguration = configuration.getDiscoveryGroupConfigurations()
+   // .get(cfConfig.getDiscoveryGroupName());
+   //
+   // if (discoveryGroupConfiguration == null)
+   // {
+   // JMSServerManagerImpl.log.warn("There is no discovery group with name '" + cfConfig.getDiscoveryGroupName() +
+   // "' deployed.");
+   //
+   // throw new HornetQException(HornetQException.ILLEGAL_STATE,
+   // "There is no discovery group with name '" + cfConfig.getDiscoveryGroupName() +
+   // "' deployed.");
+   // }
+   //
+   // cfConfig.setLocalBindAddress(discoveryGroupConfiguration.getLocalBindAddress());
+   // cfConfig.setDiscoveryAddress(discoveryGroupConfiguration.getGroupAddress());
+   // cfConfig.setDiscoveryPort(discoveryGroupConfiguration.getGroupPort());
+   // cfConfig.setDiscoveryRefreshTimeout(discoveryGroupConfiguration.getRefreshTimeout());
+   //
+   //      
+   // }
+
    /**
     * Parse the Connection Configuration node as a ConnectionFactoryConfiguration object
     * @param node
@@ -294,9 +329,6 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                                             "failover-on-initial-connection",
                                                                             HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION);
 
-      boolean failoverOnServerShutdown = XMLConfigurationUtil.getBoolean(e,
-                                                                         "failover-on-server-shutdown",
-                                                                         HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       boolean useGlobalPools = XMLConfigurationUtil.getBoolean(e,
                                                                "use-global-pools",
                                                                HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
@@ -317,9 +349,11 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                                       HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
                                                                       Validators.GT_ZERO);
 
+      boolean ha = XMLConfigurationUtil.getBoolean(e, "ha", HornetQClient.DEFAULT_HA);
+
       String groupid = XMLConfigurationUtil.getString(e, "group-id", null, Validators.NO_CHECK);
       List<String> jndiBindings = new ArrayList<String>();
-      List<Pair<String, String>> connectorNames = new ArrayList<Pair<String, String>>();
+      List<String> connectorNames = new ArrayList<String>();
       String discoveryGroupName = null;
 
       NodeList children = node.getChildNodes();
@@ -352,16 +386,7 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                {
                   String connectorName = entry.getAttributes().getNamedItem("connector-name").getNodeValue();
 
-                  String backupConnectorName = null;
-
-                  Node backupNode = entry.getAttributes().getNamedItem("backup-connector-name");
-                  if (backupNode != null)
-                  {
-                     backupConnectorName = backupNode.getNodeValue();
-                  }
-
-                  connectorNames.add(new Pair<String, String>(connectorName, backupConnectorName));
-
+                  connectorNames.add(connectorName);
                }
             }
          }
@@ -378,14 +403,44 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
 
       if (discoveryGroupName != null)
       {
-         cfConfig = new ConnectionFactoryConfigurationImpl(name, strbindings);
+         DiscoveryGroupConfiguration discoveryGroupConfiguration = config.getDiscoveryGroupConfigurations()
+                                                                         .get(discoveryGroupName);
+
+         if (discoveryGroupConfiguration == null)
+         {
+            log.warn("There is no discovery group with name '" + discoveryGroupName + "' deployed.");
+
+            throw new IllegalArgumentException("There is no discovery group with name '" + discoveryGroupName +
+                                               "' deployed.");
+         }
+
+         cfConfig = new ConnectionFactoryConfigurationImpl(name,
+                                                           ha,
+                                                           discoveryGroupConfiguration.getGroupAddress(),
+                                                           discoveryGroupConfiguration.getGroupPort(),
+                                                           strbindings);
+         cfConfig.setLocalBindAddress(discoveryGroupConfiguration.getLocalBindAddress());
          cfConfig.setInitialWaitTimeout(discoveryInitialWaitTimeout);
-         cfConfig.setDiscoveryGroupName(discoveryGroupName);
+         cfConfig.setDiscoveryRefreshTimeout(discoveryGroupConfiguration.getRefreshTimeout());
       }
       else
       {
-         cfConfig = new ConnectionFactoryConfigurationImpl(name, strbindings);
-         cfConfig.setConnectorNames(connectorNames);
+         List<TransportConfiguration> tcList = new ArrayList<TransportConfiguration>();
+         
+         for (String connectorName : connectorNames)
+         {
+            TransportConfiguration tc = config.getConnectorConfigurations().get(connectorName);
+
+            if (tc == null)
+            {
+               log.warn("There is no connector with name '" + connectorName + "' deployed.");
+
+               throw new IllegalArgumentException("There is no connector with name '" + connectorName + "' deployed.");
+            }
+            
+            tcList.add(tc);
+         }
+         cfConfig = new ConnectionFactoryConfigurationImpl(name, ha, tcList, strbindings);
       }
 
       cfConfig.setFactoryType(factType);
@@ -415,7 +470,6 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
       cfConfig.setRetryIntervalMultiplier(retryIntervalMultiplier);
       cfConfig.setMaxRetryInterval(maxRetryInterval);
       cfConfig.setReconnectAttempts(reconnectAttempts);
-      cfConfig.setFailoverOnServerShutdown(failoverOnServerShutdown);
       cfConfig.setFailoverOnInitialConnection(failoverOnInitialConnection);
       cfConfig.setGroupID(groupid);
       return cfConfig;

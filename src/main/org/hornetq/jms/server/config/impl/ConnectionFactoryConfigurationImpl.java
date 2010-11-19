@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.jms.server.config.ConnectionFactoryConfiguration;
@@ -42,19 +41,17 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    private String[] bindings;
 
-   private String discoveryGroupName;
-   
    private String localBindAddress;
 
    private String discoveryAddress;
 
    private int discoveryPort;
 
-   private List<Pair<String, String>> connectorNames;
-
-   private List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs;
+   private List<TransportConfiguration> connectorConfigs;
 
    private String clientID = null;
+
+   private boolean ha = HornetQClient.DEFAULT_HA;
 
    private long discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
 
@@ -112,12 +109,10 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    private boolean failoverOnInitialConnection = HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION;
 
-   private boolean failoverOnServerShutdown = HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN;
-   
    private String groupID = null;
-   
+
    private JMSFactoryType factoryType = JMSFactoryType.CF;
-   
+
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -126,58 +121,31 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    public ConnectionFactoryConfigurationImpl()
    {
    }
-   
+
    public ConnectionFactoryConfigurationImpl(final String name,
+                                             final boolean ha,
                                              final String discoveryAddress,
                                              final int discoveryPort,
                                              final String... bindings)
    {
-      this(name, bindings);
-      this.discoveryAddress = discoveryAddress;
-      this.discoveryPort = discoveryPort;
-   }
-   
-   public ConnectionFactoryConfigurationImpl(final String name,
-                                             final String localBindAddress,
-                                             final String discoveryAddress,
-                                             final int discoveryPort,
-                                             final String... bindings)
-   {
-      this(name, bindings);
-      this.localBindAddress = localBindAddress;
+      this(name, ha, bindings);
       this.discoveryAddress = discoveryAddress;
       this.discoveryPort = discoveryPort;
    }
 
    public ConnectionFactoryConfigurationImpl(final String name,
-                                             final TransportConfiguration liveConfig,
+                                             final boolean ha,
+                                             final List<TransportConfiguration> transportConfigs,
                                              final String... bindings)
    {
-      this(name, liveConfig, null, bindings);
+      this(name, ha, bindings);
+      connectorConfigs = transportConfigs;
    }
 
-   public ConnectionFactoryConfigurationImpl(final String name,
-                                             final TransportConfiguration liveConfig,
-                                             final TransportConfiguration backupConfig,
-                                             final String... bindings)
-   {
-      this(name, bindings);
-      connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(liveConfig, backupConfig));
-   }
-
-   public ConnectionFactoryConfigurationImpl(final String name,
-                                             final List<Pair<TransportConfiguration, TransportConfiguration>> transportConfigs,
-                                             final String... bindings)
-   {
-      this(name, bindings);
-      connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      connectorConfigs.addAll(transportConfigs);
-   }
-
-   public ConnectionFactoryConfigurationImpl(final String name, final String... bindings)
+   private ConnectionFactoryConfigurationImpl(final String name, final boolean ha, final String... bindings)
    {
       this.name = name;
+      this.ha = ha;
       this.bindings = new String[bindings.length];
       System.arraycopy(bindings, 0, this.bindings, 0, bindings.length);
    }
@@ -189,7 +157,7 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       return bindings;
    }
 
-   public void setBindings(String[] bindings)
+   public void setBindings(final String[] bindings)
    {
       this.bindings = bindings;
    }
@@ -198,7 +166,7 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       return name;
    }
-   
+
    public String getLocalBindAddress()
    {
       return localBindAddress;
@@ -229,14 +197,24 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       this.discoveryPort = discoveryPort;
    }
 
-   public List<Pair<TransportConfiguration, TransportConfiguration>> getConnectorConfigs()
+   public List<TransportConfiguration> getConnectorConfigs()
    {
       return connectorConfigs;
    }
 
-   public void setConnectorConfigs(final List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs)
+   public void setConnectorConfigs(final List<TransportConfiguration> connectorConfigs)
    {
       this.connectorConfigs = connectorConfigs;
+   }
+
+   public boolean isHA()
+   {
+      return ha;
+   }
+
+   public void setHA(final boolean ha)
+   {
+      this.ha = ha;
    }
 
    public String getClientID()
@@ -518,7 +496,7 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       this.reconnectAttempts = reconnectAttempts;
    }
-   
+
    public boolean isFailoverOnInitialConnection()
    {
       return failoverOnInitialConnection;
@@ -526,17 +504,7 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    public void setFailoverOnInitialConnection(final boolean failover)
    {
-      this.failoverOnInitialConnection = failover;
-   }
-
-   public boolean isFailoverOnServerShutdown()
-   {
-      return failoverOnServerShutdown;
-   }
-
-   public void setFailoverOnServerShutdown(final boolean failoverOnServerShutdown)
-   {
-      this.failoverOnServerShutdown = failoverOnServerShutdown;
+      failoverOnInitialConnection = failover;
    }
 
    public String getGroupID()
@@ -549,69 +517,36 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       this.groupID = groupID;
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.jms.server.config.ConnectionFactoryConfiguration#getConnectorNames()
-    */
-   public List<Pair<String, String>> getConnectorNames()
-   {
-      return connectorNames;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.jms.server.config.ConnectionFactoryConfiguration#setConnectorNames(java.util.List)
-    */
-   public void setConnectorNames(List<Pair<String, String>> connectors)
-   {
-      this.connectorNames = connectors;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.jms.server.config.ConnectionFactoryConfiguration#getDiscoveryGroupName()
-    */
-   public String getDiscoveryGroupName()
-   {
-      return discoveryGroupName;
-   }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.jms.server.config.ConnectionFactoryConfiguration#setDiscoveryGroupName(java.lang.String)
-    */
-   public void setDiscoveryGroupName(String groupName)
-   {
-      this.discoveryGroupName = groupName;
-   }
-   
    // Encoding Support Implementation --------------------------------------------------------------
-   
+
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.EncodingSupport#decode(org.hornetq.api.core.HornetQBuffer)
     */
-   public void decode(HornetQBuffer buffer)
+   public void decode(final HornetQBuffer buffer)
    {
       name = buffer.readSimpleString().toString();
 
-      discoveryGroupName = BufferHelper.readNullableSimpleStringAsString(buffer); 
-
       localBindAddress = BufferHelper.readNullableSimpleStringAsString(buffer);
-      
+
       discoveryAddress = BufferHelper.readNullableSimpleStringAsString(buffer);
 
       discoveryPort = buffer.readInt();
 
       int nConnectors = buffer.readInt();
 
-      connectorNames = new ArrayList<Pair<String, String>>(nConnectors);
-
-      for (int i = 0; i < nConnectors; i++)
+      if (nConnectors > 0)
       {
-         String a = BufferHelper.readNullableSimpleStringAsString(buffer);
-         
-         String b = BufferHelper.readNullableSimpleStringAsString(buffer);
-         
-         connectorNames.add(new Pair<String, String>(a, b));
-      }
+         connectorConfigs = new ArrayList<TransportConfiguration>(nConnectors);
 
-      connectorConfigs = TransportConfigurationEncodingSupport.decodeConfigs(buffer);
+         for (int i = 0; i < nConnectors; i++)
+         {
+            TransportConfiguration tc = new TransportConfiguration();
+
+            tc.decode(buffer);
+
+            connectorConfigs.add(tc);
+         }
+      }
 
       clientID = BufferHelper.readNullableSimpleStringAsString(buffer);
 
@@ -668,43 +603,40 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       maxRetryInterval = buffer.readLong();
 
       reconnectAttempts = buffer.readInt();
-      
+
       failoverOnInitialConnection = buffer.readBoolean();
 
-      failoverOnServerShutdown = buffer.readBoolean();
-
       groupID = BufferHelper.readNullableSimpleStringAsString(buffer);
-      
+
       factoryType = JMSFactoryType.valueOf(buffer.readInt());
    }
 
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
     */
-   public void encode(HornetQBuffer buffer)
+   public void encode(final HornetQBuffer buffer)
    {
       BufferHelper.writeAsSimpleString(buffer, name);
 
-      BufferHelper.writeAsNullableSimpleString(buffer, discoveryGroupName);
-
       BufferHelper.writeAsNullableSimpleString(buffer, localBindAddress);
-      
+
       BufferHelper.writeAsNullableSimpleString(buffer, discoveryAddress);
 
       buffer.writeInt(discoveryPort);
 
-      buffer.writeInt(connectorNames == null ? 0 : connectorNames.size());
-
-      if (connectorNames != null)
+      if (connectorConfigs == null)
       {
-         for (Pair<String, String> namePair : connectorNames)
+         buffer.writeInt(0);
+      }
+      else
+      {
+         buffer.writeInt(connectorConfigs.size());
+
+         for (TransportConfiguration tc : connectorConfigs)
          {
-            BufferHelper.writeAsNullableSimpleString(buffer, namePair.a);
-            BufferHelper.writeAsNullableSimpleString(buffer, namePair.b);
+            tc.encode(buffer);
          }
       }
-
-      TransportConfigurationEncodingSupport.encodeConfigs(buffer, connectorConfigs);
 
       BufferHelper.writeAsNullableSimpleString(buffer, clientID);
 
@@ -761,31 +693,12 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       buffer.writeLong(maxRetryInterval);
 
       buffer.writeInt(reconnectAttempts);
-      
+
       buffer.writeBoolean(failoverOnInitialConnection);
 
-      buffer.writeBoolean(failoverOnServerShutdown);
-
       BufferHelper.writeAsNullableSimpleString(buffer, groupID);
-      
+
       buffer.writeInt(factoryType.intValue());
-   }
-
-
-   private int sizeOfConnectors()
-   {
-      int size = DataConstants.SIZE_INT; // for the number of connectors persisted
-
-      if (connectorNames != null)
-      {
-         for (Pair<String, String> pair : connectorNames)
-         {
-            size += BufferHelper.sizeOfNullableSimpleString(pair.a);
-            size += BufferHelper.sizeOfNullableSimpleString(pair.b);
-         }
-      }
-
-      return size;
    }
 
    /* (non-Javadoc)
@@ -793,86 +706,113 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
     */
    public int getEncodeSize()
    {
-      return BufferHelper.sizeOfSimpleString(name) +
-             
-             BufferHelper.sizeOfNullableSimpleString(discoveryGroupName) +
-             
-             BufferHelper.sizeOfNullableSimpleString(localBindAddress)+
-             
-             BufferHelper.sizeOfNullableSimpleString(discoveryAddress)+
-             
-             DataConstants.SIZE_INT + // discoveryPort
-             
-             sizeOfConnectors() +
-             
-             TransportConfigurationEncodingSupport.getEncodeSize(connectorConfigs) +
+      int size = BufferHelper.sizeOfSimpleString(name) +
 
-             BufferHelper.sizeOfNullableSimpleString(clientID) +
-             
-             DataConstants.SIZE_LONG + // discoveryRefreshTimeout 
-             
-             DataConstants.SIZE_LONG + // clientFailureCheckPeriod
+      BufferHelper.sizeOfNullableSimpleString(localBindAddress) +
 
-             DataConstants.SIZE_LONG + // connectionTTL
+      BufferHelper.sizeOfNullableSimpleString(discoveryAddress) +
 
-             DataConstants.SIZE_LONG + // callTimeout
+      DataConstants.SIZE_INT; // discoveryPort
 
-             DataConstants.SIZE_BOOLEAN + // cacheLargeMessagesClient
-             
-             DataConstants.SIZE_INT + // minLargeMessageSize
+      if (connectorConfigs != null)
+      {
+         for (TransportConfiguration tc : connectorConfigs)
+         {
+            size += TransportConfigurationEncodingSupport.getEncodeSize(tc);
+         }
+      }
+      size += BufferHelper.sizeOfNullableSimpleString(clientID) +
+               DataConstants.SIZE_LONG +
+               // discoveryRefreshTimeout
 
-             DataConstants.SIZE_INT + // consumerWindowSize
+              DataConstants.SIZE_LONG +
+              // clientFailureCheckPeriod
 
-             DataConstants.SIZE_INT + // consumerMaxRate
+              DataConstants.SIZE_LONG +
+              // connectionTTL
 
-             DataConstants.SIZE_INT + // confirmationWindowSize
+              DataConstants.SIZE_LONG +
+              // callTimeout
 
-             DataConstants.SIZE_INT + // producerWindowSize
+              DataConstants.SIZE_BOOLEAN +
+              // cacheLargeMessagesClient
 
-             DataConstants.SIZE_INT + // producerMaxRate
+              DataConstants.SIZE_INT +
+              // minLargeMessageSize
 
-             DataConstants.SIZE_BOOLEAN + // blockOnAcknowledge
+              DataConstants.SIZE_INT +
+              // consumerWindowSize
 
-             DataConstants.SIZE_BOOLEAN + // blockOnDurableSend
+              DataConstants.SIZE_INT +
+              // consumerMaxRate
 
-             DataConstants.SIZE_BOOLEAN + // blockOnNonDurableSend
+              DataConstants.SIZE_INT +
+              // confirmationWindowSize
 
-             DataConstants.SIZE_BOOLEAN + // autoGroup
+              DataConstants.SIZE_INT +
+              // producerWindowSize
 
-             DataConstants.SIZE_BOOLEAN + // preAcknowledge
+              DataConstants.SIZE_INT +
+              // producerMaxRate
 
-             BufferHelper.sizeOfSimpleString(loadBalancingPolicyClassName) + 
+              DataConstants.SIZE_BOOLEAN +
+              // blockOnAcknowledge
 
-             DataConstants.SIZE_INT + // transactionBatchSize
+              DataConstants.SIZE_BOOLEAN +
+              // blockOnDurableSend
 
-             DataConstants.SIZE_INT + // dupsOKBatchSize
+              DataConstants.SIZE_BOOLEAN +
+              // blockOnNonDurableSend
 
-             DataConstants.SIZE_LONG + // initialWaitTimeout
+              DataConstants.SIZE_BOOLEAN +
+              // autoGroup
 
-             DataConstants.SIZE_BOOLEAN + // useGlobalPools
+              DataConstants.SIZE_BOOLEAN +
+              // preAcknowledge
 
-             DataConstants.SIZE_INT + // scheduledThreadPoolMaxSize
+              BufferHelper.sizeOfSimpleString(loadBalancingPolicyClassName) +
 
-             DataConstants.SIZE_INT + // threadPoolMaxSize
+              DataConstants.SIZE_INT +
+              // transactionBatchSize
 
-             DataConstants.SIZE_LONG + // retryInterval
+              DataConstants.SIZE_INT +
+              // dupsOKBatchSize
 
-             DataConstants.SIZE_DOUBLE + // retryIntervalMultiplier
+              DataConstants.SIZE_LONG +
+              // initialWaitTimeout
 
-             DataConstants.SIZE_LONG + // maxRetryInterval
+              DataConstants.SIZE_BOOLEAN +
+              // useGlobalPools
 
-             DataConstants.SIZE_INT + // reconnectAttempts
-             
-             DataConstants.SIZE_BOOLEAN + // failoverOnInitialConnection
+              DataConstants.SIZE_INT +
+              // scheduledThreadPoolMaxSize
 
-             DataConstants.SIZE_BOOLEAN + // failoverOnServerShutdown
-             
-             BufferHelper.sizeOfNullableSimpleString(groupID) + 
-             
-             DataConstants.SIZE_INT; //factoryType
+              DataConstants.SIZE_INT +
+              // threadPoolMaxSize
+
+              DataConstants.SIZE_LONG +
+              // retryInterval
+
+              DataConstants.SIZE_DOUBLE +
+              // retryIntervalMultiplier
+
+              DataConstants.SIZE_LONG +
+              // maxRetryInterval
+
+              DataConstants.SIZE_INT +
+              // reconnectAttempts
+
+              DataConstants.SIZE_BOOLEAN +
+              // failoverOnInitialConnection
+
+              BufferHelper.sizeOfNullableSimpleString(groupID) +
+
+              DataConstants.SIZE_INT; // factoryType
+
+      return size;
    }
 
-   public void setFactoryType(JMSFactoryType factoryType)
+   public void setFactoryType(final JMSFactoryType factoryType)
    {
       this.factoryType = factoryType;
    }
@@ -881,7 +821,7 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       return factoryType;
    }
-   
+
    // Public --------------------------------------------------------
 
    // Package protected ---------------------------------------------

@@ -45,7 +45,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1);
 
-      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 }, new int[] { 2 });
+      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 });
 
       setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 1);
 
@@ -55,10 +55,10 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 2);
 
-      startServers(2, 0, 1);
 
       try
       {
+         startServers(2, 0, 1);
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
 
@@ -84,7 +84,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          class MyListener implements FailureListener
          {
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                latch.countDown();
             }
@@ -122,6 +122,8 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          closeAllSessionFactories();
 
+         closeAllServerLocatorsFactories();
+
          stopServers(0, 1, 2);
       }
    }
@@ -136,7 +138,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1);
 
-      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 }, new int[] { 2 });
+      setupClusterConnectionWithBackups("cluster1", "queues", false, 1, isNetty(), 1, new int[] { 0 });
 
       setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 1);
 
@@ -146,10 +148,10 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
       setUpGroupHandler(GroupingHandlerConfiguration.TYPE.LOCAL, 2);
 
-      startServers(2, 0, 1);
 
       try
       {
+         startServers(2, 0, 1);
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
 
@@ -182,7 +184,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          class MyListener implements FailureListener
          {
-            public void connectionFailed(final HornetQException me)
+            public void connectionFailed(final HornetQException me, boolean failedOver)
             {
                latch.countDown();
             }
@@ -224,6 +226,8 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
          closeAllConsumers();
 
          closeAllSessionFactories();
+
+         closeAllServerLocatorsFactories();
 
          stopServers(0, 1, 2);
       }

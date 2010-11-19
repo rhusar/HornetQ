@@ -34,6 +34,7 @@ import junit.framework.Assert;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
 import org.hornetq.core.remoting.impl.netty.NettyConnector;
@@ -84,7 +85,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
@@ -106,8 +107,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.isBlockOnNonDurableSend(),
                           HornetQClient.DEFAULT_BLOCK_ON_NON_DURABLE_SEND);
       Assert.assertEquals(factory.isBlockOnDurableSend(), HornetQClient.DEFAULT_BLOCK_ON_DURABLE_SEND);
-      Assert.assertEquals(factory.isFailoverOnServerShutdown(),
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       Assert.assertEquals(factory.isPreAcknowledge(), HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       Assert.assertEquals(factory.isUseGlobalPools(), HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
    }
@@ -138,7 +137,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
@@ -160,8 +159,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.isBlockOnNonDurableSend(),
                           HornetQClient.DEFAULT_BLOCK_ON_NON_DURABLE_SEND);
       Assert.assertEquals(factory.isBlockOnDurableSend(), HornetQClient.DEFAULT_BLOCK_ON_DURABLE_SEND);
-      Assert.assertEquals(factory.isFailoverOnServerShutdown(),
-                          HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       Assert.assertEquals(factory.isPreAcknowledge(), HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       Assert.assertEquals(factory.isUseGlobalPools(), HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
    }
@@ -184,7 +181,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       ra.setDiscoveryInitialWaitTimeout(6l);
       ra.setDiscoveryRefreshTimeout(7l);
       ra.setDupsOKBatchSize(8);
-      ra.setFailoverOnServerShutdown(!HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       ra.setMinLargeMessageSize(10);
       ra.setPreAcknowledge(!HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       ra.setProducerMaxRate(11);
@@ -206,7 +202,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getConsumerWindowSize(), 5);
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(), 6);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(), 7);
       Assert.assertEquals(factory.getDupsOKBatchSize(), 8);
       Assert.assertEquals(factory.getMinLargeMessageSize(), 10);
@@ -223,8 +219,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.isBlockOnNonDurableSend(),
                           !HornetQClient.DEFAULT_BLOCK_ON_NON_DURABLE_SEND);
       Assert.assertEquals(factory.isBlockOnDurableSend(), !HornetQClient.DEFAULT_BLOCK_ON_DURABLE_SEND);
-      Assert.assertEquals(factory.isFailoverOnServerShutdown(),
-                          !HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       Assert.assertEquals(factory.isPreAcknowledge(), !HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       Assert.assertEquals(factory.isUseGlobalPools(), !HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
    }
@@ -248,7 +242,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       connectionFactoryProperties.setDiscoveryInitialWaitTimeout(6l);
       connectionFactoryProperties.setDiscoveryRefreshTimeout(7l);
       connectionFactoryProperties.setDupsOKBatchSize(8);
-      connectionFactoryProperties.setFailoverOnServerShutdown(!HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       connectionFactoryProperties.setMinLargeMessageSize(10);
       connectionFactoryProperties.setPreAcknowledge(!HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       connectionFactoryProperties.setProducerMaxRate(11);
@@ -270,7 +263,7 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getConsumerWindowSize(), 5);
       Assert.assertEquals(factory.getDiscoveryAddress(), null);
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(), 6);
-      Assert.assertEquals(factory.getDiscoveryPort(), 0);
+      Assert.assertEquals(factory.getDiscoveryPort(), -1);
       Assert.assertEquals(factory.getDiscoveryRefreshTimeout(), 7);
       Assert.assertEquals(factory.getDupsOKBatchSize(), 8);
       Assert.assertEquals(factory.getMinLargeMessageSize(), 10);
@@ -287,8 +280,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.isBlockOnNonDurableSend(),
                           !HornetQClient.DEFAULT_BLOCK_ON_NON_DURABLE_SEND);
       Assert.assertEquals(factory.isBlockOnDurableSend(), !HornetQClient.DEFAULT_BLOCK_ON_DURABLE_SEND);
-      Assert.assertEquals(factory.isFailoverOnServerShutdown(),
-                          !HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN);
       Assert.assertEquals(factory.isPreAcknowledge(), !HornetQClient.DEFAULT_PRE_ACKNOWLEDGE);
       Assert.assertEquals(factory.isUseGlobalPools(), !HornetQClient.DEFAULT_USE_GLOBAL_POOLS);
    }
@@ -384,8 +375,8 @@ public class ResourceAdapterTest extends ServiceTestBase
       {
 
          server.start();
-
-         ClientSessionFactory factory = createInVMFactory();
+         ServerLocator locator = createInVMNonHALocator();
+         ClientSessionFactory factory = locator.createSessionFactory();
          ClientSession session = factory.createSession(false, false, false);
          HornetQDestination queue = (HornetQDestination) HornetQJMSClient.createQueue("test");
          session.createQueue(queue.getSimpleAddress(), queue.getSimpleAddress(), true);
@@ -421,6 +412,8 @@ public class ResourceAdapterTest extends ServiceTestBase
 
          activation.start();
          activation.stop();
+
+         locator.close();
 
       }
       finally

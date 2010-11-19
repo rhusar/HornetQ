@@ -15,10 +15,8 @@ package org.hornetq.jms.server.config;
 
 import java.util.List;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.journal.EncodingSupport;
-import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.impl.JMSFactoryType;
 
 /**
@@ -48,37 +46,13 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
 
    void setDiscoveryPort(int discoveryPort);
 
+   List<TransportConfiguration> getConnectorConfigs();
 
-   /**
-    * A Reference to the group configuration.
-    */
-   String getDiscoveryGroupName();
+   void setConnectorConfigs(List<TransportConfiguration> connectorConfigs);
    
-   /**
-    * A Reference to the group configuration.
-    */
-   void setDiscoveryGroupName(String groupName);
+   boolean isHA();
    
-   
-   /**
-    * A List of connector names that will be converted into ConnnectorConfigs.
-    * This is useful when using the method {@link JMSServerManager#createConnectionFactory(ConnectionFactoryConfiguration)}
-    * 
-    * @return
-    */
-   List<Pair<String, String>> getConnectorNames();
-
-   /**
-    * A List of connector names that will be converted into ConnnectorConfigs.
-    * This is useful when using the method {@link JMSServerManager#createConnectionFactory(ConnectionFactoryConfiguration)}
-    * 
-    * @return
-    */
-   void setConnectorNames(List<Pair<String, String>> connectors);
-
-   List<Pair<TransportConfiguration, TransportConfiguration>> getConnectorConfigs();
-
-   void setConnectorConfigs(List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs);
+   void setHA(boolean ha);
 
    String getClientID();
 
@@ -192,10 +166,6 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
 
    void setReconnectAttempts(int reconnectAttempts);
 
-   boolean isFailoverOnServerShutdown();
-
-   void setFailoverOnServerShutdown(boolean failoverOnServerShutdown);
-   
    boolean isFailoverOnInitialConnection();
 
    void setFailoverOnInitialConnection(boolean failover);

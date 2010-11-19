@@ -25,18 +25,13 @@ import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Queue;
-import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 import javax.jms.Topic;
-import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
-import javax.jms.XAConnection;
-import javax.jms.XAQueueConnection;
 import javax.jms.XAQueueSession;
 import javax.jms.XASession;
-import javax.jms.XATopicConnection;
 import javax.jms.XATopicSession;
 
 import org.hornetq.api.core.HornetQException;
@@ -490,7 +485,7 @@ public class HornetQConnection implements Connection
                                                    isXA,
                                                    false,
                                                    false,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    transactionBatchSize);
          }
          else if (acknowledgeMode == Session.AUTO_ACKNOWLEDGE)
@@ -500,7 +495,7 @@ public class HornetQConnection implements Connection
                                                    isXA,
                                                    true,
                                                    true,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    0);
          }
          else if (acknowledgeMode == Session.DUPS_OK_ACKNOWLEDGE)
@@ -510,7 +505,7 @@ public class HornetQConnection implements Connection
                                                    isXA,
                                                    true,
                                                    true,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    dupsOKBatchSize);
          }
          else if (acknowledgeMode == Session.CLIENT_ACKNOWLEDGE)
@@ -520,7 +515,7 @@ public class HornetQConnection implements Connection
                                                    isXA,
                                                    true,
                                                    false,
-                                                   sessionFactory.isPreAcknowledge(),
+                                                   sessionFactory.getServerLocator().isPreAcknowledge(),
                                                    transactionBatchSize);
          }
          else if (acknowledgeMode == HornetQJMSConstants.PRE_ACKNOWLEDGE)
@@ -603,7 +598,7 @@ public class HornetQConnection implements Connection
          connectionRef = new WeakReference<HornetQConnection>(connection);
       }
 
-      public synchronized void connectionFailed(final HornetQException me)
+      public synchronized void connectionFailed(final HornetQException me, boolean failedOver)
       {
          if (me == null)
          {

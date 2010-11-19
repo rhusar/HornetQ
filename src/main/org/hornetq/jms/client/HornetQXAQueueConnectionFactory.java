@@ -13,13 +13,9 @@
 
 package org.hornetq.jms.client;
 
-import java.util.List;
-
 import javax.jms.XAQueueConnectionFactory;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-
 
 /**
  * A class that represents a XAQueueConnectionFactory.
@@ -31,19 +27,31 @@ public class HornetQXAQueueConnectionFactory extends HornetQConnectionFactory im
 {
    private static final long serialVersionUID = 8612457847251087454L;
 
-   public HornetQXAQueueConnectionFactory(String discoveryAddress, int discoveryPort)
+   /**
+    * 
+    */
+   public HornetQXAQueueConnectionFactory()
    {
-      super(discoveryAddress, discoveryPort);
+      super();
    }
 
-   public HornetQXAQueueConnectionFactory(List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs)
+   /**
+    * @param ha
+    * @param discoveryAddress
+    * @param discoveryPort
+    */
+   public HornetQXAQueueConnectionFactory(final boolean ha, final String discoveryAddress, final int discoveryPort)
    {
-      super(connectorConfigs);
+      super(ha, discoveryAddress, discoveryPort);
    }
 
-   public HornetQXAQueueConnectionFactory(TransportConfiguration connectorConfig,
-                                          TransportConfiguration backupConnectorConfig)
+   /**
+    * @param ha
+    * @param initialConnectors
+    */
+   public HornetQXAQueueConnectionFactory(final boolean ha, final TransportConfiguration... initialConnectors)
    {
-      super(connectorConfig, backupConnectorConfig);
+      super(ha, initialConnectors);
    }
+
 }

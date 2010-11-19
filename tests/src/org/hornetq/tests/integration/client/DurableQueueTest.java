@@ -18,7 +18,6 @@ import junit.framework.Assert;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
-import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.ServiceTestBase;
@@ -40,6 +39,8 @@ public class DurableQueueTest extends ServiceTestBase
    private ClientSession session;
 
    private ClientSessionFactory sf;
+
+   private ServerLocator locator;
 
    // Static --------------------------------------------------------
 
@@ -84,7 +85,9 @@ public class DurableQueueTest extends ServiceTestBase
       server.stop();
       server.start();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
 
       session.start();
@@ -111,7 +114,10 @@ public class DurableQueueTest extends ServiceTestBase
       server.stop();
       server.start();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+
+      sf = locator.createSessionFactory();
+
       session = sf.createSession(false, true, true);
 
       ClientProducer producer = session.createProducer(address);
@@ -142,7 +148,9 @@ public class DurableQueueTest extends ServiceTestBase
 
       server.start();
 
-      sf = createInVMFactory();
+      locator = createInVMNonHALocator();
+
+      sf = locator.createSessionFactory();
 
       session = sf.createSession(false, true, true);
    }
@@ -151,6 +159,8 @@ public class DurableQueueTest extends ServiceTestBase
    protected void tearDown() throws Exception
    {
       session.close();
+
+      locator.close();
 
       server.stop();
 

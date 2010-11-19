@@ -18,9 +18,9 @@ import java.util.List;
 
 import javax.naming.InitialContext;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.client.HornetQJMSConnectionFactory;
 import org.hornetq.jms.client.HornetQQueueConnectionFactory;
@@ -62,13 +62,13 @@ public class JMSTestCase extends HornetQServerTestCase
       // All jms tests should use a specific cg which has blockOnAcknowledge = true and
       // both np and p messages are sent synchronously
 
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration("org.hornetq.core.remoting.impl.netty.NettyConnectorFactory"),
-                                                                                    null));
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
 
       getJmsServerManager().createConnectionFactory("testsuitecf",
+                                                    false,
+                                                    JMSFactoryType.CF,
                                                     connectorConfigs,
                                                     null,
                                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -97,12 +97,12 @@ public class JMSTestCase extends HornetQServerTestCase
                                                     HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                                     HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
                                                     HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                                    HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                     null,
-                                                    JMSFactoryType.CF,
                                                     "/testsuitecf");
 
       getJmsServerManager().createConnectionFactory("testsuitecf_queue",
+                                                    false,
+                                                    JMSFactoryType.QUEUE_CF,
                                                     connectorConfigs,
                                                     null,
                                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -131,12 +131,12 @@ public class JMSTestCase extends HornetQServerTestCase
                                                     HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                                     HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
                                                     HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                                    HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                     null,
-                                                    JMSFactoryType.QUEUE_CF,
                                                     "/testsuitecf_queue");
 
       getJmsServerManager().createConnectionFactory("testsuitecf_topic",
+                                                    false,
+                                                    JMSFactoryType.TOPIC_CF,
                                                     connectorConfigs,
                                                     null,
                                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
@@ -165,9 +165,7 @@ public class JMSTestCase extends HornetQServerTestCase
                                                     HornetQClient.DEFAULT_MAX_RETRY_INTERVAL,
                                                     HornetQClient.DEFAULT_RECONNECT_ATTEMPTS,
                                                     HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                                    HornetQClient.DEFAULT_FAILOVER_ON_SERVER_SHUTDOWN,
                                                     null,
-                                                    JMSFactoryType.TOPIC_CF,
                                                     "/testsuitecf_topic");
 
       JMSTestCase.cf = (HornetQJMSConnectionFactory)getInitialContext().lookup("/testsuitecf");

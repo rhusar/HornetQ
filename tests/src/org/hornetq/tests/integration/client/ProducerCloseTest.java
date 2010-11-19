@@ -80,8 +80,8 @@ public class ProducerCloseTest extends ServiceTestBase
       config.setSecurityEnabled(false);
       server = HornetQServers.newHornetQServer(config, false);
       server.start();
-
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      sf = locator.createSessionFactory();
       session = sf.createSession(false, true, true);
    }
 

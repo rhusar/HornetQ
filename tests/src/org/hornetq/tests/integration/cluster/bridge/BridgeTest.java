@@ -103,20 +103,22 @@ public class BridgeTest extends ServiceTestBase
          final String forwardAddress = "forwardAddress";
          final String queueName1 = "queue1";
 
-         Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
+        // Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
          TransportConfiguration server0tc = new TransportConfiguration(getConnector(), server0Params);
 
          TransportConfiguration server1tc = new TransportConfiguration(getConnector(), server1Params);
-         connectors.put(server1tc.getName(), server1tc);
 
+         HashMap<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
+         connectors.put(server1tc.getName(), server1tc);
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
 
          final int messageSize = 1024;
 
          final int numMessages = 10;
 
+         ArrayList<String> connectorConfig = new ArrayList<String>();
+         connectorConfig.add(server1tc.getName());
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -125,13 +127,13 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent
                                                                            numMessages * messageSize / 2,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           connectorPair,
+                                                                           connectorConfig,
+                                                                           false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -151,10 +153,10 @@ public class BridgeTest extends ServiceTestBase
 
          server1.start();
          server0.start();
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-         ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
-
-         ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
          ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -309,10 +311,10 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
-
          final String filterString = "animal='goat'";
 
+         ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -321,11 +323,11 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           connectorPair,
+                                                                           staticConnectors,
+                                                                           false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -346,9 +348,10 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-         ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
          ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -480,7 +483,8 @@ public class BridgeTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+      ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                         queueName0,
@@ -490,11 +494,11 @@ public class BridgeTest extends ServiceTestBase
                                                                         1000,
                                                                         1d,
                                                                         -1,
-                                                                        true,
                                                                         false,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        connectorPair,
+                                                                           staticConnectors,
+                                                                           false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -515,9 +519,10 @@ public class BridgeTest extends ServiceTestBase
       server1.start();
       server0.start();
 
-      ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-      ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
       ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -609,7 +614,8 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
+         ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
 
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
@@ -619,11 +625,11 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           connectorPair,
+                                                                           staticConnectors,
+                                                                           false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -644,9 +650,10 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-         ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
          ClientSession session0 = sf0.createSession(false, true, true);
 
@@ -740,12 +747,13 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         Pair<String, String> connectorPair = new Pair<String, String>(server1tc.getName(), null);
 
          final int messageSize = 1024;
 
          final int numMessages = 10;
 
+         ArrayList<String> staticConnectors = new ArrayList<String>();
+         staticConnectors.add(server1tc.getName());
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            null, // pass a null forwarding address to use messages' original address
@@ -754,13 +762,13 @@ public class BridgeTest extends ServiceTestBase
                                                                            1000,
                                                                            1d,
                                                                            -1,
-                                                                           true,
                                                                            false,
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent
                                                                            numMessages * messageSize / 2,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           connectorPair,
+                                                                           staticConnectors,
+                                                                           false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
 
@@ -782,9 +790,10 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ClientSessionFactory sf0 = HornetQClient.createClientSessionFactory(server0tc);
+         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
-         ClientSessionFactory sf1 = HornetQClient.createClientSessionFactory(server1tc);
+         ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
          ClientSession session0 = sf0.createSession(false, true, true);
 

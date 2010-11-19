@@ -27,7 +27,7 @@ import org.hornetq.core.protocol.core.CoreRemotingConnection;
  *
  *
  */
-public interface FailoverManager
+public interface FailoverManager_Old
 {
    ClientSession createSession(final String username,
                                final String password,

@@ -21,6 +21,8 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
+import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
+import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
@@ -42,14 +44,14 @@ public class CoreClientOverHttpTest extends UnitTestCase
 
       HashMap<String, Object> params = new HashMap<String, Object>();
       params.put(TransportConstants.HTTP_ENABLED_PROP_NAME, true);
-      conf.getAcceptorConfigurations().add(new TransportConfiguration(UnitTestCase.NETTY_ACCEPTOR_FACTORY, params));
+      conf.getAcceptorConfigurations().add(new TransportConfiguration(NettyAcceptorFactory.class.getName(), params));
 
       HornetQServer server = HornetQServers.newHornetQServer(conf, false);
 
       server.start();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY,
-                                                                                        params));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName(), params));
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 
@@ -98,15 +100,15 @@ public class CoreClientOverHttpTest extends UnitTestCase
 
       HashMap<String, Object> params = new HashMap<String, Object>();
       params.put(TransportConstants.HTTP_ENABLED_PROP_NAME, true);
-      conf.getAcceptorConfigurations().add(new TransportConfiguration(UnitTestCase.NETTY_ACCEPTOR_FACTORY, params));
+      conf.getAcceptorConfigurations().add(new TransportConfiguration(NettyAcceptorFactory.class.getName(), params));
 
       HornetQServer server = HornetQServers.newHornetQServer(conf, false);
 
       server.start();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY,
-                                                                                        params));
-      sf.setConnectionTTL(500);
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName(), params));
+      locator.setConnectionTTL(500);
+      ClientSessionFactory sf = locator.createSessionFactory();
 
       ClientSession session = sf.createSession(false, true, true);
 

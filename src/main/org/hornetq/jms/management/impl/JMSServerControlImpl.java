@@ -30,9 +30,9 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.StandardMBean;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.ManagementHelper;
+import org.hornetq.api.core.management.Parameter;
 import org.hornetq.api.jms.management.ConnectionFactoryControl;
 import org.hornetq.api.jms.management.DestinationControl;
 import org.hornetq.api.jms.management.JMSQueueControl;
@@ -97,7 +97,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       }
       return trimmed;
    }
-   
+
    private static String[] determineJMSDestination(String coreAddress)
    {
       String[] result = new String[2]; // destination name & type
@@ -130,12 +130,10 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       return result;
    }
 
-   private static List<Pair<TransportConfiguration, TransportConfiguration>> convertToConnectorPairs(final Object[] liveConnectorsTransportClassNames,
-                                                                                                     final Object[] liveConnectorTransportParams,
-                                                                                                     final Object[] backupConnectorsTransportClassNames,
-                                                                                                     final Object[] backupConnectorTransportParams)
-                                                                                                     {
-      List<Pair<TransportConfiguration, TransportConfiguration>> pairs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
+   private static List<TransportConfiguration> convertToTransportConfigurationArray(final Object[] liveConnectorsTransportClassNames,
+                                                                                    final Object[] liveConnectorTransportParams)
+   {
+      List<TransportConfiguration> tcs = new ArrayList<TransportConfiguration>();
 
       for (int i = 0; i < liveConnectorsTransportClassNames.length; i++)
       {
@@ -148,25 +146,11 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          TransportConfiguration tcLive = new TransportConfiguration(liveConnectorsTransportClassNames[i].toString(),
                                                                     liveParams);
 
-         Map<String, Object> backupParams = null;
-         if (backupConnectorTransportParams.length > i)
-         {
-            backupParams = (Map<String, Object>)backupConnectorTransportParams[i];
-         }
-
-         TransportConfiguration tcBackup = null;
-         if (backupConnectorsTransportClassNames.length > i)
-         {
-            new TransportConfiguration(backupConnectorsTransportClassNames[i].toString(), backupParams);
-         }
-         Pair<TransportConfiguration, TransportConfiguration> pair = new Pair<TransportConfiguration, TransportConfiguration>(tcLive,
-                  tcBackup);
-
-         pairs.add(pair);
+         tcs.add(tcLive);
       }
 
-      return pairs;
-                                                                                                     }
+      return tcs;
+   }
 
    public static MBeanNotificationInfo[] getNotificationInfos()
    {
@@ -178,7 +162,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       }
       return new MBeanNotificationInfo[] { new MBeanNotificationInfo(names,
                                                                      JMSServerControl.class.getName(),
-      "Notifications emitted by a JMS Server") };
+                                                                     "Notifications emitted by a JMS Server") };
    }
 
    // Constructors --------------------------------------------------
@@ -194,29 +178,8 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
 
    // JMSServerControlMBean implementation --------------------------
    public void createConnectionFactory(final String name,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-                                       {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.CF, JMSServerControlImpl.convert(jndiBindings));
-
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-                                       }
-
-   public void createXAConnectionFactory(final String name,
+                                       final boolean ha,
+                                       final int cfType,
                                        final String liveTransportClassName,
                                        final Map<String, Object> liveTransportParams,
                                        final Object[] jndiBindings) throws Exception
@@ -229,99 +192,15 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
 
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.XA_CF, JMSServerControlImpl.convert(jndiBindings));
+         List<TransportConfiguration> list = new ArrayList<TransportConfiguration>(1);
 
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
+         list.add(liveTC);
 
-   public void createQueueConnectionFactory(final String name,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-   {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.QUEUE_CF, JMSServerControlImpl.convert(jndiBindings));
-
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
-
-   public void createTopicConnectionFactory(final String name,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-   {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.TOPIC_CF, JMSServerControlImpl.convert(jndiBindings));
-
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
-
-   public void createXAQueueConnectionFactory(final String name,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-   {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.QUEUE_XA_CF, JMSServerControlImpl.convert(jndiBindings));
-
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
-
-   public void createXATopicConnectionFactory(final String name,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-   {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         server.createConnectionFactory(name, liveTC, JMSFactoryType.TOPIC_XA_CF, JMSServerControlImpl.convert(jndiBindings));
+         server.createConnectionFactory(name,
+                                        ha,
+                                        JMSFactoryType.valueOf(cfType),
+                                        list,
+                                        JMSServerControlImpl.convert(jndiBindings));
 
          sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
       }
@@ -332,23 +211,25 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    }
 
    public void createConnectionFactory(final String name,
+                                       final boolean ha,
+                                       int cfType,
                                        final Object[] liveConnectorsTransportClassNames,
                                        final Object[] liveConnectorTransportParams,
-                                       final Object[] backupConnectorsTransportClassNames,
-                                       final Object[] backupConnectorTransportParams,
                                        final Object[] jndiBindings) throws Exception
-                                       {
+   {
       checkStarted();
 
       clearIO();
 
       try
       {
-         List<Pair<TransportConfiguration, TransportConfiguration>> pairs = JMSServerControlImpl.convertToConnectorPairs(liveConnectorsTransportClassNames,
-                                                                                                                         liveConnectorTransportParams,
-                                                                                                                         backupConnectorsTransportClassNames,
-                                                                                                                         backupConnectorTransportParams);
-         server.createConnectionFactory(name, pairs, JMSServerControlImpl.convert(jndiBindings));
+         List<TransportConfiguration> pairs = JMSServerControlImpl.convertToTransportConfigurationArray(liveConnectorsTransportClassNames,
+                                                                                                        liveConnectorTransportParams);
+         server.createConnectionFactory(name,
+                                        ha,
+                                        JMSFactoryType.valueOf(cfType),
+                                        pairs,
+                                        JMSServerControlImpl.convert(jndiBindings));
 
          sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
       }
@@ -356,15 +237,15 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          blockOnIO();
       }
-                                       }
+   }
 
    public void createConnectionFactory(final String name,
+                                       final boolean ha,
+                                       final int cfType,
                                        final String liveTransportClassNames,
                                        final String liveTransportParams,
-                                       final String backupTransportClassNames,
-                                       final String backupTransportParams,
                                        final String jndiBindings) throws Exception
-                                       {
+   {
       checkStarted();
 
       clearIO();
@@ -373,31 +254,34 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          Object[] liveClassNames = JMSServerControlImpl.toArray(liveTransportClassNames);
          Object[] liveParams = ManagementHelper.fromCommaSeparatedArrayOfCommaSeparatedKeyValues(liveTransportParams);
-         Object[] backupClassNames = JMSServerControlImpl.toArray(backupTransportClassNames);
-         Object[] backupParams = ManagementHelper.fromCommaSeparatedArrayOfCommaSeparatedKeyValues(backupTransportParams);;
          Object[] bindings = JMSServerControlImpl.toArray(jndiBindings);
-         createConnectionFactory(name, liveClassNames, liveParams, backupClassNames, backupParams, bindings);
+         createConnectionFactory(name, ha, cfType, liveClassNames, liveParams, bindings);
       }
       finally
       {
          blockOnIO();
       }
-                                       }
-
-
+   }
 
    public void createConnectionFactory(final String name,
+                                       final boolean ha,
+                                       final int cfType,
                                        final String discoveryAddress,
                                        final int discoveryPort,
                                        final Object[] jndiBindings) throws Exception
-                                       {
+   {
       checkStarted();
 
       clearIO();
 
       try
       {
-         server.createConnectionFactory(name, discoveryAddress, discoveryPort, JMSServerControlImpl.convert(jndiBindings));
+         server.createConnectionFactory(name,
+                                        ha,
+                                        JMSFactoryType.valueOf(cfType),
+                                        discoveryAddress,
+                                        discoveryPort,
+                                        JMSServerControlImpl.convert(jndiBindings));
 
          sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
       }
@@ -405,9 +289,11 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          blockOnIO();
       }
-                                       }
+   }
 
    public void createConnectionFactory(final String name,
+                                       final boolean ha,
+                                       final int cfType,
                                        final String discoveryAddress,
                                        final int discoveryPort,
                                        final String jndiBindings) throws Exception
@@ -420,7 +306,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          Object[] bindings = JMSServerControlImpl.toArray(jndiBindings);
 
-         createConnectionFactory(name, discoveryAddress, discoveryPort, bindings);
+         createConnectionFactory(name, ha, cfType, discoveryAddress, discoveryPort, bindings);
 
       }
       finally
@@ -429,7 +315,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       }
    }
 
-   public boolean createQueue(String name) throws Exception
+   public boolean createQueue(final String name) throws Exception
    {
       return createQueue(name, null, null, true);
    }
@@ -439,12 +325,18 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       return createQueue(name, jndiBindings, null, true);
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.api.jms.management.JMSServerControl#createQueue(java.lang.String, java.lang.String, java.lang.String)
+    */
    public boolean createQueue(String name, String jndiBindings, String selector) throws Exception
    {
       return createQueue(name, jndiBindings, selector, true);
    }
-   
-   public boolean createQueue(String name, String jndiBindings, String selector, boolean durable) throws Exception
+
+   public boolean createQueue(@Parameter(name = "name", desc = "Name of the queue to create") String name,
+                              @Parameter(name = "jndiBindings", desc = "comma-separated list of JNDI bindings (use '&comma;' if u need to use commas in your jndi name)") String jndiBindings,
+                              @Parameter(name = "selector", desc = "the jms selector") String selector,
+                              @Parameter(name = "durable", desc = "is the queue persistent and resilient to restart") boolean durable) throws Exception
    {
       checkStarted();
 
@@ -620,8 +512,8 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       try
       {
          Object[] cfControls = server.getHornetQServer()
-         .getManagementService()
-         .getResources(ConnectionFactoryControl.class);
+                                     .getManagementService()
+                                     .getResources(ConnectionFactoryControl.class);
          String[] names = new String[cfControls.length];
          for (int i = 0; i < cfControls.length; i++)
          {
@@ -641,9 +533,9 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    public void removeNotificationListener(final NotificationListener listener,
                                           final NotificationFilter filter,
                                           final Object handback) throws ListenerNotFoundException
-                                          {
+   {
       broadcaster.removeNotificationListener(listener, filter, handback);
-                                          }
+   }
 
    public void removeNotificationListener(final NotificationListener listener) throws ListenerNotFoundException
    {
@@ -653,9 +545,9 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    public void addNotificationListener(final NotificationListener listener,
                                        final NotificationFilter filter,
                                        final Object handback) throws IllegalArgumentException
-                                       {
+   {
       broadcaster.addNotificationListener(listener, filter, handback);
-                                       }
+   }
 
    public MBeanNotificationInfo[] getNotificationInfo()
    {
@@ -725,7 +617,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          blockOnIO();
       }
    }
-   
+
    public String listConnectionsAsJSON() throws Exception
    {
       checkStarted();
@@ -735,11 +627,11 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       try
       {
          JSONArray array = new JSONArray();
-         
+
          Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
 
          Set<ServerSession> sessions = server.getHornetQServer().getSessions();
-         
+
          Map<Object, ServerSession> jmsSessions = new HashMap<Object, ServerSession>();
 
          for (ServerSession session : sessions)
@@ -777,7 +669,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       try
       {
          JSONArray array = new JSONArray();
-         
+
          Set<RemotingConnection> connections = server.getHornetQServer().getRemotingService().getConnections();
          for (RemotingConnection connection : connections)
          {
@@ -808,12 +700,16 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
                      }
                      obj.put("destinationName", destinationInfo[0]);
                      obj.put("destinationType", destinationInfo[1]);
-                     if (destinationInfo[1].equals("topic")) {
+                     if (destinationInfo[1].equals("topic"))
+                     {
                         try
                         {
-                           HornetQDestination.decomposeQueueNameForDurableSubscription(consumer.getQueue().getName().toString());
+                           HornetQDestination.decomposeQueueNameForDurableSubscription(consumer.getQueue()
+                                                                                               .getName()
+                                                                                               .toString());
                            obj.put("durable", true);
-                        } catch (IllegalArgumentException e)
+                        }
+                        catch (IllegalArgumentException e)
                         {
                            obj.put("durable", false);
                         }
@@ -973,21 +869,21 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    {
       String[] addresses = server.getHornetQServer().getHornetQServerControl().listTargetAddresses(sessionID);
       Map<String, DestinationControl> allDests = new HashMap<String, DestinationControl>();
-      
+
       Object[] queueControls = server.getHornetQServer().getManagementService().getResources(JMSQueueControl.class);
       for (int i = 0; i < queueControls.length; i++)
       {
          JMSQueueControl queueControl = (JMSQueueControl)queueControls[i];
          allDests.put(queueControl.getAddress(), queueControl);
       }
-      
+
       Object[] topicControls = server.getHornetQServer().getManagementService().getResources(TopicControl.class);
       for (int i = 0; i < topicControls.length; i++)
       {
          TopicControl topicControl = (TopicControl)topicControls[i];
          allDests.put(topicControl.getAddress(), topicControl);
       }
-      
+
       List<String> destinations = new ArrayList<String>();
       for (int i = 0; i < addresses.length; i++)
       {
@@ -1025,7 +921,7 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       checkStarted();
 
       clearIO();
-      
+
       JSONArray array = new JSONArray();
       try
       {

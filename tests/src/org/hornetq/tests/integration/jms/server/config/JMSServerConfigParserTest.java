@@ -54,7 +54,7 @@ public class JMSServerConfigParserTest extends ServiceTestBase
       // anything so the parsing will work
       config.getConnectorConfigurations().put("netty", new TransportConfiguration());
       
-      JMSServerConfigParser parser = new JMSServerConfigParserImpl();
+      JMSServerConfigParser parser = new JMSServerConfigParserImpl(config);
       
       String conf = "hornetq-jms-for-JMSServerDeployerTest.xml";
       URL confURL = Thread.currentThread().getContextClassLoader().getResource(conf);
@@ -83,7 +83,6 @@ public class JMSServerConfigParserTest extends ServiceTestBase
       assertEquals(false, cfConfig.isAutoGroup());
       assertEquals(true, cfConfig.isPreAcknowledge());
       assertEquals(2345, cfConfig.getConnectionTTL());
-      assertEquals(false, cfConfig.isFailoverOnServerShutdown());
       assertEquals("FooClass", cfConfig.getLoadBalancingPolicyClassName());
       assertEquals(34, cfConfig.getReconnectAttempts());
       assertEquals(5, cfConfig.getRetryInterval());

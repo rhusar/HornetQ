@@ -85,7 +85,8 @@ public class RequestorTest extends UnitTestCase
       SimpleString requestAddress = RandomUtil.randomSimpleString();
       SimpleString requestQueue = RandomUtil.randomSimpleString();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       final ClientSession session = sf.createSession(false, true, true);
 
       session.start();
@@ -118,7 +119,8 @@ public class RequestorTest extends UnitTestCase
       SimpleString requestAddress = RandomUtil.randomSimpleString();
       SimpleString requestQueue = RandomUtil.randomSimpleString();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       final ClientSession session = sf.createSession(false, true, true);
 
       session.start();
@@ -148,7 +150,8 @@ public class RequestorTest extends UnitTestCase
    {
       final SimpleString requestAddress = RandomUtil.randomSimpleString();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       final ClientSession session = sf.createSession(false, true, true);
 
       session.close();
@@ -171,7 +174,8 @@ public class RequestorTest extends UnitTestCase
       SimpleString requestAddress = RandomUtil.randomSimpleString();
       SimpleString requestQueue = RandomUtil.randomSimpleString();
 
-      ClientSessionFactory sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      ClientSessionFactory sf = locator.createSessionFactory();
       final ClientSession session = sf.createSession(false, true, true);
 
       session.start();
@@ -221,7 +225,8 @@ public class RequestorTest extends UnitTestCase
       service = HornetQServers.newHornetQServer(conf, false);
       service.start();
 
-      sf = HornetQClient.createClientSessionFactory(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      sf = locator.createSessionFactory();
    }
 
    @Override

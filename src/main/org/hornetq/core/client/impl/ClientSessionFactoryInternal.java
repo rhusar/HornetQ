@@ -12,7 +12,9 @@
  */
 package org.hornetq.core.client.impl;
 
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.SessionFailureListener;
 
 /**
  * A ClientSessionFactoryInternal
@@ -22,9 +24,19 @@ import org.hornetq.api.core.client.ClientSessionFactory;
  */
 public interface ClientSessionFactoryInternal extends ClientSessionFactory
 {
+   void causeExit();
+   
+   void addFailureListener(SessionFailureListener listener);
+
+   boolean removeFailureListener(SessionFailureListener listener);
+   
    // for testing
 
    int numConnections();
 
    int numSessions();
+   
+   void removeSession(final ClientSessionInternal session, boolean failingOver);
+
+   void connect(int reconnectAttempts, boolean failoverOnInitialConnection) throws HornetQException;
 }

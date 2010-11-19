@@ -2,6 +2,8 @@ package org.hornetq.rest.queue;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.rest.util.LinkStrategy;
@@ -14,6 +16,7 @@ import org.hornetq.spi.core.naming.BindingRegistry;
  */
 public abstract class DestinationServiceManager
 {
+   protected ServerLocator locator;
    protected ClientSessionFactory sessionFactory;
    protected ClientSessionFactory consumerSessionFactory;
    protected boolean started;
@@ -107,8 +110,22 @@ public abstract class DestinationServiceManager
 
    protected void initDefaults()
    {
+	  if (locator == null)
+	  {
+		  locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+	  }
       if (sessionFactory == null)
-         sessionFactory = new ClientSessionFactoryImpl(new TransportConfiguration(InVMConnectorFactory.class.getName()));
+      {
+    	 try
+    	 {
+    		 sessionFactory = locator.createSessionFactory();
+    	 }
+    	 catch (Exception e)
+    	 {
+    		 throw new RuntimeException (e.getMessage(), e);
+    	 }
+      }
+      
       if (consumerSessionFactory == null) consumerSessionFactory = sessionFactory;
 
       if (timeoutTask == null) throw new RuntimeException("TimeoutTask is not set");

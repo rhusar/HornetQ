@@ -125,11 +125,12 @@ public class FloodServerTest extends UnitTestCase
       boolean failoverOnServerShutdown = true;
       long callTimeout = 30000;
 
-      List<Pair<TransportConfiguration, TransportConfiguration>> connectorConfigs = new ArrayList<Pair<TransportConfiguration, TransportConfiguration>>();
-      connectorConfigs.add(new Pair<TransportConfiguration, TransportConfiguration>(new TransportConfiguration(NettyConnectorFactory.class.getName()),
-                                                                                    null));
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
 
       serverManager.createConnectionFactory("ManualReconnectionToSingleServerTest",
+                                          false,
+                                          JMSFactoryType.CF,
                                             connectorConfigs,
                                             null,
                                             1000,
@@ -158,9 +159,7 @@ public class FloodServerTest extends UnitTestCase
                                             1000,
                                             reconnectAttempts,
                                             HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
-                                            failoverOnServerShutdown,
                                             null,
-                                            JMSFactoryType.CF,
                                             "/cf");
    }
 
