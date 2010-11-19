@@ -653,6 +653,7 @@ public class HornetQConnectionFactory implements ConnectionFactory, QueueConnect
     */
    public void setCompressLargeMessages(boolean compressLargeMessages)
    {
+      this.sessionFactory.setCompressLargeMessages(compressLargeMessages);
    }
 
    // Inner classes --------------------------------------------------------------------------------
