@@ -16,6 +16,7 @@ package org.hornetq.jms.client;
 import javax.jms.XAConnectionFactory;
 
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ServerLocator;
 
 /**
  * A class that represents a XAConnectionFactory.
@@ -33,6 +34,14 @@ public class HornetQXAConnectionFactory extends HornetQConnectionFactory impleme
    {
       super();
    }
+
+   /**
+    * @param serverLocator
+    */
+   public HornetQXAConnectionFactory(ServerLocator serverLocator)
+   {
+      super(serverLocator);
+    }
 
    /**
     * @param ha

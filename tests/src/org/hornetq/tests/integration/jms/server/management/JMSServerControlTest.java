@@ -38,7 +38,6 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.AddressControl;
 import org.hornetq.api.core.management.ObjectNameBuilder;
-import org.hornetq.api.core.management.Parameter;
 import org.hornetq.api.core.management.ResourceNames;
 import org.hornetq.api.jms.management.JMSServerControl;
 import org.hornetq.core.config.Configuration;
@@ -48,7 +47,6 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.QueueBinding;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
-import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
@@ -410,6 +408,8 @@ public class JMSServerControlTest extends ManagementTestBase
 
    public void testCreateConnectionFactory_3b() throws Exception
    {
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
       doCreateConnectionFactory(new ConnectionFactoryCreator()
       {
          public void createConnectionFactory(final JMSServerControl control,
@@ -417,61 +417,12 @@ public class JMSServerControlTest extends ManagementTestBase
                                              final Object[] bindings) throws Exception
          {
             String jndiBindings = JMSServerControlTest.toCSV(bindings);
-            String params = "\"" + TransportConstants.SERVER_ID_PROP_NAME + "\"=1";
 
             control.createConnectionFactory(cfName,
                                             false,
                                             0,
-                                            InVMConnectorFactory.class.getName(),
-                                            params,
+                                            "tst",
                                             jndiBindings);
-         }
-      });
-   }
-
-   // with 2 live servers & no backups
-   public void testCreateConnectionFactory_3c() throws Exception
-   {
-      doCreateConnectionFactory(new ConnectionFactoryCreator()
-      {
-         public void createConnectionFactory(final JMSServerControl control,
-                                             final String cfName,
-                                             final Object[] bindings) throws Exception
-         {
-            String jndiBindings = JMSServerControlTest.toCSV(bindings);
-            String params = String.format("{%s=%s}, {%s=%s}",
-                                          TransportConstants.SERVER_ID_PROP_NAME,
-                                          0,
-                                          TransportConstants.SERVER_ID_PROP_NAME,
-                                          1);
-
-            control.createConnectionFactory(cfName,
-                                            false,
-                                            0,
-                                            InVMConnectorFactory.class.getName() + ", " +
-                                                     InVMConnectorFactory.class.getName(),
-                                            params,
-                                            jndiBindings);
-         }
-      });
-   }
-
-   public void testCreateConnectionFactory_5() throws Exception
-   {
-      doCreateConnectionFactory(new ConnectionFactoryCreator()
-      {
-         public void createConnectionFactory(final JMSServerControl control,
-                                             final String cfName,
-                                             final Object[] bindings) throws Exception
-         {
-            TransportConfiguration tcLive = new TransportConfiguration(InVMConnectorFactory.class.getName());
-
-            control.createConnectionFactory(cfName,
-                                            false,
-                                            0,
-                                            new Object[] { tcLive.getFactoryClassName() },
-                                            new Object[] { tcLive.getParams() },
-                                            bindings);
          }
       });
    }
@@ -481,11 +432,12 @@ public class JMSServerControlTest extends ManagementTestBase
       Xid xid = newXID();
 
       JMSServerControl control = createManagementControl();
-      TransportConfiguration tc = new TransportConfiguration(InVMConnectorFactory.class.getName());
       String cfJNDIBinding = "/cf";
       String cfName = "cf";
+      
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
 
-      control.createConnectionFactory(cfName, false, 0, tc.getFactoryClassName(), "", cfJNDIBinding);
+      control.createConnectionFactory(cfName, false, 0, "tst", cfJNDIBinding);
 
       control.createQueue("q", "/q");
 
@@ -525,8 +477,10 @@ public class JMSServerControlTest extends ManagementTestBase
       TransportConfiguration tc = new TransportConfiguration(InVMConnectorFactory.class.getName());
       String cfJNDIBinding = "/cf";
       String cfName = "cf";
+      
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
 
-      control.createConnectionFactory(cfName, false, 0, tc.getFactoryClassName(), "", cfJNDIBinding);
+      control.createConnectionFactory(cfName, false, 0, "tst", cfJNDIBinding);
 
       control.createQueue("q", "/q");
 
@@ -649,6 +603,7 @@ public class JMSServerControlTest extends ManagementTestBase
                                                null,
                                                "231.7.7.7",
                                                discoveryPort,
+                                               ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT,
                                                ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT));
       HornetQServer server = HornetQServers.newHornetQServer(conf, mbeanServer, false);
 

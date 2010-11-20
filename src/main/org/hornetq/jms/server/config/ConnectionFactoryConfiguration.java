@@ -34,21 +34,13 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
 
    void setBindings(String[] bindings);
    
-   String getLocalBindAddress();
+   String getDiscoveryGroupName();
    
-   void setLocalBindAddress(String localBindAddress);
+   void setDiscoveryGroupName(String discoveryGroupName);
+   
+   List<String> getConnectorNames();
 
-   String getDiscoveryAddress();
-
-   void setDiscoveryAddress(String discoveryAddress);
-
-   int getDiscoveryPort();
-
-   void setDiscoveryPort(int discoveryPort);
-
-   List<TransportConfiguration> getConnectorConfigs();
-
-   void setConnectorConfigs(List<TransportConfiguration> connectorConfigs);
+   void setConnectorNames(List<String> connectorNames);
    
    boolean isHA();
    
@@ -57,10 +49,6 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
    String getClientID();
 
    void setClientID(String clientID);
-
-   long getDiscoveryRefreshTimeout();
-
-   void setDiscoveryRefreshTimeout(long discoveryRefreshTimeout);
 
    long getClientFailureCheckPeriod();
 
@@ -133,10 +121,6 @@ public interface ConnectionFactoryConfiguration extends EncodingSupport
    int getDupsOKBatchSize();
 
    void setDupsOKBatchSize(int dupsOKBatchSize);
-
-   long getInitialWaitTimeout();
-
-   void setInitialWaitTimeout(long initialWaitTimeout);
 
    boolean isUseGlobalPools();
 

@@ -68,14 +68,12 @@ public class JMSConnectionFactoryConfigurationStorageTest extends StorageManager
 
       createJMSStorage();
       
-      List<TransportConfiguration> transportConfigs = new ArrayList<TransportConfiguration>();
+      List<String> transportConfigs = new ArrayList<String>();
       
       for (int i = 0 ; i < 5; i++)
       {
-         TransportConfiguration config1 = new TransportConfiguration("c1-" + i);
-         TransportConfiguration config2 = new TransportConfiguration("c2-" + i);
-         transportConfigs.add(config1);
-         transportConfigs.add(config2);
+         transportConfigs.add("c1-" + i);
+         transportConfigs.add("c2-" + i);
       }
       
 
@@ -95,12 +93,12 @@ public class JMSConnectionFactoryConfigurationStorageTest extends StorageManager
       
       PersistedConnectionFactory cf1 = cfs.get(0);
       
-      assertEquals(5, cf1.getConfig().getConnectorConfigs().size());
+      assertEquals(5, cf1.getConfig().getConnectorNames().size());
       
       int i = 0 ;
-      List<TransportConfiguration> configs = cf1.getConfig().getConnectorConfigs();
-      assertEquals(configs.get(0).getName(), "c1-" + i);
-      assertEquals(configs.get(1).getName(), "c2-" + i);
+      List<String> configs = cf1.getConfig().getConnectorNames();
+      assertEquals(configs.get(0), "c1-" + i);
+      assertEquals(configs.get(1), "c2-" + i);
    }
 
    public void testSizeOfCF() throws Exception
@@ -112,7 +110,7 @@ public class JMSConnectionFactoryConfigurationStorageTest extends StorageManager
          str[i] = "str" + i;
       }
 
-      ConnectionFactoryConfiguration config = new ConnectionFactoryConfigurationImpl("some-name", false, new ArrayList<TransportConfiguration>(),  str);
+      ConnectionFactoryConfiguration config = new ConnectionFactoryConfigurationImpl("some-name", false, new ArrayList<String>(),  "");
 
       int size = config.getEncodeSize();
 
@@ -145,23 +143,16 @@ public class JMSConnectionFactoryConfigurationStorageTest extends StorageManager
          str[i] = "str" + i;
       }
 
-      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      List<String> connectorConfigs = new ArrayList<String>();
       Map<String, Object> liveParams = new HashMap<String, Object>();
       liveParams.put(TransportConstants.PORT_PROP_NAME, 5665);
-      TransportConfiguration live1 = new TransportConfiguration(NettyConnectorFactory.class.getName(), liveParams );
       Map<String, Object> backupParams = new HashMap<String, Object>();
       backupParams.put(TransportConstants.PORT_PROP_NAME, 5775);
-      TransportConfiguration backup1 = new TransportConfiguration(NettyConnectorFactory.class.getName(), backupParams);
       Map<String, Object> liveParams2 = new HashMap<String, Object>();
       liveParams2.put(TransportConstants.PORT_PROP_NAME, 6665);
-      TransportConfiguration live2 = new TransportConfiguration(NettyConnectorFactory.class.getName(), liveParams2);
-      
-      connectorConfigs.add(live1);
-      connectorConfigs.add(live2);
-      connectorConfigs.add(backup1);
 
       ConnectionFactoryConfiguration config = new ConnectionFactoryConfigurationImpl("some-name", false, connectorConfigs, str);
-      config.setConnectorConfigs(connectorConfigs );
+      config.setConnectorNames(connectorConfigs );
       List<Pair<String, String>> connectors = new ArrayList<Pair<String,String>>();
       connectors.add(new Pair<String, String>(RandomUtil.randomString(), null));
       //config.setConnectorNames(connectors);

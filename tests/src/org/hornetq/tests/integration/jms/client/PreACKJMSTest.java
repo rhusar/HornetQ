@@ -13,7 +13,9 @@
 
 package org.hornetq.tests.integration.jms.client;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javax.jms.Connection;
 import javax.jms.MessageConsumer;
@@ -27,8 +29,10 @@ import junit.framework.Assert;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.server.HornetQServer;
 import org.hornetq.jms.server.impl.JMSFactoryType;
 import org.hornetq.tests.util.JMSTestBase;
+import org.hornetq.tests.util.RandomUtil;
 
 /**
  * A PreACKJMSTest
@@ -197,11 +201,13 @@ public class PreACKJMSTest extends JMSTestBase
       double retryIntervalMultiplier = 1.0;
       int reconnectAttempts = -1;
       int callTimeout = 30000;
+     
+      ArrayList<String> connectors = registerConnectors(server, connectorConfigs);
 
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
                                        false,
                                        JMSFactoryType.CF,
-                                        connectorConfigs,
+                                       connectors,
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                         HornetQClient.DEFAULT_CONNECTION_TTL,

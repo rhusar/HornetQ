@@ -59,17 +59,14 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
 
    // Attributes ----------------------------------------------------
 
-   private final Configuration config;
-
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
 
-   public JMSServerConfigParserImpl(final Configuration config)
+   public JMSServerConfigParserImpl()
    {
-      this.config = config;
    }
 
    /**
@@ -344,11 +341,6 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
                                                                                      "connection-load-balancing-policy-class-name",
                                                                                      HornetQClient.DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME,
                                                                                      Validators.NOT_NULL_OR_EMPTY);
-      long discoveryInitialWaitTimeout = XMLConfigurationUtil.getLong(e,
-                                                                      "discovery-initial-wait-timeout",
-                                                                      HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
-                                                                      Validators.GT_ZERO);
-
       boolean ha = XMLConfigurationUtil.getBoolean(e, "ha", HornetQClient.DEFAULT_HA);
 
       String groupid = XMLConfigurationUtil.getString(e, "group-id", null, Validators.NO_CHECK);
@@ -403,44 +395,19 @@ public class JMSServerConfigParserImpl implements JMSServerConfigParser
 
       if (discoveryGroupName != null)
       {
-         DiscoveryGroupConfiguration discoveryGroupConfiguration = config.getDiscoveryGroupConfigurations()
-                                                                         .get(discoveryGroupName);
-
-         if (discoveryGroupConfiguration == null)
-         {
-            log.warn("There is no discovery group with name '" + discoveryGroupName + "' deployed.");
-
-            throw new IllegalArgumentException("There is no discovery group with name '" + discoveryGroupName +
-                                               "' deployed.");
-         }
-
          cfConfig = new ConnectionFactoryConfigurationImpl(name,
                                                            ha,
-                                                           discoveryGroupConfiguration.getGroupAddress(),
-                                                           discoveryGroupConfiguration.getGroupPort(),
                                                            strbindings);
-         cfConfig.setLocalBindAddress(discoveryGroupConfiguration.getLocalBindAddress());
-         cfConfig.setInitialWaitTimeout(discoveryInitialWaitTimeout);
-         cfConfig.setDiscoveryRefreshTimeout(discoveryGroupConfiguration.getRefreshTimeout());
+         cfConfig.setDiscoveryGroupName(discoveryGroupName);
       }
       else
       {
-         List<TransportConfiguration> tcList = new ArrayList<TransportConfiguration>();
-         
+         ArrayList<String> connectors = new ArrayList<String>(connectorNames.size());
          for (String connectorName : connectorNames)
          {
-            TransportConfiguration tc = config.getConnectorConfigurations().get(connectorName);
-
-            if (tc == null)
-            {
-               log.warn("There is no connector with name '" + connectorName + "' deployed.");
-
-               throw new IllegalArgumentException("There is no connector with name '" + connectorName + "' deployed.");
-            }
-            
-            tcList.add(tc);
+            connectors.add(connectorName);
          }
-         cfConfig = new ConnectionFactoryConfigurationImpl(name, ha, tcList, strbindings);
+         cfConfig = new ConnectionFactoryConfigurationImpl(name, ha, connectors, strbindings);
       }
 
       cfConfig.setFactoryType(factType);

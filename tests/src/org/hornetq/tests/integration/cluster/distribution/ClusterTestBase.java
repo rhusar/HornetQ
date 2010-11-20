@@ -1525,7 +1525,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       configuration.getBroadcastGroupConfigurations().add(bcConfig);
 
-      DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000);
+      DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
       configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 

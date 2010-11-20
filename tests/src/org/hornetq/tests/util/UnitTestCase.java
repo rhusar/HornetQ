@@ -400,6 +400,28 @@ public class UnitTestCase extends TestCase
       Assert.assertNotNull(o);
       return o;
    }
+   
+   /**
+    * @param connectorConfigs
+    * @return
+    */
+   protected ArrayList<String> registerConnectors(final HornetQServer server, final List<TransportConfiguration> connectorConfigs)
+   {
+      // The connectors need to be pre-configured at main config object but this method is taking TransportConfigurations directly
+      // So this will first register them at the config and then generate a list of objects
+      ArrayList<String> connectors = new ArrayList<String>();
+      for (TransportConfiguration tnsp : connectorConfigs)
+      {
+         String name = RandomUtil.randomString();
+         
+         server.getConfiguration().getConnectorConfigurations().put(name, tnsp);
+         
+         connectors.add(name);
+      }
+      return connectors;
+   }
+
+
 
    protected static void checkFreePort(final int... ports)
    {

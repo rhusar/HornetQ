@@ -39,6 +39,7 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.integration.bootstrap.HornetQBootstrapServer;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.impl.JMSFactoryType;
+import org.hornetq.tests.util.RandomUtil;
 import org.jboss.kernel.plugins.config.property.PropertyKernelConfig;
 
 /**
@@ -288,11 +289,13 @@ public class LocalTestServer implements Server, Runnable
    {
       List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
       connectorConfigs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
+      
+      ArrayList<String> connectors = registerTransportConfigurations(connectorConfigs);
 
       getJMSServerManager().createConnectionFactory(objectName,
                                                     false, 
                                                     JMSFactoryType.CF,
-                                                    connectorConfigs,
+                                                    connectors,
                                                     clientId,
                                                     HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                                     HornetQClient.DEFAULT_CONNECTION_TTL,
@@ -322,6 +325,26 @@ public class LocalTestServer implements Server, Runnable
                                                     HornetQClient.DEFAULT_FAILOVER_ON_INITIAL_CONNECTION,
                                                     null,
                                                     jndiBindings);
+   }
+
+   /**
+    * @param connectorConfigs
+    * @return
+    */
+   protected ArrayList<String> registerTransportConfigurations(List<TransportConfiguration> connectorConfigs)
+   {
+      // The connectors need to be pre-configured at main config object but this method is taking TransportConfigurations directly
+      // So this will first register them at the config and then generate a list of objects
+      ArrayList<String> connectors = new ArrayList<String>();
+      for (TransportConfiguration tnsp : connectorConfigs)
+      {
+         String name = RandomUtil.randomString();
+         
+         getHornetQServer().getConfiguration().getConnectorConfigurations().put(name, tnsp);
+         
+         connectors.add(name);
+      }
+      return connectors;
    }
 
    public void undeployConnectionFactory(final String objectName) throws Exception

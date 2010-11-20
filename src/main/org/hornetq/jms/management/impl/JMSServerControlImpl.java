@@ -30,8 +30,6 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.StandardMBean;
 
-import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.Parameter;
 import org.hornetq.api.jms.management.ConnectionFactoryControl;
 import org.hornetq.api.jms.management.DestinationControl;
@@ -45,10 +43,10 @@ import org.hornetq.core.server.ServerSession;
 import org.hornetq.jms.client.HornetQDestination;
 import org.hornetq.jms.client.HornetQQueue;
 import org.hornetq.jms.server.JMSServerManager;
+import org.hornetq.jms.server.impl.JMSFactoryType;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.utils.json.JSONArray;
 import org.hornetq.utils.json.JSONObject;
-import org.hornetq.jms.server.impl.JMSFactoryType;
 
 /**
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -130,28 +128,6 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       return result;
    }
 
-   private static List<TransportConfiguration> convertToTransportConfigurationArray(final Object[] liveConnectorsTransportClassNames,
-                                                                                    final Object[] liveConnectorTransportParams)
-   {
-      List<TransportConfiguration> tcs = new ArrayList<TransportConfiguration>();
-
-      for (int i = 0; i < liveConnectorsTransportClassNames.length; i++)
-      {
-         Map<String, Object> liveParams = null;
-         if (liveConnectorTransportParams.length > i)
-         {
-            liveParams = (Map<String, Object>)liveConnectorTransportParams[i];
-         }
-
-         TransportConfiguration tcLive = new TransportConfiguration(liveConnectorsTransportClassNames[i].toString(),
-                                                                    liveParams);
-
-         tcs.add(tcLive);
-      }
-
-      return tcs;
-   }
-
    public static MBeanNotificationInfo[] getNotificationInfos()
    {
       NotificationType[] values = NotificationType.values();
@@ -177,45 +153,15 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
    // Public --------------------------------------------------------
 
    // JMSServerControlMBean implementation --------------------------
-   public void createConnectionFactory(final String name,
-                                       final boolean ha,
-                                       final int cfType,
-                                       final String liveTransportClassName,
-                                       final Map<String, Object> liveTransportParams,
-                                       final Object[] jndiBindings) throws Exception
-   {
-      checkStarted();
 
-      clearIO();
-
-      try
-      {
-         TransportConfiguration liveTC = new TransportConfiguration(liveTransportClassName, liveTransportParams);
-
-         List<TransportConfiguration> list = new ArrayList<TransportConfiguration>(1);
-
-         list.add(liveTC);
-
-         server.createConnectionFactory(name,
-                                        ha,
-                                        JMSFactoryType.valueOf(cfType),
-                                        list,
-                                        JMSServerControlImpl.convert(jndiBindings));
-
-         sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
-      }
-      finally
-      {
-         blockOnIO();
-      }
-   }
-
-   public void createConnectionFactory(final String name,
-                                       final boolean ha,
+   /**
+    * See the interface definition for the javadoc.
+    */
+   public void createConnectionFactory(String name,
+                                       boolean ha,
                                        int cfType,
-                                       final Object[] liveConnectorsTransportClassNames,
-                                       final Object[] liveConnectorTransportParams,
-                                       final Object[] jndiBindings) throws Exception
+                                       String[] connectorNames,
+                                       Object[] jndiBindings) throws Exception
    {
       checkStarted();
 
@@ -223,12 +169,17 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
 
       try
       {
-         List<TransportConfiguration> pairs = JMSServerControlImpl.convertToTransportConfigurationArray(liveConnectorsTransportClassNames,
-                                                                                                        liveConnectorTransportParams);
+         List<String> connectorList = new ArrayList<String>(connectorNames.length);
+
+         for (String str : connectorNames)
+         {
+            connectorList.add(str);
+         }
+
          server.createConnectionFactory(name,
                                         ha,
                                         JMSFactoryType.valueOf(cfType),
-                                        pairs,
+                                        connectorList,
                                         JMSServerControlImpl.convert(jndiBindings));
 
          sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
@@ -239,36 +190,27 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       }
    }
 
-   public void createConnectionFactory(final String name,
-                                       final boolean ha,
-                                       final int cfType,
-                                       final String liveTransportClassNames,
-                                       final String liveTransportParams,
-                                       final String jndiBindings) throws Exception
+   /**
+    * Create a JMS ConnectionFactory with the specified name connected to a single live-backup pair of servers.
+    * <br>
+    * The ConnectionFactory is bound to JNDI for all the specified bindings Strings.
+    *  
+    */
+   public void createConnectionFactory(String name, boolean ha, int cfType, String connectors, String jndiBindings) throws Exception
    {
-      checkStarted();
 
-      clearIO();
+      createConnectionFactory(name, ha, cfType, toArray(connectors), toArray(jndiBindings));
 
-      try
-      {
-         Object[] liveClassNames = JMSServerControlImpl.toArray(liveTransportClassNames);
-         Object[] liveParams = ManagementHelper.fromCommaSeparatedArrayOfCommaSeparatedKeyValues(liveTransportParams);
-         Object[] bindings = JMSServerControlImpl.toArray(jndiBindings);
-         createConnectionFactory(name, ha, cfType, liveClassNames, liveParams, bindings);
-      }
-      finally
-      {
-         blockOnIO();
-      }
    }
 
-   public void createConnectionFactory(final String name,
-                                       final boolean ha,
-                                       final int cfType,
-                                       final String discoveryAddress,
-                                       final int discoveryPort,
-                                       final Object[] jndiBindings) throws Exception
+   /**
+    * Look at the iterface for the javadoc
+    */
+   public void createConnectionFactoryDiscovery(String name,
+                                                boolean ha,
+                                                int cfType,
+                                                String discoveryGroupName,
+                                                Object[] bindings) throws Exception
    {
       checkStarted();
 
@@ -279,9 +221,8 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
          server.createConnectionFactory(name,
                                         ha,
                                         JMSFactoryType.valueOf(cfType),
-                                        discoveryAddress,
-                                        discoveryPort,
-                                        JMSServerControlImpl.convert(jndiBindings));
+                                        discoveryGroupName,
+                                        JMSServerControlImpl.convert(bindings));
 
          sendNotification(NotificationType.CONNECTION_FACTORY_CREATED, name);
       }
@@ -289,30 +230,19 @@ public class JMSServerControlImpl extends StandardMBean implements JMSServerCont
       {
          blockOnIO();
       }
+
    }
 
-   public void createConnectionFactory(final String name,
-                                       final boolean ha,
-                                       final int cfType,
-                                       final String discoveryAddress,
-                                       final int discoveryPort,
-                                       final String jndiBindings) throws Exception
+   /**
+    * Look at the iterface for the javadoc
+    */
+   public void createConnectionFactoryDiscovery(String name,
+                                                boolean ha,
+                                                int cfType,
+                                                String discoveryGroupName,
+                                                String jndiBindings) throws Exception
    {
-      checkStarted();
-
-      clearIO();
-
-      try
-      {
-         Object[] bindings = JMSServerControlImpl.toArray(jndiBindings);
-
-         createConnectionFactory(name, ha, cfType, discoveryAddress, discoveryPort, bindings);
-
-      }
-      finally
-      {
-         blockOnIO();
-      }
+      createConnectionFactoryDiscovery(name, ha, cfType, discoveryGroupName, toArray(jndiBindings));
    }
 
    public boolean createQueue(final String name) throws Exception

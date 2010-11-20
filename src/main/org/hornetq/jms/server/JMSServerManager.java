@@ -159,18 +159,18 @@ public interface JMSServerManager extends HornetQComponent
     */
    boolean destroyTopic(String name) throws Exception;
 
-   void createConnectionFactory(String name, boolean ha, JMSFactoryType cfType, String discoveryAddress, int discoveryPort, String ... jndiBindings) throws Exception;
+   void createConnectionFactory(String name, boolean ha, JMSFactoryType cfType, String discoveryGroupName, String ... jndiBindings) throws Exception;
 
    void createConnectionFactory(String name,
                                 boolean ha,
                                 JMSFactoryType cfType, 
-                                List<TransportConfiguration> connectorConfigs,
+                                List<String> connectorNames,
                                 String ... bindings) throws Exception;
 
    void createConnectionFactory(String name,
                                 boolean ha,
                                 JMSFactoryType cfType, 
-                                List<TransportConfiguration> connectorConfigs,                                
+                                List<String> connectorNames,                                
                                 String clientID,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
@@ -204,12 +204,8 @@ public interface JMSServerManager extends HornetQComponent
    void createConnectionFactory(String name,
                                 boolean ha,
                                 JMSFactoryType cfType, 
-                                String localBindAdress,
-                                String discoveryAddress,
-                                int discoveryPort,
+                                String discoveryGroupName,
                                 String clientID,
-                                long discoveryRefreshTimeout,
-                                long discoveryInitialWaitTimeout,
                                 long clientFailureCheckPeriod,
                                 long connectionTTL,
                                 long callTimeout,

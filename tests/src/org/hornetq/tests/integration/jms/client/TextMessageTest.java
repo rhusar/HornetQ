@@ -24,7 +24,6 @@ import javax.jms.TextMessage;
 
 import junit.framework.Assert;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.jms.server.impl.JMSFactoryType;
@@ -236,7 +235,7 @@ public class TextMessageTest extends JMSTestBase
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
                                        false,
                                        JMSFactoryType.CF,
-                                        connectorConfigs,
+                                        registerConnectors(server, connectorConfigs),
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                         HornetQClient.DEFAULT_CONNECTION_TTL,

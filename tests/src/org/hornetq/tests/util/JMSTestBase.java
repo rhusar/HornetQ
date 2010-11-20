@@ -183,7 +183,7 @@ public class JMSTestBase extends ServiceTestBase
       jmsServer.createConnectionFactory("ManualReconnectionToSingleServerTest",
                                         false,
                                         JMSFactoryType.CF,
-                                        connectorConfigs,
+                                        registerConnectors(server, connectorConfigs),
                                         null,
                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                         HornetQClient.DEFAULT_CONNECTION_TTL,

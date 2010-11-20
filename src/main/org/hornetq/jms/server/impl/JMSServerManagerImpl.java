@@ -29,6 +29,7 @@ import org.hornetq.api.core.management.AddressControl;
 import org.hornetq.api.core.management.ResourceNames;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.DiscoveryGroupConfiguration;
 import org.hornetq.core.deployers.DeploymentManager;
 import org.hornetq.core.deployers.impl.FileDeploymentManager;
 import org.hornetq.core.deployers.impl.XmlDeployer;
@@ -697,7 +698,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
    public synchronized void createConnectionFactory(final String name,
                                                     final boolean ha,
                                                     final JMSFactoryType cfType,
-                                                    final List<TransportConfiguration> connectorConfigs,
+                                                    final List<String> connectorNames,
                                                     String... jndiBindings) throws Exception
    {
       checkInitialised();
@@ -706,7 +707,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       {
          ConnectionFactoryConfiguration configuration = new ConnectionFactoryConfigurationImpl(name,
                                                                                                ha,
-                                                                                               connectorConfigs);
+                                                                                               connectorNames);
          configuration.setFactoryType(cfType);
          createConnectionFactory(true, configuration, jndiBindings);
       }
@@ -715,7 +716,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
    public synchronized void createConnectionFactory(final String name,
                                                     final boolean ha,
                                                     JMSFactoryType cfType, 
-                                                    final List<TransportConfiguration> connectorConfigs,
+                                                    final List<String> connectorNames,
                                                     final String clientID,
                                                     final long clientFailureCheckPeriod,
                                                     final long connectionTTL,
@@ -752,7 +753,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       {
          ConnectionFactoryConfiguration configuration = new ConnectionFactoryConfigurationImpl(name,
                                                                                                ha,
-                                                                                               connectorConfigs);
+                                                                                               connectorNames);
          configuration.setClientID(clientID);
          configuration.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          configuration.setConnectionTTL(connectionTTL);
@@ -787,13 +788,9 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
 
    public synchronized void createConnectionFactory(final String name,
                                                     final boolean ha,
-                                                    JMSFactoryType cfType,
-                                                    final String localBindAddress,
-                                                    final String discoveryAddress,
-                                                    final int discoveryPort,
+                                                    final JMSFactoryType cfType,
+                                                    final String discoveryGroupName,
                                                     final String clientID,
-                                                    final long discoveryRefreshTimeout,
-                                                    final long discoveryInitialWaitTimeout,
                                                     final long clientFailureCheckPeriod,
                                                     final long connectionTTL,
                                                     final long callTimeout,
@@ -829,13 +826,10 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       {
          ConnectionFactoryConfiguration configuration = new ConnectionFactoryConfigurationImpl(name,
                                                                                                ha,
-                                                                                               discoveryAddress,
-                                                                                               discoveryPort);
+                                                                                               jndiBindings);
+         configuration.setDiscoveryGroupName(discoveryGroupName);
          configuration.setFactoryType(cfType);
-         configuration.setLocalBindAddress(localBindAddress);
          configuration.setClientID(clientID);
-         configuration.setDiscoveryRefreshTimeout(discoveryRefreshTimeout);
-         configuration.setInitialWaitTimeout(discoveryInitialWaitTimeout);
          configuration.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          configuration.setConnectionTTL(connectionTTL);
          configuration.setCallTimeout(callTimeout);
@@ -869,8 +863,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
    public synchronized void createConnectionFactory(final String name,
                                                     final boolean ha,
                                                     final JMSFactoryType cfType,
-                                                    final String discoveryAddress,
-                                                    final int discoveryPort,
+                                                    final String discoveryGroupName,
                                                     final String... jndiBindings) throws Exception
    {
       checkInitialised();
@@ -879,8 +872,8 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
       {
          ConnectionFactoryConfiguration configuration = new ConnectionFactoryConfigurationImpl(name,
                                                                                                ha,
-                                                                                               discoveryAddress,
-                                                                                               discoveryPort);
+                                                                                               jndiBindings);
+         configuration.setDiscoveryGroupName(discoveryGroupName);
          createConnectionFactory(true, configuration, jndiBindings);
       }
    }
@@ -1007,36 +1000,58 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
 
       if (cf == null)
       {
-         if (cfConfig.getDiscoveryAddress() != null)
+         if (cfConfig.getDiscoveryGroupName() != null)
          {
+            DiscoveryGroupConfiguration groupConfig = server.getConfiguration().getDiscoveryGroupConfigurations().get(cfConfig.getDiscoveryGroupName());
+            
+            if (groupConfig == null)
+            {
+               throw new HornetQException(HornetQException.ILLEGAL_STATE, "Discovery Group '" + cfConfig.getDiscoveryGroupName() + "' doesn't exist on maing config");
+            }
 
             if (cfConfig.isHA())
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithHA(cfConfig.getDiscoveryAddress(),
-                                                                   cfConfig.getDiscoveryPort(),
+               cf = HornetQJMSClient.createConnectionFactoryWithHA(groupConfig.getGroupAddress(), 
+                                                                   groupConfig.getGroupPort(), 
                                                                    cfConfig.getFactoryType());
             }
             else
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(cfConfig.getDiscoveryAddress(),
-                                                                      cfConfig.getDiscoveryPort(),
+               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(groupConfig.getGroupAddress(), 
+                                                                      groupConfig.getGroupPort(), 
                                                                       cfConfig.getFactoryType());
             }
-            cf.setLocalBindAddress(cfConfig.getLocalBindAddress());
-            cf.setDiscoveryRefreshTimeout(cfConfig.getDiscoveryRefreshTimeout());
-            cf.setDiscoveryInitialWaitTimeout(cfConfig.getInitialWaitTimeout());
+            cf.setLocalBindAddress(groupConfig.getLocalBindAddress());
+            cf.setDiscoveryRefreshTimeout(groupConfig.getRefreshTimeout());
+            cf.setDiscoveryInitialWaitTimeout(groupConfig.getDiscoveryInitialWaitTimeout());
          }
          else
          {
-            TransportConfiguration[] connectorConfigs = (TransportConfiguration[])cfConfig.getConnectorConfigs().toArray(new TransportConfiguration[cfConfig.getConnectorConfigs().size()]);
+            if (cfConfig.getConnectorNames() == null || cfConfig.getConnectorNames().size() == 0)
+            {
+               throw new HornetQException(HornetQException.ILLEGAL_STATE, "Null Connector name passed to create ConnectionFactory");
+            }
+            
+            TransportConfiguration[] configs = new TransportConfiguration[cfConfig.getConnectorNames().size()];
+            
+            int count = 0;
+            for (String name : cfConfig.getConnectorNames())
+            {
+               TransportConfiguration connector =  server.getConfiguration().getConnectorConfigurations().get(name);
+               if (connector == null)
+               {
+                  throw new HornetQException(HornetQException.ILLEGAL_STATE, "Connector '" + name + "' not found on the main configuration file");
+               }
+               configs[count++] = connector;
+            }
             
             if (cfConfig.isHA())
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithHA(cfConfig.getFactoryType(), connectorConfigs);
+               cf = HornetQJMSClient.createConnectionFactoryWithHA(cfConfig.getFactoryType(), configs);
             }
             else
             {
-               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(cfConfig.getFactoryType(), connectorConfigs);
+               cf = HornetQJMSClient.createConnectionFactoryWithoutHA(cfConfig.getFactoryType(), configs);
             }
          }
 

@@ -26,6 +26,7 @@ import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.jms.server.impl.JMSFactoryType;
+import org.hornetq.tests.util.RandomUtil;
 
 /**
  * Safeguards for previously detected TCK failures.
@@ -48,7 +49,6 @@ public class CTSMiscellaneousTest extends HornetQServerTestCase
    private static final String ORG_JBOSS_MESSAGING_SERVICE_LBCONNECTION_FACTORY = "StrictTCKConnectionFactory";
 
    // Constructors --------------------------------------------------
-
    @Override
    protected void setUp() throws Exception
    {
@@ -65,7 +65,7 @@ public class CTSMiscellaneousTest extends HornetQServerTestCase
          getJmsServerManager().createConnectionFactory("StrictTCKConnectionFactory",
                                                        false,
                                                        JMSFactoryType.CF,
-                                                       connectorConfigs,
+                                                       registerTransportConfigurations(connectorConfigs),
                                                        null,
                                                        HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                                                        HornetQClient.DEFAULT_CONNECTION_TTL,

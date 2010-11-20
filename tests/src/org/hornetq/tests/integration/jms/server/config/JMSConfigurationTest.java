@@ -74,7 +74,7 @@ public class JMSConfigurationTest extends ServiceTestBase
       transportConfigs.add(connectorConfig);
       ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl(RandomUtil.randomString(),
                                                                                        false,
-                                                                                       transportConfigs,
+                                                                                       registerConnectors(coreServer, transportConfigs),
                                                                                        "/cf/binding1",
                                                                                        "/cf/binding2");
       jmsConfiguration.getConnectionFactoryConfigurations().add(cfConfig);

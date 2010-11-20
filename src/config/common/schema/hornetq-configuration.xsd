@@ -231,6 +231,8 @@
 
 	<xsd:element name="refresh-timeout" type="xsd:int"/>
 
+	<xsd:element name="initial-wait-timeout" type="xsd:int"/>
+
 	<xsd:element name="discovery-group">
 		<xsd:complexType>
 			<xsd:sequence>
@@ -241,6 +243,8 @@
 				<xsd:element maxOccurs="1" minOccurs="1" ref="group-port">
 				</xsd:element>
 				<xsd:element maxOccurs="1" minOccurs="0" ref="refresh-timeout">
+				</xsd:element>
+				<xsd:element maxOccurs="1" minOccurs="0" ref="initial-wait-timeout">
 				</xsd:element>
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:ID" use="required"/>

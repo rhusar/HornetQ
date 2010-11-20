@@ -935,6 +935,11 @@ public class FileConfigurationParser
       String groupAddress = XMLConfigurationUtil.getString(e, "group-address", null, Validators.NOT_NULL_OR_EMPTY);
 
       int groupPort = XMLConfigurationUtil.getInteger(e, "group-port", -1, Validators.MINUS_ONE_OR_GT_ZERO);
+      
+      long discoveryInitialWaitTimeout = XMLConfigurationUtil.getLong(e,
+                                                                      "initial-wait-timeout",
+                                                                      HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
+                                                                      Validators.GT_ZERO);
 
       long refreshTimeout = XMLConfigurationUtil.getLong(e,
                                                          "refresh-timeout",
@@ -945,7 +950,8 @@ public class FileConfigurationParser
                                                                            localBindAddress,
                                                                            groupAddress,
                                                                            groupPort,
-                                                                           refreshTimeout);
+                                                                           refreshTimeout,
+                                                                           discoveryInitialWaitTimeout);
 
       if (mainConfig.getDiscoveryGroupConfigurations().containsKey(name))
       {

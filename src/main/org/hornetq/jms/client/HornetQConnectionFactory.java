@@ -69,6 +69,11 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
    {
       serverLocator = null;
    }
+   
+   public HornetQConnectionFactory(final ServerLocator serverLocator)
+   {
+      this.serverLocator = serverLocator;
+   }
 
    public HornetQConnectionFactory(final boolean ha, final String discoveryAddress, final int discoveryPort)
    {

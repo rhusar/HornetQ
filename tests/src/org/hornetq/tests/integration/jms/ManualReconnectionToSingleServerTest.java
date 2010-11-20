@@ -171,8 +171,7 @@ public class ManualReconnectionToSingleServerTest extends UnitTestCase
       configs.add(new TransportConfiguration(NettyConnectorFactory.class.getName()));
       ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf",
             false,
-            configs,
-                                                                                       "/cf");
+            registerConnectors(server, configs), "/cf");
       cfConfig.setRetryInterval(1000);
       cfConfig.setRetryIntervalMultiplier(1.0);
       cfConfig.setReconnectAttempts(-1);

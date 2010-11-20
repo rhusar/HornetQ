@@ -25,10 +25,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
-import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
-import org.hornetq.jms.server.config.ConnectionFactoryConfiguration;
 import org.hornetq.jms.server.config.impl.ConnectionFactoryConfigurationImpl;
 import org.hornetq.tests.util.JMSTestBase;
 
@@ -59,11 +56,14 @@ public class StoreConfigTest extends JMSTestBase
 
    public void testCreateCF() throws Exception
    {
-      TransportConfiguration transportConfiguration = new TransportConfiguration(InVMConnectorFactory.class.getName());
-      List<TransportConfiguration> transportConfigurations = new ArrayList<TransportConfiguration>();
-      transportConfigurations.add(transportConfiguration);
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+      server.getConfiguration().getConnectorConfigurations().put("np", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+      List<String> transportConfigurations = new ArrayList<String>();
+      transportConfigurations.add("tst");
       ConnectionFactoryConfigurationImpl factCFG = new ConnectionFactoryConfigurationImpl("tst", false, transportConfigurations);
-
+      
       jmsServer.createConnectionFactory(true, factCFG, "/someCF", "/someCF2" );
       
       
@@ -108,9 +108,12 @@ public class StoreConfigTest extends JMSTestBase
 
    public void testCreateTopic() throws Exception
    {
-      TransportConfiguration transportConfiguration = new TransportConfiguration(InVMConnectorFactory.class.getName());
-      List<TransportConfiguration> transportConfigurations = new ArrayList<TransportConfiguration>();
-      transportConfigurations.add(transportConfiguration);
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+      server.getConfiguration().getConnectorConfigurations().put("np", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+      List<String> transportConfigurations = new ArrayList<String>();
+      transportConfigurations.add("tst");
 
       ConnectionFactoryConfigurationImpl factCFG = new ConnectionFactoryConfigurationImpl("tst", false, transportConfigurations);
 
@@ -217,9 +220,12 @@ public class StoreConfigTest extends JMSTestBase
 
    public void testCreateQueue() throws Exception
    {
-      TransportConfiguration transportConfiguration = new TransportConfiguration(InVMConnectorFactory.class.getName());
-      List<TransportConfiguration> transportConfigurations = new ArrayList<TransportConfiguration>();
-      transportConfigurations.add(transportConfiguration);
+      server.getConfiguration().getConnectorConfigurations().put("tst", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+//      server.getConfiguration().getConnectorConfigurations().put("np", new TransportConfiguration(INVM_CONNECTOR_FACTORY));
+      
+      List<String> transportConfigurations = new ArrayList<String>();
+      transportConfigurations.add("tst");
 
       ConnectionFactoryConfigurationImpl factCFG = new ConnectionFactoryConfigurationImpl("tst", false, transportConfigurations);
 

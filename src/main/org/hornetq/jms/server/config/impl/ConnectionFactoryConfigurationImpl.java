@@ -24,6 +24,8 @@ import org.hornetq.jms.server.impl.JMSFactoryType;
 import org.hornetq.utils.BufferHelper;
 import org.hornetq.utils.DataConstants;
 
+import org.hornetq.api.core.SimpleString;;
+
 /**
  * A ConnectionFactoryConfigurationImpl
  *
@@ -41,19 +43,13 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    private String[] bindings;
 
-   private String localBindAddress;
-
-   private String discoveryAddress;
-
-   private int discoveryPort;
-
-   private List<TransportConfiguration> connectorConfigs;
+   private List<String> connectorNames;
+   
+   private String discoveryGroupName;
 
    private String clientID = null;
 
    private boolean ha = HornetQClient.DEFAULT_HA;
-
-   private long discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
 
    private long clientFailureCheckPeriod = HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
 
@@ -124,25 +120,14 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
 
    public ConnectionFactoryConfigurationImpl(final String name,
                                              final boolean ha,
-                                             final String discoveryAddress,
-                                             final int discoveryPort,
+                                             final List<String> connectorNames,
                                              final String... bindings)
    {
       this(name, ha, bindings);
-      this.discoveryAddress = discoveryAddress;
-      this.discoveryPort = discoveryPort;
+      this.connectorNames = connectorNames;
    }
 
-   public ConnectionFactoryConfigurationImpl(final String name,
-                                             final boolean ha,
-                                             final List<TransportConfiguration> transportConfigs,
-                                             final String... bindings)
-   {
-      this(name, ha, bindings);
-      connectorConfigs = transportConfigs;
-   }
-
-   private ConnectionFactoryConfigurationImpl(final String name, final boolean ha, final String... bindings)
+   public ConnectionFactoryConfigurationImpl(final String name, final boolean ha, final String... bindings)
    {
       this.name = name;
       this.ha = ha;
@@ -167,44 +152,30 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
       return name;
    }
 
-   public String getLocalBindAddress()
+   /**
+    * @return the discoveryGroupName
+    */
+   public String getDiscoveryGroupName()
    {
-      return localBindAddress;
+      return discoveryGroupName;
    }
 
-   public void setLocalBindAddress(final String localBindAddress)
+   /**
+    * @param discoveryGroupName the discoveryGroupName to set
+    */
+   public void setDiscoveryGroupName(String discoveryGroupName)
    {
-      this.localBindAddress = localBindAddress;
+      this.discoveryGroupName = discoveryGroupName;
    }
 
-   public String getDiscoveryAddress()
+   public List<String> getConnectorNames()
    {
-      return discoveryAddress;
+      return connectorNames;
    }
 
-   public void setDiscoveryAddress(final String discoveryAddress)
+   public void setConnectorNames(final List<String> connectorNames)
    {
-      this.discoveryAddress = discoveryAddress;
-   }
-
-   public int getDiscoveryPort()
-   {
-      return discoveryPort;
-   }
-
-   public void setDiscoveryPort(final int discoveryPort)
-   {
-      this.discoveryPort = discoveryPort;
-   }
-
-   public List<TransportConfiguration> getConnectorConfigs()
-   {
-      return connectorConfigs;
-   }
-
-   public void setConnectorConfigs(final List<TransportConfiguration> connectorConfigs)
-   {
-      this.connectorConfigs = connectorConfigs;
+      this.connectorNames = connectorNames;
    }
 
    public boolean isHA()
@@ -225,16 +196,6 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    public void setClientID(final String clientID)
    {
       this.clientID = clientID;
-   }
-
-   public long getDiscoveryRefreshTimeout()
-   {
-      return discoveryRefreshTimeout;
-   }
-
-   public void setDiscoveryRefreshTimeout(final long discoveryRefreshTimeout)
-   {
-      this.discoveryRefreshTimeout = discoveryRefreshTimeout;
    }
 
    public long getClientFailureCheckPeriod()
@@ -526,31 +487,23 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       name = buffer.readSimpleString().toString();
 
-      localBindAddress = BufferHelper.readNullableSimpleStringAsString(buffer);
-
-      discoveryAddress = BufferHelper.readNullableSimpleStringAsString(buffer);
-
-      discoveryPort = buffer.readInt();
-
+      discoveryGroupName = BufferHelper.readNullableSimpleStringAsString(buffer);
+      
       int nConnectors = buffer.readInt();
 
       if (nConnectors > 0)
       {
-         connectorConfigs = new ArrayList<TransportConfiguration>(nConnectors);
+         connectorNames = new ArrayList<String>(nConnectors);
 
          for (int i = 0; i < nConnectors; i++)
          {
-            TransportConfiguration tc = new TransportConfiguration();
-
-            tc.decode(buffer);
-
-            connectorConfigs.add(tc);
+            SimpleString str = buffer.readSimpleString();
+            
+            connectorNames.add(str.toString());
          }
       }
 
       clientID = BufferHelper.readNullableSimpleStringAsString(buffer);
-
-      discoveryRefreshTimeout = buffer.readLong();
 
       clientFailureCheckPeriod = buffer.readLong();
 
@@ -618,29 +571,23 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       BufferHelper.writeAsSimpleString(buffer, name);
 
-      BufferHelper.writeAsNullableSimpleString(buffer, localBindAddress);
-
-      BufferHelper.writeAsNullableSimpleString(buffer, discoveryAddress);
-
-      buffer.writeInt(discoveryPort);
-
-      if (connectorConfigs == null)
+      BufferHelper.writeAsNullableSimpleString(buffer, discoveryGroupName);
+      
+      if (this.connectorNames == null)
       {
          buffer.writeInt(0);
       }
       else
       {
-         buffer.writeInt(connectorConfigs.size());
+         buffer.writeInt(connectorNames.size());
 
-         for (TransportConfiguration tc : connectorConfigs)
+         for (String tc : connectorNames)
          {
-            tc.encode(buffer);
+            BufferHelper.writeAsSimpleString(buffer, tc);
          }
       }
 
       BufferHelper.writeAsNullableSimpleString(buffer, clientID);
-
-      buffer.writeLong(discoveryRefreshTimeout);
 
       buffer.writeLong(clientFailureCheckPeriod);
 
@@ -708,22 +655,19 @@ public class ConnectionFactoryConfigurationImpl implements ConnectionFactoryConf
    {
       int size = BufferHelper.sizeOfSimpleString(name) +
 
-      BufferHelper.sizeOfNullableSimpleString(localBindAddress) +
+      BufferHelper.sizeOfNullableSimpleString(discoveryGroupName);
+      
+      size += DataConstants.SIZE_INT;
 
-      BufferHelper.sizeOfNullableSimpleString(discoveryAddress) +
-
-      DataConstants.SIZE_INT; // discoveryPort
-
-      if (connectorConfigs != null)
+      if (this.connectorNames != null)
       {
-         for (TransportConfiguration tc : connectorConfigs)
+         for (String tc : connectorNames)
          {
-            size += TransportConfigurationEncodingSupport.getEncodeSize(tc);
+            size += BufferHelper.sizeOfSimpleString(tc); 
          }
       }
+      
       size += BufferHelper.sizeOfNullableSimpleString(clientID) +
-               DataConstants.SIZE_LONG +
-               // discoveryRefreshTimeout
 
               DataConstants.SIZE_LONG +
               // clientFailureCheckPeriod

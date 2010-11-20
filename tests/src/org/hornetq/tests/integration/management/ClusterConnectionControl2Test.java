@@ -152,7 +152,8 @@ public class ClusterConnectionControl2Test extends ManagementTestBase
                                                                                          null,
                                                                                          groupAddress,
                                                                                          groupPort,
-                                                                                         HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
+                                                                                         0,
+                                                                                         0);
 
       Configuration conf_1 = new ConfigurationImpl();
       conf_1.setSecurityEnabled(false);

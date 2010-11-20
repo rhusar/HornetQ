@@ -131,18 +131,6 @@ public interface JMSServerControl
    boolean destroyTopic(@Parameter(name = "name", desc = "Name of the topic to destroy") String name) throws Exception;
 
    /**
-    * Create a JMS ConnectionFactory with the specified name connected to a single HornetQ server.
-    * <br>
-    * The ConnectionFactory is bound to JNDI for all the specified bindings.
-    */
-   void createConnectionFactory(String name,
-                                boolean ha,
-                                @Parameter(name = "cfType", desc = "RegularCF=0, QueueCF=1, TopicCF=2, XACF=3, QueueXACF=4, TopicXACF=5") int cfType,
-                                String liveTransportClassName,
-                                Map<String, Object> liveTransportParams,
-                                Object[] jndiBindings) throws Exception;
-
-   /**
     * Create a JMS ConnectionFactory with the specified name connected to a static list of live-backup servers.
     * <br>
     * The ConnectionFactory is bound to JNDI for all the specified bindings Strings.
@@ -156,8 +144,7 @@ public interface JMSServerControl
    void createConnectionFactory(String name,
                                 boolean ha,
                                 @Parameter(name = "cfType", desc = "RegularCF=0, QueueCF=1, TopicCF=2, XACF=3, QueueXACF=4, TopicXACF=5") int cfType,
-                                Object[] liveConnectorsTransportClassNames,
-                                Object[] liveConnectorTransportParams,
+                                String[] connectorNames,
                                 Object[] bindings) throws Exception;
 
    /**
@@ -170,8 +157,7 @@ public interface JMSServerControl
    void createConnectionFactory(@Parameter(name = "name") String name,
                                 @Parameter(name = "ha") boolean ha,
                                 @Parameter(name = "cfType", desc = "RegularCF=0, QueueCF=1, TopicCF=2, XACF=3, QueueXACF=4, TopicXACF=5") int cfType,
-                                @Parameter(name = "liveTransportClassNames", desc = "comma-separated list of class names for transport to live servers") String liveTransportClassNames,
-                                @Parameter(name = "liveTransportParams", desc = "comma-separated list of key=value parameters for the live transports (enclosed between { } for each transport)") String liveTransportParams,
+                                @Parameter(name = "connectorNames", desc = "comma-separated list of connectorNames") String connectors,
                                 @Parameter(name = "jndiBindings", desc = "comma-separated list of JNDI bindings (use '&comma;' if u need to use commas in your jndi name)") String jndiBindings) throws Exception;
 
    /**
@@ -183,29 +169,26 @@ public interface JMSServerControl
     * 
     * @see #createConnectionFactory(String, Object[], Object[], Object[], Object[])
     */
-   void createConnectionFactory(String name,
+   void createConnectionFactoryDiscovery(String name,
                                 boolean ha,
                                 @Parameter(name = "cfType", desc = "RegularCF=0, QueueCF=1, TopicCF=2, XACF=3, QueueXACF=4, TopicXACF=5") int cfType,
-                                String discoveryAddress,
-                                int discoveryPort,
-                                Object[] bindings) throws Exception;
+                                @Parameter(name = "discoveryGroupName", desc="Refereced at the main configuration, it's the name of the config with automatic discovery") String discoveryGroupName,
+                                @Parameter(name = "jndiBindings", desc="Comma separated JNDI Bindings") String bindings) throws Exception;
 
    /**
     * Create a JMS ConnectionFactory with the specified name using a discovery group to discover HornetQ servers.
     * <br>
-    * The ConnectionFactory is bound to JNDI for the specified bindings Strings
+    * The ConnectionFactory is bound to JNDI for all the specified bindings Strings.
     * <br>
     * This factory listens to the specified {@code discoveryAddress} and {@code discoveryPort} to discover which servers it can connect to.
     * 
     * @see #createConnectionFactory(String, Object[], Object[], Object[], Object[])
     */
-   @Operation(desc = "Create a JMS ConnectionFactory", impact = MBeanOperationInfo.ACTION)
-   void createConnectionFactory(@Parameter(name = "name") String name,
-                                @Parameter(name = "ha") boolean ha,
+   void createConnectionFactoryDiscovery(String name,
+                                boolean ha,
                                 @Parameter(name = "cfType", desc = "RegularCF=0, QueueCF=1, TopicCF=2, XACF=3, QueueXACF=4, TopicXACF=5") int cfType,
-                                @Parameter(name = "discoveryAddress") String discoveryAddress,
-                                @Parameter(name = "discoveryPort") int discoveryPort,
-                                @Parameter(name = "jndiBindings") String jndiBindings) throws Exception;
+                                @Parameter(name = "discoveryGroupName", desc="Refereced at the main configuration, it's the name of the config with automatic discovery") String discoveryGroupName,
+                                Object[] bindings) throws Exception;
 
    /**
     * Destroy the ConnectionFactory corresponding to the specified name.

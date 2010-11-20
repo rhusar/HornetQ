@@ -59,14 +59,18 @@ public class EmbeddedExample
          configuration.getAcceptorConfigurations()
                       .add(new TransportConfiguration(NettyAcceptorFactory.class.getName()));
 
+         TransportConfiguration connectorConfig = new TransportConfiguration(NettyConnectorFactory.class.getName());
+
+         configuration.getConnectorConfigurations().put("connector", connectorConfig);
+
+         
          // Step 2. Create the JMS configuration
          JMSConfiguration jmsConfig = new JMSConfigurationImpl();
 
          // Step 3. Configure the JMS ConnectionFactory
-         TransportConfiguration connectorConfig = new TransportConfiguration(NettyConnectorFactory.class.getName());
-         List<TransportConfiguration> configurations = new ArrayList<TransportConfiguration>();
-         configurations.add(connectorConfig);
-         ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf", false,  configurations, "/cf");
+         ArrayList<String> connectorNames = new ArrayList<String>();
+         connectorNames.add("connector");
+         ConnectionFactoryConfiguration cfConfig = new ConnectionFactoryConfigurationImpl("cf", false,  connectorNames, "/cf");
          jmsConfig.getConnectionFactoryConfigurations().add(cfConfig);
 
          // Step 4. Configure the JMS Queue

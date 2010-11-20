@@ -35,6 +35,7 @@ import javax.transaction.TransactionManager;
 
 import com.arjuna.ats.internal.jta.transaction.arjunacore.TransactionManagerImple;
 
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.HornetQServer;
@@ -42,6 +43,7 @@ import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.tests.tools.ServerManagement;
 import org.hornetq.jms.tests.tools.container.Server;
 import org.hornetq.jms.tests.util.ProxyAssertSupport;
+import org.hornetq.tests.util.RandomUtil;
 
 /**
  * @author <a href="mailto:adrian@jboss.org">Adrian Brock</a>
@@ -61,6 +63,28 @@ public class HornetQServerTestCase extends ProxyAssertSupport
    protected final Logger log = Logger.getLogger(getClass());
 
    // Static --------------------------------------------------------
+  
+   /**
+    * @param connectorConfigs
+    * @return
+    */
+   protected ArrayList<String> registerTransportConfigurations(List<TransportConfiguration> connectorConfigs) throws Exception
+   {
+      // The connectors need to be pre-configured at main config object but this method is taking TransportConfigurations directly
+      // So this will first register them at the config and then generate a list of objects
+      ArrayList<String> connectors = new ArrayList<String>();
+      for (TransportConfiguration tnsp : connectorConfigs)
+      {
+         String name = RandomUtil.randomString();
+         
+         getJmsServer().getConfiguration().getConnectorConfigurations().put(name, tnsp);
+         
+         connectors.add(name);
+      }
+      return connectors;
+   }
+
+
 
    /** Some testcases are time sensitive, and we need to make sure a GC would happen before certain scenarios*/
    public static void forceGC()

@@ -316,8 +316,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       this.nodeID = UUIDGenerator.getInstance().generateStringUUID();
 
-      discoveryRefreshTimeout = HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT;
-
       clientFailureCheckPeriod = HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
 
       connectionTTL = HornetQClient.DEFAULT_CONNECTION_TTL;

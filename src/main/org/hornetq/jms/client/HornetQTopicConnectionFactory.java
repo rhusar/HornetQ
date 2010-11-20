@@ -16,6 +16,7 @@ package org.hornetq.jms.client;
 import javax.jms.TopicConnectionFactory;
 
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ServerLocator;
 
 /**
  * A class that represents a TopicConnectionFactory.
@@ -34,6 +35,15 @@ public class HornetQTopicConnectionFactory extends HornetQConnectionFactory impl
    {
       super();
    }
+
+   /**
+    * @param serverLocator
+    */
+   public HornetQTopicConnectionFactory(ServerLocator serverLocator)
+   {
+      super(serverLocator);
+    }
+
 
    /**
     * @param ha

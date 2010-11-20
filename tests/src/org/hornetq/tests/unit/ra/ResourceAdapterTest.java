@@ -86,8 +86,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
       Assert.assertEquals(factory.getDiscoveryPort(), -1);
-      Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
-                          HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
       Assert.assertEquals(factory.getMinLargeMessageSize(), HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE);
       Assert.assertEquals(factory.getProducerMaxRate(), HornetQClient.DEFAULT_PRODUCER_MAX_RATE);
@@ -138,8 +136,6 @@ public class ResourceAdapterTest extends ServiceTestBase
       Assert.assertEquals(factory.getDiscoveryInitialWaitTimeout(),
                           HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
       Assert.assertEquals(factory.getDiscoveryPort(), -1);
-      Assert.assertEquals(factory.getDiscoveryRefreshTimeout(),
-                          HornetQClient.DEFAULT_DISCOVERY_REFRESH_TIMEOUT);
       Assert.assertEquals(factory.getDupsOKBatchSize(), HornetQClient.DEFAULT_ACK_BATCH_SIZE);
       Assert.assertEquals(factory.getMinLargeMessageSize(), HornetQClient.DEFAULT_MIN_LARGE_MESSAGE_SIZE);
       Assert.assertEquals(factory.getProducerMaxRate(), HornetQClient.DEFAULT_PRODUCER_MAX_RATE);
