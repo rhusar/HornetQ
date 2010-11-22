@@ -698,6 +698,8 @@ public class PagingTest extends ServiceTestBase
          {
             message = session.createMessage(IS_DURABLE_MESSAGE);
             message.getBodyBuffer().writeBytes(body);
+            message.putIntProperty("id", numberOfMessages);
+            message.putBooleanProperty("new", false);
 
             // Stop sending message as soon as we start paging
             if (server.getPostOffice().getPagingManager().getPageStore(PagingTest.ADDRESS).isPaging())
@@ -727,10 +729,19 @@ public class PagingTest extends ServiceTestBase
                {
                   ClientMessage msg = consumer.receive(PagingTest.RECEIVE_TIMEOUT);
                   msg.acknowledge();
+                  assertEquals(j, msg.getIntProperty("id").intValue());
+                  assertFalse(msg.getBooleanProperty("new"));
                   Assert.assertNotNull(msg);
                }
+               
+               ClientMessage msgReceived = consumer.receiveImmediate();
+               
+               if (msgReceived != null)
+               {
+                  System.out.println("new = " + msgReceived.getBooleanProperty("new") + " id = " + msgReceived.getIntProperty("id"));
+               }
 
-               Assert.assertNull(consumer.receiveImmediate());
+               Assert.assertNull(msgReceived);
                consumer.close();
             }
 
@@ -1275,16 +1286,6 @@ public class PagingTest extends ServiceTestBase
          locator.setBlockOnAcknowledge(true);
          final ClientSessionFactory sf = locator.createSessionFactory();
 
-         ClientSession session = sf.createSession(null, null, false, true, true, false, 0);
-
-         session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
-         
-         session.close();
-         
-         session = null;
-
-         ClientProducer producer = session.createProducer(PagingTest.ADDRESS);
-
          final CountDownLatch ready = new CountDownLatch(1);
 
          final byte[] body = new byte[messageSize];
@@ -1345,7 +1346,7 @@ public class PagingTest extends ServiceTestBase
             }
          };
 
-         session = sf.createSession(true, true, 0);
+         ClientSession session = sf.createSession(true, true, 0);
          session.start();
          session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
 
