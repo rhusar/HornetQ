@@ -115,6 +115,18 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       consumers = new ConsumerHolder[ClusterTestBase.MAX_CONSUMERS];
 
+      for (ServerLocator locator : locators)
+      {
+         try
+         {
+            locator.close();
+         }
+         catch (Exception e)
+         {
+            //
+         }
+      }
+
       nodeManagers = null;
 
       super.tearDown();

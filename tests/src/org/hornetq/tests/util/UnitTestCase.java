@@ -434,7 +434,8 @@ public class UnitTestCase extends TestCase
          }
          catch (Exception e)
          {
-            Assert.fail("port " + port + " is already bound");
+            System.out.println("port " + port + " is already bound");
+            System.exit(0);
          }
          finally
          {

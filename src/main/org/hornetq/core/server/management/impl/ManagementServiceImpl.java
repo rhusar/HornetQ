@@ -15,12 +15,7 @@ package org.hornetq.core.server.management.impl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.management.MBeanServer;
@@ -474,7 +469,8 @@ public class ManagementServiceImpl implements ManagementService
    public Object[] getResources(final Class<?> resourceType)
    {
       List<Object> resources = new ArrayList<Object>();
-      for (Object entry : registry.values())
+      Collection<Object> clone = new ArrayList<Object>(registry.values());
+      for (Object entry : clone)
       {
          if (resourceType.isAssignableFrom(entry.getClass()))
          {

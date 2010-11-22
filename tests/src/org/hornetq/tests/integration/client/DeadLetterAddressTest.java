@@ -43,6 +43,7 @@ public class DeadLetterAddressTest extends UnitTestCase
    private HornetQServer server;
 
    private ClientSession clientSession;
+   private ServerLocator locator;
 
    public void testBasicSend() throws Exception
    {
@@ -465,7 +466,7 @@ public class DeadLetterAddressTest extends UnitTestCase
       // start the server
       server.start();
       // then we create a client as normal
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
       clientSession = sessionFactory.createSession(false, true, false);
    }
@@ -480,6 +481,17 @@ public class DeadLetterAddressTest extends UnitTestCase
             clientSession.close();
          }
          catch (HornetQException e1)
+         {
+            //
+         }
+      }
+      if(locator != null)
+      {
+         try
+         {
+            locator.close();
+         }
+         catch (Exception e)
          {
             //
          }

@@ -36,6 +36,7 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
+import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
@@ -99,6 +100,13 @@ public abstract class ServiceTestBase extends UnitTestCase
          }
       }
       super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
+      checkFreePort(5445);
+      checkFreePort(5446);
+      checkFreePort(5447);
+      if(InVMRegistry.instance.size() > 0)
+      {
+         System.exit(0);
+      }
    }
 
    protected static Map<String, Object> generateParams(final int node, final boolean netty)

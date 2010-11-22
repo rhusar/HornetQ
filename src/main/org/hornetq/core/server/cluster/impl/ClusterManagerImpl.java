@@ -356,6 +356,7 @@ public class ClusterManagerImpl implements ClusterManager
             try
             {
                backupSessionFactory.close();
+               backupSessionFactory.getServerLocator().close();
             }
             catch (Exception e)
             {

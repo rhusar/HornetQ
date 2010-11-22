@@ -214,6 +214,8 @@ public class BridgeTest extends ServiceTestBase
 
          sf1.close();
 
+         locator.close();
+
       }
       finally
       {
@@ -428,6 +430,8 @@ public class BridgeTest extends ServiceTestBase
          sf0.close();
 
          sf1.close();
+
+         locator.close();
       }
 
       finally
@@ -577,6 +581,8 @@ public class BridgeTest extends ServiceTestBase
 
       sf1.close();
 
+      locator.close();
+
       server0.stop();
 
       server1.stop();
@@ -698,6 +704,8 @@ public class BridgeTest extends ServiceTestBase
          sf0.close();
 
          sf1.close();
+
+         locator.close();
 
       }
       finally
@@ -840,6 +848,8 @@ public class BridgeTest extends ServiceTestBase
          sf0.close();
 
          sf1.close();
+
+         locator.close();
 
       }
       finally

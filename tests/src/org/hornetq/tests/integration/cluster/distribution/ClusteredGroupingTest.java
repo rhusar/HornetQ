@@ -1052,16 +1052,6 @@ public class ClusteredGroupingTest extends ClusterTestBase
    @Override
    protected void tearDown() throws Exception
    {
-      if(locators != null)
-      {
-         for (ServerLocator locator : locators)
-         {
-            if(locator != null)
-            {
-               System.out.println("ClusteredGroupingTest.tearDown");
-            }
-         }
-      }
       super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
    }
 

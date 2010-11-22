@@ -19,6 +19,7 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
+import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.tests.util.ServiceTestBase;
 
 /**
@@ -71,7 +72,11 @@ public class GroupingFailoverSharedServerTest extends GroupingFailoverTestBase
 
       if (fileStorage)
       {
-         server = HornetQServers.newHornetQServer(configuration);
+         if(nodeManagers[backupNode] == null)
+         {
+            nodeManagers[backupNode] = new InVMNodeManager();
+         }
+         server = createInVMFailoverServer(true, configuration, nodeManagers[backupNode]);
       }
       else
       {

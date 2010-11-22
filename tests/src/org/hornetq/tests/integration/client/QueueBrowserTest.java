@@ -64,10 +64,6 @@ public class QueueBrowserTest extends ServiceTestBase
 
    public void testSimpleConsumerBrowser() throws Exception
    {
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
-
-
-
       locator.setBlockOnNonDurableSend(true);
 
       sf = locator.createSessionFactory();

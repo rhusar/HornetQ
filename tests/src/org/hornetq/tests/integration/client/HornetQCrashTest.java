@@ -32,6 +32,7 @@ public class HornetQCrashTest extends TestCase
    public HornetQServer server;
 
    private volatile boolean ackReceived;
+   private ServerLocator locator;
 
    public void testHang() throws Exception
    {
@@ -46,7 +47,6 @@ public class HornetQCrashTest extends TestCase
 
       server.getRemotingService().addInterceptor(new AckInterceptor(server));
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
 
 
 
@@ -115,8 +115,19 @@ public class HornetQCrashTest extends TestCase
    }
 
    @Override
+   protected void setUp() throws Exception
+   {
+      super.setUp();
+
+
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+   }
+
+   @Override
    protected void tearDown() throws Exception
    {
+      locator.close();
+
       super.tearDown();
 
       server = null;

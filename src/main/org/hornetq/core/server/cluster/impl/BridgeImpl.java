@@ -51,7 +51,7 @@ import org.hornetq.utils.UUID;
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
- * 
+ *
  * Created 12 Nov 2008 11:37:35
  *
  *
@@ -66,7 +66,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    // Attributes ----------------------------------------------------
 
    protected final ServerLocatorInternal serverLocator;
-   
+
    private final UUID nodeUUID;
 
    private final SimpleString name;
@@ -125,7 +125,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
                      final StorageManager storageManager) throws Exception
    {
       this.serverLocator = serverLocator;
-      
+
       this.nodeUUID = nodeUUID;
 
       this.name = name;
@@ -209,6 +209,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          if (csf != null)
          {
             csf.close();
+         }
+
+         if(serverLocator != null)
+         {
+            serverLocator.close();
          }
       }
 
@@ -312,7 +317,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    }
 
    // Consumer implementation ---------------------------------------
-   
+
    /* Hook for processing message before forwarding */
    protected ServerMessage beforeForward(ServerMessage message)
    {
@@ -341,7 +346,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          message = transformer.transform(message);
       }
-      
+
       return message;
    }
 
@@ -366,7 +371,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          refs.add(ref);
 
          message = beforeForward(message);
-         
+
          SimpleString dest;
 
          if (forwardingAddress != null)
@@ -460,7 +465,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          BridgeImpl.log.error("Failed to cancel refs", e);
       }
    }
-   
+
    /* Hook for doing extra stuff after connection */
    protected void afterConnect() throws Exception
    {
@@ -488,7 +493,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          BridgeImpl.log.info("Connecting bridge " + name + " to its destination [" + nodeUUID.toString() + "]");
 
          try
-         {      
+         {
             csf = createSessionFactory();
             // Session is pre-acknowledge
             session = (ClientSessionInternal)csf.createSession(user, password, false, true, true, true, 1);
@@ -592,7 +597,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             {
                queue.deliverAsync();
             }
-            
+
             log.info("stopped bridge " + name);
          }
          catch (Exception e)

@@ -405,6 +405,10 @@ public class TemporaryQueueTest extends ServiceTestBase
 
       session.close();
 
+      locator.close();
+
+      locator = null;
+
       server.stop();
 
       session = null;

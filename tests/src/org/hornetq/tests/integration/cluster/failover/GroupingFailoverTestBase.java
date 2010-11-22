@@ -80,22 +80,8 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
 
          closeSessionFactory(0);
 
-         final CountDownLatch latch = new CountDownLatch(1);
-
-         class MyListener implements FailureListener
-         {
-            public void connectionFailed(final HornetQException me, boolean failedOver)
-            {
-               latch.countDown();
-            }
-         }
-
-         Map<String, MessageFlowRecord> records = ((ClusterConnectionImpl)getServer(1).getClusterManager()
-                                                                                      .getClusterConnection(new SimpleString("cluster1"))).getRecords();
-         RemotingConnection rc = records.get("0").getBridge().getForwardingConnection();
-         rc.addFailureListener(new MyListener());
-         fail(rc, latch);
-
+         servers[0].kill();
+         
          waitForServerRestart(2);
 
          setupSessionFactory(2, isNetty());

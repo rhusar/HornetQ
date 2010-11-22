@@ -173,7 +173,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return globalThreadPool;
    }
 
-   private static synchronized ScheduledExecutorService getGlobalScheduledThreadPool()
+   public static synchronized ScheduledExecutorService getGlobalScheduledThreadPool()
    {
       if (globalScheduledThreadPool == null)
       {
@@ -533,7 +533,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                      threadPool,
                      scheduledThreadPool,
                      interceptors);
-               factory.connect(reconnectAttempts, failoverOnInitialConnection);
+               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {
@@ -1216,7 +1216,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       return topology;
    }
-   
+
    public void addClusterTopologyListener(final ClusterTopologyListener listener)
    {
       topologyListeners.add(listener);
@@ -1230,6 +1230,20 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public synchronized TransportConfiguration getBackup(final TransportConfiguration live)
    {
       return pairs.get(live);
+   }
+
+   public static void shutdown()
+   {
+      if (globalScheduledThreadPool != null)
+      {
+         globalScheduledThreadPool.shutdown();
+         globalScheduledThreadPool = null;
+      }
+      if (globalThreadPool != null)
+      {
+         globalThreadPool.shutdown();
+         globalThreadPool = null;
+      }
    }
 
    class StaticConnector implements Serializable
@@ -1251,7 +1265,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          {
             throw new HornetQException(HornetQException.INTERNAL_ERROR, "Failed to initialise session factory", e);
          }
-         
+
          ClientSessionFactory csf = null;
 
          createConnectors();
@@ -1337,7 +1351,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          super.finalize();
       }
-      
+
       class Connector implements Callable<ClientSessionFactory>
       {
          private TransportConfiguration initialConnector;
@@ -1391,7 +1405,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          public void disconnect()
          {
             interrupted = true;
-            
+
             if (factory != null)
             {
                factory.causeExit();
