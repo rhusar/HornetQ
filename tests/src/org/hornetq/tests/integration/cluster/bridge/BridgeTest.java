@@ -88,7 +88,7 @@ public class BridgeTest extends ServiceTestBase
    {
       HornetQServer server0 = null;
       HornetQServer server1 = null;
-
+      ServerLocator locator = null;
       try
       {
          Map<String, Object> server0Params = new HashMap<String, Object>();
@@ -153,7 +153,7 @@ public class BridgeTest extends ServiceTestBase
 
          server1.start();
          server0.start();
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
@@ -214,11 +214,13 @@ public class BridgeTest extends ServiceTestBase
 
          sf1.close();
 
-         locator.close();
-
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
          try
          {
             server0.stop();
@@ -290,7 +292,7 @@ public class BridgeTest extends ServiceTestBase
    {
       HornetQServer server0 = null;
       HornetQServer server1 = null;
-
+      ServerLocator locator = null;
       try
       {
 
@@ -350,7 +352,7 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
@@ -430,12 +432,14 @@ public class BridgeTest extends ServiceTestBase
          sf0.close();
 
          sf1.close();
-
-         locator.close();
       }
 
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
          try
          {
             server0.stop();
@@ -520,72 +524,82 @@ public class BridgeTest extends ServiceTestBase
       queueConfigs1.add(queueConfig1);
       server1.getConfiguration().setQueueConfigurations(queueConfigs1);
 
-      server1.start();
-      server0.start();
+      ServerLocator locator = null;
+      try
+      {
+         server1.start();
+         server0.start();
 
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
 
-      ClientSession session0 = sf0.createSession(false, true, true);
+         ClientSession session0 = sf0.createSession(false, true, true);
 
-      ClientSession session1 = sf1.createSession(false, true, true);
+         ClientSession session1 = sf1.createSession(false, true, true);
 
-      ClientProducer producer0 = session0.createProducer(new SimpleString(testAddress));
+         ClientProducer producer0 = session0.createProducer(new SimpleString(testAddress));
 
-      ClientConsumer consumer1 = session1.createConsumer(queueName1);
+         ClientConsumer consumer1 = session1.createConsumer(queueName1);
 
-      session1.start();
+         session1.start();
 
-      final int numMessages = 10;
+         final int numMessages = 10;
 
-      final SimpleString propKey = new SimpleString("wibble");
+         final SimpleString propKey = new SimpleString("wibble");
 
-      for (int i = 0; i < numMessages; i++)
+         for (int i = 0; i < numMessages; i++)
+         {
+            ClientMessage message = session0.createMessage(false);
+
+            message.putStringProperty(propKey, new SimpleString("bing"));
+
+            message.getBodyBuffer().writeString("doo be doo be doo be doo");
+
+            producer0.send(message);
+         }
+
+         for (int i = 0; i < numMessages; i++)
+         {
+            ClientMessage message = consumer1.receive(200);
+
+            Assert.assertNotNull(message);
+
+            SimpleString val = (SimpleString)message.getObjectProperty(propKey);
+
+            Assert.assertEquals(new SimpleString("bong"), val);
+
+            String sval = message.getBodyBuffer().readString();
+
+            Assert.assertEquals("dee be dee be dee be dee", sval);
+
+            message.acknowledge();
+
+         }
+
+         Assert.assertNull(consumer1.receiveImmediate());
+
+         session0.close();
+
+         session1.close();
+
+         sf0.close();
+
+         sf1.close();
+      }
+      finally
       {
-         ClientMessage message = session0.createMessage(false);
+         if (locator != null)
+         {
+            locator.close();
+         }
 
-         message.putStringProperty(propKey, new SimpleString("bing"));
+         server0.stop();
 
-         message.getBodyBuffer().writeString("doo be doo be doo be doo");
-
-         producer0.send(message);
+         server1.stop();
       }
 
-      for (int i = 0; i < numMessages; i++)
-      {
-         ClientMessage message = consumer1.receive(200);
-
-         Assert.assertNotNull(message);
-
-         SimpleString val = (SimpleString)message.getObjectProperty(propKey);
-
-         Assert.assertEquals(new SimpleString("bong"), val);
-
-         String sval = message.getBodyBuffer().readString();
-
-         Assert.assertEquals("dee be dee be dee be dee", sval);
-
-         message.acknowledge();
-
-      }
-
-      Assert.assertNull(consumer1.receiveImmediate());
-
-      session0.close();
-
-      session1.close();
-
-      sf0.close();
-
-      sf1.close();
-
-      locator.close();
-
-      server0.stop();
-
-      server1.stop();
    }
 
    public void testBridgeWithPaging() throws Exception
@@ -596,7 +610,7 @@ public class BridgeTest extends ServiceTestBase
       final int PAGE_MAX = 100 * 1024;
 
       final int PAGE_SIZE = 10 * 1024;
-
+      ServerLocator locator = null;
       try
       {
 
@@ -656,7 +670,7 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
@@ -705,11 +719,13 @@ public class BridgeTest extends ServiceTestBase
 
          sf1.close();
 
-         locator.close();
-
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
          try
          {
             server0.stop();
@@ -733,7 +749,7 @@ public class BridgeTest extends ServiceTestBase
    {
       HornetQServer server0 = null;
       HornetQServer server1 = null;
-
+      ServerLocator locator = null;
       try
       {
          Map<String, Object> server0Params = new HashMap<String, Object>();
@@ -798,7 +814,7 @@ public class BridgeTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
@@ -849,11 +865,13 @@ public class BridgeTest extends ServiceTestBase
 
          sf1.close();
 
-         locator.close();
-
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
          try
          {
             server0.stop();

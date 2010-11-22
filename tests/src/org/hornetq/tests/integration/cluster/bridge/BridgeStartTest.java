@@ -79,7 +79,7 @@ public class BridgeStartTest extends ServiceTestBase
          server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
       }
       HornetQServer server1 = createClusteredServerWithParams(isNetty(), 1, true, server1Params);
-
+      ServerLocator locator = null;
       try
       {
          final String testAddress = "testAddress";
@@ -132,7 +132,7 @@ public class BridgeStartTest extends ServiceTestBase
          server1.start();
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
          ClientSessionFactory sf1 = locator.createSessionFactory(server1tc);
@@ -213,6 +213,11 @@ public class BridgeStartTest extends ServiceTestBase
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
+
          server0.stop();
 
          server1.stop();
@@ -286,14 +291,14 @@ public class BridgeStartTest extends ServiceTestBase
       List<CoreQueueConfiguration> queueConfigs1 = new ArrayList<CoreQueueConfiguration>();
       queueConfigs1.add(queueConfig1);
       server1.getConfiguration().setQueueConfigurations(queueConfigs1);
-
+      ServerLocator locator = null;
       try
       {
          // Don't start server 1 yet
 
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
 
@@ -422,6 +427,11 @@ public class BridgeStartTest extends ServiceTestBase
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
+
          server0.stop();
 
          server1.stop();
@@ -448,7 +458,7 @@ public class BridgeStartTest extends ServiceTestBase
       final String queueName0 = "queue0";
       final String forwardAddress = "forwardAddress";
       final String queueName1 = "queue1";
-
+      ServerLocator locator = null;
       try
       {
          Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
@@ -497,7 +507,7 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
 
@@ -564,10 +574,14 @@ public class BridgeStartTest extends ServiceTestBase
 
          sf0.close();
 
-         locator.close();
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
+
          server0.stop();
 
          server1.stop();
@@ -595,7 +609,7 @@ public class BridgeStartTest extends ServiceTestBase
       final String queueName0 = "queue0";
       final String forwardAddress = "forwardAddress";
       final String queueName1 = "queue1";
-
+      ServerLocator locator = null;
       try
       {
          Map<String, TransportConfiguration> connectors = new HashMap<String, TransportConfiguration>();
@@ -644,7 +658,7 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.start();
 
-         ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
+         locator = HornetQClient.createServerLocatorWithoutHA(server0tc, server1tc);
          ClientSessionFactory sf0 = locator.createSessionFactory(server0tc);
 
 
@@ -759,11 +773,13 @@ public class BridgeStartTest extends ServiceTestBase
          session0.close();
 
          sf0.close();
-
-         locator.close();
       }
       finally
       {
+         if(locator != null)
+         {
+            locator.close();
+         }
          server0.stop();
 
          server1.stop();
