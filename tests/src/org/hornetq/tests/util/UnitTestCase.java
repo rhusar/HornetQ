@@ -776,6 +776,21 @@ public class UnitTestCase extends TestCase
          Assert.fail("test did not close all its files " + AsynchronousFileImpl.getTotalMaxIO());
       }
 
+      /*Map<Thread, StackTraceElement[]> threads = Thread.getAllStackTraces();
+      for (Thread thread : threads.keySet())
+      {
+         if(thread.isAlive())
+         {
+            StackTraceElement[] elements = threads.get(thread);
+            for (StackTraceElement element : elements)
+            {
+               if(element.getMethodName().contains("getConnectionWithRetry"))
+               {
+                  System.out.println("UnitTestCase.tearDown");
+               }
+            }
+         }
+      }*/
       super.tearDown();
    }
 

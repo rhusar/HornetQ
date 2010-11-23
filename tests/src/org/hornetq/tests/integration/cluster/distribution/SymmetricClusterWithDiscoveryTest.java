@@ -60,31 +60,31 @@ public class SymmetricClusterWithDiscoveryTest extends SymmetricClusterTest
    @Override
    protected void setupServers() throws Exception
    {
-      setupServerWithDiscovery(0,
+      setupLiveServerWithDiscovery(0,
                                SymmetricClusterWithDiscoveryTest.groupAddress,
                                SymmetricClusterWithDiscoveryTest.groupPort,
                                isFileStorage(),
                                isNetty(),
                                false);
-      setupServerWithDiscovery(1,
+      setupLiveServerWithDiscovery(1,
                                SymmetricClusterWithDiscoveryTest.groupAddress,
                                SymmetricClusterWithDiscoveryTest.groupPort,
                                isFileStorage(),
                                isNetty(),
                                false);
-      setupServerWithDiscovery(2,
+      setupLiveServerWithDiscovery(2,
                                SymmetricClusterWithDiscoveryTest.groupAddress,
                                SymmetricClusterWithDiscoveryTest.groupPort,
                                isFileStorage(),
                                isNetty(),
                                false);
-      setupServerWithDiscovery(3,
+      setupLiveServerWithDiscovery(3,
                                SymmetricClusterWithDiscoveryTest.groupAddress,
                                SymmetricClusterWithDiscoveryTest.groupPort,
                                isFileStorage(),
                                isNetty(),
                                false);
-      setupServerWithDiscovery(4,
+      setupLiveServerWithDiscovery(4,
                                SymmetricClusterWithDiscoveryTest.groupAddress,
                                SymmetricClusterWithDiscoveryTest.groupPort,
                                isFileStorage(),

@@ -63,7 +63,7 @@ import org.hornetq.utils.VersionLoader;
 
 /**
  * A ClientSessionFactoryImpl
- * 
+ *
  * Encapsulates a connection to a server
  *
  * @author Tim Fox
@@ -147,8 +147,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final Object waitLock = new Object();
 
-   public static List<ClientSessionFactoryImpl> factories = new ArrayList<ClientSessionFactoryImpl>();
-
    // Static
    // ---------------------------------------------------------------------------------------
 
@@ -215,8 +213,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       if (connection == null && failoverOnInitialConnection)
       {
-         TransportConfiguration backupConfig = serverLocator.getBackup(connectorConfig);
-
          if (backupConfig != null)
          {
             // Try and connect to the backup
@@ -239,6 +235,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                     "Unable to connect to server using configuration " + connectorConfig);
       }
 
+   }
+
+   public TransportConfiguration getConnectorConfiguration()
+   {
+      return connectorConfig;
+   }
+
+   public void setBackupConnector(TransportConfiguration live, TransportConfiguration backUp)
+   {
+      if(live.equals(connectorConfig))
+      {
+         backupConfig = backUp;
+      }
    }
 
    public ClientSession createSession(final String username,
@@ -887,68 +896,61 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       long interval = retryInterval;
 
       int count = 0;
-      factories.add(this);
-      try
+
+      synchronized (waitLock)
       {
-         synchronized (waitLock)
+         while (true)
          {
-            while (true)
+            if (exitLoop)
             {
-               if (exitLoop)
+               return;
+            }
+
+            getConnection();
+
+            if (connection == null)
+            {
+               // Failed to get connection
+
+               if (reconnectAttempts != 0)
                {
-                  return;
-               }
+                  count++;
 
-               getConnection();
-
-               if (connection == null)
-               {
-                  // Failed to get connection
-
-                  if (reconnectAttempts != 0)
+                  if (reconnectAttempts != -1 && count == reconnectAttempts)
                   {
-                     count++;
+                     log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up.");
 
-                     if (reconnectAttempts != -1 && count == reconnectAttempts)
-                     {
-                        log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up.");
-
-                        return;
-                     }
-
-                     try
-                     {
-                        waitLock.wait(interval);
-                     }
-                     catch (InterruptedException ignore)
-                     {
-                     }
-
-                     // Exponential back-off
-                     long newInterval = (long)(interval * retryIntervalMultiplier);
-
-                     if (newInterval > maxRetryInterval)
-                     {
-                        newInterval = maxRetryInterval;
-                     }
-
-                     interval = newInterval;
-                  }
-                  else
-                  {
                      return;
                   }
+
+                  try
+                  {
+                     waitLock.wait(interval);
+                  }
+                  catch (InterruptedException ignore)
+                  {
+                  }
+
+                  // Exponential back-off
+                  long newInterval = (long)(interval * retryIntervalMultiplier);
+
+                  if (newInterval > maxRetryInterval)
+                  {
+                     newInterval = maxRetryInterval;
+                  }
+
+                  interval = newInterval;
                }
                else
                {
                   return;
                }
             }
+            else
+            {
+               return;
+            }
          }
-      }
-      finally
-      {
-         factories.remove(this);
       }
    }
 
@@ -1221,7 +1223,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   SimpleString nodeID = msg.getNodeID();
                   if (nodeID != null)
                   {
-                     backupConfig = serverLocator.getBackup(connectorConfig);
                      serverLocator.notifyNodeDown(msg.getNodeID().toString());
                   }
 

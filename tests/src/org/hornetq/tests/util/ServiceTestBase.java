@@ -86,20 +86,11 @@ public abstract class ServiceTestBase extends UnitTestCase
          }
          catch (Exception e)
          {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace(); 
          }
       }
       locators.clear();
-      if(!ClientSessionFactoryImpl.factories.isEmpty())
-      {
-         for (ClientSessionFactoryImpl factory : ClientSessionFactoryImpl.factories)
-         {
-          //  System.out.println(threadDump("oops"));
-            //factory.e.printStackTrace();
-           // System.exit(0);
-         }
-      }
-      super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
+      super.tearDown();
       checkFreePort(5445);
       checkFreePort(5446);
       checkFreePort(5447);

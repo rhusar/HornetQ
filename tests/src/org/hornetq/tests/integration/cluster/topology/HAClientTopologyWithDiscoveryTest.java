@@ -49,11 +49,11 @@ public class HAClientTopologyWithDiscoveryTest extends TopologyClusterTestBase
 
    protected void setupServers() throws Exception
    {
-      setupServerWithDiscovery(0, groupAddress, groupPort, isFileStorage(), isNetty(), false);
-      setupServerWithDiscovery(1, groupAddress, groupPort, isFileStorage(), isNetty(), false);
-      setupServerWithDiscovery(2, groupAddress, groupPort, isFileStorage(), isNetty(), false);
-      setupServerWithDiscovery(3, groupAddress, groupPort, isFileStorage(), isNetty(), false);
-      setupServerWithDiscovery(4, groupAddress, groupPort, isFileStorage(), isNetty(), false);
+      setupLiveServerWithDiscovery(0, groupAddress, groupPort, isFileStorage(), isNetty(), false);
+      setupLiveServerWithDiscovery(1, groupAddress, groupPort, isFileStorage(), isNetty(), false);
+      setupLiveServerWithDiscovery(2, groupAddress, groupPort, isFileStorage(), isNetty(), false);
+      setupLiveServerWithDiscovery(3, groupAddress, groupPort, isFileStorage(), isNetty(), false);
+      setupLiveServerWithDiscovery(4, groupAddress, groupPort, isFileStorage(), isNetty(), false);
    }
 
    @Override

@@ -54,6 +54,7 @@ import org.hornetq.tests.util.RandomUtil;
 public class FailoverTest extends FailoverTestBase
 {
    private static final Logger log = Logger.getLogger(FailoverTest.class);
+   private ServerLocator locator;
 
    // Constants -----------------------------------------------------
 
@@ -84,11 +85,23 @@ public class FailoverTest extends FailoverTestBase
       }
    }
 
+   @Override
+   protected void setUp() throws Exception
+   {
+      super.setUp();
+      locator = getServerLocator();
+   }
+
+   @Override
+   protected void tearDown() throws Exception
+   {
+      locator.close();
+      super.tearDown();
+   }
+
    //https://jira.jboss.org/browse/HORNETQ-522
    public void testNonTransactedWithZeroConsumerWindowSize() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
 
@@ -176,8 +189,6 @@ public class FailoverTest extends FailoverTestBase
    {
       ClientSessionFactoryInternal sf;
 
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -238,8 +249,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testConsumeTransacted() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -327,12 +336,11 @@ public class FailoverTest extends FailoverTestBase
    // https://jira.jboss.org/jira/browse/HORNETQ-285
    public void testFailoverOnInitialConnection() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setFailoverOnInitialConnection(true);
       locator.setReconnectAttempts(-1);
+
 
       ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
@@ -386,8 +394,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testTransactedMessagesSentSoRollback() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -451,8 +457,6 @@ public class FailoverTest extends FailoverTestBase
     */
    public void testTransactedMessagesSentSoRollbackAndContinueWork() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -524,8 +528,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testTransactedMessagesNotSentSoNoRollback() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -598,8 +600,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testTransactedMessagesWithConsumerStartedBeforeFailover() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -680,8 +680,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testTransactedMessagesConsumedSoRollback() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -756,8 +754,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testTransactedMessagesNotConsumedSoNoRollback() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -844,8 +840,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testXAMessagesSentSoRollbackOnEnd() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -907,8 +901,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testXAMessagesSentSoRollbackOnPrepare() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -973,8 +965,6 @@ public class FailoverTest extends FailoverTestBase
    // This might happen if 1PC optimisation kicks in
    public void testXAMessagesSentSoRollbackOnCommit() throws Exception
    {
-     ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1040,8 +1030,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testXAMessagesNotSentSoNoRollbackOnCommit() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1122,8 +1110,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testXAMessagesConsumedSoRollbackOnEnd() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1200,8 +1186,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testXAMessagesConsumedSoRollbackOnPrepare() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1281,8 +1265,6 @@ public class FailoverTest extends FailoverTestBase
    // 1PC optimisation
    public void testXAMessagesConsumedSoRollbackOnCommit() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1362,8 +1344,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testCreateNewFactoryAfterFailover() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setFailoverOnInitialConnection(true);
@@ -1392,8 +1372,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testFailoverMultipleSessionsWithConsumers() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1492,8 +1470,6 @@ public class FailoverTest extends FailoverTestBase
     */
    public void testFailWithBrowser() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1564,8 +1540,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testFailThenReceiveMoreMessagesAfterFailover() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -1639,8 +1613,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testFailThenReceiveMoreMessagesAfterFailover2() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
@@ -1744,8 +1716,6 @@ public class FailoverTest extends FailoverTestBase
 
    private void testSimpleSendAfterFailover(final boolean durable, final boolean temporary) throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
@@ -1809,7 +1779,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void _testForceBlockingReturn() throws Exception
    {
-      ServerLocator locator = getServerLocator();
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
@@ -1875,8 +1844,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testCommitOccurredUnblockedAndResendNoDuplicates() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
@@ -2028,8 +1995,6 @@ public class FailoverTest extends FailoverTestBase
 
    public void testCommitDidNotOccurUnblockedAndResend() throws Exception
    {
-      ServerLocator locator = getServerLocator();
-
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);

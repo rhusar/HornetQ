@@ -13,6 +13,7 @@
 package org.hornetq.core.client.impl;
 
 import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.SessionFailureListener;
 
@@ -39,4 +40,8 @@ public interface ClientSessionFactoryInternal extends ClientSessionFactory
    void removeSession(final ClientSessionInternal session, boolean failingOver);
 
    void connect(int reconnectAttempts, boolean failoverOnInitialConnection) throws HornetQException;
+
+   TransportConfiguration getConnectorConfiguration();
+
+   void setBackupConnector(TransportConfiguration live, TransportConfiguration backUp);
 }

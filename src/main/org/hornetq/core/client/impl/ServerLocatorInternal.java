@@ -32,8 +32,6 @@ public interface ServerLocatorInternal extends ServerLocator
    
    void factoryClosed(final ClientSessionFactory factory);
 
-   TransportConfiguration getBackup( TransportConfiguration live);
-
    void setNodeID(String nodeID);
 
    String getNodeID();

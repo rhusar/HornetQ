@@ -68,8 +68,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
-   private Map<TransportConfiguration, TransportConfiguration> pairs = new HashMap<TransportConfiguration, TransportConfiguration>();
-
    private boolean receivedTopology;
 
    private ExecutorService threadPool;
@@ -159,6 +157,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private TransportConfiguration clusterTransportConfiguration;
 
    private boolean backup;
+
    private final Exception e = new Exception();
 
    private static synchronized ExecutorService getGlobalThreadPool()
@@ -305,7 +304,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                              final TransportConfiguration[] transportConfigs)
    {
       e.fillInStackTrace();
-
       this.ha = useHA;
 
       this.discoveryAddress = discoveryAddress;
@@ -425,18 +423,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    public ClientSessionFactory connect() throws Exception
    {
-      ClientSessionFactory sf;
+      ClientSessionFactoryInternal sf;
       // static list of initial connectors
       if (initialConnectors != null && discoveryGroup == null)
       {
-         sf = staticConnector.connect();
+         sf = (ClientSessionFactoryInternal) staticConnector.connect();
       }
       // wait for discovery group to get the list of initial connectors
       else
       {
-         sf = createSessionFactory();
+         sf = (ClientSessionFactoryInternal) createSessionFactory();
       }
-      factories.add(sf);
+      addFactory(sf);
       return sf;
    }
 
@@ -471,7 +469,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       factory.connect(reconnectAttempts, failoverOnInitialConnection);
 
-      factories.add(factory);
+      addFactory(factory);
 
       return factory;
    }
@@ -537,6 +535,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
             catch (HornetQException e)
             {
+               factory.close();
+               factory = null;
                if (e.getCode() == HornetQException.NOT_CONNECTED)
                {
                   attempts++;
@@ -591,7 +591,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
          }
 
-         factories.add(factory);
+         addFactory(factory);
 
          return factory;
       }
@@ -1108,8 +1108,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
       else
       {
-         pairs.clear();
-
          topologyArray = null;
 
          receivedTopology = false;
@@ -1137,7 +1135,20 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
 
-      updateArraysAndPairs();
+      TopologyMember actMember = topology.getMember(nodeID);
+
+      if (actMember.getConnector().a != null && actMember.getConnector().b != null)
+      {
+         for (ClientSessionFactory factory : factories)
+         {
+            ((ClientSessionFactoryInternal) factory).setBackupConnector(actMember.getConnector().a, actMember.getConnector().b);
+         }
+      }
+
+      if (connectorPair.a != null)
+      {
+         updateArraysAndPairs();
+      }
 
       if (last)
       {
@@ -1161,11 +1172,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       int count = 0;
       for (TopologyMember pair : topology.getMembers())
       {
-         if (pair.getConnector().b != null)
-         {
-            pairs.put(pair.getConnector().a, pair.getConnector().b);
-         }
-
          topologyArray[count++] = pair.getConnector();
       }
    }
@@ -1227,11 +1233,15 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       topologyListeners.remove(listener);
    }
 
-   public synchronized TransportConfiguration getBackup(final TransportConfiguration live)
+   public synchronized void addFactory(ClientSessionFactoryInternal factory)
    {
-      return pairs.get(live);
+      if (factory != null)
+      {
+         TransportConfiguration backup = topology.getBackupForConnector(factory.getConnectorConfiguration());
+         factory.setBackupConnector(factory.getConnectorConfiguration(), backup);
+         factories.add(factory);
+      }
    }
-
    public static void shutdown()
    {
       if (globalScheduledThreadPool != null)

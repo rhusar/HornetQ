@@ -210,11 +210,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          {
             csf.close();
          }
-
-         if(serverLocator != null)
-         {
-            serverLocator.close();
-         }
       }
 
       executor.execute(new StopRunnable());

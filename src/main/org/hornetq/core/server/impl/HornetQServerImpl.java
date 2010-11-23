@@ -565,10 +565,6 @@ public class HornetQServerImpl implements HornetQServer
       // start connector service
       connectorsService = new ConnectorsService(configuration, storageManager, scheduledPool, postOffice);
       connectorsService.start();
-      
-      started = true;
-
-
    }
 
    @Override

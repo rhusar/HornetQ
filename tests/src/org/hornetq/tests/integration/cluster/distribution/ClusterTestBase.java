@@ -29,6 +29,7 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.*;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
+import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.config.*;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
@@ -105,16 +106,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
    @Override
    protected void tearDown() throws Exception
    {
-      UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
-
-      servers = null;
-
-      sfs = null;
-
-      consumers = null;
-
-      consumers = new ConsumerHolder[ClusterTestBase.MAX_CONSUMERS];
-
       for (ServerLocator locator : locators)
       {
          try
@@ -127,9 +118,26 @@ public abstract class ClusterTestBase extends ServiceTestBase
          }
       }
 
+      locators = null;
+
+      locators = new ServerLocator[ClusterTestBase.MAX_SERVERS];
+      UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
+
+      servers = null;
+
+      sfs = null;
+
+      consumers = null;
+
+      consumers = new ConsumerHolder[ClusterTestBase.MAX_CONSUMERS];
+
+
+
       nodeManagers = null;
 
       super.tearDown();
+
+    //  ServerLocatorImpl.shutdown();
    }
 
    // Private -------------------------------------------------------------------------------------------------------
@@ -426,7 +434,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          if (holder != null)
          {
             holder.consumer.close();
-            holder.session.close();
+           // holder.session.close();
 
             consumers[i] = null;
          }
@@ -1468,91 +1476,172 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       servers[node] = server;
    }
-   protected void setupServerWithDiscovery(final int node,
-                                           final String groupAddress,
-                                           final int port,
-                                           final boolean fileStorage,
-                                           final boolean netty,
-                                           final boolean backup)
-   {
-      setupServerWithDiscovery(node, groupAddress, port, fileStorage, netty, backup, -1);
-   }
 
-   protected void setupServerWithDiscovery(final int node,
-                                           final String groupAddress,
-                                           final int port,
-                                           final boolean fileStorage,
-                                           final boolean netty,
-                                           final int backupNode)
-   {
-      setupServerWithDiscovery(node, groupAddress, port, fileStorage, netty, false, backupNode);
-   }
+   protected void setupLiveServerWithDiscovery(final int node,
+                                             final String groupAddress,
+                                             final int port,
+                                             final boolean fileStorage,
+                                             final boolean netty,
+                                             final boolean sharedStorage)
+     {
+        if (servers[node] != null)
+        {
+           throw new IllegalArgumentException("Already a server at node " + node);
+        }
 
-   protected void setupServerWithDiscovery(final int node,
-                                           final String groupAddress,
-                                           final int port,
-                                           final boolean fileStorage,
-                                           final boolean netty,
-                                           final boolean backup,
-                                           final int backupNode)
-   {
-      if (servers[node] != null)
-      {
-         throw new IllegalArgumentException("Already a server at node " + node);
-      }
+        Configuration configuration = new ConfigurationImpl();
 
-      Configuration configuration = new ConfigurationImpl();
+        configuration.setSecurityEnabled(false);
+        configuration.setBindingsDirectory(getBindingsDir(node, false));
+        configuration.setJournalMinFiles(2);
+        configuration.setJournalDirectory(getJournalDir(node, false));
+        configuration.setJournalFileSize(100 * 1024);
+        configuration.setJournalType(getDefaultJournalType());
+        configuration.setJournalMaxIO_AIO(1000);
+        configuration.setPagingDirectory(getPageDir(node, false));
+        configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, false));
+        configuration.setClustered(true);
+        configuration.setBackup(false);
 
-      configuration.setSecurityEnabled(false);
-      configuration.setBindingsDirectory(getBindingsDir(node, false));
-      configuration.setJournalMinFiles(2);
-      configuration.setJournalDirectory(getJournalDir(node, false));
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
-      configuration.setJournalMaxIO_AIO(1000);
-      configuration.setPagingDirectory(getPageDir(node, false));
-      configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, false));
-      configuration.setClustered(true);
-      configuration.setBackup(backup);
+        configuration.getAcceptorConfigurations().clear();
 
-      configuration.getAcceptorConfigurations().clear();
+        Map<String, Object> params = generateParams(node, netty);
 
-      Map<String, Object> params = generateParams(node, netty);
+        configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, params));
 
-      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, params));
+        TransportConfiguration connector = createTransportConfiguration(netty, false, params);
+        configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
-      TransportConfiguration connector = createTransportConfiguration(netty, false, params);
-      configuration.getConnectorConfigurations().put(connector.getName(), connector);
+        List<String> connectorPairs = new ArrayList<String>();
+        connectorPairs.add(connector.getName());
 
-      List<String> connectorPairs = new ArrayList<String>();
-      connectorPairs.add(connector.getName());
+        BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
+                                                                               null,
+                                                                               -1,
+                                                                               groupAddress,
+                                                                               port,
+                                                                               1000,
+                                                                               connectorPairs);
 
-      BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
-                                                                             null,
-                                                                             -1,
-                                                                             groupAddress,
-                                                                             port,
-                                                                             1000,
-                                                                             connectorPairs);
+        configuration.getBroadcastGroupConfigurations().add(bcConfig);
 
-      configuration.getBroadcastGroupConfigurations().add(bcConfig);
+        DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
-      DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+        configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
-      configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
+        HornetQServer server;
+        if (fileStorage)
+        {
+           if (sharedStorage)
+           {
+              server = createInVMFailoverServer(true, configuration, nodeManagers[node]);
+           }
+           else
+           {
+              server = HornetQServers.newHornetQServer(configuration);
+           }
+        }
+        else
+        {
+           if (sharedStorage)
+           {
+              server = createInVMFailoverServer(false, configuration, nodeManagers[node]);
+           }
+           else
+           {
+              server = HornetQServers.newHornetQServer(configuration, false);
+           }
+        }
+        servers[node] = server;
+     }
 
-      HornetQServer server;
+   protected void setupBackupServerWithDiscovery(final int node,
+                                             final int liveNode,
+                                             final String groupAddress,
+                                             final int port,
+                                             final boolean fileStorage,
+                                             final boolean netty,
+                                             final boolean sharedStorage)
+     {
+        if (servers[node] != null)
+        {
+           throw new IllegalArgumentException("Already a server at node " + node);
+        }
 
-      if (fileStorage)
-      {
-         server = HornetQServers.newHornetQServer(configuration);
-      }
-      else
-      {
-         server = HornetQServers.newHornetQServer(configuration, false);
-      }
-      servers[node] = server;
-   }
+        Configuration configuration = new ConfigurationImpl();
+
+        configuration.setSecurityEnabled(false);
+        configuration.setSharedStore(sharedStorage);
+        if (sharedStorage)
+        {
+           // Shared storage will share the node between the backup and live node
+           configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
+           configuration.setJournalDirectory(getJournalDir(liveNode, false));
+           configuration.setPagingDirectory(getPageDir(liveNode, false));
+           configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
+        }
+        else
+        {
+           configuration.setBindingsDirectory(getBindingsDir(node, true));
+           configuration.setJournalDirectory(getJournalDir(node, true));
+           configuration.setPagingDirectory(getPageDir(node, true));
+           configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
+        }
+        configuration.setClustered(true);
+        configuration.setBackup(true);
+
+        configuration.getAcceptorConfigurations().clear();
+
+        Map<String, Object> params = generateParams(node, netty);
+
+        configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, params));
+
+        TransportConfiguration connector = createTransportConfiguration(netty, false, params);
+        configuration.getConnectorConfigurations().put(connector.getName(), connector);
+
+        List<String> connectorPairs = new ArrayList<String>();
+        connectorPairs.add(connector.getName());
+
+        BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
+                                                                               null,
+                                                                               -1,
+                                                                               groupAddress,
+                                                                               port,
+                                                                               1000,
+                                                                               connectorPairs);
+
+        configuration.getBroadcastGroupConfigurations().add(bcConfig);
+
+        DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+
+        configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
+
+        HornetQServer server;
+        if (fileStorage)
+        {
+           if (sharedStorage)
+           {
+              server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+           }
+           else
+           {
+              server = HornetQServers.newHornetQServer(configuration);
+           }
+        }
+        else
+        {
+           if (sharedStorage)
+           {
+              server = createInVMFailoverServer(false, configuration, nodeManagers[liveNode]);
+           }
+           else
+           {
+              server = HornetQServers.newHornetQServer(configuration, false);
+           }
+        }
+        servers[node] = server;
+     }
+
 
    protected void clearServer(final int... nodes)
    {

@@ -79,8 +79,6 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
 
    public void testFailLiveNodes() throws Exception
    {
-      try
-      {
          setupCluster();
 
          startServers(3, 4, 5, 0, 1, 2);
@@ -190,10 +188,6 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
          stopServers();
 
          ClusterWithBackupFailoverTestBase.log.info("*** test done");
-      } catch (Exception e)
-      {
-         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-      }
    }
    
    public void testFailBackupNodes() throws Exception
@@ -306,11 +300,11 @@ public abstract class ClusterWithBackupFailoverTestBase extends ClusterTestBase
 
    protected void stopServers() throws Exception
    {
+
+      closeAllServerLocatorsFactories();
       closeAllConsumers();
 
       closeAllSessionFactories();
-
-      closeAllServerLocatorsFactories();
 
       stopServers(0, 1, 2, 3, 4, 5);
    }

@@ -137,4 +137,16 @@ public class Topology implements Serializable
    {
       return (currentConnector == null && connector != null) || (currentConnector != null && !currentConnector.equals(connector));
    }
+
+   public TransportConfiguration getBackupForConnector(TransportConfiguration connectorConfiguration)
+   {
+      for (TopologyMember member : topology.values())
+      {
+         if(member.getConnector().a != null && member.getConnector().a.equals(connectorConfiguration))
+         {
+            return member.getConnector().b;  
+         }
+      }
+      return null;
+   }
 }

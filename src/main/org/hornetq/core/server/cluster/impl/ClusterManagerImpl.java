@@ -17,11 +17,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.lang.reflect.Array;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -103,7 +99,10 @@ public class ClusterManagerImpl implements ClusterManager
    private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
    private Topology topology = new Topology();
-   private ClientSessionFactory backupSessionFactory;
+
+   private ServerLocatorInternal backupServerLocator;
+
+   private final List<ServerLocatorInternal> clusterLocators = new ArrayList<ServerLocatorInternal>();
 
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
@@ -214,13 +213,16 @@ public class ClusterManagerImpl implements ClusterManager
 
       bridges.clear();
 
-      if(backupSessionFactory != null)
+      if(backupServerLocator != null)
       {
-         backupSessionFactory.close();
-         backupSessionFactory.getServerLocator().close();
-         backupSessionFactory = null;
+         backupServerLocator.close();
       }
 
+      for (ServerLocatorInternal clusterLocator : clusterLocators)
+      {
+         clusterLocator.close();
+      }
+      clusterLocators.clear();
       started = false;
    }
 
@@ -350,19 +352,18 @@ public class ClusterManagerImpl implements ClusterManager
             member.getConnector().b = null;
          }
 
-         if(backupSessionFactory != null)
+         if(backupServerLocator != null)
          {
             //todo we could use the topology of this to preempt it arriving from the cc
             try
             {
-               backupSessionFactory.close();
-               backupSessionFactory.getServerLocator().close();
+               backupServerLocator.close();
             }
             catch (Exception e)
             {
                log.warn("problem closing backup session factory", e);
             }
-            backupSessionFactory = null;
+            backupServerLocator = null;
          }
 
          for (BroadcastGroup broadcastGroup : broadcastGroups.values())
@@ -670,7 +671,7 @@ public class ClusterManagerImpl implements ClusterManager
       serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());
       serverLocator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
       serverLocator.setInitialConnectAttempts(config.getReconnectAttempts());
-
+      clusterLocators.add(serverLocator);
       Bridge bridge = new BridgeImpl(serverLocator,
                                      nodeUUID,
                                      new SimpleString(config.getName()),
@@ -740,6 +741,7 @@ public class ClusterManagerImpl implements ClusterManager
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(tcConfigs);
          serverLocator.setNodeID(nodeUUID.toString());
          serverLocator.setReconnectAttempts(-1);
+         clusterLocators.add(serverLocator);
       }
       else if (config.getDiscoveryGroupName() != null)
       {
@@ -755,6 +757,7 @@ public class ClusterManagerImpl implements ClusterManager
          serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(dg.getGroupAddress(), dg.getGroupPort());
          serverLocator.setNodeID(nodeUUID.toString());
          serverLocator.setReconnectAttempts(-1);
+         clusterLocators.add(serverLocator);
       }
       else
       {
@@ -796,16 +799,14 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   private void announceBackup(ClusterConnectionConfiguration config, TransportConfiguration connector) throws Exception
+   private void announceBackup(final ClusterConnectionConfiguration config, final TransportConfiguration connector) throws Exception
    {
-      ServerLocatorInternal locator;
-
       if (config.getStaticConnectors() != null)
       {
          TransportConfiguration[] tcConfigs = connectorNameListToArray(config.getStaticConnectors());
 
-         locator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(tcConfigs);
-         locator.setReconnectAttempts(-1);
+         backupServerLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(tcConfigs);
+         backupServerLocator.setReconnectAttempts(-1);
       }
       else if (config.getDiscoveryGroupName() != null)
       {
@@ -818,17 +819,30 @@ public class ClusterManagerImpl implements ClusterManager
                                         "'. The cluster connection will not be deployed.");
          }
 
-         locator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(dg.getGroupAddress(), dg.getGroupPort());
-         locator.setReconnectAttempts(-1);
-         locator.setDiscoveryInitialWaitTimeout(0);
+         backupServerLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(dg.getGroupAddress(), dg.getGroupPort());
+         backupServerLocator.setReconnectAttempts(-1);
+         backupServerLocator.setDiscoveryInitialWaitTimeout(0);
       }
       else
       {
          return;
       }
       log.info("announcing backup");
-      backupSessionFactory = locator.connect();
-      backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, connector));
+      this.executorFactory.getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            try
+            {
+               ClientSessionFactory backupSessionFactory = backupServerLocator.connect();
+               backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, connector));
+            }
+            catch (Exception e)
+            {
+               log.warn("Unable to announce backup", e); 
+            }
+         }
+      });
    }
 
    private Transformer instantiateTransformer(final String transformerClassName)
