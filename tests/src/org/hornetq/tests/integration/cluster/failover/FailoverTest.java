@@ -13,7 +13,11 @@
 
 package org.hornetq.tests.integration.cluster.failover;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import javax.transaction.xa.XAException;
@@ -22,8 +26,6 @@ import javax.transaction.xa.Xid;
 
 import junit.framework.Assert;
 
-import org.hornetq.api.core.*;
-import org.hornetq.api.core.client.*;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.Message;
@@ -34,12 +36,11 @@ import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.tests.util.RandomUtil;
@@ -2127,35 +2128,13 @@ public class FailoverTest extends FailoverTestBase
    @Override
    protected TransportConfiguration getAcceptorTransportConfiguration(final boolean live)
    {
-      if (live)
-      {
-         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory");
-      }
-      else
-      {
-         Map<String, Object> server1Params = new HashMap<String, Object>();
-
-         server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-
-         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory", server1Params);
-      }
+      return getInVMTransportAcceptorConfiguration(live);
    }
 
    @Override
    protected TransportConfiguration getConnectorTransportConfiguration(final boolean live)
    {
-      if (live)
-      {
-         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory");
-      }
-      else
-      {
-         Map<String, Object> server1Params = new HashMap<String, Object>();
-
-         server1Params.put(TransportConstants.SERVER_ID_PROP_NAME, 1);
-
-         return new TransportConfiguration("org.hornetq.core.remoting.impl.invm.InVMConnectorFactory", server1Params);
-      }
+      return getInVMConnectorTransportConfiguration(live);
    }
 
    /**
