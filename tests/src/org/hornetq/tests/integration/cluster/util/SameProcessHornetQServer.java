@@ -13,7 +13,6 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +23,6 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
-import org.hornetq.spi.core.protocol.RemotingConnection;
 
 /**
  * A SameProcessHornetQServer

@@ -68,7 +68,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
    protected Configuration backupConfig;
 
    protected Configuration liveConfig;
-   private NodeManager nodeManager;
+   
+   protected NodeManager nodeManager;
 
    // Static --------------------------------------------------------
 
@@ -287,6 +288,8 @@ public abstract class FailoverTestBase extends ServiceTestBase
       }
       System.out.println("FailoverTestBase.waitForNewLive");
    }
+   
+   
 
    protected TransportConfiguration getInVMConnectorTransportConfiguration(final boolean live)
    {

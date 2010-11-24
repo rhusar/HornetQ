@@ -361,7 +361,7 @@ public class HornetQServerImpl implements HornetQServer
 
             started = true;
 
-            log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "] started");
+            log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "] started, waiting live to fail before it gets active");
 
             nodeManager.awaitLiveNode();
             
@@ -1373,11 +1373,11 @@ public class HornetQServerImpl implements HornetQServer
    {
       // Load the journal and populate queues, transactions and caches in memory
 
+      pagingManager.reloadStores();
+      
       JournalLoadInformation[] journalInfo = loadJournals();
 
       compareJournals(journalInfo);
-
-      pagingManager.resumeDepages();
 
       final ServerInfo dumper = new ServerInfo(this, pagingManager);
 

@@ -1651,6 +1651,27 @@ public class PagingTest extends ServiceTestBase
          }
 
          session.commit();
+         
+         session.close();
+         
+         locator.close();
+         
+         locator = createInVMNonHALocator();
+         
+         server.stop();
+         
+         
+         server = createServer(true,
+                               config,
+                               PagingTest.PAGE_SIZE,
+                               PagingTest.PAGE_MAX,
+                               new HashMap<String, AddressSettings>());
+         
+         server.start();
+
+         sf = locator.createSessionFactory();
+         
+         session =  sf.createSession(null, null, false, false, false, false, 0);
 
          ClientConsumer consumer = session.createConsumer(PagingTest.ADDRESS);
 
