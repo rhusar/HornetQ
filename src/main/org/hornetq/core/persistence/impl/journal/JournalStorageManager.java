@@ -1107,6 +1107,9 @@ public class JournalStorageManager implements StorageManager
             }
          }
       }
+      
+      // To recover positions on Iterators
+      pagingManager.processReload();
 
       if (perfBlastPages != -1)
       {

@@ -1700,6 +1700,135 @@ public class PagingTest extends ServiceTestBase
 
    }
 
+   public void testParialConsume() throws Exception
+   {
+      clearData();
+
+      Configuration config = createDefaultConfig();
+
+      HornetQServer server = createServer(true,
+                                          config,
+                                          PagingTest.PAGE_SIZE,
+                                          PagingTest.PAGE_MAX,
+                                          new HashMap<String, AddressSettings>());
+
+      server.start();
+
+      final int numberOfMessages = 1000;
+
+      try
+      {
+
+         locator.setBlockOnNonDurableSend(true);
+         locator.setBlockOnDurableSend(true);
+         locator.setBlockOnAcknowledge(true);
+
+         ClientSessionFactory sf = locator.createSessionFactory();
+         ClientSession session = sf.createSession(null, null, false, false, false, false, 0);
+
+         session.createQueue(PagingTest.ADDRESS, PagingTest.ADDRESS, null, true);
+
+         ClientProducer producer = session.createProducer(PagingTest.ADDRESS);
+
+         ClientMessage message = null;
+
+         for (int i = 0; i < numberOfMessages; i++)
+         {
+            message = session.createMessage(true);
+
+            HornetQBuffer bodyLocal = message.getBodyBuffer();
+
+            bodyLocal.writeBytes(new byte[1024]);
+
+            message.putIntProperty(new SimpleString("id"), i);
+
+            producer.send(message);
+         }
+
+         session.commit();
+         
+         session.close();
+         
+         locator.close();
+         
+         server.stop();
+         
+         server = createServer(true,
+                               config,
+                               PagingTest.PAGE_SIZE,
+                               PagingTest.PAGE_MAX,
+                               new HashMap<String, AddressSettings>());
+         
+         server.start();
+         
+         locator = createInVMNonHALocator();
+
+         sf = locator.createSessionFactory();
+         
+         session =  sf.createSession(null, null, false, false, false, false, 0);
+
+         ClientConsumer consumer = session.createConsumer(PagingTest.ADDRESS);
+
+         session.start();
+         // 347 = I just picked any odd number, not rounded, to make sure it's not at the beggining of any page
+         for (int i = 0; i < 347; i++)
+         {
+            System.out.println("Received " + i);
+            ClientMessage msg = consumer.receive(5000);
+            assertEquals(i, msg.getIntProperty("id").intValue());
+            Assert.assertNotNull(msg);
+            msg.acknowledge();
+            session.commit();
+         }
+
+         session.close();
+         
+         locator.close();
+         
+         server.stop();
+         
+         server = createServer(true,
+                               config,
+                               PagingTest.PAGE_SIZE,
+                               PagingTest.PAGE_MAX,
+                               new HashMap<String, AddressSettings>());
+         
+         server.start();
+         
+         locator = createInVMNonHALocator();
+
+         sf = locator.createSessionFactory();
+         
+         session =  sf.createSession(null, null, false, false, false, false, 0);
+
+         consumer = session.createConsumer(PagingTest.ADDRESS);
+
+         session.start();
+         for (int i = 347; i < numberOfMessages; i++)
+         {
+            System.out.println("Received " + i);
+            ClientMessage msg = consumer.receive(5000);
+            assertEquals(i, msg.getIntProperty("id").intValue());
+            Assert.assertNotNull(msg);
+            msg.acknowledge();
+            session.commit();
+         }
+
+         session.close();
+      }
+      finally
+      {
+         try
+         {
+            server.stop();
+         }
+         catch (Throwable ignored)
+         {
+         }
+      }
+
+   }
+
    public void testPageMultipleDestinations() throws Exception
    {
       internalTestPageMultipleDestinations(false);
