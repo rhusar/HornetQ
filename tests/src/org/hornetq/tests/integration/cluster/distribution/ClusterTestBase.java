@@ -27,10 +27,17 @@ import junit.framework.Assert;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.*;
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
-import org.hornetq.core.config.*;
+import org.hornetq.api.core.client.ClientConsumer;
+import org.hornetq.api.core.client.ClientMessage;
+import org.hornetq.api.core.client.ClientProducer;
+import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.ClusterConnectionConfiguration;
+import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.DiscoveryGroupConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
@@ -1262,79 +1269,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    protected void setupServer(final int node, final boolean fileStorage, final boolean netty)
    {
-      setupLiveServer(node, fileStorage, true, netty);
+      setupLiveServer(node, fileStorage, false, netty);
    }
-
-   /*protected void setupServer(final int node,
-                              final boolean fileStorage,
-                              final boolean sharedStorage,
-                              final boolean netty,
-                              final boolean backup,
-                              final int backupNode,
-                              final boolean useFakeLock)
-   {
-      if (servers[node] != null)
-      {
-         throw new IllegalArgumentException("Already a server at node " + node);
-      }
-
-      Configuration configuration = new ConfigurationImpl();
-
-      configuration.setSecurityEnabled(false);
-      configuration.setJournalMinFiles(2);
-      configuration.setJournalMaxIO_AIO(1000);
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
-      configuration.setSharedStore(sharedStorage);
-      if (sharedStorage && backup)
-      {
-         // Shared storage will share the node between the backup and live node
-         int nodeDirectoryToUse = backupNode == -1 ? node : backupNode;
-         configuration.setBindingsDirectory(getBindingsDir(nodeDirectoryToUse, false));
-         configuration.setJournalDirectory(getJournalDir(nodeDirectoryToUse, false));
-         configuration.setPagingDirectory(getPageDir(nodeDirectoryToUse, false));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(nodeDirectoryToUse, false));
-      }
-      else
-      {
-         configuration.setBindingsDirectory(getBindingsDir(node, backup));
-         configuration.setJournalDirectory(getJournalDir(node, backup));
-         configuration.setPagingDirectory(getPageDir(node, backup));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, backup));
-      }
-      configuration.setClustered(true);
-      configuration.setJournalCompactMinFiles(0);
-      configuration.setBackup(backup);
-
-      configuration.getAcceptorConfigurations().clear();
-      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node, netty)));
-      
-      HornetQServer server;
-
-      if (fileStorage)
-      {
-         if (useFakeLock)
-         {
-            server = createFakeLockServer(true, configuration);
-         }  
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration);
-         }
-      }
-      else
-      {
-         if (useFakeLock)
-         {
-            server = createFakeLockServer(false, configuration);
-         }
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration, false);
-         }
-      }
-      servers[node] = server;
-   }*/
 
    protected void setupLiveServer(final int node,
                                   final boolean fileStorage,
