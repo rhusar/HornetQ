@@ -442,7 +442,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                   managementService.getManagementAddress(),
                                                   managementService.getManagementNotificationAddress(),
                                                   record,
-                                                  this.connector);
+                                                  connector);
 
       record.setBridge(bridge);
 
