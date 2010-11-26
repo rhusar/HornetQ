@@ -28,7 +28,6 @@
    <!--the queue used by the example-->
    <queue name="exampleQueue">
       <entry name="/queue/exampleQueue"/>
-      <durable>true</durable>
    </queue>
 
 </configuration>
