@@ -173,6 +173,8 @@ public class TransactionDurabilityTest extends ServiceTestBase
 
       session2.close();
 
+      locator.close();
+
       server.stop();
 
    }

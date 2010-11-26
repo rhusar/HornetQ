@@ -278,6 +278,8 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
       testSettersThrowException(cf);
 
+      cf.close();
+
       conn.close();
    }
 
@@ -647,6 +649,8 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       cf.getRetryInterval();
       cf.getRetryIntervalMultiplier();
       cf.getReconnectAttempts();
+
+      cf.close();
    }
 
    private void assertFactoryParams(final HornetQConnectionFactory cf,

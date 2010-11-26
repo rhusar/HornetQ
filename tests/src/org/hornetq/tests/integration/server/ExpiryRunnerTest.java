@@ -50,6 +50,7 @@ public class ExpiryRunnerTest extends UnitTestCase
    private SimpleString expiryQueue;
 
    private SimpleString expiryAddress;
+   private ServerLocator locator;
 
    public void testBasicExpire() throws Exception
    {
@@ -256,7 +257,7 @@ public class ExpiryRunnerTest extends UnitTestCase
       // start the server
       server.start();
       // then we create a client as normal
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY));
       locator.setBlockOnAcknowledge(true);
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
 
@@ -285,6 +286,7 @@ public class ExpiryRunnerTest extends UnitTestCase
             //
          }
       }
+      locator.close();
       if (server != null && server.isStarted())
       {
          try

@@ -45,6 +45,7 @@ public class MessageGroupingTest extends UnitTestCase
    private ClientSession clientSession;
 
    private final SimpleString qName = new SimpleString("MessageGroupingTestQueue");
+   private ServerLocator locator;
 
    public void testBasicGrouping() throws Exception
    {
@@ -258,11 +259,13 @@ public class MessageGroupingTest extends UnitTestCase
       consumer = this.clientSession.createConsumer(qName);
       Assert.assertNull(consumer.receiveImmediate());
       clientSession.close();
+      locator.close();
    }
 
    private void doTestMultipleGroupingTXRollback() throws Exception
    {
-      log.info("*** starting test");ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      log.info("*** starting test");
+      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
       locator.setBlockOnAcknowledge(true);
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
       ClientSession clientSession = sessionFactory.createSession(false, false, false);
@@ -333,6 +336,7 @@ public class MessageGroupingTest extends UnitTestCase
       consumer = this.clientSession.createConsumer(qName);
       Assert.assertNull(consumer.receiveImmediate());
       clientSession.close();
+      locator.close();
    }
 
    private void dotestMultipleGroupingXACommit() throws Exception
@@ -392,6 +396,7 @@ public class MessageGroupingTest extends UnitTestCase
       consumer = this.clientSession.createConsumer(qName);
       Assert.assertNull(consumer.receiveImmediate());
       clientSession.close();
+      locator.close();
    }
 
    private void doTestMultipleGroupingXARollback() throws Exception
@@ -472,6 +477,7 @@ public class MessageGroupingTest extends UnitTestCase
       consumer = this.clientSession.createConsumer(qName);
       Assert.assertNull(consumer.receiveImmediate());
       clientSession.close();
+      locator.close();
    }
 
    private void doTestMultipleGrouping() throws Exception
@@ -547,6 +553,7 @@ public class MessageGroupingTest extends UnitTestCase
             //
          }
       }
+      locator.close();
       server = null;
       clientSession = null;
 
@@ -567,7 +574,7 @@ public class MessageGroupingTest extends UnitTestCase
       server.start();
 
       // then we create a client as normal
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
       ClientSessionFactory sessionFactory = locator.createSessionFactory();
       clientSession = sessionFactory.createSession(false, true, true);
       clientSession.createQueue(qName, qName, null, false);

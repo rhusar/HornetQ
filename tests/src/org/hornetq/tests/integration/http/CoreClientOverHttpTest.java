@@ -87,6 +87,9 @@ public class CoreClientOverHttpTest extends UnitTestCase
 
       session.close();
 
+      locator.close();
+
+
       server.stop();
    }
 
@@ -119,6 +122,8 @@ public class CoreClientOverHttpTest extends UnitTestCase
       Thread.sleep(500 * 5);
 
       session.close();
+
+      locator.close();
 
       server.stop();
    }

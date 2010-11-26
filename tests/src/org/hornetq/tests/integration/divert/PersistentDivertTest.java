@@ -485,6 +485,12 @@ public class PersistentDivertTest extends ServiceTestBase
 
       sf.close();
 
+      locator3.close();
+
+      locator2.close();
+
+      locator.close();
+
       messagingService.stop();
    }
 

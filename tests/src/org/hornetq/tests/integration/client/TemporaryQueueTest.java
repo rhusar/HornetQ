@@ -375,6 +375,8 @@ public class TemporaryQueueTest extends ServiceTestBase
                                           });
 
       session.close();
+
+      locator2.close();
    }
 
    // Package protected ---------------------------------------------
