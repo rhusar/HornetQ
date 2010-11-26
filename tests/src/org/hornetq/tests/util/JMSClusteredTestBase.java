@@ -140,12 +140,15 @@ public class JMSClusteredTestBase extends ServiceTestBase
       conf2.getConnectorConfigurations().put("toServer1",
                                              new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                         generateInVMParams(0)));
+      conf2.getConnectorConfigurations().put("server2",
+                                             new TransportConfiguration(InVMConnectorFactory.class.getName(),
+                                                                        generateInVMParams(1)));
 
       conf2.setClustered(true);
       
       conf2.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server1",
                                                                               "jms",
-                                                                                 "toServer1",
+                                                                                 "server2",
                                                                               1000,
                                                                               true,
                                                                               true,
@@ -182,12 +185,15 @@ public class JMSClusteredTestBase extends ServiceTestBase
       conf1.getConnectorConfigurations().put("toServer2",
                                              new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                         generateInVMParams(1)));
+      conf1.getConnectorConfigurations().put("server1",
+                                             new TransportConfiguration(InVMConnectorFactory.class.getName(),
+                                                                        generateInVMParams(0)));
 
       conf1.setClustered(true);
 
       conf1.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server2",
                                                                               "jms",
-                                                                              "toServer2",
+                                                                              "server1",
                                                                               1000,
                                                                               true,
                                                                               true,
