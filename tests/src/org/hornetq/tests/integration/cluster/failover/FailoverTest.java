@@ -105,6 +105,7 @@ public class FailoverTest extends FailoverTestBase
    {
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
+      locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal)locator.createSessionFactory();
 
@@ -112,17 +113,6 @@ public class FailoverTest extends FailoverTestBase
 
       session.createQueue(FailoverTestBase.ADDRESS, FailoverTestBase.ADDRESS, null, true);
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener extends BaseListener
-      {
-         public void connectionFailed(final HornetQException me, final boolean failover)
-         {
-            latch.countDown();
-         }
-      }
-
-      session.addFailureListener(new MyListener());
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
