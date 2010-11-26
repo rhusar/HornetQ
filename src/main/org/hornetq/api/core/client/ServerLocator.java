@@ -563,7 +563,10 @@ public interface ServerLocator
     * @param reconnectAttempts maximum number of attempts to retry connection in case of failure
     */
    void setReconnectAttempts(int reconnectAttempts);
-   
+
+   void setInitialConnectAttempts(int reconnectAttempts);
+
+   int getInitialConnectAttempts();
    /**
     * Returns true if the client will automatically attempt to connect to the backup server if the initial
     * connection to the live server fails

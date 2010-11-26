@@ -871,6 +871,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       this.initialConnectAttempts = initialConnectAttempts;
    }
 
+   public int getInitialConnectAttempts()
+   {
+      return initialConnectAttempts;
+   }
+
    public synchronized boolean isFailoverOnInitialConnection()
    {
       return this.failoverOnInitialConnection;

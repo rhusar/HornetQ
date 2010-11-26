@@ -54,7 +54,5 @@ public interface ServerLocatorInternal extends ServerLocator
    
    void setBackup(boolean backup);
 
-   void setInitialConnectAttempts(int reconnectAttempts);
-
    Topology getTopology();
 }

@@ -240,6 +240,7 @@ public class JMSFailoverTest extends UnitTestCase
                                                                                                     backupParams));
       jbcfBackup.setBlockOnNonDurableSend(true);
       jbcfBackup.setBlockOnDurableSend(true);
+      jbcfBackup.setInitialConnectAttempts(-1);
       jbcfBackup.setReconnectAttempts(-1);
 
       Connection connLive = jbcfLive.createConnection();

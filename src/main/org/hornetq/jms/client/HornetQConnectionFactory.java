@@ -486,6 +486,18 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       checkWrite();
       serverLocator.setReconnectAttempts(reconnectAttempts);
    }
+
+   public synchronized void setInitialConnectAttempts(final int reconnectAttempts)
+   {
+      checkWrite();
+      serverLocator.setInitialConnectAttempts(reconnectAttempts);
+   }
+
+   public synchronized int getInitialConnectAttempts()
+   {
+      checkWrite();
+      return serverLocator.getInitialConnectAttempts();
+   }
    
    public synchronized boolean isFailoverOnInitialConnection()
    {
