@@ -141,6 +141,8 @@ public abstract class HornetQExample
    {
       String config = configs[index];
       HornetQExample.log.info("starting server with config '" + config + "' " + "logServerOutput " + logServerOutput);
+      String debugProp = System.getProperty("server" + index);
+      boolean debugServer= "true".equals(debugProp);
       servers[index] = SpawnedVMSupport.spawnVM(serverClasspath,
                                                 "HornetQServer_" + index,
                                                 SpawnedHornetQServer.class.getName(),
@@ -149,6 +151,7 @@ public abstract class HornetQExample
                                                 "STARTED::",
                                                 "FAILED::",
                                                 config,
+                                                debugServer,
                                                 "hornetq-beans.xml");
    }
 

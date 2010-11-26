@@ -34,7 +34,7 @@ public class FileLockNodeManager extends NodeManager
 {
    private static final Logger log = Logger.getLogger(FileLockNodeManager.class);
 
-   private final String SERVER_LOCK_NAME = "server.lock";
+   private static final String SERVER_LOCK_NAME = "server.lock";
 
    private static final String ACCESS_MODE = "rw";
 
@@ -126,16 +126,16 @@ public class FileLockNodeManager extends NodeManager
    {
       do
       {
-         while (getState() == NOT_STARTED)
+         byte state = getState();
+         while (state == NOT_STARTED || state == 0)
          {
-            log.info("awaiting live node startup");
+            log.info("awaiting live node startup state='" + state + "'");
             Thread.sleep(2000);
+            state = getState();
          }
 
          liveLock = channel.lock(LIVE_LOCK_POS, 1, false);
-
-         byte state = getState();
-
+         state = getState();
          if (state == PAUSED)
          {
             liveLock.release();
@@ -162,7 +162,6 @@ public class FileLockNodeManager extends NodeManager
       log.info("Waiting to become backup node");
 
       backupLock = channel.lock(BACKUP_LOCK_POS, LOCK_LENGTH, false);
-
       log.info("** got backup lock");
 
       readNodeId();
