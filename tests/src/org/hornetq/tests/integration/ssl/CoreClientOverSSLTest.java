@@ -85,6 +85,7 @@ public class CoreClientOverSSLTest extends UnitTestCase
       Message m = consumer.receive(1000);
       Assert.assertNotNull(m);
       Assert.assertEquals(text, m.getBodyBuffer().readString());
+      locator.close();
    }
 
    public void testSSLWithIncorrectKeyStorePassword() throws Exception
@@ -103,6 +104,10 @@ public class CoreClientOverSSLTest extends UnitTestCase
       catch (HornetQException e)
       {
          Assert.assertEquals(HornetQException.NOT_CONNECTED, e.getCode());
+      }
+      finally
+      {
+         locator.close();
       }
    }
 
@@ -123,6 +128,10 @@ public class CoreClientOverSSLTest extends UnitTestCase
       catch (HornetQException e)
       {
          Assert.assertEquals(HornetQException.CONNECTION_TIMEDOUT, e.getCode());
+      }
+      finally
+      {
+         locator.close();
       }
    }
 
