@@ -105,6 +105,7 @@ public class FailoverTest extends FailoverTestBase
    {
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
+      locator.setAckBatchSize(0);
       locator.setReconnectAttempts(-1);
 
       ClientSessionFactoryInternal sf = (ClientSessionFactoryInternal)locator.createSessionFactory();
@@ -157,7 +158,7 @@ public class FailoverTest extends FailoverTestBase
       crash(session);
       
       int retry = 0;
-      while (received.size() != numMessages)
+      while (received.size() >= numMessages)
       {
          Thread.sleep(1000);
          retry++;
@@ -166,8 +167,10 @@ public class FailoverTest extends FailoverTestBase
             break;
          }
       }
-
+      System.out.println("received.size() = " + received.size());
       session.close();
+
+      sf.close();
       
       Assert.assertTrue(retry <= 5);
 
