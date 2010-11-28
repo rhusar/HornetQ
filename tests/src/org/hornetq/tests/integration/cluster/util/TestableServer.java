@@ -13,6 +13,7 @@
 
 package org.hornetq.tests.integration.cluster.util;
 
+import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.client.ClientSession;
 
 /**
@@ -35,4 +36,8 @@ public interface TestableServer
    void destroy();
 
    boolean isStarted();
+
+   void addInterceptor(Interceptor interceptor);
+
+   void removeInterceptor(Interceptor interceptor);
 }

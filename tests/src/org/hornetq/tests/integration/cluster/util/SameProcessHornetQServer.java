@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.server.HornetQServer;
@@ -54,6 +55,16 @@ public class SameProcessHornetQServer implements TestableServer
    public boolean isStarted()
    {
       return server.isStarted();
+   }
+
+   public void addInterceptor(Interceptor interceptor)
+   {
+      server.getRemotingService().addInterceptor(interceptor);
+   }
+
+   public void removeInterceptor(Interceptor interceptor)
+   {
+      server.getRemotingService().removeInterceptor(interceptor);
    }
 
    public void start() throws Exception

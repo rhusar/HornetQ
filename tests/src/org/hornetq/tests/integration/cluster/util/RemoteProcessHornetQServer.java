@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
 
@@ -78,6 +79,16 @@ public class RemoteProcessHornetQServer implements TestableServer
    public boolean isStarted()
    {
       return started;
+   }
+
+   public void addInterceptor(Interceptor interceptor)
+   {
+      throw new UnsupportedOperationException("can't do this with a remote server");
+   }
+
+   public void removeInterceptor(Interceptor interceptor)
+   {
+      throw new UnsupportedOperationException("can't do this with a remote server");
    }
 
    public void setInitialised(boolean initialised)

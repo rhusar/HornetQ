@@ -2023,7 +2023,7 @@ public class FailoverTest extends FailoverTestBase
 
             try
             {
-               //liveServer.getRemotingService().addInterceptor(interceptor);
+               liveServer.addInterceptor(interceptor);
 
                session.commit();
             }
@@ -2033,7 +2033,7 @@ public class FailoverTest extends FailoverTestBase
                {
                   // Ok - now we retry the commit after removing the interceptor
 
-                  //liveServer.getRemotingService().removeInterceptor(interceptor);
+                  liveServer.removeInterceptor(interceptor);
 
                   try
                   {
