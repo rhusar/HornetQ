@@ -13,11 +13,17 @@
 
 package org.hornetq.jms.example;
 
-import org.hornetq.common.example.HornetQExample;
-import org.hornetq.jms.client.HornetQConnection;
-
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.naming.InitialContext;
+
+import org.hornetq.common.example.HornetQExample;
 
 /**
  * @author <a href="mailto:andy.taylor@jboss.com">Andy Taylor</a>
