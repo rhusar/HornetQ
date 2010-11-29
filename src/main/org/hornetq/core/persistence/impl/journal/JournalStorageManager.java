@@ -1109,7 +1109,12 @@ public class JournalStorageManager implements StorageManager
       }
       
       // To recover positions on Iterators
-      pagingManager.processReload();
+      if (pagingManager != null)
+      {
+         // it could be null on certain tests that are not dealing with paging
+         // This could also be the case in certain embedded conditions
+         pagingManager.processReload();
+      }
 
       if (perfBlastPages != -1)
       {
