@@ -145,7 +145,9 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
 
       for (int i = 0; i < numMessages; i++)
       {
-         ClientMessage message2 = consumer.receive();
+         ClientMessage message2 = consumer.receive(10000);
+         
+         assertNotNull(message2);
 
          Assert.assertEquals("aardvarks", message2.getBodyBuffer().readString());
 
