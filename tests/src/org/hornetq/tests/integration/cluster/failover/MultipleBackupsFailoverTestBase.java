@@ -211,7 +211,7 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
          this.latch = latch;
       }
 
-      public void nodeUP(String nodeID, String sourceNodeID,
+      public void nodeUP(String nodeID,
                          Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                          boolean last,
                          int distance)

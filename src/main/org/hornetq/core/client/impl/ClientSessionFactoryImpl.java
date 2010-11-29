@@ -1109,7 +1109,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
                channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(),
-                                                     serverLocator.getNodeID(),
                                                      serverLocator.isBackup(),
                                                      config));
             }
@@ -1244,7 +1243,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             else
             {
                serverLocator.notifyNodeUp(topMessage.getNodeID(),
-                                          topMessage.getSourceNodeID(),
                                           topMessage.getPair(),
                                           topMessage.isLast(),
                                           topMessage.getDistance());

@@ -1128,7 +1128,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    }
 
    public synchronized void notifyNodeUp(final String nodeID,
-                                         final String sourceNodeID,
                                          final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                          final boolean last,
                                          final int distance)
@@ -1162,7 +1161,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       for (ClusterTopologyListener listener : topologyListeners)
       {
-         listener.nodeUP(nodeID, sourceNodeID, connectorPair, last, distance);
+         listener.nodeUP(nodeID, connectorPair, last, distance);
       }
 
       // Notify if waiting on getting topology

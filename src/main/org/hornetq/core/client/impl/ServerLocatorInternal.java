@@ -38,7 +38,7 @@ public interface ServerLocatorInternal extends ServerLocator
 
    ClientSessionFactory connect() throws  Exception;
 
-   void notifyNodeUp(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance);
+   void notifyNodeUp(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance);
 
    void notifyNodeDown(String nodeID);
 

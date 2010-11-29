@@ -34,8 +34,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl
    private boolean exit;
    
    private String nodeID;
-
-   private String sourceNodeID;
    
    private Pair<TransportConfiguration, TransportConfiguration> pair;
    
@@ -47,13 +45,11 @@ public class ClusterTopologyChangeMessage extends PacketImpl
 
    // Constructors --------------------------------------------------
 
-   public ClusterTopologyChangeMessage(final String nodeID, String sourceNodeID, final Pair<TransportConfiguration, TransportConfiguration> pair, final boolean last, int distance)
+   public ClusterTopologyChangeMessage(final String nodeID, final Pair<TransportConfiguration, TransportConfiguration> pair, final boolean last, int distance)
    {
       super(PacketImpl.CLUSTER_TOPOLOGY);
 
       this.nodeID = nodeID;
-
-      this.sourceNodeID = sourceNodeID;
       
       this.pair = pair;
       
@@ -83,11 +79,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl
    public String getNodeID()
    {
       return nodeID;
-   }
-   
-   public String getSourceNodeID()
-   {
-      return sourceNodeID;
    }
 
    public Pair<TransportConfiguration, TransportConfiguration> getPair()
@@ -122,7 +113,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       buffer.writeString(nodeID);
       if (!exit)
       {
-         buffer.writeString(sourceNodeID);
          if (pair.a != null)
          {
             buffer.writeBoolean(true);
@@ -153,7 +143,6 @@ public class ClusterTopologyChangeMessage extends PacketImpl
       nodeID = buffer.readString();
       if (!exit)
       {
-         sourceNodeID = buffer.readString();
          boolean hasLive = buffer.readBoolean();
          TransportConfiguration a;
          if(hasLive)

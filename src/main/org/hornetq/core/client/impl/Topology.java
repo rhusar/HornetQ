@@ -39,10 +39,16 @@ public class Topology implements Serializable
     */
    private Map<String, TopologyMember> topology = new HashMap<String, TopologyMember>();
 
+   private boolean debug;
+
    public synchronized boolean addMember(String nodeId, TopologyMember member)
    {
       boolean replaced = false;
       TopologyMember currentMember = topology.get(nodeId);
+      if (debug)
+      {
+         //System.out.println("member.getConnector() = " + member.getConnector());
+      }
       if(currentMember == null)
       {
          topology.put(nodeId, member);
@@ -60,6 +66,15 @@ public class Topology implements Serializable
             currentMember.getConnector().b =  member.getConnector().b;
             replaced = true;
          }
+
+         if(member.getConnector().a == null)
+         {
+            member.getConnector().a = currentMember.getConnector().a;
+         }
+         if(member.getConnector().b == null)
+         {
+            member.getConnector().b = currentMember.getConnector().b;
+         }
       }
       return replaced;
    }
@@ -70,12 +85,12 @@ public class Topology implements Serializable
       return (member != null);
    }
 
-   public synchronized void fireListeners(ClusterTopologyListener listener, String sourceNodeId)
+   public synchronized void fireListeners(ClusterTopologyListener listener)
    {
       int count = 0;
       for (Map.Entry<String, TopologyMember> entry : topology.entrySet())
       {
-         listener.nodeUP(entry.getKey(), sourceNodeId, entry.getValue().getConnector(), ++count == topology.size(), entry.getValue().getDistance());
+         listener.nodeUP(entry.getKey(), entry.getValue().getConnector(), ++count == topology.size(), entry.getValue().getDistance());
       }
    }
 
@@ -148,5 +163,10 @@ public class Topology implements Serializable
          }
       }
       return null;
+   }
+
+   public void setDebug(boolean b)
+   {
+      debug = b;
    }
 }

@@ -111,16 +111,9 @@ public class CoreProtocolManager implements ProtocolManager
                
                final ClusterTopologyListener listener = new ClusterTopologyListener()
                {
-                  public void nodeUP(String nodeID, String sourceNodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
+                  public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last, int distance)
                   {
-                     if(System.getProperty("foo") != null)
-                     {
-                        if(connectorPair.toString().contains("b=org-hornetq-core-remoting-impl-invm-InVMConnectorFactory?server-id=1"))
-                        {
-                           System.out.println("");
-                        }
-                     }
-                     channel0.send(new ClusterTopologyChangeMessage(nodeID, sourceNodeID, connectorPair, last, distance + 1));
+                     channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last, distance + 1));
                   }
                   
                   public void nodeDown(String nodeID)
@@ -154,7 +147,7 @@ public class CoreProtocolManager implements ProtocolManager
                {
                   pair = new Pair<TransportConfiguration, TransportConfiguration>(msg.getConnector(), null);
                }
-               server.getClusterManager().notifyNodeUp(msg.getNodeID(), msg.getSourceNodeID(), pair, false, 1);
+               server.getClusterManager().notifyNodeUp(msg.getNodeID(), pair, false, 1);
             }
          }
       });

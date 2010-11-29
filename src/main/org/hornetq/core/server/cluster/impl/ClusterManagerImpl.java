@@ -251,26 +251,27 @@ public class ClusterManagerImpl implements ClusterManager
    }
 
    public void notifyNodeUp(String nodeID,
-                            String sourceNodeID,
                                    Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    boolean last,
                                    int distance)
    {
       boolean updated = topology.addMember(nodeID, new TopologyMember(connectorPair, distance));
+
       if(!updated)
       {
          return;
       }
+      
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, sourceNodeID, connectorPair, last, distance);
+         listener.nodeUP(nodeID, connectorPair, last, distance);
       }
 
       if (distance < topology.nodes())
       {
          for (ClusterTopologyListener listener : clusterConnectionListeners)
          {
-            listener.nodeUP(nodeID, sourceNodeID, connectorPair, last, distance);
+            listener.nodeUP(nodeID, connectorPair, last, distance);
          }
       }
    }
@@ -313,7 +314,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       // We now need to send the current topology to the client
-      topology.fireListeners(listener, nodeUUID.toString());
+      topology.fireListeners(listener);
    }
 
    public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
@@ -405,12 +406,12 @@ public class ClusterManagerImpl implements ClusterManager
 
          for (ClusterTopologyListener listener : clientListeners)
          {
-            listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
+            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
          }
 
          for (ClusterTopologyListener listener : clusterConnectionListeners)
          {
-            listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
+            listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
          }
       }
    }
@@ -478,12 +479,12 @@ public class ClusterManagerImpl implements ClusterManager
 
       for (ClusterTopologyListener listener : clientListeners)
       {
-         listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
+         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
       }
       
       for (ClusterTopologyListener listener : clusterConnectionListeners)
       {
-         listener.nodeUP(nodeID, nodeID, member.getConnector(), false, member.getDistance());
+         listener.nodeUP(nodeID, member.getConnector(), false, member.getDistance());
       }
 
    }
@@ -835,7 +836,7 @@ public class ClusterManagerImpl implements ClusterManager
             try
             {
                ClientSessionFactory backupSessionFactory = backupServerLocator.connect();
-               backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), nodeUUID.toString(), true, connector));
+               backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, connector));
             }
             catch (Exception e)
             {

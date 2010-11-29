@@ -303,7 +303,6 @@ public class JMSUtil
       }
 
       public void nodeUP(String nodeID,
-                         String sourceNodeID,
                          Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                          boolean last,
                          int distance)

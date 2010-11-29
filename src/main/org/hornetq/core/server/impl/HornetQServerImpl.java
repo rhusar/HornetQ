@@ -200,6 +200,7 @@ public class HornetQServerImpl implements HornetQServer
    private final Set<ActivateCallback> activateCallbacks = new HashSet<ActivateCallback>();
 
    private volatile GroupingHandler groupingHandler;
+   
    private NodeManager nodeManager;
 
    // Constructors

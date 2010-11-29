@@ -343,23 +343,23 @@ public class ClusterConnectionImpl implements ClusterConnection
    }
 
    public synchronized void nodeUP(final String nodeID,
-                                   final String sourceNodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last,
                                    final int distance)
    {
       // discard notifications about ourselves unless its from our backup
+
       if (nodeID.equals(nodeUUID.toString()))
       {
-         if(sourceNodeID.equals(nodeUUID.toString()) && connectorPair.b != null)
+         if(connectorPair.b != null)
          {
-            server.getClusterManager().notifyNodeUp(nodeID, sourceNodeID, connectorPair, last, distance);
+            server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, distance);
          }
          return;
       }
 
       // we propagate the node notifications to all cluster topology listeners
-      server.getClusterManager().notifyNodeUp(nodeID, sourceNodeID, connectorPair, last, distance);
+      server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, distance);
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
       if (allowsDirectConnectionsOnly && distance > 1 && !allowableConnections.contains(connectorPair.a))
