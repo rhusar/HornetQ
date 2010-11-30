@@ -49,16 +49,8 @@ public class NodeAnnounceMessage extends PacketImpl
       this.backup = backup;
       
       this.connector = tc;
-      if(System.getProperty("foo") != null)
-      {
-         if(tc.toString().contains("org-hornetq-core-remoting-impl-invm-InVMConnectorFactory?server-id=1"))
-         {
-            System.out.println("");
-         }
-      }
-
    }
-
+   
    public NodeAnnounceMessage()
    {
       super(PacketImpl.NODE_ANNOUNCE);

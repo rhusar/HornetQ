@@ -195,41 +195,14 @@ public class ClusterConnectionImpl implements ClusterConnection
          return;
       }
 
-      if (serverLocator != null)
-      {
-         serverLocator.addClusterTopologyListener(this);
-         serverLocator.start();
-         // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
-         server.getExecutorFactory().getExecutor().execute(new Runnable()
-         {
-            public void run()
-            {
-               try
-               {
-                  serverLocator.connect();
-               }
-               catch (Exception e)
-               {
-                  if(started)
-                  {
-                     log.warn("did not connect the cluster connection to other nodes", e);
-                  }
-               }
-            }
-         });
-      }
-      
       started = true;
-
-      if (managementService != null)
+      
+      if(!backup)
       {
-         TypedProperties props = new TypedProperties();
-         props.putSimpleStringProperty(new SimpleString("name"), name);
-         Notification notification = new Notification(nodeUUID.toString(),
-                                                      NotificationType.CLUSTER_CONNECTION_STARTED,
-                                                      props);
-         managementService.sendNotification(notification);
+         activate();
       }
+
+
    }
 
    public void stop() throws Exception
@@ -299,7 +272,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       return nodes;
    }
 
-   public synchronized void activate()
+   public synchronized void activate() throws Exception
    {
       if (!started)
       {
@@ -307,6 +280,41 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
 
       backup = false;
+
+
+      if (serverLocator != null)
+      {
+         serverLocator.addClusterTopologyListener(this);
+         serverLocator.start();
+         // FIXME Ugly ugly code to connect to other nodes and form the cluster... :(
+         server.getExecutorFactory().getExecutor().execute(new Runnable()
+         {
+            public void run()
+            {
+               try
+               {
+                  serverLocator.connect();
+               }
+               catch (Exception e)
+               {
+                  if(started)
+                  {
+                     log.warn("did not connect the cluster connection to other nodes", e);
+                  }
+               }
+            }
+         });
+      }
+
+      if (managementService != null)
+      {
+         TypedProperties props = new TypedProperties();
+         props.putSimpleStringProperty(new SimpleString("name"), name);
+         Notification notification = new Notification(nodeUUID.toString(),
+                                                      NotificationType.CLUSTER_CONNECTION_STARTED,
+                                                      props);
+         managementService.sendNotification(notification);
+      }
    }
    
    public TransportConfiguration getConnector()

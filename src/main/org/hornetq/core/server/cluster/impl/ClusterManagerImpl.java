@@ -100,7 +100,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    private Topology topology = new Topology();
 
-   private ServerLocatorInternal backupServerLocator;
+   private volatile ServerLocatorInternal backupServerLocator;
 
    private final List<ServerLocatorInternal> clusterLocators = new ArrayList<ServerLocatorInternal>();
 
@@ -384,7 +384,7 @@ public class ClusterManagerImpl implements ClusterManager
          {
             try
             {
-               clusterConnection.start();
+               clusterConnection.activate();
             }
             catch (Exception e)
             {
@@ -790,11 +790,9 @@ public class ClusterManagerImpl implements ClusterManager
 
       clusterConnections.put(config.getName(), clusterConnection);
 
-      if (!backup)
-      {
-         clusterConnection.start();
-      }
-      else
+      clusterConnection.start();
+      
+      if(backup)
       {
          announceBackup(config, connector);
       }
@@ -836,7 +834,11 @@ public class ClusterManagerImpl implements ClusterManager
             try
             {
                ClientSessionFactory backupSessionFactory = backupServerLocator.connect();
-               backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, connector));
+               if (backupSessionFactory != null)
+               {
+                  backupSessionFactory.getConnection().getChannel(0, -1).send(new NodeAnnounceMessage(nodeUUID.toString(), true, connector));
+                  log.info("backup announced");
+               }
             }
             catch (Exception e)
             {

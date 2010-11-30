@@ -48,7 +48,7 @@ public interface ClusterConnection extends HornetQComponent, ClusterTopologyList
                                    SimpleString queueName,
                                    int distance) throws Exception;
 
-   void activate();
+   void activate() throws Exception;
    
    TransportConfiguration getConnector();
 

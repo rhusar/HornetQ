@@ -785,7 +785,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       for (int i = 0; i < consumers.length; i++)
       {
-         if (consumers[i] != null)
+         if (consumers[i] != null && !consumers[i].consumer.isClosed())
          {
             ClusterTestBase.log.info("Dumping consumer " + i);
 
@@ -1163,6 +1163,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    protected void setupSessionFactory(final int node, final boolean netty) throws Exception
    {
+      setupSessionFactory(node, netty, false);
+   }
+
+   protected void setupSessionFactory(final int node, final boolean netty, boolean ha) throws Exception
+   {
       if (sfs[node] != null)
       {
          throw new IllegalArgumentException("Already a server at " + node);
@@ -1181,7 +1186,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
          serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
       }
 
-      locators[node] = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      if (ha)
+      {
+         locators[node] = HornetQClient.createServerLocatorWithHA(serverTotc);
+      }
+      else
+      {
+         locators[node] = HornetQClient.createServerLocatorWithoutHA(serverTotc);
+      }
 
       locators[node].setBlockOnNonDurableSend(true);
       locators[node].setBlockOnDurableSend(true);
@@ -1189,6 +1201,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       sfs[node] = sf;
    }
+
 
    protected void setupSessionFactory(final int node, final boolean netty, int reconnectAttempts) throws Exception
    {

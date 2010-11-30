@@ -605,17 +605,18 @@ public class HornetQServerImpl implements HornetQServer
          }
 
          connectorsService.stop();
+         //we stop the groupinghandler before we stop te cluster manager so binding mappings aren't removed in case of failover
+         if (groupingHandler != null)
+         {
+            managementService.removeNotificationListener(groupingHandler);
+            groupingHandler = null;
+         }
          
          if (clusterManager != null)
          {
             clusterManager.stop();
          }
 
-         if (groupingHandler != null)
-         {
-            managementService.removeNotificationListener(groupingHandler);
-            groupingHandler = null;
-         }
       }
 
       // we stop the remoting service outside a lock

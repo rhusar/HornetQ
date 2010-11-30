@@ -244,7 +244,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    public void setBackupConnector(TransportConfiguration live, TransportConfiguration backUp)
    {
-      if(live.equals(connectorConfig))
+      if(live.equals(connectorConfig) && backUp != null)
       {
          backupConfig = backUp;
       }
@@ -1209,10 +1209,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          if (type == PacketImpl.DISCONNECT)
          {
             final DisconnectMessage msg = (DisconnectMessage)packet;
-            if (msg.getNodeID() != null)
-            {
-               System.out.println("received disconnect from node " + msg.getNodeID());
-            }
+            
             closeExecutor.execute(new Runnable()
             {
                // Must be executed on new thread since cannot block the netty thread for a long time and fail can

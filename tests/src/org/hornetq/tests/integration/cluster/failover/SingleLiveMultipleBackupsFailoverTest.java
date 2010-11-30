@@ -94,6 +94,8 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       session = sendAndConsume(sf, false);
       session.close();
       servers.get(backupNode).stop();
+
+      locator.close();
    }
    
    protected void createBackupConfig(int liveNode, int nodeid, int... nodes)

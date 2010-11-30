@@ -97,7 +97,8 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       System.setProperty("foo", "bar");
       servers.get(3).crash(session2);
       int liveAfter3 = waitForNewLive(10000, true, servers, 4, 5);
-
+      locator.close();
+      locator2.close();
       if (liveAfter0 == 2)
       {
          servers.get(1).stop();
