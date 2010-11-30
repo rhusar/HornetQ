@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -43,7 +44,6 @@ import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.tests.tools.ServerManagement;
 import org.hornetq.jms.tests.tools.container.Server;
 import org.hornetq.jms.tests.util.ProxyAssertSupport;
-import org.hornetq.tests.util.RandomUtil;
 
 /**
  * @author <a href="mailto:adrian@jboss.org">Adrian Brock</a>
@@ -75,7 +75,7 @@ public class HornetQServerTestCase extends ProxyAssertSupport
       ArrayList<String> connectors = new ArrayList<String>();
       for (TransportConfiguration tnsp : connectorConfigs)
       {
-         String name = RandomUtil.randomString();
+         String name = UUID.randomUUID().toString();
          
          getJmsServer().getConfiguration().getConnectorConfigurations().put(name, tnsp);
          
