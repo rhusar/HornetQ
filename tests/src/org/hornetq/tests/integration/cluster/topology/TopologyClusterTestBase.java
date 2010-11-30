@@ -414,6 +414,7 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
 
       final List<String> nodes = new ArrayList<String>();
       final CountDownLatch upLatch = new CountDownLatch(5);
+      final CountDownLatch downLatch = new CountDownLatch(5);
 
       locator.addClusterTopologyListener(new ClusterTopologyListener()
       {
@@ -434,6 +435,7 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
             if (nodes.contains(nodeID))
             {
                nodes.remove(nodeID);
+               downLatch.countDown();
             }
          }
       });
@@ -454,6 +456,8 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
       waitForClusterConnections(4, 4);
 
       stopServers(0, 4, 2, 3, 1);
+
+      assertTrue("Was not notified that all servers are Down", upLatch.await(10, SECONDS));
       checkContains(new int[] { }, nodeIDs, nodes);
       
       for (int i = 0; i < sfs.length; i++)
