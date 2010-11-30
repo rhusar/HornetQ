@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
@@ -39,7 +40,6 @@ import org.hornetq.core.server.HornetQServer;
 import org.hornetq.integration.bootstrap.HornetQBootstrapServer;
 import org.hornetq.jms.server.JMSServerManager;
 import org.hornetq.jms.server.impl.JMSFactoryType;
-import org.hornetq.tests.util.RandomUtil;
 import org.jboss.kernel.plugins.config.property.PropertyKernelConfig;
 
 /**
@@ -338,7 +338,7 @@ public class LocalTestServer implements Server, Runnable
       ArrayList<String> connectors = new ArrayList<String>();
       for (TransportConfiguration tnsp : connectorConfigs)
       {
-         String name = RandomUtil.randomString();
+         String name = UUID.randomUUID().toString();
          
          getHornetQServer().getConfiguration().getConnectorConfigurations().put(name, tnsp);
          
