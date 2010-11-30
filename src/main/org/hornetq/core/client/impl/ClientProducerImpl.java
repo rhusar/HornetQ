@@ -13,16 +13,8 @@
 
 package org.hornetq.core.client.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.util.concurrent.Executor;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
@@ -30,13 +22,12 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.message.BodyEncoder;
 import org.hornetq.core.message.impl.MessageInternal;
 import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendContinuationMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendLargeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendMessage;
-import org.hornetq.utils.GZipUtil;
+import org.hornetq.utils.DeflaterReader;
 import org.hornetq.utils.HornetQBufferInputStream;
 import org.hornetq.utils.TokenBucketLimiter;
 import org.hornetq.utils.UUIDGenerator;
@@ -411,8 +402,7 @@ public class ClientProducerImpl implements ClientProducerInternal
 
       if (session.isCompressLargeMessages())
       {
-         //input = GZipUtil.pipeGZip(inputStreamParameter, true, session.getThreadPool());
-         input = GZipUtil.createZipInputStream(inputStreamParameter);
+         input = new DeflaterReader(inputStreamParameter);
       }
 
       while (!lastPacket)

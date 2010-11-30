@@ -47,6 +47,11 @@ public class InflaterWriter extends OutputStream
    {
       this.output = output;
    }
+   
+   private void log(String str)
+   {
+      System.err.println(this + " " + str);
+   }
 
    /*
     * Write a compressed byte.
@@ -54,6 +59,7 @@ public class InflaterWriter extends OutputStream
    @Override
    public void write(int b) throws IOException
    {
+      log("call write b: " + b);
       writeBuffer[writePointer] = (byte)(b & 0xFF);
       writePointer++;
       
@@ -62,6 +68,7 @@ public class InflaterWriter extends OutputStream
          writePointer = 0;
          try
          {
+            log("call doWrite");
             doWrite();
          }
          catch (DataFormatException e)
@@ -74,6 +81,7 @@ public class InflaterWriter extends OutputStream
    @Override
    public void close() throws IOException
    {
+      log("call close");
       if (writePointer > 0)
       {
          inflater.setInput(writeBuffer, 0, writePointer);

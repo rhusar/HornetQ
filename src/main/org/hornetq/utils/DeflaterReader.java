@@ -16,6 +16,7 @@ package org.hornetq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.zip.Deflater;
 
 /**
@@ -26,7 +27,7 @@ import java.util.zip.Deflater;
  * @author <a href="mailto:hgao@redhat.com">Howard Gao</a>
  *
  */
-public class DeflaterReader
+public class DeflaterReader extends InputStream
 {
    private Deflater deflater = new Deflater();
    private boolean isFinished = false;
@@ -38,12 +39,22 @@ public class DeflaterReader
    {
       input = inData;
    }
-   
-   public int read(byte[] buffer) throws IOException
+
+   public int read() throws IOException
    {
-      return read(buffer, 0, buffer.length);
+      byte[] buffer = new byte[1];
+      int n = read(buffer, 0, 1);
+      if (n == 1)
+      {
+         return buffer[0];
+      }
+      if (n == -1)
+      {
+         return -1;
+      }
+      throw new IOException("Error reading data, invalid n: " + n);
    }
-   
+
    /**
     * Try to fill the buffer with compressed bytes. Except the last effective read,
     * this method always returns with a full buffer of compressed data.
@@ -52,6 +63,7 @@ public class DeflaterReader
     * @return the number of bytes really filled, -1 indicates end.
     * @throws IOException 
     */
+   @Override
    public int read(byte[] buffer, int offset, int len) throws IOException
    {
       if (compressDone)
@@ -74,6 +86,7 @@ public class DeflaterReader
             {
                deflater.end();
                compressDone = true;
+               read = -1;
                break;
             }
             else if (deflater.needsInput())
@@ -120,6 +133,25 @@ public class DeflaterReader
       
       DeflaterReader reader = new DeflaterReader(inputStream);
       
+
+      ArrayList<Integer> zipHolder = new ArrayList<Integer>();
+      int b = reader.read();
+      
+      while (b != -1)
+      {
+         zipHolder.add(b);
+         b = reader.read();
+      }
+      
+      byte[] allCompressed = new byte[zipHolder.size()];
+      for (int i = 0; i < allCompressed.length; i++)
+      {
+         allCompressed[i] = (byte) zipHolder.get(i).intValue();
+      }
+      
+      System.err.println("compressed: " + getBytesString(allCompressed));
+
+/*
       byte[] buffer = new byte[7];
       
       int n = reader.read(buffer);
@@ -131,7 +163,7 @@ public class DeflaterReader
          System.err.println("==>read n " + n + " values: " + getBytesString(buffer));
          n = reader.read(buffer);
       }
-      
+*/
       System.err.println("compressed.");
       
       System.err.println("now verify");

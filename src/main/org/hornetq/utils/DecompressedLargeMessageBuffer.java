@@ -98,7 +98,7 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    public void setOutputStream(final OutputStream output) throws HornetQException
    {
-      bufferDelegate.setOutputStream(GZipUtil.createZipOutputStream(output));
+      bufferDelegate.setOutputStream(new InflaterWriter(output));
    }
 
    public synchronized void saveBuffer(final OutputStream output) throws HornetQException
@@ -145,7 +145,7 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
          {
             InputStream input = new HornetQBufferInputStream(bufferDelegate);
             
-            dataInput = new DataInputStream(GZipUtil.createUnZipInputStream(input));
+            dataInput = new DataInputStream(new InflaterReader(input));
          }
          catch (Exception e)
          {
