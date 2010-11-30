@@ -1924,7 +1924,8 @@
 
    <target name="all-tests" depends="unit-tests, integration-tests, concurrent-tests, stress-tests, jms-tests, joram-tests, rest-tests"/>
 
-   <target name="hudson-tests" depends="unit-tests, integration-tests, concurrent-tests, timing-tests, jms-tests, joram-tests"/>
+   <!-- jms-tests are removed temporarily until merge on trunk is done... target name="hudson-tests" depends="unit-tests, integration-tests, concurrent-tests, timing-tests, jms-tests, joram-tests"/ -->
+   <target name="hudson-tests" depends="unit-tests, integration-tests, concurrent-tests, timing-tests"/>
 
    <target name="compile-reports">
       <mkdir dir="${test.stylesheets.dir}"/>
