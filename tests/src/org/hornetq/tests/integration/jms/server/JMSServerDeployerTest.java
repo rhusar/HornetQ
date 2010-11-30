@@ -314,7 +314,6 @@ public class JMSServerDeployerTest extends ServiceTestBase
          assertEquals("172.16.8.10", cf.getLocalBindAddress());
          assertEquals(12345, cf.getDiscoveryPort());
          assertEquals(5432, cf.getDiscoveryRefreshTimeout());
-         assertEquals(5464, cf.getDiscoveryInitialWaitTimeout());
       }
 
       for (String binding : queueBindings)
