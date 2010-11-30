@@ -22,6 +22,8 @@ import java.util.zip.Deflater;
  * A DeflaterReader
  * The reader takes an inputstream and compress it.
  * Not for concurrent use.
+
+ * @author <a href="mailto:hgao@redhat.com">Howard Gao</a>
  *
  */
 public class DeflaterReader

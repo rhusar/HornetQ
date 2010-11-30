@@ -26,6 +26,7 @@ import java.util.zip.Inflater;
  * It takes an compressed input stream and decompressed it as it is being read.
  * Not for concurrent use.
  *
+ * @author <a href="mailto:hgao@redhat.com">Howard Gao</a>
  */
 public class InflaterReader extends InputStream
 {
