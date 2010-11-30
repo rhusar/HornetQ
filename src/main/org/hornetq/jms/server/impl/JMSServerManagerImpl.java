@@ -757,6 +757,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setClientID(clientID);
          configuration.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          configuration.setConnectionTTL(connectionTTL);
+         configuration.setFactoryType(cfType);
          configuration.setCallTimeout(callTimeout);
          configuration.setCacheLargeMessagesClient(cacheLargeMessagesClient);
          configuration.setMinLargeMessageSize(minLargeMessageSize);
@@ -782,7 +783,7 @@ public class JMSServerManagerImpl implements JMSServerManager, ActivateCallback
          configuration.setReconnectAttempts(reconnectAttempts);
          configuration.setFailoverOnInitialConnection(failoverOnInitialConnection);
          configuration.setGroupID(groupId);
-         createConnectionFactory(true, configuration, jndiBindings);
+          createConnectionFactory(true, configuration, jndiBindings);
       }
    }
 
