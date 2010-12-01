@@ -26,7 +26,6 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
 import org.hornetq.core.message.impl.MessageImpl;
-import org.hornetq.utils.GZipUtil;
 import org.hornetq.utils.HornetQBufferInputStream;
 
 /**
