@@ -13,12 +13,9 @@
 
 package org.hornetq.utils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 /**
@@ -50,30 +47,17 @@ public class InflaterReader extends InputStream
       this.pointer = -1;
    }
    
-   public static void log(String str)
-   {
-      System.out.println(str);
-   }
-   
    public int read() throws IOException
    {
-      log("in read");
-      
       if (pointer == -1)
       {
-         log("pointer is -1");
-         
          try
          {
-            log("need to decompress more bytes");
             length = doRead(readBuffer, 0, readBuffer.length);
-            log("bytes decompressed:" + length);
             if (length == 0)
             {
-               log("zero byte got, ending");
                return -1;
             }
-            log("reset pointer to zero");
             pointer = 0;
          }
          catch (DataFormatException e)
@@ -82,16 +66,13 @@ public class InflaterReader extends InputStream
          }
       }
       
-      log("reading byte at " + pointer);
       int value = readBuffer[pointer] & 0xFF;
       pointer++;
       if (pointer == length)
       {
-         log("buffer all read, set pointer to -1");
          pointer = -1;
       }
       
-      log("byte got: " + value);
       return value;
    }
    
@@ -152,45 +133,6 @@ public class InflaterReader extends InputStream
          }
       }
       return read;
-   }
-   
-   public static void main(String[] args) throws IOException
-   {
-      String inputString = "blahblahblah??blahblahblahblahblah??blablahblah??blablahblah??bla";
-      byte[] input = inputString.getBytes("UTF-8");
-      byte[] output = new byte[30];
-      Deflater compresser = new Deflater();
-      compresser.setInput(input);
-      compresser.finish();
-      int compressedDataLength = compresser.deflate(output);
-      System.err.println("compress len: " + compressedDataLength);
-
-      byte[] zipBytes = new byte[compressedDataLength];
-      
-      System.arraycopy(output, 0, zipBytes, 0, compressedDataLength);
-      ByteArrayInputStream byteInput = new ByteArrayInputStream(zipBytes);
-      
-      InflaterReader inflater = new InflaterReader(byteInput);
-      ArrayList<Integer> holder = new ArrayList<Integer>();
-      int read = inflater.read();
-      
-      while (read != -1)
-      {
-         holder.add(read);
-         read = inflater.read();
-      }
-      
-      byte[] result = new byte[holder.size()];
-      
-      System.out.println("total bytes: " + holder.size());
-      for (int i = 0; i < result.length; i++)
-      {
-         result[i] = holder.get(i).byteValue();
-      }
-      
-      String txt = new String(result);
-      System.out.println("the result: " + txt);
-      
    }
 
 }

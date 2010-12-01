@@ -1257,7 +1257,6 @@ public class LargeMessageBufferImpl implements LargeMessageBufferInternal
    {
       try
       {
-         System.err.println("___writing packet: " + packet + " output " + output);
          output.write(packet.getBody());
          if (!packet.isContinues())
          {

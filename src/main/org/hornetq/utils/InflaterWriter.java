@@ -47,11 +47,6 @@ public class InflaterWriter extends OutputStream
    {
       this.output = output;
    }
-   
-   private void log(String str)
-   {
-      System.err.println(this + " " + str);
-   }
 
    /*
     * Write a compressed byte.
@@ -59,7 +54,6 @@ public class InflaterWriter extends OutputStream
    @Override
    public void write(int b) throws IOException
    {
-      log("call write b: " + b);
       writeBuffer[writePointer] = (byte)(b & 0xFF);
       writePointer++;
       
@@ -68,7 +62,6 @@ public class InflaterWriter extends OutputStream
          writePointer = 0;
          try
          {
-            log("call doWrite");
             doWrite();
          }
          catch (DataFormatException e)
@@ -81,7 +74,6 @@ public class InflaterWriter extends OutputStream
    @Override
    public void close() throws IOException
    {
-      log("call close");
       if (writePointer > 0)
       {
          inflater.setInput(writeBuffer, 0, writePointer);
@@ -112,44 +104,6 @@ public class InflaterWriter extends OutputStream
          output.write(outputBuffer, 0, n);
          n = inflater.inflate(outputBuffer);
       }
-   }
-   
-   public static void main(String[] args) throws IOException
-   {
-      String inputString = "blahblahblah??blahblahblahblahblah??blablahblah??blablahblah??bla";
-      byte[] input = inputString.getBytes("UTF-8");
-      byte[] output = new byte[30];
-      Deflater compresser = new Deflater();
-      compresser.setInput(input);
-      compresser.finish();
-      int compressedDataLength = compresser.deflate(output);
-      System.err.println("compress len: " + compressedDataLength);
-
-      byte[] zipBytes = new byte[compressedDataLength];
-      
-      System.arraycopy(output, 0, zipBytes, 0, compressedDataLength);
-      ByteArrayInputStream byteInput = new ByteArrayInputStream(zipBytes);
-      
-      ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
-      InflaterWriter writer = new InflaterWriter(byteOutput);
-      
-      byte[] zipBuffer = new byte[12];
-      
-      int n = byteInput.read(zipBuffer);
-      while (n > 0)
-      {
-         System.out.println("Writing: " + n);
-         writer.write(zipBuffer, 0, n);
-         n = byteInput.read(zipBuffer);
-      }
-
-      writer.close();
-      
-      byte[] outcome = byteOutput.toByteArray();
-      String outStr = new String(outcome);
-      
-      System.out.println("Outcome: " + outStr);
-      
    }
 
 }

@@ -17,8 +17,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
@@ -28,7 +26,6 @@ import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.core.client.impl.LargeMessageBufferImpl;
 import org.hornetq.core.client.impl.LargeMessageBufferInternal;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveContinuationMessage;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -45,18 +42,15 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    // Constants -----------------------------------------------------
 
-   /**
-    * 
-    */
    private static final String OPERATION_NOT_SUPPORTED = "Operation not supported";
 
    private static final String READ_ONLY_ERROR_MESSAGE = "This is a read-only buffer, setOperations are not supported";
 
    // Attributes ----------------------------------------------------
 
-
    final LargeMessageBufferInternal bufferDelegate;
    
+   private long readerIndex = 0;
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
@@ -411,7 +405,6 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    public int readerIndex()
    {
-      // TODO
       return 0;
    }
 

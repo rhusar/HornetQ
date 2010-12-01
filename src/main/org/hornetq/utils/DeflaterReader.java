@@ -13,10 +13,8 @@
 
 package org.hornetq.utils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.zip.Deflater;
 
 /**
@@ -46,9 +44,9 @@ public class DeflaterReader extends InputStream
       int n = read(buffer, 0, 1);
       if (n == 1)
       {
-         return buffer[0];
+         return (int)buffer[0] & 0xFF;
       }
-      if (n == -1)
+      if (n == -1 || n == 0)
       {
          return -1;
       }
@@ -86,19 +84,15 @@ public class DeflaterReader extends InputStream
             {
                deflater.end();
                compressDone = true;
-               read = -1;
                break;
             }
             else if (deflater.needsInput())
             {
-               System.err.println("need input so read input");
                // read some data from inputstream
                int m = input.read(readBuffer);
-               System.err.println("original data read: " + m);
+               
                if (m == -1)
                {
-                  System.err.println("no more original data, finish deflater, now offset " + offset + " len " + len);
-                  
                   deflater.finish();
                   isFinished = true;
                }
@@ -119,74 +113,8 @@ public class DeflaterReader extends InputStream
             offset += n;
             len -= n;
          }
-         
       }
       return read;
-   }
-   
-   public static void main(String[] args) throws IOException
-   {
-      String inputString = "blahblahblah??blahblahblahblahblah??blablahblah??blablahblah??bla";
-      byte[] input = inputString.getBytes("UTF-8");
-
-      ByteArrayInputStream inputStream = new ByteArrayInputStream(input);
-      
-      DeflaterReader reader = new DeflaterReader(inputStream);
-      
-
-      ArrayList<Integer> zipHolder = new ArrayList<Integer>();
-      int b = reader.read();
-      
-      while (b != -1)
-      {
-         zipHolder.add(b);
-         b = reader.read();
-      }
-      
-      byte[] allCompressed = new byte[zipHolder.size()];
-      for (int i = 0; i < allCompressed.length; i++)
-      {
-         allCompressed[i] = (byte) zipHolder.get(i).intValue();
-      }
-      
-      System.err.println("compressed: " + getBytesString(allCompressed));
-
-/*
-      byte[] buffer = new byte[7];
-      
-      int n = reader.read(buffer);
-      
-      System.err.println("first read: " + n);
-      
-      while (n != -1)
-      {
-         System.err.println("==>read n " + n + " values: " + getBytesString(buffer));
-         n = reader.read(buffer);
-      }
-*/
-      System.err.println("compressed.");
-      
-      System.err.println("now verify");
-      
-      byte[] output = new byte[30];
-      Deflater compresser = new Deflater();
-      compresser.setInput(input);
-      compresser.finish();
-      int compressedDataLength = compresser.deflate(output);
-      System.err.println("compress len: " + compressedDataLength);
-      System.err.println("commpress data: " + getBytesString(output));
-
-   }
-   
-   static String getBytesString(byte[] array)
-   {
-      StringBuffer bf = new StringBuffer();
-      for (byte b : array)
-      {
-         int val = b & 0xFF;
-         bf.append(val + " ");
-      }
-      return bf.toString();
    }
    
 }

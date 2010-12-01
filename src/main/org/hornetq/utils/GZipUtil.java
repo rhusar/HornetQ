@@ -34,6 +34,7 @@ import org.hornetq.api.core.HornetQException;
  */
 public class GZipUtil
 {
+   
    public static InputStream createZipInputStream(InputStream input) throws HornetQException
    {
       try

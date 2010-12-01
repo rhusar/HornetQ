@@ -887,6 +887,7 @@ public class LargeMessageTest extends LargeMessageTestBase
          }
          catch (Throwable e)
          {
+            log.error("failed", e);
             failed = true;
          }
 
