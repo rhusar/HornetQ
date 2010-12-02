@@ -298,11 +298,6 @@ public class FailoverManagerImpl implements FailoverManager, ConnectionLifeCycle
    }
 
    // FailoverManager implementation ------------------------------------------------------------------
-
-   public Executor getThreadPool()
-   {
-      return threadPool;
-   }
    
    public ClientSession createSession(final String username,
                                       final String password,

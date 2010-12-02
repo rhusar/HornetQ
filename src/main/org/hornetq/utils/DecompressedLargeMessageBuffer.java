@@ -44,18 +44,14 @@ public class DecompressedLargeMessageBuffer implements LargeMessageBufferInterna
 
    private static final String OPERATION_NOT_SUPPORTED = "Operation not supported";
 
-   private static final String READ_ONLY_ERROR_MESSAGE = "This is a read-only buffer, setOperations are not supported";
-
    // Attributes ----------------------------------------------------
 
    final LargeMessageBufferInternal bufferDelegate;
-   
-   private long readerIndex = 0;
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public DecompressedLargeMessageBuffer(final LargeMessageBufferInternal bufferDelegate, Executor executor)
+   public DecompressedLargeMessageBuffer(final LargeMessageBufferInternal bufferDelegate)
    {
       this.bufferDelegate = bufferDelegate;
    }

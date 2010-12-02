@@ -13,8 +13,6 @@
 
 package org.hornetq.core.client.impl;
 
-import java.util.concurrent.Executor;
-
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
@@ -89,6 +87,4 @@ public interface ClientSessionInternal extends ClientSession
    void setAddress(Message message, SimpleString address);
    
    void setPacketSize(int packetSize);
-   
-   Executor getThreadPool();
 }

@@ -66,6 +66,4 @@ public interface FailoverManager
    boolean removeFailureListener(SessionFailureListener listener);
 
    void causeExit();
-   
-   Executor getThreadPool();
 }
