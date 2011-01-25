@@ -48,6 +48,8 @@ public class StompConnection implements RemotingConnection
    private String passcode;
 
    private String clientID;
+   
+   private String version;
 
    private boolean valid;
 
@@ -307,6 +309,16 @@ public class StompConnection implements RemotingConnection
    public void setValid(boolean valid)
    {
       this.valid = valid;
+   }
+
+   public void setVersion(String version)
+   {
+      this.version = version;
+   }
+
+   public String getVersion()
+   {
+      return version;
    }
 
    private void callFailureListeners(final HornetQException me)

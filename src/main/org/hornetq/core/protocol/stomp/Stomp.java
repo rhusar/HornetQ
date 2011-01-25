@@ -28,9 +28,18 @@ public interface Stomp
 
    String NEWLINE = "\n";
 
+   public static interface Versions
+   {
+      String V10 = "1.0";
+      
+      String V11 = "1.1";
+   }
+   
    public static interface Commands
    {
       String CONNECT = "CONNECT";
+      
+      String STOMP = "STOMP";
 
       String SEND = "SEND";
 
@@ -75,6 +84,8 @@ public interface Stomp
       String TRANSACTION = "transaction";
 
       String CONTENT_LENGTH = "content-length";
+      
+      String CONTENT_TYPE = "content-type";
 
       public interface Response
       {
@@ -159,11 +170,17 @@ public interface Stomp
          String CLIENT_ID = "client-id";
 
          String REQUEST_ID = "request-id";
+         
+         String ACCEPT_VERSION = "accept-version";
+         
+         String HOST = "host";
       }
 
       public interface Error
       {
          String MESSAGE = "message";
+         
+         String VERSION = "version";
       }
 
       public interface Connected
@@ -171,6 +188,8 @@ public interface Stomp
          String SESSION = "session";
 
          String RESPONSE_ID = "response-id";
+         
+         String VERSION = "version";
       }
 
       public interface Ack

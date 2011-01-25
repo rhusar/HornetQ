@@ -50,12 +50,12 @@ import org.hornetq.utils.UUIDGenerator;
 class StompProtocolManager implements ProtocolManager
 {
    // Constants -----------------------------------------------------
-
+   
    private static final Logger log = Logger.getLogger(StompProtocolManager.class);
 
    // TODO use same value than HornetQConnection
    private static final String CONNECTION_ID_PROP = "__HQ_CID";
-
+   
    // Attributes ----------------------------------------------------
 
    private final HornetQServer server;
@@ -178,7 +178,7 @@ class StompProtocolManager implements ProtocolManager
 
             StompFrame response = null;
 
-            if (Stomp.Commands.CONNECT.equals(command))
+            if (Stomp.Commands.CONNECT.equals(command) || Stomp.Commands.STOMP.equals(command))
             {
                response = onConnect(request, conn);
             }
@@ -577,6 +577,7 @@ class StompProtocolManager implements ProtocolManager
       String passcode = (String)headers.get(Stomp.Headers.Connect.PASSCODE);
       String clientID = (String)headers.get(Stomp.Headers.Connect.CLIENT_ID);
       String requestID = (String)headers.get(Stomp.Headers.Connect.REQUEST_ID);
+      String acceptVersion = (String)headers.get(Stomp.Headers.Connect.ACCEPT_VERSION);
 
       HornetQSecurityManager sm = server.getSecurityManager();
       
@@ -585,11 +586,18 @@ class StompProtocolManager implements ProtocolManager
       {
          sm.validateUser(login, passcode);
       }
+      
+      String version = negotiateVersion(acceptVersion);
 
       connection.setLogin(login);
       connection.setPasscode(passcode);
       connection.setClientID(clientID);
       connection.setValid(true);
+      if (version == null){
+         // client and server does not have any version in common. Return Error frame
+         return createNegotiationFailedFrame();
+      }
+      connection.setVersion(version);
 
       HashMap<String, Object> h = new HashMap<String, Object>();
       h.put(Stomp.Headers.Connected.SESSION, connection.getID());
@@ -597,7 +605,43 @@ class StompProtocolManager implements ProtocolManager
       {
          h.put(Stomp.Headers.Connected.RESPONSE_ID, requestID);
       }
+      if (acceptVersion != null)
+      {
+         // Only put this in header if we got a accept-version header.
+         h.put(Stomp.Headers.Connected.VERSION, version);
+      }
       return new StompFrame(Stomp.Responses.CONNECTED, h);
+   }
+
+   private String negotiateVersion(String acceptVersion)
+   {
+      if (acceptVersion != null)
+      {
+         String bestVersion = null;
+         for(String v : acceptVersion.split(","))
+         {
+            if(Stomp.Versions.V11.equals(v.trim()))
+            {
+               bestVersion = Stomp.Versions.V11;
+            } 
+            else if (Stomp.Versions.V10.equals(v.trim()) && bestVersion == null) 
+            {
+               bestVersion = Stomp.Versions.V10;
+            }
+         }
+         return bestVersion;
+      }
+      return Stomp.Versions.V10;
+   }
+
+   private StompFrame createNegotiationFailedFrame() throws Exception
+   {
+      HashMap<String, Object> h = new HashMap<String, Object>();
+      h.put(Stomp.Headers.Error.VERSION, Stomp.Versions.V10 + "," + Stomp.Versions.V11);
+      h.put(Stomp.Headers.CONTENT_TYPE, "text/plain");
+
+      StringBuffer eMess = new StringBuffer("Supported protocol versions are " + Stomp.Versions.V10 + " " + Stomp.Versions.V11);
+      return new StompFrame(Stomp.Responses.ERROR, h, eMess.toString().getBytes("UTF-8"));
    }
 
    public void cleanup(StompConnection connection)

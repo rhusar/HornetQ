@@ -130,6 +130,7 @@ class StompUtils
          headers.put(name.toString(), message.getObjectProperty(name));
       }
    }
+
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------

@@ -59,6 +59,10 @@ public class StompDecoder
    private static final String COMMAND_SEND = "SEND";
 
    private static final int COMMAND_SEND_LENGTH = COMMAND_SEND.length();
+   
+   private static final String COMMAND_STOMP = "STOMP";
+   
+   private static final int COMMAND_STOMP_LENGTH = COMMAND_STOMP.length();
 
    private static final String COMMAND_SUBSCRIBE = "SUBSCRIBE";
 
@@ -82,6 +86,8 @@ public class StompDecoder
 
    private static final byte S = (byte)'S';
 
+   private static final byte T = (byte)'T';
+   
    private static final byte U = (byte)'U';
 
    private static final byte HEADER_SEPARATOR = (byte)':';
@@ -267,6 +273,16 @@ public class StompDecoder
 
                   // SEND
                   command = COMMAND_SEND;
+               } 
+               else if (workingBuffer[offset + 1] == T)
+               {
+                  if (!tryIncrement(offset + COMMAND_STOMP_LENGTH + 1))
+                  {
+                     return null;
+                  }
+                  
+                  // STOMP
+                  command = COMMAND_STOMP;
                }
                else
                {

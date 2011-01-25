@@ -88,6 +88,55 @@ public class StompTest extends StompTestBase
       Assert.assertTrue(f.startsWith("CONNECTED"));
       Assert.assertTrue(f.indexOf("response-id:1") >= 0);
    }
+   
+   public void testV11Connect() throws Exception
+   {
+      String connect_frame = "CONNECT\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.0,1.1\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("CONNECTED"));
+      Assert.assertTrue(f.indexOf("response-id:1") >= 0);
+      Assert.assertTrue(f.indexOf("version:1.1") >= 0);
+   }
+
+   public void testConnectWithStomp() throws Exception
+   {
+      String connect_frame = "STOMP\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.0,1.1\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("CONNECTED"));
+      Assert.assertTrue(f.indexOf("response-id:1") >= 0);
+      Assert.assertTrue(f.indexOf("version:1.1") >= 0);
+   }
+
+   public void testProtocolNegotiationFail() throws Exception
+   {
+      String connect_frame = "CONNECT\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.2\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("ERROR"));
+      Assert.assertTrue(f.indexOf("version:1.0,1.1") >= 0);
+      Assert.assertTrue(f.indexOf("content-type:text/plain") >= 0);
+      Assert.assertTrue(f.indexOf("Supported protocol versions are") >= 0);
+   }
 
    public void testDisconnectAndError() throws Exception
    {
