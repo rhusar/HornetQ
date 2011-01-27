@@ -37,6 +37,8 @@ import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
+import org.hornetq.core.client.impl.DiscoveryGroupConstants;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.ra.inflow.HornetQActivation;
@@ -1403,10 +1405,11 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
       else if (discoveryAddress != null)
       {
+         // FIXME make discovery stategy pluggable with configuration
+         Map<String,Object> params = new HashMap<String,Object>();
+         
          Integer discoveryPort = overrideProperties.getDiscoveryPort() != null ? overrideProperties.getDiscoveryPort()
                                                                               : getDiscoveryPort();
-
-         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(discoveryAddress, discoveryPort);
 
          long refreshTimeout = overrideProperties.getDiscoveryRefreshTimeout() != null ? overrideProperties.getDiscoveryRefreshTimeout()
                                                                     : raProperties.getDiscoveryRefreshTimeout();
@@ -1414,9 +1417,12 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
          long initialTimeout = overrideProperties.getDiscoveryInitialWaitTimeout() != null ? overrideProperties.getDiscoveryInitialWaitTimeout()
                                                                         : raProperties.getDiscoveryInitialWaitTimeout();
 
-         groupConfiguration.setDiscoveryInitialWaitTimeout(initialTimeout);
+         params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, discoveryAddress);
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, discoveryPort);
+         params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, initialTimeout);
+         params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialTimeout);
 
-         groupConfiguration.setRefreshTimeout(refreshTimeout);
+         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, null);
 
          if (ha)
          {

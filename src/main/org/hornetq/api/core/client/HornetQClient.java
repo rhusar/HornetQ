@@ -13,13 +13,15 @@
 package org.hornetq.api.core.client;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
-import org.hornetq.api.core.Pair;
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy;
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.DiscoveryGroupConstants;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 
-import java.util.List;
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Utility class for creating HornetQ {@link ClientSessionFactory} objects.
@@ -107,21 +109,34 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithoutHA(TransportConfiguration... transportConfigurations)
    {
-      return new ServerLocatorImpl(false, transportConfigurations);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, transportConfigurations);
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, null);
+      return createServerLocatorWithoutHA(config);
    }
    
    /**
     * Create a ServerLocator which creates session factories from a set of live servers, no HA backup information is propagated to the client
     * 
-    * The UDP address and port are used to listen for live servers in the cluster
-    * 
-    * @param discoveryAddress The UDP group address to listen for updates
-    * @param discoveryPort the UDP port to listen for updates
+    * @param groupConfiguration The configuration for server discovery
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(false, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(Boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.FALSE, groupConfiguration);
+      }
+      catch(Exception e)
+      {
+          new HornetQException(HornetQException.INTERNAL_ERROR, "Could not instantiate ServerLocator implementation class: " + className, e);
+      }
+         return serverLocator;
    }
    
    /**
@@ -135,9 +150,12 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(TransportConfiguration... initialServers)
    {
-      return new ServerLocatorImpl(true, initialServers);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, initialServers);
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, null);
+      return createServerLocatorWithHA(config);
    }
-   
+
    /**
     * Create a ServerLocator which will receive cluster topology updates from the cluster as servers leave or join and new backups are appointed or removed.
     * The discoveryAddress and discoveryPort parameters in this method are used to listen for UDP broadcasts which contain connection information for members of the cluster.
@@ -150,7 +168,20 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(true, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(Boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.TRUE, groupConfiguration);
+      }
+      catch(Exception e)
+      {
+          new HornetQException(HornetQException.INTERNAL_ERROR, "Could not instantiate ServerLocator implementation class: " + className, e);
+      }
+      return serverLocator;
    }
    
 

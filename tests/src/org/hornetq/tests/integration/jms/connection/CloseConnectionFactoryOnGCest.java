@@ -27,7 +27,7 @@ import javax.jms.ConnectionFactory;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.AbstractServerLocator;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.tests.util.JMSTestBase;
@@ -61,7 +61,7 @@ public class CloseConnectionFactoryOnGCest extends JMSTestBase
 
       final AtomicInteger valueGC = new AtomicInteger(0);
 
-      ServerLocatorImpl.finalizeCallback = new Runnable()
+      AbstractServerLocator.finalizeCallback = new Runnable()
       {
          public void run()
          {
@@ -85,7 +85,7 @@ public class CloseConnectionFactoryOnGCest extends JMSTestBase
       }
       finally
       {
-         ServerLocatorImpl.finalizeCallback = null;
+         AbstractServerLocator.finalizeCallback = null;
       }
 
       assertEquals("The code is throwing exceptions", 0, valueGC.get());

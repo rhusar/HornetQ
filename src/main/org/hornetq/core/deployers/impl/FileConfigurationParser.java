@@ -22,12 +22,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.core.client.impl.DiscoveryGroupConstants;
 import org.hornetq.core.config.*;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.config.impl.FileConfiguration;
@@ -939,28 +941,41 @@ public class FileConfigurationParser
    {
       String name = e.getAttribute("name");
 
-      String localBindAddress = XMLConfigurationUtil.getString(e, "local-bind-address", null, Validators.NO_CHECK);
+      String clazz = XMLConfigurationUtil.getString(e, "server-locator-class", null, Validators.NOT_NULL_OR_EMPTY);
 
-      String groupAddress = XMLConfigurationUtil.getString(e, "group-address", null, Validators.NOT_NULL_OR_EMPTY);
+      Map<String, Object> params = new HashMap<String, Object>();
 
-      int groupPort = XMLConfigurationUtil.getInteger(e, "group-port", -1, Validators.MINUS_ONE_OR_GT_ZERO);
+      NodeList paramsNodes = e.getElementsByTagName("param");
 
-      long discoveryInitialWaitTimeout = XMLConfigurationUtil.getLong(e,
-                                                                      "initial-wait-timeout",
-                                                                      HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
-                                                                      Validators.GT_ZERO);
+      for (int i = 0; i < paramsNodes.getLength(); i++)
+      {
+         Node paramNode = paramsNodes.item(i);
 
-      long refreshTimeout = XMLConfigurationUtil.getLong(e,
-                                                         "refresh-timeout",
-                                                         ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT,
-                                                         Validators.GT_ZERO);
+         NamedNodeMap attributes = paramNode.getAttributes();
 
-      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(name,
-                                                                           localBindAddress,
-                                                                           groupAddress,
-                                                                           groupPort,
-                                                                           refreshTimeout,
-                                                                           discoveryInitialWaitTimeout);
+         Node nkey = attributes.getNamedItem("key");
+
+         String key = nkey.getTextContent();
+
+         Node nValue = attributes.getNamedItem("value");
+
+         params.put(key, nValue.getTextContent());
+      }
+      
+      // discovery-group configuration contains static connector list
+      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME);
+      if(connectorList != null)
+      {
+         List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
+         while(token.hasMoreElements())
+         {
+            connectors.add(mainConfig.getConnectorConfigurations().get(token.nextElement()));
+         }
+         params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors.toArray(new TransportConfiguration[0]));
+      }
+
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(clazz, params, name);
 
       if (mainConfig.getDiscoveryGroupConfigurations().containsKey(name))
       {
@@ -1008,8 +1023,6 @@ public class FileConfigurationParser
 
       String discoveryGroupName = null;
 
-      List<String> staticConnectorNames = new ArrayList<String>();
-
       boolean allowDirectConnectionsOnly = false;
 
       NodeList children = e.getChildNodes();
@@ -1021,45 +1034,57 @@ public class FileConfigurationParser
          if (child.getNodeName().equals("discovery-group-ref"))
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
-         }
-         else if (child.getNodeName().equals("static-connectors"))
-         {
+
             Node attr = child.getAttributes().getNamedItem("allow-direct-connections-only");
             if (attr != null)
             {
                allowDirectConnectionsOnly = "true".equalsIgnoreCase(attr.getNodeValue()) || allowDirectConnectionsOnly;
             }
-            getStaticConnectors(staticConnectorNames, child);
          }
       }
 
+      List<String> staticConnectors = new ArrayList<String>();
+      DiscoveryGroupConfiguration discovery = mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName);
+      Map<String,Object> params = discovery.getParams();
+      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME);
+      if(connectorList != null)
+      {
+         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
+         while(token.hasMoreElements())
+         {
+            staticConnectors.add(token.nextToken());
+         }
+      }
+      
+      List<String> allowableConnectionNames = null;
+      if(allowDirectConnectionsOnly)
+      {
+         if(connectorList == null)
+         {
+            log.warn("allow-direct-connections-only was found, but "
+                     + DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME
+                     + " was not found in discovery-group. ignore.");
+         }
+         else
+         {
+            allowableConnectionNames = staticConnectors;
+         }
+      }
+      
       ClusterConnectionConfiguration config;
 
-      if (discoveryGroupName == null)
-      {
-         config = new ClusterConnectionConfiguration(name,
-                                                     address,
-                                                     connectorName,
-                                                     retryInterval,
-                                                     duplicateDetection,
-                                                     forwardWhenNoConsumers,
-                                                     maxHops,
-                                                     confirmationWindowSize,
-                                                     staticConnectorNames,
-                                                     allowDirectConnectionsOnly);
-      }
-      else
-      {
-         config = new ClusterConnectionConfiguration(name,
-                                                     address,
-                                                     connectorName,
-                                                     retryInterval,
-                                                     duplicateDetection,
-                                                     forwardWhenNoConsumers,
-                                                     maxHops,
-                                                     confirmationWindowSize,
-                                                     discoveryGroupName);
-      }
+      config = new ClusterConnectionConfiguration(name,
+                                                  address,
+                                                  connectorName,
+                                                  retryInterval,
+                                                  duplicateDetection,
+                                                  forwardWhenNoConsumers,
+                                                  maxHops,
+                                                  confirmationWindowSize,
+                                                  staticConnectors,
+                                                  discoveryGroupName,
+                                                  allowDirectConnectionsOnly,
+                                                  allowableConnectionNames);
 
       mainConfig.getClusterConfigurations().add(config);
    }

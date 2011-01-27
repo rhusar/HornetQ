@@ -42,6 +42,8 @@ public class ClusterConnectionConfiguration implements Serializable
    private final boolean forwardWhenNoConsumers;
 
    private final List<String> staticConnectors;
+   
+   private final List<String> allowableConnectors;
 
    private final String discoveryGroupName;
 
@@ -49,7 +51,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    private final int confirmationWindowSize;
 
-   private final boolean allowDirectConnectionsOnly;
+   private final boolean allowableConnectionsOnly;
 
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
@@ -60,30 +62,9 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final int maxHops,
                                          final int confirmationWindowSize,
                                          final List<String> staticConnectors,
-                                         final boolean allowDirectConnectionsOnly)
-   {
-      this.name = name;
-      this.address = address;
-      this.connectorName = connectorName;
-      this.retryInterval = retryInterval;
-      this.staticConnectors = staticConnectors;
-      this.duplicateDetection = duplicateDetection;
-      this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      discoveryGroupName = null;
-      this.maxHops = maxHops;
-      this.confirmationWindowSize = confirmationWindowSize;
-      this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-   }
-
-   public ClusterConnectionConfiguration(final String name,
-                                         final String address,
-                                         final String connectorName,
-                                         final long retryInterval,
-                                         final boolean duplicateDetection,
-                                         final boolean forwardWhenNoConsumers,
-                                         final int maxHops,
-                                         final int confirmationWindowSize,
-                                         final String discoveryGroupName)
+                                         final String discoveryGroupName,
+                                         final boolean allowableConnectionsOnly,
+                                         final List<String> allowableConnectorNames)
    {
       this.name = name;
       this.address = address;
@@ -92,10 +73,11 @@ public class ClusterConnectionConfiguration implements Serializable
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
       this.discoveryGroupName = discoveryGroupName;
-      this.staticConnectors = null;
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
-      allowDirectConnectionsOnly = false;
+      this.staticConnectors = staticConnectors;
+      this.allowableConnectors = allowableConnectorNames;
+      this.allowableConnectionsOnly = allowableConnectionsOnly;
    }
 
    public String getName()
@@ -137,6 +119,11 @@ public class ClusterConnectionConfiguration implements Serializable
    {
       return staticConnectors;
    }
+   
+   public List<String> getAllowableConnectors()
+   {
+      return allowableConnectors;
+   }
 
    public String getDiscoveryGroupName()
    {
@@ -148,8 +135,8 @@ public class ClusterConnectionConfiguration implements Serializable
       return retryInterval;
    }
 
-   public boolean isAllowDirectConnectionsOnly()
+   public boolean isAllowableConnectionsOnly()
    {
-      return allowDirectConnectionsOnly;
+      return allowableConnectionsOnly;
    }
 }
