@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -128,8 +129,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                 final boolean backup,
                                 final String clusterUser,
                                 final String clusterPassword,
-                                final boolean allowableConnectionsOnly,
-                                final TransportConfiguration[] allowableConnections) throws Exception
+                                final boolean allowableConnectionsOnly) throws Exception
    {
 
       if (nodeUUID == null)
@@ -305,6 +305,14 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                       NotificationType.CLUSTER_CONNECTION_STARTED,
                                                       props);
          managementService.sendNotification(notification);
+      }
+      
+      if(this.allowableConnectionsOnly)
+      {
+         Map<String,Object> params = discoveryGroupConfiguration.getParams();
+         TransportConfiguration[] sc = (TransportConfiguration[])params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         List<TransportConfiguration> staticConnectors = java.util.Arrays.asList(sc);
+         this.allowableConnections.addAll(staticConnectors);
       }
    }
    

@@ -13,10 +13,10 @@
 package org.hornetq.api.core.client;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy;
-import org.hornetq.core.client.impl.DiscoveryGroupConstants;
 import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 
 import java.lang.reflect.Constructor;

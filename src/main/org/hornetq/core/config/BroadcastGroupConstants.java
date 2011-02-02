@@ -11,24 +11,24 @@
  * permissions and limitations under the License.
  */
 
-package org.hornetq.core.client.impl;
+package org.hornetq.core.config;
 
 /**
- * A DiscoveryGroupConstants
+ * A BroadcastGroupConstants
  *
  * @author "<a href=\"tm.igarashi@gmail.com\">Tomohisa Igarashi</a>"
  *
+ *
  */
-public class DiscoveryGroupConstants
+public class BroadcastGroupConstants
 {
-   // for static discovery
-   public static final String STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME = "static-connector-ref-list";
-   public static final String STATIC_CONNECTORS_LIST_NAME = "static-connector-list";
-   
-   // for simple UDP discovery
+   // for simple UDP broadcast
    public static final String LOCAL_BIND_ADDRESS_NAME = "local-bind-address";
+   public static final String LOCAL_BIND_PORT_NAME = "local-bind-port";
    public static final String GROUP_ADDRESS_NAME = "group-address";
    public static final String GROUP_PORT_NAME = "group-port";
-   public static final String INITIAL_WAIT_TIMEOUT_NAME = "initial-wait-timeout";
-   public static final String REFRESH_TIMEOUT_NAME = "refresh-timeout";
+   public static final String BROADCAST_PERIOD_NAME = "broadcast-period";
+   public static final String CONNECTOR_REF_LIST_NAME = "connector-ref-list";
+   public static final String CONNECTOR_LIST_NAME = "connector-list";
+   
 }

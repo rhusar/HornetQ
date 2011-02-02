@@ -1641,8 +1641,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                             final boolean useDuplicateDetection,
                             final int confirmationWindowSize,
                             final long clientFailureCheckPeriod,
-                            final String connectorNames,
-                            boolean useDiscoveryGroup,
+                            final String discoveryGroupName,
                             final boolean ha,
                             final String user,
                             final String password) throws Exception
@@ -1655,43 +1654,22 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       try
       {
          BridgeConfiguration config = null;
-         if (useDiscoveryGroup)
-         {
-            config = new BridgeConfiguration(name,
-                                            queueName,
-                                            forwardingAddress,
-                                            filterString,
-                                            transformerClassName,
-                                            retryInterval,
-                                            retryIntervalMultiplier,
-                                            reconnectAttempts,
-                                            useDuplicateDetection,
-                                            confirmationWindowSize,
-                                            clientFailureCheckPeriod,
-                                            connectorNames,
-                                            ha,
-                                            user,
-                                            password);
-         }
-         else
-         {
-            List<String> connectors = toList(connectorNames);
-            config = new BridgeConfiguration(name,
-                                            queueName,
-                                            forwardingAddress,
-                                            filterString,
-                                            transformerClassName,
-                                            retryInterval,
-                                            retryIntervalMultiplier,
-                                            reconnectAttempts,
-                                            useDuplicateDetection,
-                                            confirmationWindowSize,
-                                            clientFailureCheckPeriod,
-                                            connectors,
-                                            ha,
-                                            user,
-                                            password);
-         }
+         config = new BridgeConfiguration(name,
+                                          queueName,
+                                          forwardingAddress,
+                                          filterString,
+                                          transformerClassName,
+                                          retryInterval,
+                                          retryIntervalMultiplier,
+                                          reconnectAttempts,
+                                          useDuplicateDetection,
+                                          confirmationWindowSize,
+                                          clientFailureCheckPeriod,
+                                          configuration.getDiscoveryGroupConfigurations().get(discoveryGroupName),
+                                          ha,
+                                          user,
+                                          password);
+
          server.deployBridge(config);
       }
       finally

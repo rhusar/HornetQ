@@ -16,6 +16,7 @@ package org.hornetq.core.server.cluster.impl;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,6 +24,7 @@ import java.util.concurrent.ScheduledFuture;
 
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -498,43 +500,23 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
 
-      InetAddress localAddress = null;
-      if (config.getLocalBindAddress() != null)
+      String className = config.getBroadcastGroupClassName();
+
+      ClassLoader loader = Thread.currentThread().getContextClassLoader();
+      Class<?> clazz = loader.loadClass(className);
+      Constructor<?> constructor = clazz.getConstructor(String.class, String.class, Boolean.class, DiscoveryGroupConfiguration.class);
+      BroadcastGroup group = (BroadcastGroup)constructor.newInstance(nodeUUID.toString(), config.getName(), !backup, config);
+      
+      if (group.size() == 0)
       {
-         localAddress = InetAddress.getByName(config.getLocalBindAddress());
+         ClusterManagerImpl.log.warn("There is no connector deployed for the broadcast group with name '" +
+                                     group.getName() +
+                                     "'. That will not be deployed.");
+         return;
       }
 
-      InetAddress groupAddress = InetAddress.getByName(config.getGroupAddress());
-
-      BroadcastGroupImpl group = new BroadcastGroupImpl(nodeUUID.toString(),
-                                                        config.getName(),
-                                                        localAddress,
-                                                        config.getLocalBindPort(),
-                                                        groupAddress,
-                                                        config.getGroupPort(),
-                                                        !backup);
-
-      for (String connectorInfo : config.getConnectorInfos())
-      {
-         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorInfo);
-
-         if (connector == null)
-         {
-            logWarnNoConnector(config.getName(), connectorInfo);
-
-            return;
-         }
-
-         group.addConnector(connector);
-      }
-
-      ScheduledFuture<?> future = scheduledExecutor.scheduleWithFixedDelay(group,
-                                                                           0L,
-                                                                           config.getBroadcastPeriod(),
-                                                                           MILLISECONDS);
-
-      group.setScheduledFuture(future);
-
+      group.schedule(scheduledExecutor);
+      
       broadcastGroups.put(config.getName(), group);
 
       managementService.registerBroadcastGroup(group, config);
@@ -543,37 +525,6 @@ public class ClusterManagerImpl implements ClusterManager
       {
          group.start();
       }
-   }
-
-   private void logWarnNoConnector(final String connectorName, final String bgName)
-   {
-      ClusterManagerImpl.log.warn("There is no connector deployed with name '" + connectorName +
-                                  "'. The broadcast group with name '" +
-                                  bgName +
-                                  "' will not be deployed.");
-   }
-
-   private TransportConfiguration[] connectorNameListToArray(final List<String> connectorNames)
-   {
-      TransportConfiguration[] tcConfigs = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class,
-                                                                                       connectorNames.size());
-      int count = 0;
-      for (String connectorName : connectorNames)
-      {
-         TransportConfiguration connector = configuration.getConnectorConfigurations().get(connectorName);
-
-         if (connector == null)
-         {
-            ClusterManagerImpl.log.warn("No connector defined with name '" + connectorName +
-                                        "'. The bridge will not be deployed.");
-
-            return null;
-         }
-
-         tcConfigs[count++] = connector;
-      }
-
-      return tcConfigs;
    }
 
    public synchronized void deployBridge(final BridgeConfiguration config) throws Exception
@@ -621,15 +572,7 @@ public class ClusterManagerImpl implements ClusterManager
 
       ServerLocatorInternal serverLocator;
 
-      DiscoveryGroupConfiguration discoveryGroupConfiguration = configuration.getDiscoveryGroupConfigurations()
-                                                                                .get(config.getDiscoveryGroupName());
-      if (discoveryGroupConfiguration == null)
-      {
-         ClusterManagerImpl.log.warn("No discovery group configured with name '" + config.getDiscoveryGroupName() +
-                                       "'. The bridge will not be deployed.");
-
-         return;
-      }
+      DiscoveryGroupConfiguration discoveryGroupConfiguration = config.getDiscoveryGroupConfiguration();
 
       if (config.isHA())
       {
@@ -717,20 +660,14 @@ public class ClusterManagerImpl implements ClusterManager
       ClusterConnectionImpl clusterConnection;
 
       DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations()
-                                                      .get(config.getDiscoveryGroupName());
+                                                      .get(config.getDiscoveryGroupConfiguration().getName());
 
       if (dg == null)
       {
-         ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupName() +
+         ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupConfiguration().getName() +
                                         "'. The cluster connection will not be deployed.");
       }
 
-      List<String> connectorNames = config.getAllowableConnectors();
-      TransportConfiguration[] allowableConnections = null;
-      if(connectorNames != null)
-      {
-         allowableConnections = connectorNameListToArray(connectorNames);
-      }
       clusterConnection = new ClusterConnectionImpl(dg,
                                                     connector,
                                                     new SimpleString(config.getName()),
@@ -749,8 +686,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                     backup,
                                                     server.getConfiguration().getClusterUser(),
                                                     server.getConfiguration().getClusterPassword(),
-                                                    config.isAllowableConnectionsOnly(),
-                                                    allowableConnections);
+                                                    config.isAllowableConnectionsOnly());
 
       managementService.registerCluster(clusterConnection, config);
 
@@ -767,11 +703,11 @@ public class ClusterManagerImpl implements ClusterManager
    private void announceBackup(final ClusterConnectionConfiguration config, final TransportConfiguration connector) throws Exception
    {
       DiscoveryGroupConfiguration dg = configuration.getDiscoveryGroupConfigurations()
-                                                       .get(config.getDiscoveryGroupName());
+                                                       .get(config.getDiscoveryGroupConfiguration().getName());
 
       if (dg == null)
       {
-         ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupName() +
+         ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupConfiguration().getName() +
                                        "'. The cluster connection will not be deployed.");
       }
 

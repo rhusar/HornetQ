@@ -18,13 +18,18 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.management.Notification;
@@ -48,14 +53,8 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
 
    private final String name;
 
-   private final InetAddress localAddress;
-
-   private final int localPort;
-
-   private final InetAddress groupAddress;
-
-   private final int groupPort;
-
+   private final BroadcastGroupConfiguration broadcastGroupConfiguration;
+   
    private DatagramSocket socket;
 
    private final List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
@@ -77,26 +76,17 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
     */
    public BroadcastGroupImpl(final String nodeID,
                              final String name,
-                             final InetAddress localAddress,
-                             final int localPort,
-                             final InetAddress groupAddress,
-                             final int groupPort,
-                             final boolean active) throws Exception
+                             final boolean active,
+                             final BroadcastGroupConfiguration config) throws Exception
    {
       this.nodeID = nodeID;
 
       this.name = name;
 
-      this.localAddress = localAddress;
-
-      this.localPort = localPort;
-
-      this.groupAddress = groupAddress;
-
-      this.groupPort = groupPort;
-
       this.active = active;
 
+      this.broadcastGroupConfiguration = config;
+      
       uniqueID = UUIDGenerator.getInstance().generateStringUUID();
    }
 
@@ -111,6 +101,11 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       {
          return;
       }
+
+      Map<String,Object> params = this.broadcastGroupConfiguration.getParams();
+      int localPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME));
+      String localAddr = (String)params.get(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME);
+      InetAddress localAddress = InetAddress.getByName(localAddr);
 
       if (localPort != -1)
       {
@@ -222,6 +217,11 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
 
       byte[] data = buff.toByteBuffer().array();
 
+      Map<String,Object> params = broadcastGroupConfiguration.getParams();
+      int groupPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.GROUP_PORT_NAME));
+      String groupAddr = (String)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME);
+      InetAddress groupAddress = InetAddress.getByName(groupAddr);
+      
       DatagramPacket packet = new DatagramPacket(data, data.length, groupAddress, groupPort);
 
       socket.send(packet);
@@ -244,9 +244,13 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       }
    }
 
-   public synchronized void setScheduledFuture(final ScheduledFuture<?> future)
+   public void schedule(ScheduledExecutorService scheduler)
    {
-      this.future = future;
+      Map<String,Object> params = broadcastGroupConfiguration.getParams();
+      
+      this.future = scheduler.scheduleWithFixedDelay(this,
+                                                     0L,
+                                                     Long.parseLong((String)params.get(BroadcastGroupConstants.BROADCAST_PERIOD_NAME)),
+                                                     TimeUnit.MILLISECONDS);
    }
-
 }

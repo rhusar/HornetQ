@@ -565,8 +565,7 @@ public interface HornetQServerControl
                      @Parameter(name="useDuplicateDetection", desc="Use duplicate detection") boolean useDuplicateDetection,
                      @Parameter(name="confirmationWindowSize", desc="Confirmation window size") int confirmationWindowSize,
                      @Parameter(name="clientFailureCheckPeriod", desc="Period to check client failure") long clientFailureCheckPeriod,
-                     @Parameter(name="staticConnectorNames", desc="comma separated list of connector names or name of discovery group if 'useDiscoveryGroup' is set to true") String connectorNames,
-                     @Parameter(name="useDiscoveryGroup", desc="use discovery  group")boolean useDiscoveryGroup,
+                     @Parameter(name="discoveryGroupName", desc="name of discovery group") String connectorNames,
                      @Parameter(name="ha", desc="Is it using HA") boolean ha,
                      @Parameter(name="user", desc="User name") String user,
                      @Parameter(name="password", desc="User password") String password) throws Exception;

@@ -25,11 +25,11 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.core.client.impl.DiscoveryGroupConstants;
 import org.hornetq.core.config.*;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.config.impl.FileConfiguration;
@@ -894,45 +894,40 @@ public class FileConfigurationParser
    {
       String name = e.getAttribute("name");
 
-      String localAddress = XMLConfigurationUtil.getString(e, "local-bind-address", null, Validators.NO_CHECK);
+      String clazz = XMLConfigurationUtil.getString(e, "broadcast-group-class", null, Validators.NOT_NULL_OR_EMPTY);
 
-      int localBindPort = XMLConfigurationUtil.getInteger(e, "local-bind-port", -1, Validators.MINUS_ONE_OR_GT_ZERO);
+      Map<String, Object> params = new HashMap<String, Object>();
 
-      String groupAddress = XMLConfigurationUtil.getString(e, "group-address", null, Validators.NOT_NULL_OR_EMPTY);
+      NodeList paramsNodes = e.getElementsByTagName("param");
 
-      int groupPort = XMLConfigurationUtil.getInteger(e, "group-port", -1, Validators.GT_ZERO);
-
-      long broadcastPeriod = XMLConfigurationUtil.getLong(e,
-                                                          "broadcast-period",
-                                                          ConfigurationImpl.DEFAULT_BROADCAST_PERIOD,
-                                                          Validators.GT_ZERO);
-
-      NodeList children = e.getChildNodes();
-
-      List<String> connectorNames = new ArrayList<String>();
-
-      for (int j = 0; j < children.getLength(); j++)
+      for (int i = 0; i < paramsNodes.getLength(); i++)
       {
-         Node child = children.item(j);
+         Node paramNode = paramsNodes.item(i);
 
-         if (child.getNodeName().equals("connector-ref"))
-         {
-            String connectorName = XMLConfigurationUtil.getString(e,
-                                                                  "connector-ref",
-                                                                  null,
-                                                                  Validators.NOT_NULL_OR_EMPTY);
+         NamedNodeMap attributes = paramNode.getAttributes();
 
-            connectorNames.add(connectorName);
-         }
+         Node nkey = attributes.getNamedItem("key");
+
+         String key = nkey.getTextContent();
+
+         Node nValue = attributes.getNamedItem("value");
+
+         params.put(key, nValue.getTextContent());
       }
 
-      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(name,
-                                                                           localAddress,
-                                                                           localBindPort,
-                                                                           groupAddress,
-                                                                           groupPort,
-                                                                           broadcastPeriod,
-                                                                           connectorNames);
+      String connectorList = (String)params.get(BroadcastGroupConstants.CONNECTOR_REF_LIST_NAME);
+      if(connectorList != null)
+      {
+         List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
+         while(token.hasMoreElements())
+         {
+            connectors.add(mainConfig.getConnectorConfigurations().get(token.nextElement()));
+         }
+         params.put(BroadcastGroupConstants.CONNECTOR_LIST_NAME, connectors.toArray(new TransportConfiguration[0]));
+      }
+      
+      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(clazz, params, name);
 
       mainConfig.getBroadcastGroupConfigurations().add(config);
    }
@@ -962,7 +957,6 @@ public class FileConfigurationParser
          params.put(key, nValue.getTextContent());
       }
       
-      // discovery-group configuration contains static connector list
       String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME);
       if(connectorList != null)
       {
@@ -1043,33 +1037,7 @@ public class FileConfigurationParser
          }
       }
 
-      List<String> staticConnectors = new ArrayList<String>();
-      DiscoveryGroupConfiguration discovery = mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName);
-      Map<String,Object> params = discovery.getParams();
-      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME);
-      if(connectorList != null)
-      {
-         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
-         while(token.hasMoreElements())
-         {
-            staticConnectors.add(token.nextToken());
-         }
-      }
-      
-      List<String> allowableConnectionNames = null;
-      if(allowDirectConnectionsOnly)
-      {
-         if(connectorList == null)
-         {
-            log.warn("allow-direct-connections-only was found, but "
-                     + DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME
-                     + " was not found in discovery-group. ignore.");
-         }
-         else
-         {
-            allowableConnectionNames = staticConnectors;
-         }
-      }
+      DiscoveryGroupConfiguration discoveryGroupConfiguration = mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName);
       
       ClusterConnectionConfiguration config;
 
@@ -1081,10 +1049,8 @@ public class FileConfigurationParser
                                                   forwardWhenNoConsumers,
                                                   maxHops,
                                                   confirmationWindowSize,
-                                                  staticConnectors,
-                                                  discoveryGroupName,
-                                                  allowDirectConnectionsOnly,
-                                                  allowableConnectionNames);
+                                                  discoveryGroupConfiguration,
+                                                  allowDirectConnectionsOnly);
 
       mainConfig.getClusterConfigurations().add(config);
    }
@@ -1157,9 +1123,7 @@ public class FileConfigurationParser
 
       String filterString = null;
 
-      List<String> staticConnectorNames = new ArrayList<String>();
-
-      String discoveryGroupName = null;
+      DiscoveryGroupConfiguration discoveryGroupConfiguration = null;
 
       NodeList children = brNode.getChildNodes();
 
@@ -1173,68 +1137,30 @@ public class FileConfigurationParser
          }
          else if (child.getNodeName().equals("discovery-group-ref"))
          {
-            discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
-         }
-         else if (child.getNodeName().equals("static-connectors"))
-         {
-            getStaticConnectors(staticConnectorNames, child);
+            String discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
+            discoveryGroupConfiguration = mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName);
          }
       }
 
       BridgeConfiguration config;
 
-      if (!staticConnectorNames.isEmpty())
-      {
-         config = new BridgeConfiguration(name,
-                                          queueName,
-                                          forwardingAddress,
-                                          filterString,
-                                          transformerClassName,
-                                          retryInterval,
-                                          retryIntervalMultiplier,
-                                          reconnectAttempts,
-                                          useDuplicateDetection,
-                                          confirmationWindowSize,
-                                          HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                          staticConnectorNames,
-                                          ha,
-                                          user,
-                                          password);
-      }
-      else
-      {
-         config = new BridgeConfiguration(name,
-                                          queueName,
-                                          forwardingAddress,
-                                          filterString,
-                                          transformerClassName,
-                                          retryInterval,
-                                          retryIntervalMultiplier,
-                                          reconnectAttempts,
-                                          useDuplicateDetection,
-                                          confirmationWindowSize,
-                                          HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                          discoveryGroupName,
-                                          ha,
-                                          user,
-                                          password);
-      }
+      config = new BridgeConfiguration(name,
+                                       queueName,
+                                       forwardingAddress,
+                                       filterString,
+                                       transformerClassName,
+                                       retryInterval,
+                                       retryIntervalMultiplier,
+                                       reconnectAttempts,
+                                       useDuplicateDetection,
+                                       confirmationWindowSize,
+                                       HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
+                                       discoveryGroupConfiguration,
+                                       ha,
+                                       user,
+                                       password);
 
       mainConfig.getBridgeConfigurations().add(config);
-   }
-
-   private void getStaticConnectors(List<String> staticConnectorNames, Node child)
-   {
-      NodeList children2 = ((Element)child).getElementsByTagName("connector-ref");
-
-      for (int k = 0; k < children2.getLength(); k++)
-      {
-         Element child2 = (Element)children2.item(k);
-
-         String connectorName = child2.getChildNodes().item(0).getNodeValue();
-
-         staticConnectorNames.add(connectorName);
-      }
    }
 
    private void parseDivertConfiguration(final Element e, final Configuration mainConfig)

@@ -15,6 +15,7 @@ package org.hornetq.core.config;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 import org.hornetq.core.logging.Logger;
 
@@ -32,71 +33,36 @@ public class BroadcastGroupConfiguration implements Serializable
 
    private static final Logger log = Logger.getLogger(BroadcastGroupConfiguration.class);
 
+   private String broadcastGroupClassName;
+   
+   private Map<String,Object> params;
+   
    private String name;
 
-   private String localBindAddress;
-
-   private int localBindPort;
-
-   private String groupAddress;
-
-   private int groupPort;
-
-   private long broadcastPeriod;
-
-   private List<String> connectorInfos;
-
-   public BroadcastGroupConfiguration(final String name,
-                                      final String localBindAddress,
-                                      final int localBindPort,
-                                      final String groupAddress,
-                                      final int groupPort,
-                                      final long broadcastPeriod,
-                                      final List<String> connectorInfos)
+   public BroadcastGroupConfiguration(final String clazz,
+                                      final Map<String,Object> params,
+                                      final String name)
    {
       super();
+      this.broadcastGroupClassName = clazz;
+      this.params = params;
       this.name = name;
-      this.localBindAddress = localBindAddress;
-      this.localBindPort = localBindPort;
-      this.groupAddress = groupAddress;
-      this.groupPort = groupPort;
-      this.broadcastPeriod = broadcastPeriod;
-      this.connectorInfos = connectorInfos;
+      
+   }
+
+   public String getBroadcastGroupClassName()
+   {
+      return this.broadcastGroupClassName;
+   }
+
+   public Map<String, Object> getParams()
+   {
+      return this.params;
    }
 
    public String getName()
    {
       return name;
-   }
-
-   public String getLocalBindAddress()
-   {
-      return localBindAddress;
-   }
-
-   public int getLocalBindPort()
-   {
-      return localBindPort;
-   }
-
-   public String getGroupAddress()
-   {
-      return groupAddress;
-   }
-
-   public int getGroupPort()
-   {
-      return groupPort;
-   }
-
-   public long getBroadcastPeriod()
-   {
-      return broadcastPeriod;
-   }
-
-   public List<String> getConnectorInfos()
-   {
-      return connectorInfos;
    }
 
    /**
@@ -106,53 +72,4 @@ public class BroadcastGroupConfiguration implements Serializable
    {
       this.name = name;
    }
-
-   /**
-    * @param localBindAddress the localBindAddress to set
-    */
-   public void setLocalBindAddress(final String localBindAddress)
-   {
-      this.localBindAddress = localBindAddress;
-   }
-
-   /**
-    * @param localBindPort the localBindPort to set
-    */
-   public void setLocalBindPort(final int localBindPort)
-   {
-      this.localBindPort = localBindPort;
-   }
-
-   /**
-    * @param groupAddress the groupAddress to set
-    */
-   public void setGroupAddress(final String groupAddress)
-   {
-      this.groupAddress = groupAddress;
-   }
-
-   /**
-    * @param groupPort the groupPort to set
-    */
-   public void setGroupPort(final int groupPort)
-   {
-      this.groupPort = groupPort;
-   }
-
-   /**
-    * @param broadcastPeriod the broadcastPeriod to set
-    */
-   public void setBroadcastPeriod(final long broadcastPeriod)
-   {
-      this.broadcastPeriod = broadcastPeriod;
-   }
-
-   /**
-    * @param connectorInfos the connectorInfos to set
-    */
-   public void setConnectorInfos(final List<String> connectorInfos)
-   {
-      this.connectorInfos = connectorInfos;
-   }
-
 }

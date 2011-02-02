@@ -54,5 +54,4 @@ public class DiscoveryGroupConfiguration implements Serializable
    {
       return this.name;
    }
-   
 }

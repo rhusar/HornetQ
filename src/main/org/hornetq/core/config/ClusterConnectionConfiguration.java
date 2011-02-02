@@ -14,7 +14,8 @@
 package org.hornetq.core.config;
 
 import java.io.Serializable;
-import java.util.List;
+
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 
 /**
  * A ClusterConnectionConfiguration
@@ -41,11 +42,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    private final boolean forwardWhenNoConsumers;
 
-   private final List<String> staticConnectors;
-   
-   private final List<String> allowableConnectors;
-
-   private final String discoveryGroupName;
+   private final DiscoveryGroupConfiguration discoveryGroupConfiguration;
 
    private final int maxHops;
 
@@ -61,10 +58,8 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final List<String> staticConnectors,
-                                         final String discoveryGroupName,
-                                         final boolean allowableConnectionsOnly,
-                                         final List<String> allowableConnectorNames)
+                                         final DiscoveryGroupConfiguration discoveryGroupConfiguration,
+                                         final boolean allowableConnectionsOnly)
    {
       this.name = name;
       this.address = address;
@@ -72,11 +67,9 @@ public class ClusterConnectionConfiguration implements Serializable
       this.retryInterval = retryInterval;
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      this.discoveryGroupName = discoveryGroupName;
+      this.discoveryGroupConfiguration = discoveryGroupConfiguration;
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
-      this.staticConnectors = staticConnectors;
-      this.allowableConnectors = allowableConnectorNames;
       this.allowableConnectionsOnly = allowableConnectionsOnly;
    }
 
@@ -115,19 +108,9 @@ public class ClusterConnectionConfiguration implements Serializable
       return confirmationWindowSize;
    }
 
-   public List<String> getStaticConnectors()
+   public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()
    {
-      return staticConnectors;
-   }
-   
-   public List<String> getAllowableConnectors()
-   {
-      return allowableConnectors;
-   }
-
-   public String getDiscoveryGroupName()
-   {
-      return discoveryGroupName;
+      return discoveryGroupConfiguration;
    }
 
    public long getRetryInterval()
