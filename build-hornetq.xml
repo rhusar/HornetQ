@@ -69,6 +69,8 @@
    <property name="spring.integration.sources.jar.name" value="hornetq-spring-integration-sources.jar"/>
    <property name="twitter.integration.jar.name" value="hornetq-twitter-integration.jar"/>
    <property name="twitter.integration.sources.jar.name" value="hornetq-twitter-integration-sources.jar"/>
+   <property name="jgroups.discovery.jar.name" value="hornetq-jgroups-discovery.jar"/>
+   <property name="jgroups.discovery.sources.jar.name" value="hornetq-jgroups-discovery.jar"/>
    <property name="bootstrap.jar.name" value="hornetq-bootstrap.jar"/>
    <property name="bootstrap.sources.jar.name" value="hornetq-bootstrap-sources.jar"/>
    <property name="logging.jar.name" value="hornetq-logging.jar"/>
@@ -87,6 +89,7 @@
    <property name="resources.jar.name" value="hornetq-resources.jar"/>
    <property name="resources.sources.jar.name" value="hornetq-resources-sources.jar"/>
    <property name="twitter4j.jar.name" value="twitter4j-core.jar"/>
+   <property name="jgroups.jar.name" value="jgroups.jar"/>
    <property name="eap.examples.zip.name" value="hornetq-eap-examples.zip"/>
 
    <!--source and build dirs-->
@@ -99,6 +102,7 @@
    <property name="build.jboss.integration.classes.dir" value="${build.dir}/classes/jboss-integration"/>
    <property name="build.spring.integration.classes.dir" value="${build.dir}/classes/spring-integration"/>
    <property name="build.twitter.integration.classes.dir" value="${build.dir}/classes/twitter-integration"/>
+   <property name="build.jgroups.discovery.classes.dir" value="${build.dir}/classes/jgroups-discovery"/>
    <property name="build.service.classes.dir" value="${build.dir}/classes/service"/>
    <property name="build.bootstrap.classes.dir" value="${build.dir}/classes/bootstrap"/>
    <property name="build.logging.classes.dir" value="${build.dir}/classes/logging"/>
@@ -223,6 +227,11 @@
       <path refid="org.twitter4j.classpath"/>
    </path>
 
+   <path id="jgroups.discovery.compilation.classpath">
+      <path location="${build.core.classes.dir}"/>
+      <path refid="jgroups.jgroups.classpath"/>
+   </path>
+
    <path id="spring.integration.compilation.classpath">
       <path location="${build.core.classes.dir}"/>
       <path location="${build.jms.classes.dir}"/>
@@ -259,6 +268,7 @@
       <path refid="bootstrap.compilation.classpath"/>
       <path refid="junit.junit.classpath"/>
       <path refid="org.twitter4j.classpath"/>
+      <path refid="jgroups.jgroups.classpath"/>
       <path refid="org.springframework.classpath"/>
       <path location="${build.jars.dir}/${ra.jar.name}"/>
       <path location="${build.jars.dir}/${jms.jar.name}"/>
@@ -267,6 +277,7 @@
       <path location="${build.jars.dir}/${logging.jar.name}"/>
       <path location="${build.jars.dir}/${spring.integration.jar.name}"/>
       <path location="${build.jars.dir}/${twitter.integration.jar.name}"/>
+      <path location="${build.jars.dir}/${jgroups.discovery.jar.name}"/>
    </path>
 
    <path id="jms.test.compilation.classpath">
@@ -321,6 +332,7 @@
  	  <path refid="apache.logging.classpath"/>
       <path refid="org.springframework.classpath"/>
       <path refid="org.twitter4j.classpath"/>
+      <path refid="jgroups.jgroups.classpath"/>
    </path>
 
    <path id="emma.unit.test.execution.classpath">
@@ -403,6 +415,7 @@
       <mkdir dir="${build.jboss.integration.classes.dir}"/>
       <mkdir dir="${build.spring.integration.classes.dir}"/>
       <mkdir dir="${build.twitter.integration.classes.dir}"/>
+      <mkdir dir="${build.jgroups.discovery.classes.dir}"/>
       <mkdir dir="${build.service.classes.dir}"/>
       <mkdir dir="${build.bootstrap.classes.dir}"/>
       <mkdir dir="${build.logging.classes.dir}"/>
@@ -606,6 +619,27 @@
       </javac>
    </target>
 
+   <target name="compile-jgroups-discovery" depends="compile-core">
+      <javac destdir="${build.jgroups.discovery.classes.dir}"
+             target="${javac.target}"
+             source="${javac.source}"
+             optimize="${javac.optimize}"
+             debug="${javac.debug}"
+             depend="${javac.depend}"
+             verbose="${javac.verbose}"
+             deprecation="${javac.deprecation}"
+             includeAntRuntime="${javac.include.ant.runtime}"
+             includeJavaRuntime="${javac.include.java.runtime}"
+             encoding="${javac.encoding}"
+             failonerror="${javac.fail.onerror}">
+         <src>
+            <pathelement path="${src.main.dir}"/>
+         </src>
+         <include name="org/hornetq/integration/discovery/jgroups/**/*.java"/>
+         <classpath refid="jgroups.discovery.compilation.classpath"/>
+      </javac>
+   </target>
+
    <target name="compile-spring-integration" depends="compile-core">
       <javac destdir="${build.spring.integration.classes.dir}"
              target="${javac.target}"
@@ -771,11 +805,11 @@
    <!-- ======================================================================================== -->
 
    <target name="sources-jar" description="create jar files containing source code"
-           depends="jar-core-sources, jar-core-client-sources, jar-core-client-java5-sources, jar-jms-sources, jar-jms-client-sources, jar-jms-client-java5-sources, jar-jboss-integration-sources, jar-jboss-service-sources, jar-bootstrap-sources, jar-logging-sources, jar-ra-sources, jar-resources-sources, jar-twitter-integration-sources, jar-spring-integration-sources">
+           depends="jar-core-sources, jar-core-client-sources, jar-core-client-java5-sources, jar-jms-sources, jar-jms-client-sources, jar-jms-client-java5-sources, jar-jboss-integration-sources, jar-jboss-service-sources, jar-bootstrap-sources, jar-logging-sources, jar-ra-sources, jar-resources-sources, jar-twitter-integration-sources, jar-jgroups-discovery-sources, jar-spring-integration-sources">
    </target>
 
    <target name="jar"
-           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration, jar-spring-integration, jar-rest">
+           depends="jar-core, jar-core-client, jar-core-client-java5, jar-jms, jar-jms-client, jar-jms-client-java5, jar-jboss-integration, jar-jboss-service, jar-bootstrap, jar-logging, jar-ra, jar-mc, jar-jnp-client, jar-resources, sources-jar, jar-twitter-integration, jar-jgroups-discovery, jar-spring-integration, jar-rest">
    </target>
 
    <target name="jar-jnp-client" depends="init">
@@ -933,6 +967,24 @@
             <include name="org/hornetq/integration/twitter/**/*.java"/>
          </fileset>
       </jar>
+   </target>
+
+    <target name="jar-jgroups-discovery" depends="compile-jgroups-discovery">
+
+      <jar jarfile="${build.jars.dir}/${jgroups.discovery.jar.name}">
+         <fileset dir="${build.jgroups.discovery.classes.dir}" includes="**"/>
+      </jar>
+
+   </target>
+
+    <target name="jar-jgroups-discovery-sources">
+    
+      <jar jarfile="${build.jars.dir}/${jgroups.discovery.sources.jar.name}">
+         <fileset dir="${src.main.dir}">
+            <include name="org/hornetq/integration/discovery/jgroups/**/*.java"/>
+         </fileset>
+      </jar>
+
    </target>
 
     <target name="jar-spring-integration" depends="compile-spring-integration">
@@ -1267,6 +1319,7 @@
          	<include name="${jnp.client.jar.name}"/>
          	<include name="${spring.integration.jar.name}"/>
          	<include name="${twitter.integration.jar.name}"/>
+         	<include name="${jgroups.discovery.jar.name}"/>
          </fileset>
          <fileset dir="${org.jboss.naming.lib}">                                                   
             <include name="jnpserver.jar"/>
@@ -1277,6 +1330,7 @@
       </copy>
       <copy file="${org.jboss.netty.lib}/${netty.jar.name}" tofile="${build.distro.lib.dir}/netty.jar"/>
       <copy file="${org.twitter4j.lib}/${twitter4j.jar.name}" tofile="${build.distro.lib.dir}/${twitter4j.jar.name}"/>
+      <copy file="${jgroups.jgroups.lib}/${jgroups.jar.name}" tofile="${build.distro.lib.dir}/${jgroups.jar.name}"/>
       <copy todir="${build.distro.config.dir}">
          <fileset dir="${src.config.dir}">
             <include name="*.xml"/>

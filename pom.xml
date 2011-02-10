@@ -255,6 +255,12 @@ Copyright 2009 Red Hat, Inc.
            <artifactId>twitter4j-core</artifactId>
            <version>2.1.6</version>
        </dependency>
+      <!-- needed to compile jgroups discovery support-->
+      <dependency>
+         <groupId>jgroups</groupId>
+         <artifactId>jgroups</artifactId>
+         <version>2.3</version>
+      </dependency>
       <!-- needed to compile the tests-->
       <dependency>
         <groupId>junit</groupId>
