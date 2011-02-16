@@ -93,24 +93,26 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
 
          ArrayList<String> list = new ArrayList<String>();
          list.add(server1tc.getName());
-         BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
+         BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
                                                                                 null,
                                                                                 -1,
                                                                                 groupAddress,
                                                                                 port,
                                                                                 250,
-               list);
+                                                                                list);
 
          server0.getConfiguration().getBroadcastGroupConfigurations().add(bcConfig);
 
-         DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+         DiscoveryGroupConfiguration dcConfig = createSimpleUDPDiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
          server0.getConfiguration().getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
          final String bridgeName = "bridge1";
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[]{server1tc});
+
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+         
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                            queueName0,
                                                                            forwardAddress,
@@ -122,7 +124,7 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
                                                                            true,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           staticConnectors,
+                                                                           groupConf,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);

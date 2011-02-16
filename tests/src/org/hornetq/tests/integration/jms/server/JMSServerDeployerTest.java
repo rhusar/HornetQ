@@ -339,9 +339,9 @@ public class JMSServerDeployerTest extends ServiceTestBase
       config.getConnectorConfigurations().put("netty",
                                               new TransportConfiguration(NettyConnectorFactory.class.getName()));
       
-      DiscoveryGroupConfiguration dcg = new DiscoveryGroupConfiguration("mygroup", "172.16.8.10",
-                                                                        "243.7.7.7", 12345,
-                                                                        5432, 5432);
+      DiscoveryGroupConfiguration dcg = createSimpleUDPDiscoveryGroupConfiguration("mygroup", "172.16.8.10",
+                                                                                   "243.7.7.7", 12345,
+                                                                                   5432, 5432);
       config.getDiscoveryGroupConfigurations().put("mygroup", dcg);
       HornetQServer server = createServer(false, config);
 

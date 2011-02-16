@@ -130,6 +130,13 @@ public class ClusterConnectionControl2Test extends ManagementTestBase
                                                               null,
                                                               false);
 
+      DiscoveryGroupConfiguration discoveryGroupConfig = createSimpleUDPDiscoveryGroupConfiguration(discoveryName,
+                                                                                                    null,
+                                                                                                    groupAddress,
+                                                                                                    groupPort,
+                                                                                                    0,
+                                                                                                    0);
+
       clusterConnectionConfig_0 = new ClusterConnectionConfiguration(clusterName,
                                                                      queueConfig.getAddress(),
                                                                      clusterName,
@@ -138,22 +145,17 @@ public class ClusterConnectionControl2Test extends ManagementTestBase
                                                                      false,
                                                                      1,
                                                                      1024,
-                                                                     discoveryName);
+                                                                     discoveryGroupConfig,
+                                                                     false);
       List<String> connectorInfos = new ArrayList<String>();
       connectorInfos.add("netty");
-      BroadcastGroupConfiguration broadcastGroupConfig = new BroadcastGroupConfiguration(discoveryName,
-                                                                                         null,
-                                                                                         -1,
-                                                                                         groupAddress,
-                                                                                         groupPort,
-                                                                                         250,
-                                                                                         connectorInfos);
-      DiscoveryGroupConfiguration discoveryGroupConfig = new DiscoveryGroupConfiguration(discoveryName,
-                                                                                         null,
-                                                                                         groupAddress,
-                                                                                         groupPort,
-                                                                                         0,
-                                                                                         0);
+      BroadcastGroupConfiguration broadcastGroupConfig = createBroadcastGroupConfiguration(discoveryName,
+                                                                                           null,
+                                                                                           -1,
+                                                                                           groupAddress,
+                                                                                           groupPort,
+                                                                                           250,
+                                                                                           connectorInfos);
 
       Configuration conf_1 = createBasicConfig();
       conf_1.setSecurityEnabled(false);

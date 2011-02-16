@@ -24,6 +24,7 @@ import javax.management.MBeanServerFactory;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -81,7 +82,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
 
       Assert.assertEquals(clusterConnectionConfig1.getName(), clusterConnectionControl.getName());
       Assert.assertEquals(clusterConnectionConfig1.getAddress(), clusterConnectionControl.getAddress());
-      Assert.assertEquals(clusterConnectionConfig1.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig1.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
       Assert.assertEquals(clusterConnectionConfig1.getRetryInterval(), clusterConnectionControl.getRetryInterval());
       Assert.assertEquals(clusterConnectionConfig1.isDuplicateDetection(),
@@ -93,13 +94,14 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       Object[] connectors = clusterConnectionControl.getStaticConnectors();
       Assert.assertEquals(1, connectors.length);
       String connector = (String)connectors[0];
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectors().get(0), connector);
+      TransportConfiguration[] clusterConnectors = (TransportConfiguration[])clusterConnectionConfig1.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+      Assert.assertEquals(clusterConnectors[0].getName(), connector);
 
       String jsonString = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNotNull(jsonString);
       JSONArray array = new JSONArray(jsonString);
       Assert.assertEquals(1, array.length());
-      Assert.assertEquals(clusterConnectionConfig1.getStaticConnectors().get(0), array.getString(0));
+      Assert.assertEquals(clusterConnectors[0].getName(), array.getString(0));
       
       Assert.assertNull(clusterConnectionControl.getDiscoveryGroupName());
 
@@ -114,7 +116,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
 
       Assert.assertEquals(clusterConnectionConfig2.getName(), clusterConnectionControl.getName());
       Assert.assertEquals(clusterConnectionConfig2.getAddress(), clusterConnectionControl.getAddress());
-      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
       Assert.assertEquals(clusterConnectionConfig2.getRetryInterval(), clusterConnectionControl.getRetryInterval());
       Assert.assertEquals(clusterConnectionConfig2.isDuplicateDetection(),
@@ -129,7 +131,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       String jsonPairs = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNull(jsonPairs);
 
-      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
    }
 
@@ -200,8 +202,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                               RandomUtil.randomString(),
                                                               null,
                                                               false);
-      List<String> connectors = new ArrayList<String>();
-      connectors.add(connectorConfig.getName());
+      DiscoveryGroupConfiguration staticGroupConfig = createStaticDiscoveryGroupConfiguration(connectorConfig);
       
       clusterConnectionConfig1 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
@@ -211,10 +212,10 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomPositiveInt(),
                                                                     RandomUtil.randomPositiveInt(),
-                                                                    connectors, false);
+                                                                    staticGroupConfig, false);
 
       String discoveryGroupName = RandomUtil.randomString();
-      DiscoveryGroupConfiguration discoveryGroupConfig = new DiscoveryGroupConfiguration(discoveryGroupName, null, "230.1.2.3", 6745, 500, 0);
+      DiscoveryGroupConfiguration discoveryGroupConfig = createSimpleUDPDiscoveryGroupConfiguration(discoveryGroupName, null, "230.1.2.3", 6745, 500, 0);
 
       clusterConnectionConfig2 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
@@ -224,7 +225,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomPositiveInt(),
                                                                     RandomUtil.randomPositiveInt(),
-                                                                    discoveryGroupName);
+                                                                    discoveryGroupConfig, false);
       
       Configuration conf_1 = createBasicConfig();
       conf_1.setSecurityEnabled(false);
@@ -241,6 +242,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       conf_0.getConnectorConfigurations().put(connectorConfig.getName(), connectorConfig);
       conf_0.getClusterConfigurations().add(clusterConnectionConfig1);
       conf_0.getClusterConfigurations().add(clusterConnectionConfig2);
+      conf_0.getDiscoveryGroupConfigurations().put(staticGroupConfig.getName(), staticGroupConfig);
       conf_0.getDiscoveryGroupConfigurations().put(discoveryGroupName, discoveryGroupConfig);
 
       mbeanServer_1 = MBeanServerFactory.createMBeanServer();

@@ -23,6 +23,7 @@ import javax.jms.Queue;
 import javax.jms.Topic;
 import javax.naming.NamingException;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
@@ -129,23 +130,21 @@ public class JMSClusteredTestBase extends ServiceTestBase
     */
    private void setupServer2() throws Exception
    {
-      List<String> toOtherServerPair = new ArrayList<String>();
-      toOtherServerPair.add("toServer1");
-
       Configuration conf2 = createDefaultConfig(1, generateInVMParams(1), InVMAcceptorFactory.class.getCanonicalName());
       conf2.setSecurityEnabled(false);
       conf2.setJMXManagementEnabled(true);
       conf2.setPersistenceEnabled(false);
 
-      conf2.getConnectorConfigurations().put("toServer1",
-                                             new TransportConfiguration(InVMConnectorFactory.class.getName(),
-                                                                        generateInVMParams(0)));
+      TransportConfiguration toServer1 = new TransportConfiguration(InVMConnectorFactory.class.getName(), generateInVMParams(0));
+      conf2.getConnectorConfigurations().put("toServer1", toServer1);
       conf2.getConnectorConfigurations().put("server2",
                                              new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                         generateInVMParams(1)));
 
       conf2.setClustered(true);
       
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(toServer1);
+      conf2.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       conf2.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server1",
                                                                               "jms",
                                                                                  "server2",
@@ -154,7 +153,7 @@ public class JMSClusteredTestBase extends ServiceTestBase
                                                                               true,
                                                                               MAX_HOPS,
                                                                               1024,
-                                                                              toOtherServerPair, false));
+                                                                              groupConf, false));
 
 
       JMSConfigurationImpl jmsconfig = new JMSConfigurationImpl();
@@ -173,24 +172,22 @@ public class JMSClusteredTestBase extends ServiceTestBase
     */
    private void setupServer1() throws Exception
    {
-      List<String> toOtherServerPair = new ArrayList<String>();
-      toOtherServerPair.add("toServer2");
-
       Configuration conf1 = createDefaultConfig(0, generateInVMParams(0), InVMAcceptorFactory.class.getCanonicalName());
       
       conf1.setSecurityEnabled(false);
       conf1.setJMXManagementEnabled(true);
       conf1.setPersistenceEnabled(false);
 
-      conf1.getConnectorConfigurations().put("toServer2",
-                                             new TransportConfiguration(InVMConnectorFactory.class.getName(),
-                                                                        generateInVMParams(1)));
+      TransportConfiguration toServer2 = new TransportConfiguration(InVMConnectorFactory.class.getName(), generateInVMParams(1));
+      conf1.getConnectorConfigurations().put("toServer2", toServer2);
       conf1.getConnectorConfigurations().put("server1",
                                              new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                         generateInVMParams(0)));
 
       conf1.setClustered(true);
 
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(toServer2);
+      conf1.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       conf1.getClusterConfigurations().add(new ClusterConnectionConfiguration("to-server2",
                                                                               "jms",
                                                                               "server1",
@@ -199,7 +196,7 @@ public class JMSClusteredTestBase extends ServiceTestBase
                                                                               true,
                                                                               MAX_HOPS,
                                                                               1024,
-                                                                              toOtherServerPair, false));
+                                                                              groupConf, false));
 
       
       JMSConfigurationImpl jmsconfig = new JMSConfigurationImpl();

@@ -12,6 +12,9 @@
  */
 package org.hornetq.jms.example;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.MessageConsumer;
@@ -22,9 +25,12 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
 import org.hornetq.common.example.HornetQExample;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
+import org.hornetq.utils.UUIDGenerator;
 
 /**
  * This example demonstrates a cluster of three nodes set up in a symmetric topology - i.e. each node
@@ -81,7 +87,11 @@ public class SymmetricClusterExample extends HornetQExample
          // connection factory directly we avoid having to worry about a JNDI look-up.
          // In an app server environment you could use HA-JNDI to lookup from the clustered JNDI servers without
          // having to know about a specific one.
-         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration("231.7.7.7", 9876);
+         Map<String,Object> params = new HashMap<String,Object>();
+         params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, "231.7.7.7");
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, 9876);
+         
+         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
          
          ConnectionFactory cf = (ConnectionFactory)HornetQJMSClient.createConnectionFactoryWithHA(groupConfiguration, JMSFactoryType.CF);
 

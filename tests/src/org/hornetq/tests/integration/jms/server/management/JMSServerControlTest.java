@@ -657,12 +657,12 @@ public class JMSServerControlTest extends ManagementTestBase
       conf.setJMXManagementEnabled(true);
       conf.getDiscoveryGroupConfigurations()
           .put("discovery",
-               new DiscoveryGroupConfiguration("discovery",
-                                               null,
-                                               "231.7.7.7",
-                                               discoveryPort,
-                                               ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT,
-                                               ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT));
+               createSimpleUDPDiscoveryGroupConfiguration("discovery",
+                                                          null,
+                                                          "231.7.7.7",
+                                                          discoveryPort,
+                                                          ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT,
+                                                          ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT));
       HornetQServer server = HornetQServers.newHornetQServer(conf, mbeanServer, false);
 
       context = new InVMContext();

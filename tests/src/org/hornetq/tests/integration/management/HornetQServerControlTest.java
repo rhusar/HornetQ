@@ -612,6 +612,8 @@ public class HornetQServerControlTest extends ManagementTestBase
       session.createQueue(sourceAddress, sourceQueue);
       session.createQueue(targetAddress, targetQueue);
       
+      serverControl.createStaticDiscoveryGroup("static0", connectorConfig.getName());
+      
       serverControl.createBridge(name,
                                  sourceQueue,
                                  targetAddress,
@@ -623,8 +625,7 @@ public class HornetQServerControlTest extends ManagementTestBase
                                   false, // duplicateDetection
                                  1, // confirmationWindowSize
                                  HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                 connectorConfig.getName(), // liveConnector
-                                 false,
+                                 "static0", // liveConnector
                                  false,
                                  null,
                                  null);

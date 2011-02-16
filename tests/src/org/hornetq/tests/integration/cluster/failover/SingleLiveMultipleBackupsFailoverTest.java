@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
@@ -107,16 +108,18 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config1.setSharedStore(true);
       config1.setBackup(true);
       config1.setClustered(true);
-      List<String> staticConnectors = new ArrayList<String>();
+      List<TransportConfiguration> staticConnectors = new ArrayList<TransportConfiguration>();
 
       for (int node : nodes)
       {
          TransportConfiguration liveConnector = createTransportConfiguration(isNetty(), false, generateParams(node, isNetty()));
          config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-         staticConnectors.add(liveConnector.getName());
+         staticConnectors.add(liveConnector);
       }
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(staticConnectors.toArray(new TransportConfiguration[0]));
+      config1.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       TransportConfiguration backupConnector = createTransportConfiguration(isNetty(), false, generateParams(nodeid, isNetty()));
-      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1, staticConnectors, false);
+      ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1, groupConf, false);
       config1.getClusterConfigurations().add(ccc1);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
@@ -137,16 +140,18 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config0.setSecurityEnabled(false);
       config0.setSharedStore(true);
       config0.setClustered(true);
-      List<String> pairs = null;
+      List<TransportConfiguration> pairs = new ArrayList<TransportConfiguration>();
       for (int node : otherLiveNodes)
       {
          TransportConfiguration otherLiveConnector = createTransportConfiguration(isNetty(), false, generateParams(node, isNetty()));
          config0.getConnectorConfigurations().put(otherLiveConnector.getName(), otherLiveConnector);
-         pairs.add(otherLiveConnector.getName());  
+         pairs.add(otherLiveConnector);  
 
       }
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+      config0.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1", "jms", liveConnector.getName(), -1, false, false, 1, 1,
-            pairs, false);
+            groupConf, false);
       config0.getClusterConfigurations().add(ccc0);
       config0.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
 

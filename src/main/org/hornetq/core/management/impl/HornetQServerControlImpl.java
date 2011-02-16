@@ -35,6 +35,8 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.transaction.xa.Xid;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -44,6 +46,8 @@ import org.hornetq.api.core.management.DivertControl;
 import org.hornetq.api.core.management.HornetQServerControl;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.QueueControl;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -69,6 +73,7 @@ import org.hornetq.core.transaction.impl.CoreTransactionDetail;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.utils.SecurityFormatter;
+import org.hornetq.utils.UUIDGenerator;
 import org.hornetq.utils.json.JSONArray;
 import org.hornetq.utils.json.JSONObject;
 
@@ -1900,6 +1905,38 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
          list.add(values[i].trim());
       }
       return list;
+   }
+
+   public void createStaticDiscoveryGroup(String name, String connectors) throws Exception
+   {
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      for(String connector : toList(connectors))
+      {
+         connectorConfigs.add(configuration.getConnectorConfigurations().get(connector));
+      }
+      
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME, connectors);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectorConfigs.toArray(new TransportConfiguration[0]));
+      DiscoveryGroupConfiguration groupConf = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, name);
+      configuration.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+   }
+
+   public void createSimpleUDPDiscoveryGroup(String name,
+                                             String localBindAddress,
+                                             String groupAddress,
+                                             int groupPort,
+                                             long refreshTimeout,
+                                             long initialWaitTimeout) throws Exception
+   {
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.LOCAL_BIND_ADDRESS_NAME, localBindAddress);
+      params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, groupPort);
+      params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout);
+      params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialWaitTimeout);
+      DiscoveryGroupConfiguration groupConf = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, name);
+      configuration.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
    }
 
 }

@@ -576,4 +576,16 @@ public interface HornetQServerControl
 
    @Operation(desc = "force the server to stop and notify clients to failover", impact = MBeanOperationInfo.UNKNOWN)
    void forceFailover() throws Exception;
+   
+   @Operation(desc = "create static discovery group", impact = MBeanOperationInfo.UNKNOWN)
+   void createStaticDiscoveryGroup(@Parameter(name="name", desc="Name of the discovery group") String name,
+                                   @Parameter(name="connectors", desc="List of the connector name with comma separated") String connectors) throws Exception;
+
+   @Operation(desc = "create simple UDP discovery group", impact = MBeanOperationInfo.UNKNOWN)
+   void createSimpleUDPDiscoveryGroup(@Parameter(name="name", desc="Name of the discovery group") String name,
+                                      @Parameter(name="localBindAddress", desc="Local bind address") String localBindAddress,
+                                      @Parameter(name="groupAddress", desc="Discovery group address") String groupAddress,
+                                      @Parameter(name="groupPort", desc="Discovery group port") int groupPort,
+                                      @Parameter(name="refreshTimeout", desc="Refresh timeout") long refreshTimeout,
+                                      @Parameter(name="initialWaitTimeout", desc="initial wait timeout to discover") long initialWaitTimeout) throws Exception;
 }

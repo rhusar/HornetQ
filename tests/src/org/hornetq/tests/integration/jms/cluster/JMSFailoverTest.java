@@ -32,6 +32,7 @@ import javax.management.MBeanServer;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -361,8 +362,8 @@ public class JMSFailoverTest extends ServiceTestBase
       backupConf.getAcceptorConfigurations().add(backupAcceptortc);
       backupConf.getConnectorConfigurations().put(livetc.getName(), livetc);
       backupConf.getConnectorConfigurations().put(backuptc.getName(), backuptc);
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(livetc.getName());
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(livetc);
+      backupConf.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       ClusterConnectionConfiguration cccBackup = new ClusterConnectionConfiguration("cluster1",
                                                                                     "jms",
                                                                                     backuptc.getName(),
@@ -371,7 +372,7 @@ public class JMSFailoverTest extends ServiceTestBase
                                                                                     false,
                                                                                     1,
                                                                                     1,
-                                                                                    staticConnectors,
+                                                                                    groupConf,
                                                                                     false);
 
       backupConf.getClusterConfigurations().add(cccBackup);
@@ -404,7 +405,7 @@ public class JMSFailoverTest extends ServiceTestBase
 
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations().add(liveAcceptortc);
-      List<String> pairs = null;
+      DiscoveryGroupConfiguration pairs = null;
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1",
                                                                                "jms",
                                                                                livetc.getName(),

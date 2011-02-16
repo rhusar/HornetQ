@@ -22,6 +22,8 @@ import javax.management.MBeanServerFactory;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -74,7 +76,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
       CoreMessagingProxy proxy = createProxy(bridgeConfig.getName());
 
       Assert.assertEquals(bridgeConfig.getName(), (String)proxy.retrieveAttributeValue("name"));
-      Assert.assertEquals(bridgeConfig.getDiscoveryGroupName(),
+      Assert.assertEquals(bridgeConfig.getDiscoveryGroupConfiguration().getName(),
                           (String)proxy.retrieveAttributeValue("discoveryGroupName"));
       Assert.assertEquals(bridgeConfig.getQueueName(), (String)proxy.retrieveAttributeValue("queueName"));
       Assert.assertEquals(bridgeConfig.getForwardingAddress(),
@@ -90,7 +92,8 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                           ((Boolean)proxy.retrieveAttributeValue("useDuplicateDetection")).booleanValue());
 
       Object[] data = (Object[])proxy.retrieveAttributeValue("staticConnectors");
-      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0), data[0]);
+      TransportConfiguration[] connectors = (TransportConfiguration[])bridgeConfig.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME); 
+      Assert.assertEquals(connectors[0].getName(), data[0]);
 
       Assert.assertTrue((Boolean)proxy.retrieveAttributeValue("started"));
    }
@@ -137,8 +140,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                                                                     RandomUtil.randomString(),
                                                                     null,
                                                                     false);
-      List<String> connectors = new ArrayList<String>();
-      connectors.add(connectorConfig.getName());
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(connectorConfig);
       bridgeConfig = new BridgeConfiguration(RandomUtil.randomString(),
                                              sourceQueueConfig.getName(),
                                              targetQueueConfig.getAddress(),
@@ -150,7 +152,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
                                              RandomUtil.randomBoolean(),
                                              RandomUtil.randomPositiveInt(),
                                              HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                             connectors,
+                                             groupConf,
                                              false,
                                              ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                              ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -169,6 +171,7 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
       conf_0.getAcceptorConfigurations().add(new TransportConfiguration(InVMAcceptorFactory.class.getName()));
       conf_0.getConnectorConfigurations().put(connectorConfig.getName(), connectorConfig);
       conf_0.getQueueConfigurations().add(sourceQueueConfig);
+      conf_0.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       conf_0.getBridgeConfigurations().add(bridgeConfig);
 
       server_1 = HornetQServers.newHornetQServer(conf_1, MBeanServerFactory.createMBeanServer(), false);

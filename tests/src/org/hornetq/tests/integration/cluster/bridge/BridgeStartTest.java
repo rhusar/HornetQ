@@ -20,6 +20,7 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -94,8 +95,8 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[]{server1tc});
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
 
          final String bridgeName = "bridge1";
 
@@ -110,7 +111,7 @@ public class BridgeStartTest extends ServiceTestBase
                                                                            true,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           staticConnectors,
+                                                                           groupConf,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -257,8 +258,8 @@ public class BridgeStartTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[]{server1tc});
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
 
       final String bridgeName = "bridge1";
 
@@ -273,7 +274,7 @@ public class BridgeStartTest extends ServiceTestBase
                                                                         true,
                                                                         1024,
                                                                         HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                        staticConnectors,
+                                                                        groupConf,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -468,8 +469,8 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[]{server1tc});
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
 
          final String bridgeName = "bridge1";
 
@@ -484,7 +485,7 @@ public class BridgeStartTest extends ServiceTestBase
                                                                            false,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           staticConnectors,
+                                                                           groupConf,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -619,8 +620,8 @@ public class BridgeStartTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[]{server1tc});
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
 
          final String bridgeName = "bridge1";
 
@@ -635,7 +636,7 @@ public class BridgeStartTest extends ServiceTestBase
                                                                            true,
                                                                            1024,
                                                                            HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
-                                                                           staticConnectors,
+                                                                           groupConf,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);

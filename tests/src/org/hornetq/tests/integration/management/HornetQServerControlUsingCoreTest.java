@@ -592,7 +592,6 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
                                   int confirmationWindowSize,
                                   long clientFailureCheckPeriod,
                                   String connectorNames,
-                                  boolean useDiscovery,
                                   boolean ha,
                                   String user,
                                   String password) throws Exception
@@ -610,7 +609,6 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
                                   confirmationWindowSize,
                                   clientFailureCheckPeriod,
                                   connectorNames,
-                                  useDiscovery,
                                   ha,
                                   user,
                                   password);
@@ -620,6 +618,27 @@ public class HornetQServerControlUsingCoreTest extends HornetQServerControlTest
          public String listProducersInfoAsJSON() throws Exception
          {
             return (String)proxy.invokeOperation("listProducersInfoAsJSON");
+         }
+
+         public void createStaticDiscoveryGroup(String name, String connectors) throws Exception
+         {
+            proxy.invokeOperation("createStaticDiscoveryGroup", name, connectors);
+         }
+
+         public void createSimpleUDPDiscoveryGroup(String name,
+                                                   String localBindAddress,
+                                                   String groupAddress,
+                                                   int groupPort,
+                                                   long refreshTimeout,
+                                                   long initialWaitTimeout) throws Exception
+         {
+            proxy.invokeOperation("createSimpleUDPDiscoveryGroup",
+                                  name,
+                                  localBindAddress,
+                                  groupAddress,
+                                  groupPort,
+                                  refreshTimeout,
+                                  initialWaitTimeout);
          }
       };
    }
