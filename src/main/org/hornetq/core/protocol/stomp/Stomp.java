@@ -73,6 +73,8 @@ public interface Stomp
       String MESSAGE = "MESSAGE";
 
       String RECEIPT = "RECEIPT";
+
+      String HEART_BEAT = "\n";
    }
 
    public interface Headers
@@ -174,6 +176,8 @@ public interface Stomp
          String ACCEPT_VERSION = "accept-version";
          
          String HOST = "host";
+         
+         String HEART_BEAT = "heart-beat";
       }
 
       public interface Error
@@ -190,6 +194,8 @@ public interface Stomp
          String RESPONSE_ID = "response-id";
          
          String VERSION = "version";
+         
+         String HEART_BEAT = "heart-beat";
       }
 
       public interface Ack

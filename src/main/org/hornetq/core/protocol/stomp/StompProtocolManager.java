@@ -32,6 +32,7 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.journal.IOAsyncTask;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.ServerSession;
 import org.hornetq.core.server.impl.ServerMessageImpl;
@@ -113,8 +114,10 @@ class StompProtocolManager implements ProtocolManager
    {
       StompConnection conn = new StompConnection(connection, this);
 
-      // Note that STOMP has no heartbeat, so if connection ttl is non zero, data must continue to be sent or connection
+      // Note that STOMP 1.0 has no heartbeat, so if connection ttl is non zero, data must continue to be sent or connection
       // will be timed out and closed!
+      // From version 1.1 there is heartbeats however, the times for them will be negotiated when clients connect
+      // the server will prefer the ttl setting for this.
 
       long ttl = server.getConfiguration().getConnectionTTLOverride();
 
@@ -578,6 +581,7 @@ class StompProtocolManager implements ProtocolManager
       String clientID = (String)headers.get(Stomp.Headers.Connect.CLIENT_ID);
       String requestID = (String)headers.get(Stomp.Headers.Connect.REQUEST_ID);
       String acceptVersion = (String)headers.get(Stomp.Headers.Connect.ACCEPT_VERSION);
+      String heartBeats = (String)headers.get(Stomp.Headers.Connect.HEART_BEAT);
 
       HornetQSecurityManager sm = server.getSecurityManager();
       
@@ -586,7 +590,6 @@ class StompProtocolManager implements ProtocolManager
       {
          sm.validateUser(login, passcode);
       }
-      
       String version = negotiateVersion(acceptVersion);
 
       connection.setLogin(login);
@@ -598,6 +601,7 @@ class StompProtocolManager implements ProtocolManager
          return createNegotiationFailedFrame();
       }
       connection.setVersion(version);
+      String serverPreferedHeartBeat = negotiateHeartBeat(heartBeats, connection);
 
       HashMap<String, Object> h = new HashMap<String, Object>();
       h.put(Stomp.Headers.Connected.SESSION, connection.getID());
@@ -609,6 +613,9 @@ class StompProtocolManager implements ProtocolManager
       {
          // Only put this in header if we got a accept-version header.
          h.put(Stomp.Headers.Connected.VERSION, version);
+      }
+      if (serverPreferedHeartBeat != null){
+         h.put(Stomp.Headers.Connected.HEART_BEAT, serverPreferedHeartBeat);
       }
       return new StompFrame(Stomp.Responses.CONNECTED, h);
    }
@@ -634,6 +641,42 @@ class StompProtocolManager implements ProtocolManager
       return Stomp.Versions.V10;
    }
 
+   private String negotiateHeartBeat(String heartBeats, StompConnection connection) throws Exception
+   {
+      StringBuilder agreedHeartBeats;
+      if (heartBeats == null)
+      {
+         return null;
+      } 
+      else 
+      {
+         agreedHeartBeats = new StringBuilder();
+         String[] splitBeats = heartBeats.split(",");
+         if (splitBeats.length != 2)
+         {
+            throw new StompException("Heart beat parameters are incorrect. Need to be two integers separated by a comma.");
+         }
+         // We do not support sending heart beats from the server
+         agreedHeartBeats.append("0,");
+         long clientSendMiliSeconds = Long.parseLong(splitBeats[0]);
+         long currentTtl = server.getRemotingService().getCurrentTtl(connection);
+         if (clientSendMiliSeconds > currentTtl)
+         {
+            server.getRemotingService().changeConnectionTtl(connection, clientSendMiliSeconds);
+            agreedHeartBeats.append(clientSendMiliSeconds);
+         } 
+         else if (currentTtl == -1)
+         {
+            agreedHeartBeats.append("0");
+         }
+         else 
+         {
+            agreedHeartBeats.append(currentTtl);
+         }
+      }
+      return agreedHeartBeats.toString();
+   }
+   
    private StompFrame createNegotiationFailedFrame() throws Exception
    {
       HashMap<String, Object> h = new HashMap<String, Object>();

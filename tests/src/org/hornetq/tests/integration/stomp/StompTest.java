@@ -105,6 +105,24 @@ public class StompTest extends StompTestBase
       Assert.assertTrue(f.indexOf("version:1.1") >= 0);
    }
 
+   public void testHeartBeatNegotiation() throws Exception
+   {
+      String connect_frame = "CONNECT\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.1\n" +
+                             "heart-beat: 100000,100000\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("CONNECTED"));
+      Assert.assertTrue(f.indexOf("response-id:1") >= 0);
+      Assert.assertTrue(f.indexOf("version:1.1") >= 0);
+      Assert.assertTrue(f.indexOf("heart-beat:0,100000") >= 0);
+   }
+
    public void testConnectWithStomp() throws Exception
    {
       String connect_frame = "STOMP\n" + "login: brianm\n" +
@@ -1288,4 +1306,63 @@ public class StompTest extends StompTestBase
       frame = "DISCONNECT\n" + "\n\n" + Stomp.NULL;
       sendFrame(frame);
    }
+   
+   public void testConnectionClosedInLackOfHeartBeat() throws Exception
+   {
+      String connect_frame = "CONNECT\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.1\n" +
+                             "heart-beat: 60000,60000\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("CONNECTED"));
+      Assert.assertTrue(f.indexOf("heart-beat:0,60000") >= 0);
+      // Wait until the connection should be closed.
+      Thread.sleep(63000);
+      String frame = "SEND\n" + "destination:" + getQueuePrefix() + getQueueName() + "\n\n" + "Hello World" + Stomp.NULL;
+      sendFrame(frame);
+      try
+      {
+         frame = receiveFrame(1000);
+         log.info("Received frame: " + frame);
+         Assert.fail("No message should have been received as the connection should have been closed.");
+      }
+      catch (SocketTimeoutException e)
+      {
+      }
+   }
+
+   public void testHeartBeatKeepsConnectionAlive() throws Exception
+   {
+      MessageConsumer consumer = session.createConsumer(queue);
+
+      String connect_frame = "CONNECT\n" + "login: brianm\n" +
+                             "passcode: wombats\n" +
+                             "request-id: 1\n" +
+                             "accept-version: 1.1\n" +
+                             "heart-beat: 60000,60000\n" +
+                             "\n" +
+                             Stomp.NULL;
+      sendFrame(connect_frame);
+
+      String f = receiveFrame(10000);
+      Assert.assertTrue(f.startsWith("CONNECTED"));
+      Assert.assertTrue(f.indexOf("heart-beat:0,60000") >= 0);
+      // Wait for time out to be near.
+      Thread.sleep(45000);
+      String frame = Stomp.NEWLINE;
+      Thread.sleep(45000);
+      
+      
+      frame = "SEND\n" + "destination:" + getQueuePrefix() + getQueueName() + "\n\n" + "Hello World" + Stomp.NULL;
+      sendFrame(frame);
+      TextMessage message = (TextMessage)consumer.receive(1000);
+      Assert.assertNotNull(message);
+      Assert.assertEquals("Hello World", message.getText());
+   }
+
 }

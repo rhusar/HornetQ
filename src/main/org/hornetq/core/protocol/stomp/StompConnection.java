@@ -55,6 +55,10 @@ public class StompConnection implements RemotingConnection
 
    private boolean destroyed = false;
    
+   private boolean sendHeartBeat = false;
+   
+   private boolean receiveHeartBeat = false;
+   
    private final long creationTime;
 
    private StompDecoder decoder = new StompDecoder();
@@ -319,6 +323,26 @@ public class StompConnection implements RemotingConnection
    public String getVersion()
    {
       return version;
+   }
+
+   public void setSendHeartBeat(boolean sendHeartBeat)
+   {
+      this.sendHeartBeat = sendHeartBeat;
+   }
+
+   public boolean isSendHeartBeat()
+   {
+      return sendHeartBeat;
+   }
+
+   public void setReceiveHeartBeat(boolean receiveHeartBeat)
+   {
+      this.receiveHeartBeat = receiveHeartBeat;
+   }
+
+   public boolean isReceiveHeartBeat()
+   {
+      return receiveHeartBeat;
    }
 
    private void callFailureListeners(final HornetQException me)

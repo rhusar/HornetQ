@@ -16,8 +16,10 @@ package org.hornetq.core.remoting.server;
 import java.util.Set;
 
 import org.hornetq.api.core.Interceptor;
+import org.hornetq.core.protocol.stomp.StompConnection;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.spi.core.remoting.Connection;
 
 /**
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
@@ -45,4 +47,8 @@ public interface RemotingService extends HornetQComponent
    void freeze();
 
    RemotingConnection getServerSideReplicatingConnection();
+   
+   void changeConnectionTtl(StompConnection connection, long newTtl);
+   
+   long getCurrentTtl(StompConnection connection) throws Exception;
 }

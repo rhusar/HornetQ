@@ -27,6 +27,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.ws.ProtocolException;
+
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
@@ -34,6 +36,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.impl.CoreProtocolManagerFactory;
+import org.hornetq.core.protocol.stomp.StompConnection;
 import org.hornetq.core.protocol.stomp.StompProtocolManagerFactory;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
@@ -571,4 +574,22 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
    }
 
+   public void changeConnectionTtl(StompConnection connection, long newTtl)
+   {
+      ConnectionEntry entry = connections.get(connection.getID());
+      if (entry != null)
+      {
+         entry.ttl = newTtl;
+      }
+   }
+
+   public long getCurrentTtl(StompConnection connection) throws Exception
+   {
+      ConnectionEntry entry = connections.get(connection.getID());
+      if (entry == null)
+      {
+         throw new Exception("No Connection Entry for the connection " + connection.getID());
+      }
+      return entry.ttl;
+   }
 }
