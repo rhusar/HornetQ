@@ -13,6 +13,7 @@
 
 package org.hornetq.core.management.impl;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.management.MBeanOperationInfo;
@@ -63,16 +64,16 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl
       try
       {
          Map<String,Object> params = configuration.getDiscoveryGroupConfiguration().getParams();
-         TransportConfiguration[] staticConnectors = (TransportConfiguration[])params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         List<TransportConfiguration> staticConnectors = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
          if(staticConnectors == null)
          {
             return null;
          }
          
-         String[] staticConnectorNames = new String[staticConnectors.length];
-         for(int i=0; i<staticConnectors.length; i++)
+         String[] staticConnectorNames = new String[staticConnectors.size()];
+         for(int i=0; i<staticConnectors.size(); i++)
          {
-            staticConnectorNames[i] = staticConnectors[i].getName();
+            staticConnectorNames[i] = staticConnectors.get(i).getName();
          }
          return staticConnectorNames;
       }

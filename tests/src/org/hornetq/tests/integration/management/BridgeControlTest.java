@@ -86,8 +86,8 @@ public class BridgeControlTest extends ManagementTestBase
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(), bridgeControl.isUseDuplicateDetection());
 
       String[] connectorPairData = bridgeControl.getStaticConnectors();
-      TransportConfiguration[] connectors = (TransportConfiguration[])bridgeConfig.getDiscoveryGroupConfiguration().getParams().get((DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME));  
-      Assert.assertEquals(connectors[0].getName(), connectorPairData[0]);
+      List<TransportConfiguration> connectors = (List<TransportConfiguration>)bridgeConfig.getDiscoveryGroupConfiguration().getParams().get((DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME));  
+      Assert.assertEquals(connectors.get(0).getName(), connectorPairData[0]);
 
       Assert.assertTrue(bridgeControl.isStarted());
    }

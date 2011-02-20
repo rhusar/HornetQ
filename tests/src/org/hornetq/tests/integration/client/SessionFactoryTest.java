@@ -160,7 +160,7 @@ public class SessionFactoryTest extends ServiceTestBase
 
       assertFactoryParams(locator,
                           tc,
-                          null,
+                          locator.getDiscoveryGroupConfiguration(),
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                           HornetQClient.DEFAULT_CONNECTION_TTL,
                           HornetQClient.DEFAULT_CALL_TIMEOUT,
@@ -587,7 +587,7 @@ public class SessionFactoryTest extends ServiceTestBase
                                                                               getUDPDiscoveryAddress(),
                                                                               getUDPDiscoveryPort(),
                                                                               broadcastPeriod,
-                                                                              Arrays.asList(liveTC.getName()));
+                                                                              Arrays.asList(liveTC));
 
       List<BroadcastGroupConfiguration> bcConfigs1 = new ArrayList<BroadcastGroupConfiguration>();
       bcConfigs1.add(bcConfig1);

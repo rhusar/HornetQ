@@ -504,7 +504,7 @@ public class ClusterManagerImpl implements ClusterManager
 
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
       Class<?> clazz = loader.loadClass(className);
-      Constructor<?> constructor = clazz.getConstructor(String.class, String.class, Boolean.class, DiscoveryGroupConfiguration.class);
+      Constructor<?> constructor = clazz.getConstructor(String.class, String.class, boolean.class, BroadcastGroupConfiguration.class);
       BroadcastGroup group = (BroadcastGroup)constructor.newInstance(nodeUUID.toString(), config.getName(), !backup, config);
       
       if (group.size() == 0)

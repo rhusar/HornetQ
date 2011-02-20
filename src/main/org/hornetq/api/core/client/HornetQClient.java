@@ -18,8 +18,11 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy;
 import org.hornetq.core.client.impl.StaticServerLocatorImpl;
+import org.hornetq.core.logging.Logger;
+import org.hornetq.utils.UUIDGenerator;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +37,8 @@ import java.util.Map;
  */
 public class HornetQClient
 {
+   private static final Logger log = Logger.getLogger(HornetQClient.class);
+   
    public static final String DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME = RoundRobinConnectionLoadBalancingPolicy.class.getCanonicalName();
 
    public static final long DEFAULT_CLIENT_FAILURE_CHECK_PERIOD = 30000;
@@ -110,8 +115,8 @@ public class HornetQClient
    public static ServerLocator createServerLocatorWithoutHA(TransportConfiguration... transportConfigurations)
    {
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, transportConfigurations);
-      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, null);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(transportConfigurations));
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
       return createServerLocatorWithoutHA(config);
    }
    
@@ -129,14 +134,16 @@ public class HornetQClient
       {
          ClassLoader loader = Thread.currentThread().getContextClassLoader();
          Class<?> clazz = loader.loadClass(className);
-         Constructor<?> constructor = clazz.getConstructor(Boolean.class, DiscoveryGroupConfiguration.class);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
          serverLocator = (ServerLocator)constructor.newInstance(Boolean.FALSE, groupConfiguration);
       }
       catch(Exception e)
       {
-          new HornetQException(HornetQException.INTERNAL_ERROR, "Could not instantiate ServerLocator implementation class: " + className, e);
+          log.fatal("Could not instantiate ServerLocator implementation class: ", e);
+          return null;
       }
-         return serverLocator;
+      
+      return serverLocator;
    }
    
    /**
@@ -151,8 +158,8 @@ public class HornetQClient
    public static ServerLocator createServerLocatorWithHA(TransportConfiguration... initialServers)
    {
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, initialServers);
-      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, null);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(initialServers));
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
       return createServerLocatorWithHA(config);
    }
 
@@ -170,17 +177,19 @@ public class HornetQClient
    {
       ServerLocator serverLocator = null;
       String className = groupConfiguration.getServerLocatorClassName();
-      try
-      {
+
+      try{
          ClassLoader loader = Thread.currentThread().getContextClassLoader();
          Class<?> clazz = loader.loadClass(className);
-         Constructor<?> constructor = clazz.getConstructor(Boolean.class, DiscoveryGroupConfiguration.class);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
          serverLocator = (ServerLocator)constructor.newInstance(Boolean.TRUE, groupConfiguration);
       }
       catch(Exception e)
       {
-          new HornetQException(HornetQException.INTERNAL_ERROR, "Could not instantiate ServerLocator implementation class: " + className, e);
+         log.fatal("Could not instantiate ServerLocator implementation class", e);
+         return null;
       }
+      
       return serverLocator;
    }
    

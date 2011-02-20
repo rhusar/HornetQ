@@ -1916,8 +1916,8 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       }
       
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME, connectors);
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectorConfigs.toArray(new TransportConfiguration[0]));
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_NAMES_NAME, connectors);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectorConfigs);
       DiscoveryGroupConfiguration groupConf = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, name);
       configuration.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
    }

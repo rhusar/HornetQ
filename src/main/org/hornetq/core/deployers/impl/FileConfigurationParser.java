@@ -896,6 +896,25 @@ public class FileConfigurationParser
 
       String clazz = XMLConfigurationUtil.getString(e, "broadcast-group-class", null, Validators.NOT_NULL_OR_EMPTY);
 
+      NodeList children = e.getChildNodes();
+
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
+
+      for (int j = 0; j < children.getLength(); j++)
+      {
+         Node child = children.item(j);
+
+         if (child.getNodeName().equals("connector-ref"))
+         {
+            String connectorName = XMLConfigurationUtil.getString(e,
+                                                                  "connector-ref",
+                                                                  null,
+                                                                  Validators.NOT_NULL_OR_EMPTY);
+
+            connectorList.add(mainConfig.getConnectorConfigurations().get(connectorName));
+         }
+      }
+      
       Map<String, Object> params = new HashMap<String, Object>();
 
       NodeList paramsNodes = e.getElementsByTagName("param");
@@ -915,19 +934,7 @@ public class FileConfigurationParser
          params.put(key, nValue.getTextContent());
       }
 
-      String connectorList = (String)params.get(BroadcastGroupConstants.CONNECTOR_REF_LIST_NAME);
-      if(connectorList != null)
-      {
-         List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
-         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
-         while(token.hasMoreElements())
-         {
-            connectors.add(mainConfig.getConnectorConfigurations().get(token.nextElement()));
-         }
-         params.put(BroadcastGroupConstants.CONNECTOR_LIST_NAME, connectors.toArray(new TransportConfiguration[0]));
-      }
-      
-      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(clazz, params, name);
+      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(clazz, params, name, connectorList);
 
       mainConfig.getBroadcastGroupConfigurations().add(config);
    }
@@ -957,7 +964,7 @@ public class FileConfigurationParser
          params.put(key, nValue.getTextContent());
       }
       
-      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME);
+      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_NAMES_NAME);
       if(connectorList != null)
       {
          List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
@@ -966,7 +973,7 @@ public class FileConfigurationParser
          {
             connectors.add(mainConfig.getConnectorConfigurations().get(token.nextElement()));
          }
-         params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors.toArray(new TransportConfiguration[0]));
+         params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors);
       }
 
       DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(clazz, params, name);

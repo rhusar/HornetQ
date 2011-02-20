@@ -13,6 +13,7 @@
 
 package org.hornetq.core.management.impl;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.management.MBeanOperationInfo;
@@ -98,10 +99,9 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         Map<String,Object> params = configuration.getParams();
-         TransportConfiguration[] connectors = (TransportConfiguration[])params.get(BroadcastGroupConstants.CONNECTOR_LIST_NAME);
+         List<TransportConfiguration> connectors = configuration.getConnectorList();
          
-         Object[] ret = new Object[connectors.length];
+         Object[] ret = new Object[connectors.size()];
 
          int i = 0;
          for (TransportConfiguration conn : connectors)
@@ -124,8 +124,7 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       {
          JSONArray array = new JSONArray();
 
-         Map<String,Object> params = configuration.getParams();
-         TransportConfiguration[] connectors = (TransportConfiguration[])params.get(BroadcastGroupConstants.CONNECTOR_LIST_NAME);
+         List<TransportConfiguration> connectors = configuration.getConnectorList();
          
          for (TransportConfiguration conn : connectors)
          {

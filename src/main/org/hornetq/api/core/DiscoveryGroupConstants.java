@@ -22,7 +22,7 @@ package org.hornetq.api.core;
 public class DiscoveryGroupConstants
 {
    // for static discovery
-   public static final String STATIC_CONNECTORS_CONNECTOR_REF_LIST_NAME = "static-connector-ref-list";
+   public static final String STATIC_CONNECTORS_CONNECTOR_NAMES_NAME = "static-connector-names";
    public static final String STATIC_CONNECTORS_LIST_NAME = "static-connector-list";
    
    // for simple UDP discovery

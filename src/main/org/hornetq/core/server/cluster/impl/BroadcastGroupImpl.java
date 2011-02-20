@@ -57,7 +57,7 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
    
    private DatagramSocket socket;
 
-   private final List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+   private final List<TransportConfiguration> connectors;
 
    private boolean started;
 
@@ -88,6 +88,8 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       this.broadcastGroupConfiguration = config;
       
       uniqueID = UUIDGenerator.getInstance().generateStringUUID();
+    
+      this.connectors = config.getConnectorList();
    }
 
    public void setNotificationService(final NotificationService notificationService)

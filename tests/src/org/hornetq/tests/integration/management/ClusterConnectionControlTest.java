@@ -94,14 +94,14 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       Object[] connectors = clusterConnectionControl.getStaticConnectors();
       Assert.assertEquals(1, connectors.length);
       String connector = (String)connectors[0];
-      TransportConfiguration[] clusterConnectors = (TransportConfiguration[])clusterConnectionConfig1.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
-      Assert.assertEquals(clusterConnectors[0].getName(), connector);
+      List<TransportConfiguration> clusterConnectors = (List<TransportConfiguration>)clusterConnectionConfig1.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+      Assert.assertEquals(clusterConnectors.get(0).getName(), connector);
 
       String jsonString = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNotNull(jsonString);
       JSONArray array = new JSONArray(jsonString);
       Assert.assertEquals(1, array.length());
-      Assert.assertEquals(clusterConnectors[0].getName(), array.getString(0));
+      Assert.assertEquals(clusterConnectors.get(0).getName(), array.getString(0));
       
       Assert.assertNull(clusterConnectionControl.getDiscoveryGroupName());
 

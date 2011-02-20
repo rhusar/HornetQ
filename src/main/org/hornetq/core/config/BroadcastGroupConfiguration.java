@@ -14,9 +14,11 @@
 package org.hornetq.core.config;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.logging.Logger;
 
 /**
@@ -33,21 +35,24 @@ public class BroadcastGroupConfiguration implements Serializable
 
    private static final Logger log = Logger.getLogger(BroadcastGroupConfiguration.class);
 
-   private String broadcastGroupClassName;
+   private final String broadcastGroupClassName;
    
-   private Map<String,Object> params;
+   private final Map<String,Object> params;
    
-   private String name;
+   private final String name;
 
+   private final List<TransportConfiguration> connectorList;
+   
    public BroadcastGroupConfiguration(final String clazz,
                                       final Map<String,Object> params,
-                                      final String name)
+                                      final String name,
+                                      final List<TransportConfiguration> connectorList)
    {
       super();
       this.broadcastGroupClassName = clazz;
       this.params = params;
       this.name = name;
-      
+      this.connectorList = connectorList;
    }
 
    public String getBroadcastGroupClassName()
@@ -65,11 +70,9 @@ public class BroadcastGroupConfiguration implements Serializable
       return name;
    }
 
-   /**
-    * @param name the name to set
-    */
-   public void setName(final String name)
+   public List<TransportConfiguration> getConnectorList()
    {
-      this.name = name;
+      return connectorList;
    }
+
 }

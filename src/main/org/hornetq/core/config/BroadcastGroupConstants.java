@@ -28,7 +28,4 @@ public class BroadcastGroupConstants
    public static final String GROUP_ADDRESS_NAME = "group-address";
    public static final String GROUP_PORT_NAME = "group-port";
    public static final String BROADCAST_PERIOD_NAME = "broadcast-period";
-   public static final String CONNECTOR_REF_LIST_NAME = "connector-ref-list";
-   public static final String CONNECTOR_LIST_NAME = "connector-list";
-   
 }

@@ -55,10 +55,6 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
 
          instantiateLoadBalancingPolicy();
 
-         Map<String,Object> params = getDiscoveryGroupConfiguration().getParams();
-         TransportConfiguration[] initialConnectors = (TransportConfiguration[])params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
-         setInitialConnectors(initialConnectors);
-         
          setReadOnly(true);
       }
    }
@@ -67,6 +63,10 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
                              final DiscoveryGroupConfiguration discoveryGroupConfiguration)
    {
       super(useHA, discoveryGroupConfiguration);
+      
+      Map<String,Object> params = discoveryGroupConfiguration.getParams();
+      List<TransportConfiguration> initialConnectors = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+      setInitialConnectors(initialConnectors.toArray(new TransportConfiguration[0]));
       
       e.fillInStackTrace();
    }

@@ -310,9 +310,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       if(this.allowableConnectionsOnly)
       {
          Map<String,Object> params = discoveryGroupConfiguration.getParams();
-         TransportConfiguration[] sc = (TransportConfiguration[])params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
-         List<TransportConfiguration> staticConnectors = java.util.Arrays.asList(sc);
-         this.allowableConnections.addAll(staticConnectors);
+         List<TransportConfiguration> sc = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         this.allowableConnections.addAll(sc);
       }
    }
    

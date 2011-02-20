@@ -146,16 +146,16 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       try
       {
          Map<String,Object> params = configuration.getDiscoveryGroupConfiguration().getParams();
-         TransportConfiguration[] staticConnectors = (TransportConfiguration[])params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         List<TransportConfiguration> staticConnectors = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
          if(staticConnectors == null)
          {
             return null;
          }
          
-         String[] staticConnectorNames = new String[staticConnectors.length];
-         for(int i=0; i<staticConnectors.length; i++)
+         String[] staticConnectorNames = new String[staticConnectors.size()];
+         for(int i=0; i<staticConnectors.size(); i++)
          {
-            staticConnectorNames[i] = staticConnectors[i].getName();
+            staticConnectorNames[i] = staticConnectors.get(i).getName();
          }
          return staticConnectorNames;
       }

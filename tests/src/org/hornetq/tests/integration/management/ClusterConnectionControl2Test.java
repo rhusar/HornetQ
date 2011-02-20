@@ -147,15 +147,15 @@ public class ClusterConnectionControl2Test extends ManagementTestBase
                                                                      1024,
                                                                      discoveryGroupConfig,
                                                                      false);
-      List<String> connectorInfos = new ArrayList<String>();
-      connectorInfos.add("netty");
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
+      connectorList.add(connectorConfig_0);
       BroadcastGroupConfiguration broadcastGroupConfig = createBroadcastGroupConfiguration(discoveryName,
                                                                                            null,
                                                                                            -1,
                                                                                            groupAddress,
                                                                                            groupPort,
                                                                                            250,
-                                                                                           connectorInfos);
+                                                                                           connectorList);
 
       Configuration conf_1 = createBasicConfig();
       conf_1.setSecurityEnabled(false);

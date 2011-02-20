@@ -115,7 +115,7 @@ public class ClientCrashTest extends ClientTestBase
    }
    
    public void testCrashClient2() throws Exception
-   {     
+   {
       assertActiveConnections(1);
 
       ClientSession session = sf.createSession(false, true, true);

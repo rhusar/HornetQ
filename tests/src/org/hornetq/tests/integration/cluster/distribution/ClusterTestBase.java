@@ -1462,8 +1462,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
         TransportConfiguration connector = createTransportConfiguration(netty, false, params);
         configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
-        List<String> connectorPairs = new ArrayList<String>();
-        connectorPairs.add(connector.getName());
+        List<TransportConfiguration> connectorPairs = new ArrayList<TransportConfiguration>();
+        connectorPairs.add(connector);
 
         BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
                                                                                  null,
@@ -1549,8 +1549,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
         TransportConfiguration connector = createTransportConfiguration(netty, false, params);
         configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
-        List<String> connectorPairs = new ArrayList<String>();
-        connectorPairs.add(connector.getName());
+        List<TransportConfiguration> connectorPairs = new ArrayList<TransportConfiguration>();
+        connectorPairs.add(connector);
 
         BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
                                                                                  null,

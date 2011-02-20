@@ -31,6 +31,7 @@ import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -264,7 +265,7 @@ public class UnitTestCase extends TestCase
    protected static DiscoveryGroupConfiguration createStaticDiscoveryGroupConfiguration(TransportConfiguration... connectors)
    {
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(connectors));
       return new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(),
                                              params,
                                              UUIDGenerator.getInstance().generateStringUUID());
@@ -276,16 +277,15 @@ public class UnitTestCase extends TestCase
                                                                                   String groupAddress,
                                                                                   int groupPort,
                                                                                   long broadcastPeriod,
-                                                                                  List<String> connectorInfos)
+                                                                                  List<TransportConfiguration> connectorList)
    {
       Map<String,Object> params = new HashMap<String,Object>();
       params.put(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, localBindAddress);
-      params.put(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, localBindPort);
+      params.put(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, Integer.toString(localBindPort));
       params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
-      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
-      params.put(BroadcastGroupConstants.BROADCAST_PERIOD_NAME, broadcastPeriod);
-      params.put(BroadcastGroupConstants.CONNECTOR_REF_LIST_NAME, connectorInfos);
-      return new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, name);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, Integer.toString(groupPort));
+      params.put(BroadcastGroupConstants.BROADCAST_PERIOD_NAME, Long.toString(broadcastPeriod));
+      return new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, name, connectorList);
    }
    
    public static int getUDPDiscoveryPort()

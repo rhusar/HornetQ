@@ -715,8 +715,8 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       liveConf.setSharedStore(true);
       liveConf.setClustered(true);
 
-      List<String> connectorNames = new ArrayList<String>();
-      connectorNames.add(liveTC.getName());
+      List<TransportConfiguration> connectorNames = new ArrayList<TransportConfiguration>();
+      connectorNames.add(liveTC);
 
       final long broadcastPeriod = 250;
 
