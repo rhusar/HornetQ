@@ -107,7 +107,12 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       Map<String,Object> params = this.broadcastGroupConfiguration.getParams();
       int localPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME));
       String localAddr = (String)params.get(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME);
-      InetAddress localAddress = InetAddress.getByName(localAddr);
+
+      InetAddress localAddress = null;
+      if(localAddr!=null)
+      {
+         localAddress = InetAddress.getByName(localAddr);
+      }
 
       if (localPort != -1)
       {
