@@ -1642,8 +1642,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
          pairs = new ArrayList<TransportConfiguration>();
          pairs.add(serverTotc);
       }
-
-      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+      
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs!=null ? pairs.toArray(new TransportConfiguration[0]) : null);
       serverFrom.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
       
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,

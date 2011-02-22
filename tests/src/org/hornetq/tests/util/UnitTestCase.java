@@ -265,7 +265,7 @@ public class UnitTestCase extends TestCase
    protected static DiscoveryGroupConfiguration createStaticDiscoveryGroupConfiguration(TransportConfiguration... connectors)
    {
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(connectors));
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors != null ? Arrays.asList(connectors) : null);
       return new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(),
                                              params,
                                              UUIDGenerator.getInstance().generateStringUUID());
