@@ -23,5 +23,8 @@ package org.hornetq.integration.discovery.jgroups;
 public class BroadcastGroupConstants
 {
    public static final String JGROUPS_CONFIGURATION_FILE_NAME = "jgroups-configuration-file";
-   public static final Object BROADCAST_PERIOD_NAME = "broadcast-period";
+   public static final String BROADCAST_PERIOD_NAME = "broadcast-period";
+   public static final String JGROUPS_CHANNEL_NAME_NAME = "jgroups-channel-name";
+   
+   public static final String DEFAULT_JGROUPS_CHANNEL_NAME = "hornetq-jgroups-channel";   
 }

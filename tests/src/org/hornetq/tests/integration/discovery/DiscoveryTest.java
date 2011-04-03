@@ -155,10 +155,10 @@ public class DiscoveryTest extends UnitTestCase
          return;
       }
       
-      log.info("Local address is " + localAddress);
+      log.info("Local address is " + localAddress.getHostAddress());
 
       Map<String,Object> params = new HashMap<String,Object>();
-      params.put(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, localAddress);
+      params.put(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, localAddress.getHostAddress());
       params.put(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, 6552);
       params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
       params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);

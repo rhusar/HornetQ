@@ -13,7 +13,6 @@
 
 package org.hornetq.integration.discovery.jgroups;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,9 +52,11 @@ public class JGroupsBroadcastGroupImpl implements BroadcastGroup, Runnable
 
    private final BroadcastGroupConfiguration broadcastGroupConfiguration;
    
-   private final List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+   private final List<TransportConfiguration> connectors;
 
    private String jgroupsConfigurationFileName;
+   
+   private String jgroupsChannelName = null;
    
    private JChannel broadcastChannel;
    
@@ -84,6 +85,8 @@ public class JGroupsBroadcastGroupImpl implements BroadcastGroup, Runnable
 
       this.broadcastGroupConfiguration = config;
       
+      this.connectors = config.getConnectorList();
+      
       uniqueID = UUIDGenerator.getInstance().generateStringUUID();
    }
    
@@ -100,11 +103,11 @@ public class JGroupsBroadcastGroupImpl implements BroadcastGroup, Runnable
       }
 
       Map<String,Object> params = this.broadcastGroupConfiguration.getParams();
-      this.jgroupsConfigurationFileName = ConfigurationHelper.getStringProperty(DiscoveryGroupConstants.JGROUPS_CONFIGURATION_FILE_NAME, null, params);
-
+      this.jgroupsConfigurationFileName = ConfigurationHelper.getStringProperty(BroadcastGroupConstants.JGROUPS_CONFIGURATION_FILE_NAME, null, params);
+      this.jgroupsChannelName = ConfigurationHelper.getStringProperty(BroadcastGroupConstants.JGROUPS_CHANNEL_NAME_NAME, BroadcastGroupConstants.DEFAULT_JGROUPS_CHANNEL_NAME, params);
       this.broadcastChannel = new JChannel(Thread.currentThread().getContextClassLoader().getResource(this.jgroupsConfigurationFileName));
       
-      this.broadcastChannel.connect(this.name);
+      this.broadcastChannel.connect(this.jgroupsChannelName);
       
       started = true;
 
@@ -127,6 +130,14 @@ public class JGroupsBroadcastGroupImpl implements BroadcastGroup, Runnable
       if (future != null)
       {
          future.cancel(false);
+         future = null;
+      }
+      
+      if (broadcastChannel != null)
+      {
+         broadcastChannel.shutdown();
+         broadcastChannel.close();
+         broadcastChannel = null;
       }
 
       started = false;

@@ -50,6 +50,8 @@ public class JGroupsServerLocatorImpl extends AbstractServerLocator implements D
    
    private String jgroupsConfigurationFileName;
 
+   private String jgroupsChannelName;
+   
    private long initialWaitTimeout;
    
    private long refreshTimeout;
@@ -69,6 +71,7 @@ public class JGroupsServerLocatorImpl extends AbstractServerLocator implements D
          
          Map<String,Object> params = getDiscoveryGroupConfiguration().getParams();
 
+         this.jgroupsChannelName = ConfigurationHelper.getStringProperty(DiscoveryGroupConstants.JGROUPS_CHANNEL_NAME_NAME, DiscoveryGroupConstants.DEFAULT_JGROUPS_CHANNEL_NAME, params);
          this.initialWaitTimeout = ConfigurationHelper.getLongProperty(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT, params);
 
          this.refreshTimeout = ConfigurationHelper.getLongProperty(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT, params);
@@ -77,6 +80,7 @@ public class JGroupsServerLocatorImpl extends AbstractServerLocator implements D
          
          this.discoveryGroup = new JGroupsDiscoveryGroupImpl(getNodeID(),
                                                              this.discoveryGroupName,
+                                                             this.jgroupsChannelName,
                                                              Thread.currentThread().getContextClassLoader().getResource(this.jgroupsConfigurationFileName),
                                                              this.refreshTimeout);
          

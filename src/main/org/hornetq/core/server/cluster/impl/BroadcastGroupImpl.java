@@ -34,6 +34,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
+import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -105,8 +106,8 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       }
 
       Map<String,Object> params = this.broadcastGroupConfiguration.getParams();
-      int localPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME));
-      String localAddr = (String)params.get(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME);
+      int localPort = ConfigurationHelper.getIntProperty(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, -1, params);
+      String localAddr = ConfigurationHelper.getStringProperty(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, null, params);
 
       InetAddress localAddress = null;
       if(localAddr!=null)
@@ -225,11 +226,10 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       byte[] data = buff.toByteBuffer().array();
 
       Map<String,Object> params = broadcastGroupConfiguration.getParams();
-      int groupPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.GROUP_PORT_NAME));
-      String groupAddr = (String)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME);
-      InetAddress groupAddress = InetAddress.getByName(groupAddr);
+      Integer groupPort = (Integer)params.get(BroadcastGroupConstants.GROUP_PORT_NAME);
+      InetAddress groupAddr = (InetAddress)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME);
       
-      DatagramPacket packet = new DatagramPacket(data, data.length, groupAddress, groupPort);
+      DatagramPacket packet = new DatagramPacket(data, data.length, groupAddr, groupPort);
 
       socket.send(packet);
    }

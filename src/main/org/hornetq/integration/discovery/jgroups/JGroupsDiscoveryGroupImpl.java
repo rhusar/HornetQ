@@ -51,6 +51,8 @@ public class JGroupsDiscoveryGroupImpl extends ReceiverAdapter implements Discov
 
    private final String name;
    
+   private final String jgroupsChannelName;
+
    private final URL configURL;
    
    private final String nodeID;
@@ -73,11 +75,13 @@ public class JGroupsDiscoveryGroupImpl extends ReceiverAdapter implements Discov
    
    public JGroupsDiscoveryGroupImpl(final String nodeID,
                                     final String name,
+                                    final String channelName,
                                     final URL confURL,
                                     final long timeout)
    {
       this.nodeID = nodeID;
       this.name = name;
+      this.jgroupsChannelName = channelName;
       this.configURL = confURL;
       this.timeout = timeout;
    }
@@ -100,7 +104,7 @@ public class JGroupsDiscoveryGroupImpl extends ReceiverAdapter implements Discov
 
          this.discoveryChannel.setReceiver(this);
          
-         this.discoveryChannel.connect(this.name);
+         this.discoveryChannel.connect(this.jgroupsChannelName);
       }
       catch(Exception e)
       {
@@ -141,6 +145,8 @@ public class JGroupsDiscoveryGroupImpl extends ReceiverAdapter implements Discov
 
       this.discoveryChannel.shutdown();
 
+      this.discoveryChannel.close();
+      
       this.discoveryChannel = null;
 
       if (notificationService != null)
@@ -164,6 +170,11 @@ public class JGroupsDiscoveryGroupImpl extends ReceiverAdapter implements Discov
       return this.name;
    }
 
+   public String getJGroupsChannelName()
+   {
+      return this.jgroupsChannelName;
+   }
+   
    public List<DiscoveryEntry> getDiscoveryEntries()
    {
       List<DiscoveryEntry> list = new ArrayList<DiscoveryEntry>();

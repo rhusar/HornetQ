@@ -25,4 +25,7 @@ public class DiscoveryGroupConstants
    public static final String JGROUPS_CONFIGURATION_FILE_NAME = "jgroups-configuration-filename";
    public static final String INITIAL_WAIT_TIMEOUT_NAME = "initial-wait-timeout";
    public static final String REFRESH_TIMEOUT_NAME = "refresh-timeout";
+   public static final String JGROUPS_CHANNEL_NAME_NAME = "jgroups-channel-name";
+   
+   public static final String DEFAULT_JGROUPS_CHANNEL_NAME = "hornetq-jgroups-channel";
 }
