@@ -70,7 +70,7 @@ public class PushConsumer implements MessageHandler
       strategy.setRegistration(registration);
       strategy.start();
 
-      session = factory.createSession(false, false);
+      session = factory.createSession(false, false, 0);
       if (registration.getSelector() != null)
       {
          consumer = session.createConsumer(destination, SelectorTranslator.convertToHornetQFilterString(registration.getSelector()));
@@ -127,19 +127,25 @@ public class PushConsumer implements MessageHandler
    @Override
    public void onMessage(ClientMessage clientMessage)
    {
+
+      try
+      {
+           clientMessage.acknowledge();
+      }
+      catch (HornetQException e)
+      {
+           throw new RuntimeException(e.getMessage(), e);
+      }
+
       boolean acknowledge = strategy.push(clientMessage);
 
-      if (registration.isDisableOnFailure())
-      {
-         log.error("Failed to push message to "+ registration.getTarget() + " disabling push registration...");
-         disableFromFailure();
-      }
       if (acknowledge)
       {
          try
          {
             log.debug("Acknowledging: " + clientMessage.getMessageID());
-            clientMessage.acknowledge();
+            session.commit();
+            return;
          }
          catch (HornetQException e)
          {
@@ -148,8 +154,20 @@ public class PushConsumer implements MessageHandler
       }
       else
       {
-         // let hornetq decide what to do
-         throw new RuntimeException("Failed to push message to "+ registration.getTarget());
+          try
+          {
+              session.rollback();
+          }
+          catch (HornetQException e)
+          {
+              throw new RuntimeException(e.getMessage(), e);
+          }
+          if (registration.isDisableOnFailure())
+         {
+            log.error("Failed to push message to " + registration.getTarget() + " disabling push registration...");
+            disableFromFailure();
+            return;
+         }
       }
    }
 }
