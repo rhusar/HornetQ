@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="urn:hornetq"
+            xmlns="urn:hornetq"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified"
+            version="1.0">
+
+    <xsd:element name="hq-journal-export">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element type="bindings-journalType" name="queues" maxOccurs="1"/>
+                <xsd:element type="messages-journalType" name="messages" maxOccurs="1"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:complexType name="bindings-journalType">
+        <xsd:sequence>
+            <xsd:element type="queueType" name="queue" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="messages-journalType">
+        <xsd:sequence>
+            <xsd:element type="messageType" name="message" maxOccurs="unbounded" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <!-- bindings -->
+
+    <xsd:complexType name="bindingsType">
+        <xsd:sequence>
+            <xsd:element type="queueType" name="queue"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="queueType">
+        <xsd:sequence>
+            <xsd:element name="name" type="xsd:string"/>
+            <xsd:element name="address" type="xsd:string"/>
+            <xsd:element name="filterString" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute type="xsd:long" name="id" use="required"/>
+    </xsd:complexType>
+
+    <!-- journal -->
+
+    <xsd:complexType name="messageType">
+        <xsd:sequence>
+            <xsd:element type="xsd:string" name="address"/>
+            <xsd:element type="xsd:byte" name="type">
+                <xsd:annotation>
+                    <xsd:documentation>see interface Message</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element type="xsd:boolean" name="durable"/>
+            <xsd:element type="xsd:long" name="expiration"/>
+            <xsd:element type="xsd:long" name="timestamp"/>
+            <xsd:element type="propertiesType" name="properties"/>
+            <xsd:element type="xsd:byte" name="priority"/>
+            <xsd:element type="xsd:string" name="payload">
+                <xsd:annotation>
+                    <xsd:documentation>ref to byte array in &lt;msgId&gt; directory</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element type="xsd:string" name="userId"/>
+            <xsd:element type="bindType" name="bindings"/>
+            <xsd:element type="ackType" name="acks"/>
+        </xsd:sequence>
+        <xsd:attribute type="xsd:long" name="id"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertiesType">
+        <xsd:sequence>
+            <xsd:element type="propertyType" name="property" maxOccurs="unbounded" minOccurs="1"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="propertyType">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attribute type="xsd:string" name="key" use="required"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="bindType">
+        <xsd:sequence>
+            <xsd:element name="queue" type="queueRefType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ackType">
+        <xsd:sequence>
+            <xsd:element name="queue" type="queueRefType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="queueRefType">
+        <xsd:attribute name="id" type="xsd:long"/>
+    </xsd:complexType>
+</xsd:schema>

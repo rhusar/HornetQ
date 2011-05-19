@@ -53,7 +53,6 @@ import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.journal.TransactionFailureCallback;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
-import org.hornetq.core.journal.impl.ExportJournal;
 import org.hornetq.core.journal.impl.JournalFile;
 import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.JournalReaderCallback;
@@ -108,6 +107,7 @@ import org.hornetq.utils.XidCodecSupport;
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
+ * @author <a href="torben@redhat.com">Torben Jaeger</a>
  *
  */
 public class JournalStorageManager implements StorageManager
@@ -198,6 +198,7 @@ public class JournalStorageManager implements StorageManager
    private final Map<SimpleString, PersistedRoles> mapPersistedRoles = new ConcurrentHashMap<SimpleString, PersistedRoles>();
 
    private final Map<SimpleString, PersistedAddressSetting> mapPersistedAddressSettings = new ConcurrentHashMap<SimpleString, PersistedAddressSetting>();
+
 
    public JournalStorageManager(final Configuration config, final ExecutorFactory executorFactory)
    {
@@ -2169,7 +2170,7 @@ public class JournalStorageManager implements StorageManager
       }
    }
 
-   private static class PersistentQueueBindingEncoding implements EncodingSupport, QueueBindingInfo
+   protected static class PersistentQueueBindingEncoding implements EncodingSupport, QueueBindingInfo
    {
       long id;
 
@@ -2337,7 +2338,7 @@ public class JournalStorageManager implements StorageManager
 
    private static class QueueEncoding implements EncodingSupport
    {
-      long queueID;
+      public long queueID;
 
       public QueueEncoding(final long queueID)
       {
@@ -2389,7 +2390,7 @@ public class JournalStorageManager implements StorageManager
       }
    }
 
-   private static class RefEncoding extends QueueEncoding
+   protected static class RefEncoding extends QueueEncoding
    {
       public RefEncoding()
       {
@@ -2839,7 +2840,7 @@ public class JournalStorageManager implements StorageManager
 
    // Encoding functions for binding Journal
 
-   private static Object newObjectEncoding(RecordInfo info)
+   protected static Object newObjectEncoding(RecordInfo info)
    {
       HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(info.data);
       long id = info.id;
@@ -2981,9 +2982,9 @@ public class JournalStorageManager implements StorageManager
       }
    }
 
-   private static class ReferenceDescribe
+   protected static class ReferenceDescribe
    {
-      RefEncoding refEncoding;
+      public RefEncoding refEncoding;
 
       public ReferenceDescribe(RefEncoding refEncoding)
       {
@@ -2997,9 +2998,9 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   private static class AckDescribe
+   protected static class AckDescribe
    {
-      RefEncoding refEncoding;
+      public RefEncoding refEncoding;
 
       public AckDescribe(RefEncoding refEncoding)
       {
@@ -3013,14 +3014,14 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   private static class MessageDescribe
+   protected static class MessageDescribe
    {
       public MessageDescribe(Message msg)
       {
          this.msg = msg;
       }
 
-      Message msg;
+      public Message msg;
 
       public String toString()
       {
@@ -3322,5 +3323,4 @@ public class JournalStorageManager implements StorageManager
 
       journal.stop();
    }
-
 }
