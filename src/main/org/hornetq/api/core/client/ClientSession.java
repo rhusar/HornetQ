@@ -57,6 +57,11 @@ public interface ClientSession extends XAResource
    public interface QueueQuery
    {
       /**
+       * @return the ID of the queue.
+       */
+      long getId();
+
+      /**
        * Returns <code>true</code> if the queue exists, <code>false</code> else.
        */
       boolean isExists();

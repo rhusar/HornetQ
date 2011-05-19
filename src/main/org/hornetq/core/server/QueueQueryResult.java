@@ -24,6 +24,8 @@ import org.hornetq.api.core.SimpleString;
  */
 public class QueueQueryResult
 {
+   private long id;
+
    private SimpleString name;
    
    private boolean exists;
@@ -50,10 +52,35 @@ public class QueueQueryResult
    {
       this(name, address, durable, temporary, filterString, consumerCount, messageCount, true);
    }
+   public QueueQueryResult(final long id,
+                           final SimpleString name,
+                                           final SimpleString address,
+                                           final boolean durable,
+                                           final boolean temporary,
+                                           final SimpleString filterString,
+                                           final int consumerCount,
+                                           final long messageCount)
+   {
+      this(id, name, address, durable, temporary, filterString, consumerCount, messageCount, true);
+   }
 
    public QueueQueryResult()
    {
       this(null, null, false, false, null, 0, 0, false);
+   }
+
+   private QueueQueryResult(final long id,
+                            final SimpleString name,
+                                            final SimpleString address,
+                                            final boolean durable,
+                                            final boolean temporary,
+                                            final SimpleString filterString,
+                                            final int consumerCount,
+                                            final long messageCount,
+                                            final boolean exists)
+   {
+      this(name, address, durable, temporary, filterString, consumerCount, messageCount, exists);
+      this.id = id;
    }
 
    private QueueQueryResult(final SimpleString name,
@@ -80,6 +107,10 @@ public class QueueQueryResult
       this.name = name;
 
       this.exists = exists;
+   }
+
+   public long getId() {
+      return id;
    }
 
    public boolean isExists()

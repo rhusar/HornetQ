@@ -105,10 +105,8 @@ public class ManageDataTool extends JournalStorageManager
     * </ul>
     * <p/>
     *
-    * @param exportFile  full qualified name of the export file (/path/name.xml)
     * @param bindingsDir directory with the bindings journal
     * @param messagesDir directory with the messages journal
-    * @param backup flag if a backup should be created before modifying the original journal
     * @throws Exception if something goes wrong
     */
    public static void exportMessages(final String bindingsDir, final String messagesDir, final OutputStream out) throws Exception
@@ -218,24 +216,6 @@ public class ManageDataTool extends JournalStorageManager
 
    }
 
-   /*
-    * 
-    * private static void addDelRecordsToOriginal(JournalImpl original, Set<Long> recordsToDelete, List<MessageType> messages) throws Exception {
-      List<Long> originalDeletes = new ArrayList<Long>(messages.size() / 3);
-      for (MessageType message : messages) {
-         if (!recordsToDelete.contains(message.getId()) &&
-               !originalDeletes.contains(message.getId())) {
-            original.appendDeleteRecord(message.getId(), false, DummyOperationContext.getInstance());
-            originalDeletes.add(message.getId());
-         }
-      }
-      if (log.isInfoEnabled()) {
-         int size = originalDeletes.size();
-         log.info("Deleted " + size + " record" + (size > 1 ? "s" : "") + " from original journal!");
-      }
-   }
-    */
-
    private static void loadData(Journal original, final List<RecordInfo> records, final Set<Long> recordsToDelete) throws Exception
    {
       original.start();
@@ -294,7 +274,6 @@ public class ManageDataTool extends JournalStorageManager
     * Method which writes the XML export file to disk.
     *
     * @param hqJournalExport the root JAXB context
-    * @param exportFile the export filename
     * @throws java.io.FileNotFoundException if the export file could not be created
     * @throws javax.xml.bind.JAXBException if an error occurs during marshalling
     */
@@ -501,18 +480,17 @@ public class ManageDataTool extends JournalStorageManager
 
       FileInputStream input = new FileInputStream(new File(importFile));
 
-      return importMessages(input, configuration.getBindingsDirectory(), serverLocator);
+      return importMessages(input, serverLocator);
    }
 
    public static long importMessages(final InputStream importFile,
-                                     final String bindingsDirectory,
                                      final ServerLocator serverLocator) throws Exception
    {
       final JAXBContext context = JAXBContext.newInstance(HornetQExport.class);
 
       final Unmarshaller unmarshaller = context.createUnmarshaller();
 
-      final Map<String, Long> queueBindings = loadBindings(bindingsDirectory);
+      final Map<Long, Long> queueMapping = new HashMap<Long, Long>();
 
       ClientSessionFactory sf = null;
       
@@ -524,8 +502,21 @@ public class ManageDataTool extends JournalStorageManager
          // message notification callback
          final MessagesExportType.Listener listener = new MessagesExportType.Listener()
          {
-            public void handleMessage(MessageType message) throws Exception
-            {
+            public void handleMessage(MessageType message) throws Exception {
+               final List<QueueType> originalQueues = message.getAllPreviousBindings().getQueue();
+               final List<QueueRefType> originalBindings = message.getBindings().getQueue();
+               QueueType queue;
+               ClientSession.QueueQuery queueQuery;
+               for (QueueRefType originalBinding : originalBindings) {
+                  queue = originalQueues.get(originalQueues.indexOf(new QueueType(originalBinding.getId())));
+                  queueQuery = coreSession.queueQuery(SimpleString.toSimpleString(queue.getName()));
+
+                  if (!queueQuery.isExists()) {
+                     coreSession.createQueue(queue.getAddress(), queue.getName(), queue.getFilterString(), message.isDurable());
+                     queueQuery = coreSession.queueQuery(SimpleString.toSimpleString(queue.getName()));
+                     queueMapping.put(queue.getId(), queueQuery.getId());
+                  }
+               }
 
                ClientProducer producer = coreSession.createProducer(message.getAddress());
                ClientMessage clientMessage = generateClientMessage(message);
@@ -553,7 +544,7 @@ public class ManageDataTool extends JournalStorageManager
                {
                   if (!ackedQueues.contains(new QueueRefType(binding.getId())))
                   {
-                     queues.add(queueBindings.get(message.getAddress()));
+                     queues.add(queueMapping.get(binding.getId()));
                   }
                }
                clientMessage.putBytesProperty(MessageImpl.HDR_ROUTE_TO_IDS, getByteArrayOf(queues));
@@ -615,6 +606,9 @@ public class ManageDataTool extends JournalStorageManager
                if (target instanceof MessagesExportType)
                {
                   ((MessagesExportType)target).setMessageListener(listener);
+                  if (((MessagesExportType) target).getBindings() == null) {
+                     ((MessagesExportType)target).setOriginalBindings(((HornetQExport)parent).getQueues());
+                  }
                }
             }
 

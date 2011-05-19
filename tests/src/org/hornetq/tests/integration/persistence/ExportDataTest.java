@@ -105,7 +105,7 @@ public class ExportDataTest extends ServiceTestBase {
          
          locator = createInVMNonHALocator();
          
-         ManageDataTool.importMessages(is, getBindingsDir(), locator);
+         ManageDataTool.importMessages(is, locator);
          
          ClientSessionFactory csf = locator.createSessionFactory();
          
@@ -120,8 +120,6 @@ public class ExportDataTest extends ServiceTestBase {
             msg.acknowledge();
             assertEquals(i, msg.getIntProperty("count").intValue());
          }
-         
-   
          
       }
       finally

@@ -13,8 +13,6 @@ x * Copyright 2009 Red Hat, Inc.
 
 package org.hornetq.core.server.impl;
 
-import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,6 +72,7 @@ import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUID;
 import org.hornetq.utils.json.JSONArray;
 import org.hornetq.utils.json.JSONObject;
+import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
 
 /*
  * Session implementation 
@@ -495,7 +494,8 @@ public class ServerSessionImpl implements ServerSession , FailureListener
 
          SimpleString filterString = filter == null ? null : filter.getFilterString();
 
-         response = new QueueQueryResult(name,
+         response = new QueueQueryResult(queue.getID(),
+                                         name,
                                          binding.getAddress(),
                                          queue.isDurable(),
                                          queue.isTemporary(),

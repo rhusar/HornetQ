@@ -46,6 +46,13 @@ public class QueueType {
     @XmlAttribute(required = true)
     protected long id;
 
+   public QueueType() {
+   }
+
+   public QueueType(long id) {
+      this.id = id;
+   }
+
     /**
      * Gets the value of the name property.
      * 
@@ -134,4 +141,20 @@ public class QueueType {
         this.id = value;
     }
 
+   @Override
+   public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      QueueType queueType = (QueueType) o;
+
+      if (id != queueType.id) return false;
+
+      return true;
+   }
+
+   @Override
+   public int hashCode() {
+      return (int) (id ^ (id >>> 32));
+   }
 }

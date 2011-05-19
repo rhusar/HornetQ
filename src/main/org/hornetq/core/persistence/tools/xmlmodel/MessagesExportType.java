@@ -6,6 +6,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -34,6 +35,9 @@ public class MessagesExportType {
 
    @XmlElement(namespace = "urn:hornetq")
    protected List<MessageType> message;
+
+   @XmlTransient
+   private BindingsJournalType bindings;
 
    /**
     * Gets the value of the message property.
@@ -70,6 +74,7 @@ public class MessagesExportType {
       message = (listener == null) ? null : new ArrayList<MessageType>() {
          public boolean add(MessageType o) {
             try {
+               o.setAllPreviousBindings(getBindings());
                listener.handleMessage(o);
             } catch (Exception e) {
                e.printStackTrace();
@@ -78,6 +83,14 @@ public class MessagesExportType {
             return false;
          }
       };
+   }
+
+   public void setOriginalBindings(final BindingsJournalType bindings) {
+      this.bindings = bindings;
+   }
+
+   public BindingsJournalType getBindings() {
+      return bindings;
    }
 
    /**

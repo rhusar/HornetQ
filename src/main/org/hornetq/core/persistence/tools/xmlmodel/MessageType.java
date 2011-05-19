@@ -4,6 +4,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 import org.hornetq.api.core.SimpleString;
@@ -78,6 +79,9 @@ public class MessageType {
    protected AckType acks = new AckType();
    @XmlAttribute
    protected Long id;
+
+   @XmlTransient
+   private BindingsJournalType allPreviousBindings;
 
    public MessageType(ServerMessage msg) {
       setId(msg.getMessageID());
@@ -348,5 +352,13 @@ public class MessageType {
    @Override
    public int hashCode() {
       return id.hashCode();
+   }
+
+   public BindingsJournalType getAllPreviousBindings() {
+      return allPreviousBindings;
+   }
+
+   public void setAllPreviousBindings(BindingsJournalType allPreviousBindings) {
+      this.allPreviousBindings = allPreviousBindings;
    }
 }
