@@ -514,6 +514,9 @@ public class ManageDataTool extends JournalStorageManager
                   if (!queueQuery.isExists()) {
                      coreSession.createQueue(queue.getAddress(), queue.getName(), queue.getFilterString(), message.isDurable());
                      queueQuery = coreSession.queueQuery(SimpleString.toSimpleString(queue.getName()));
+                  }
+
+                  if (!queueMapping.containsKey(queue.getId())) {
                      queueMapping.put(queue.getId(), queueQuery.getId());
                   }
                }
