@@ -14,8 +14,6 @@
 package org.hornetq.core.journal.impl;
 
 import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.hornetq.core.asyncio.BufferCallback;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.utils.HornetQThreadFactory;
@@ -41,7 +37,7 @@ public class AIOSequentialFileFactory extends AbstractSequentialFileFactory
 
    private static final Logger log = Logger.getLogger(AIOSequentialFileFactory.class);
 
-   private static final boolean trace = AIOSequentialFileFactory.log.isTraceEnabled();
+   private static final boolean trace = log.isTraceEnabled();
 
    private final ReuseBuffersController buffersControl = new ReuseBuffersController();
 
@@ -52,14 +48,14 @@ public class AIOSequentialFileFactory extends AbstractSequentialFileFactory
    // Journal
    private static final void trace(final String message)
    {
-      AIOSequentialFileFactory.log.trace(message);
+      log.trace(message);
    }
 
    public AIOSequentialFileFactory(final String journalDir)
    {
       this(journalDir,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_SIZE_AIO,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_SIZE_AIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_AIO,
            false);
    }
 
@@ -297,16 +293,16 @@ public class AIOSequentialFileFactory extends AbstractSequentialFileFactory
       }
    }
 
-   private static ClassLoader getThisClassLoader()
-   {
-      return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>()
-      {
-         public ClassLoader run()
-         {
-            return ClientSessionFactoryImpl.class.getClassLoader();
-         }
-      });
-
-   }
+//   private static ClassLoader getThisClassLoader()
+//   {
+//      return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>()
+//      {
+//         public ClassLoader run()
+//         {
+//            return ClientSessionFactoryImpl.class.getClassLoader();
+//         }
+//      });
+//
+//   }
 
 }

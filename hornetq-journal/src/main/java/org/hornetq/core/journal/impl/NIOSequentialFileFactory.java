@@ -15,7 +15,6 @@ package org.hornetq.core.journal.impl;
 
 import java.nio.ByteBuffer;
 
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -36,8 +35,8 @@ public class NIOSequentialFileFactory extends AbstractSequentialFileFactory impl
    {
       this(journalDir,
            false,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_SIZE_NIO,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_SIZE_NIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO,
            false);
    }
 
@@ -45,8 +44,8 @@ public class NIOSequentialFileFactory extends AbstractSequentialFileFactory impl
    {
       this(journalDir,
            buffered,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_SIZE_NIO,
-           ConfigurationImpl.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_SIZE_NIO,
+           JournalConstants.DEFAULT_JOURNAL_BUFFER_TIMEOUT_NIO,
            false);
    }
 

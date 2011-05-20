@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
+//import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.journal.SequentialFile;
 import org.hornetq.core.journal.SequentialFileFactory;
 import org.hornetq.core.logging.Logger;
@@ -39,7 +39,7 @@ import org.hornetq.utils.HornetQThreadFactory;
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  *
  */
-public abstract class AbstractSequentialFileFactory implements SequentialFileFactory
+abstract class AbstractSequentialFileFactory implements SequentialFileFactory
 {
 
    // Timeout used to wait executors to shutdown
@@ -59,7 +59,7 @@ public abstract class AbstractSequentialFileFactory implements SequentialFileFac
     * Asynchronous writes need to be done at another executor.
     * This needs to be done at NIO, or else we would have the callers thread blocking for the return.
     * At AIO this is necessary as context switches on writes would fire flushes at the kernel.
-    *  */
+    */
    protected ExecutorService writeExecutor;
 
    public AbstractSequentialFileFactory(final String journalDir,
@@ -191,13 +191,13 @@ public abstract class AbstractSequentialFileFactory implements SequentialFileFac
       return Arrays.asList(fileNames);
    }
 
-   private static ClassLoader getThisClassLoader()
+   protected static ClassLoader getThisClassLoader()
    {
       return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>()
       {
          public ClassLoader run()
          {
-            return ClientSessionFactoryImpl.class.getClassLoader();
+            return NIOSequentialFileFactory.class.getClassLoader(); // XXX
          }
       });
 

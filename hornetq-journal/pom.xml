@@ -8,19 +8,14 @@
       <version>2.2.3-SNAPSHOT</version>
    </parent>
 
-   <artifactId>hornetq-core</artifactId>
+   <artifactId>hornetq-journal</artifactId>
    <packaging>jar</packaging>
-   <name>HornetQ Core</name>
+   <name>HornetQ Journal</name>
 
    <dependencies>
       <dependency>
          <groupId>org.jboss.netty</groupId>
          <artifactId>netty</artifactId>
-      </dependency>
-      <dependency>
-         <groupId>org.hornetq</groupId>
-         <artifactId>hornetq-journal</artifactId>
-         <version>${project.version}</version>
       </dependency>
    </dependencies>
 
@@ -60,24 +55,5 @@
          </build>
       </profile>
    </profiles>
-   <build>
-      <plugins>
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>javacc-maven-plugin</artifactId>
-            <executions>
-               <execution>
-                  <id>javacc</id>
-                  <goals>
-                     <goal>javacc</goal>
-                  </goals>
-                  <configuration>
-                     <isStatic>false</isStatic>
-                  </configuration>
-               </execution>
-            </executions>
-         </plugin>
-      </plugins>
-   </build>
 
 </project>
