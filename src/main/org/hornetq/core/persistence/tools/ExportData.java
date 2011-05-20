@@ -25,8 +25,9 @@ public class ExportData
 
    public static void main(String args[])
    {
-      if (args.length != 4) {
-         System.out.println("Usage Export: java org.hornetq.core.persistence.tools.ExportData <bindings-journal-dir> <messages-journal-dir>");
+      if (args.length != 2) {
+         // todo: maybe just use a hq-config.xml file as a parameter
+         System.out.println("Usage Export: java org.hornetq.core.persistence.tools.ExportData <bindings-dir> <journal-dir>");
          System.exit(-1);
       }
       try
