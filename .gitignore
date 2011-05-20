@@ -705,3 +705,4 @@ org.maven.ide.eclipse.prefs
 /tests/unit-tests/.project
 /docs/rest-manual/.project
 /docs/quickstart-guide/.project
+/hornetq-journal/.project
