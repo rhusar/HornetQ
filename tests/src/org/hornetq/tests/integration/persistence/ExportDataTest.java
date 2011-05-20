@@ -121,6 +121,8 @@ public class ExportDataTest extends ServiceTestBase {
             assertEquals(i, msg.getIntProperty("count").intValue());
          }
          
+         server.stop();
+         
       }
       finally
       {
@@ -130,6 +132,4 @@ public class ExportDataTest extends ServiceTestBase {
 
    }
 
-   public void testImport() {
-   }
 }
