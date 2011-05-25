@@ -28,9 +28,10 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.OperationContext;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
 import org.hornetq.core.replication.ReplicationManager;
+import org.hornetq.core.server.HornetQComponent;
 
 /**
- * Used by the {@link JournalStorageManager} to replicate journal calls. 
+ * Used by the {@link JournalStorageManager} to replicate journal calls.
  *
  * @author <mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
  *
@@ -193,7 +194,7 @@ public class ReplicatedJournal implements Journal
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#appendCommitRecord(long, boolean, org.hornetq.core.journal.IOCompletion, boolean)
     */
-   public void appendCommitRecord(long txID, boolean sync, IOCompletion callback, boolean lineUpContext) throws Exception
+   public void appendCommitRecord(final long txID, final boolean sync, final IOCompletion callback, final boolean lineUpContext) throws Exception
    {
       if (ReplicatedJournal.trace)
       {
@@ -201,10 +202,10 @@ public class ReplicatedJournal implements Journal
       }
       replicationManager.appendCommitRecord(journalID, txID, lineUpContext);
       localJournal.appendCommitRecord(txID, sync, callback, lineUpContext);
-      
+
    }
 
-   
+
    /**
     * @param id
     * @param sync
@@ -563,7 +564,7 @@ public class ReplicatedJournal implements Journal
    /* (non-Javadoc)
     * @see org.hornetq.core.journal.Journal#lineUpContex(org.hornetq.core.journal.IOCompletion)
     */
-   public void lineUpContex(IOCompletion callback)
+   public void lineUpContex(final IOCompletion callback)
    {
       ((OperationContext)callback).replicationLineUp();
       localJournal.lineUpContex(callback);

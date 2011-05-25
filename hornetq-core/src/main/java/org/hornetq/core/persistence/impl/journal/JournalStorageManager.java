@@ -518,7 +518,7 @@ public class JournalStorageManager implements StorageManager
                                         getContext(syncNonTransactional));
    }
 
-   public void storeCursorAcknowledge(long queueID, PagePosition position) throws Exception
+   public void storeCursorAcknowledge(final long queueID, final PagePosition position) throws Exception
    {
       long ackID = idGenerator.generateID();
       position.setRecordID(ackID);
@@ -639,7 +639,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#storeCursorAcknowledgeTransactional(long, long, org.hornetq.core.paging.cursor.PagePosition)
     */
-   public void storeCursorAcknowledgeTransactional(long txID, long queueID, PagePosition position) throws Exception
+   public void storeCursorAcknowledgeTransactional(final long txID, final long queueID, final PagePosition position) throws Exception
    {
       long ackID = idGenerator.generateID();
       position.setRecordID(ackID);
@@ -652,7 +652,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#deleteCursorAcknowledgeTransactional(long, long)
     */
-   public void deleteCursorAcknowledgeTransactional(long txID, long ackID) throws Exception
+   public void deleteCursorAcknowledgeTransactional(final long txID, final long ackID) throws Exception
    {
       messageJournal.appendDeleteRecordTransactional(txID, ackID);
    }
@@ -767,7 +767,7 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   public void storeAddressSetting(PersistedAddressSetting addressSetting) throws Exception
+   public void storeAddressSetting(final PersistedAddressSetting addressSetting) throws Exception
    {
       deleteAddressSetting(addressSetting.getAddressMatch());
       long id = idGenerator.generateID();
@@ -796,7 +796,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#storeSecurityRoles(org.hornetq.core.persistconfig.PersistedRoles)
     */
-   public void storeSecurityRoles(PersistedRoles persistedRoles) throws Exception
+   public void storeSecurityRoles(final PersistedRoles persistedRoles) throws Exception
    {
 
       deleteSecurityRoles(persistedRoles.getAddressMatch());
@@ -806,7 +806,7 @@ public class JournalStorageManager implements StorageManager
       mapPersistedRoles.put(persistedRoles.getAddressMatch(), persistedRoles);
    }
 
-   public void deleteAddressSetting(SimpleString addressMatch) throws Exception
+   public void deleteAddressSetting(final SimpleString addressMatch) throws Exception
    {
       PersistedAddressSetting oldSetting = mapPersistedAddressSettings.remove(addressMatch);
       if (oldSetting != null)
@@ -816,7 +816,7 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   public void deleteSecurityRoles(SimpleString addressMatch) throws Exception
+   public void deleteSecurityRoles(final SimpleString addressMatch) throws Exception
    {
       PersistedRoles oldRoles = mapPersistedRoles.remove(addressMatch);
       if (oldRoles != null)
@@ -829,7 +829,7 @@ public class JournalStorageManager implements StorageManager
                                                     final PagingManager pagingManager,
                                                     final ResourceManager resourceManager,
                                                     final Map<Long, Queue> queues,
-                                                    Map<Long, QueueBindingInfo> queueInfos,
+                                                    final Map<Long, QueueBindingInfo> queueInfos,
                                                     final Map<SimpleString, List<Pair<byte[], Long>>> duplicateIDMap) throws Exception
    {
       List<RecordInfo> records = new ArrayList<RecordInfo>();
@@ -1309,7 +1309,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#storePageCounterAdd(long, long, int)
     */
-   public long storePageCounterInc(long txID, long queueID, int value) throws Exception
+   public long storePageCounterInc(final long txID, final long queueID, final int value) throws Exception
    {
       long recordID = idGenerator.generateID();
       messageJournal.appendAddRecordTransactional(txID,
@@ -1322,7 +1322,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#storePageCounterAdd(long, long, int)
     */
-   public long storePageCounterInc(long queueID, int value) throws Exception
+   public long storePageCounterInc(final long queueID, final int value) throws Exception
    {
       long recordID = idGenerator.generateID();
       messageJournal.appendAddRecord(recordID,
@@ -1336,7 +1336,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#storePageCounter(long, long, long)
     */
-   public long storePageCounter(long txID, long queueID, long value) throws Exception
+   public long storePageCounter(final long txID, final long queueID, final long value) throws Exception
    {
       long recordID = idGenerator.generateID();
       messageJournal.appendAddRecordTransactional(txID,
@@ -1349,7 +1349,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#deleteIncrementRecord(long, long)
     */
-   public void deleteIncrementRecord(long txID, long recordID) throws Exception
+   public void deleteIncrementRecord(final long txID, final long recordID) throws Exception
    {
       messageJournal.appendDeleteRecordTransactional(txID, recordID);
    }
@@ -1357,7 +1357,7 @@ public class JournalStorageManager implements StorageManager
    /* (non-Javadoc)
     * @see org.hornetq.core.persistence.StorageManager#deletePageCounter(long, long)
     */
-   public void deletePageCounter(long txID, long recordID) throws Exception
+   public void deletePageCounter(final long txID, final long recordID) throws Exception
    {
       messageJournal.appendDeleteRecordTransactional(txID, recordID);
    }
@@ -2425,19 +2425,19 @@ public class JournalStorageManager implements StorageManager
       public PageUpdateTXEncoding(final long pageTX, final int records)
       {
          this.pageTX = pageTX;
-         this.recods = records;
+         recods = records;
       }
 
-      public void decode(HornetQBuffer buffer)
+      public void decode(final HornetQBuffer buffer)
       {
-         this.pageTX = buffer.readLong();
-         this.recods = buffer.readInt();
+         pageTX = buffer.readLong();
+         recods = buffer.readInt();
       }
 
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void encode(HornetQBuffer buffer)
+      public void encode(final HornetQBuffer buffer)
       {
          buffer.writeLong(pageTX);
          buffer.writeInt(recods);
@@ -2621,7 +2621,7 @@ public class JournalStorageManager implements StorageManager
 
       }
 
-      PageCountRecord(long queueID, long value)
+      PageCountRecord(final long queueID, final long value)
       {
          this.queueID = queueID;
          this.value = value;
@@ -2642,7 +2642,7 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void encode(HornetQBuffer buffer)
+      public void encode(final HornetQBuffer buffer)
       {
          buffer.writeLong(queueID);
          buffer.writeLong(value);
@@ -2651,7 +2651,7 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#decode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void decode(HornetQBuffer buffer)
+      public void decode(final HornetQBuffer buffer)
       {
          queueID = buffer.readLong();
          value = buffer.readLong();
@@ -2676,7 +2676,7 @@ public class JournalStorageManager implements StorageManager
 
       }
 
-      PageCountRecordInc(long queueID, int value)
+      PageCountRecordInc(final long queueID, final int value)
       {
          this.queueID = queueID;
          this.value = value;
@@ -2697,7 +2697,7 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void encode(HornetQBuffer buffer)
+      public void encode(final HornetQBuffer buffer)
       {
          buffer.writeLong(queueID);
          buffer.writeInt(value);
@@ -2706,7 +2706,7 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#decode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void decode(HornetQBuffer buffer)
+      public void decode(final HornetQBuffer buffer)
       {
          queueID = buffer.readLong();
          value = buffer.readInt();
@@ -2738,7 +2738,7 @@ public class JournalStorageManager implements StorageManager
 
       public CursorAckRecordEncoding()
       {
-         this.position = new PagePositionImpl();
+         position = new PagePositionImpl();
       }
 
       /* (non-Javadoc)
@@ -2765,7 +2765,7 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#encode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void encode(HornetQBuffer buffer)
+      public void encode(final HornetQBuffer buffer)
       {
          buffer.writeLong(queueID);
          buffer.writeLong(position.getPageNr());
@@ -2775,12 +2775,12 @@ public class JournalStorageManager implements StorageManager
       /* (non-Javadoc)
        * @see org.hornetq.core.journal.EncodingSupport#decode(org.hornetq.api.core.HornetQBuffer)
        */
-      public void decode(HornetQBuffer buffer)
+      public void decode(final HornetQBuffer buffer)
       {
          queueID = buffer.readLong();
          long pageNR = buffer.readLong();
          int messageNR = buffer.readInt();
-         this.position = new PagePositionImpl(pageNR, messageNR);
+         position = new PagePositionImpl(pageNR, messageNR);
       }
    }
 
@@ -2821,7 +2821,7 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   private static String describeRecord(RecordInfo info)
+   private static String describeRecord(final RecordInfo info)
    {
       return "recordID=" + info.id +
              ";userRecordType=" +
@@ -2832,14 +2832,14 @@ public class JournalStorageManager implements StorageManager
              newObjectEncoding(info);
    }
 
-   private static String describeRecord(RecordInfo info, Object o)
+   private static String describeRecord(final RecordInfo info, final Object o)
    {
       return "recordID=" + info.id + ";userRecordType=" + info.userRecordType + ";isUpdate=" + info.isUpdate + ";" + o;
    }
 
    // Encoding functions for binding Journal
 
-   private static Object newObjectEncoding(RecordInfo info)
+   private static Object newObjectEncoding(final RecordInfo info)
    {
       HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(info.data);
       long id = info.id;
@@ -2985,7 +2985,7 @@ public class JournalStorageManager implements StorageManager
    {
       RefEncoding refEncoding;
 
-      public ReferenceDescribe(RefEncoding refEncoding)
+      public ReferenceDescribe(final RefEncoding refEncoding)
       {
          this.refEncoding = refEncoding;
       }
@@ -3001,7 +3001,7 @@ public class JournalStorageManager implements StorageManager
    {
       RefEncoding refEncoding;
 
-      public AckDescribe(RefEncoding refEncoding)
+      public AckDescribe(final RefEncoding refEncoding)
       {
          this.refEncoding = refEncoding;
       }
@@ -3015,7 +3015,7 @@ public class JournalStorageManager implements StorageManager
 
    private static class MessageDescribe
    {
-      public MessageDescribe(Message msg)
+      public MessageDescribe(final Message msg)
       {
          this.msg = msg;
       }
@@ -3061,7 +3061,7 @@ public class JournalStorageManager implements StorageManager
     * @param buffer
     * @return
     */
-   protected static PersistedRoles newSecurityRecord(long id, HornetQBuffer buffer)
+   protected static PersistedRoles newSecurityRecord(final long id, final HornetQBuffer buffer)
    {
       PersistedRoles roles = new PersistedRoles();
       roles.decode(buffer);
@@ -3074,7 +3074,7 @@ public class JournalStorageManager implements StorageManager
     * @param buffer
     * @return
     */
-   protected static PersistedAddressSetting newAddressEncoding(long id, HornetQBuffer buffer)
+   protected static PersistedAddressSetting newAddressEncoding(final long id, final HornetQBuffer buffer)
    {
       PersistedAddressSetting setting = new PersistedAddressSetting();
       setting.decode(buffer);
@@ -3087,7 +3087,7 @@ public class JournalStorageManager implements StorageManager
     * @param buffer
     * @return
     */
-   protected static GroupingEncoding newGroupEncoding(long id, HornetQBuffer buffer)
+   protected static GroupingEncoding newGroupEncoding(final long id, final HornetQBuffer buffer)
    {
       GroupingEncoding encoding = new GroupingEncoding();
       encoding.decode(buffer);
@@ -3100,7 +3100,7 @@ public class JournalStorageManager implements StorageManager
     * @param buffer
     * @return
     */
-   protected static PersistentQueueBindingEncoding newBindingEncoding(long id, HornetQBuffer buffer)
+   protected static PersistentQueueBindingEncoding newBindingEncoding(final long id, final HornetQBuffer buffer)
    {
       PersistentQueueBindingEncoding bindingEncoding = new PersistentQueueBindingEncoding();
 
@@ -3120,7 +3120,7 @@ public class JournalStorageManager implements StorageManager
     * @param journal
     * @throws Exception
     */
-   protected static void describeJournal(SequentialFileFactory fileFactory, JournalImpl journal) throws Exception
+   protected static void describeJournal(final SequentialFileFactory fileFactory, final JournalImpl journal) throws Exception
    {
       List<JournalFile> files = journal.orderFiles();
 
@@ -3206,7 +3206,7 @@ public class JournalStorageManager implements StorageManager
       journal.load(records, preparedTransactions, new TransactionFailureCallback()
       {
 
-         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> recordsToDelete)
+         public void failedTransaction(final long transactionID, final List<RecordInfo> records, final List<RecordInfo> recordsToDelete)
          {
             bufferFailingTransactions.append("Transaction " + transactionID + " failed with these records:\n");
             for (RecordInfo info : records)

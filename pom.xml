@@ -126,7 +126,7 @@
       <module>hornetq-jms-client</module>
       <module>hornetq-journal</module>
       <module>hornetq-ra</module>
-      <module>hornetq-logging</module>
+      <module>hornetq-commons</module>
       <module>hornetq-bootstrap</module>
       <module>hornetq-jboss-as-integration</module>
       <module>hornetq-twitter-integration</module>

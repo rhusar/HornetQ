@@ -22,14 +22,15 @@ import org.hornetq.utils.DataConstants;
 /**
  * A simple String class that can store all characters, and stores as simple
  * byte[], this minimises expensive copying between String objects.
- * 
+ *
  * This object is used heavily throughout HornetQ for performance reasons.
- * 
+ *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  */
 
-public class SimpleString implements CharSequence, Serializable, Comparable<SimpleString> {
+public final class SimpleString implements CharSequence, Serializable, Comparable<SimpleString>
+{
   private static final long serialVersionUID = 4204223851422244307L;
 
   // Attributes
@@ -227,7 +228,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
   /**
    * splits this SimpleString into an array of SimpleString using the char param
    * as the delimeter.
-   * 
+   *
    * i.e. "a.b" would return "a" and "b" if . was the delimeter
    * @param delim
    */
@@ -257,7 +258,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
 
   /**
    * checks to see if this SimpleString contains the char parameter passed in
-   * 
+   *
    * @param c the char to check for
    * @return true if the char is found, false otherwise.
    */
@@ -274,7 +275,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
 
   /**
    * concatanates a SimpleString and a String
-   * 
+   *
    * @param toAdd the String to concate with.
    * @return the concatanated SimpleString
    */
@@ -284,7 +285,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
 
   /**
    * concatanates 2 SimpleString's
-   * 
+   *
    * @param toAdd the SimpleString to concate with.
    * @return the concatanated SimpleString
    */
@@ -297,7 +298,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
 
   /**
    * concatanates a SimpleString and a char
-   * 
+   *
    * @param c the char to concate with.
    * @return the concatanated SimpleString
    */
@@ -340,7 +341,7 @@ public class SimpleString implements CharSequence, Serializable, Comparable<Simp
   }
 
   /**
-   * 
+   *
    * @param srcBegin
    * @param srcEnd
    * @param dst

@@ -271,12 +271,12 @@ public abstract class XmlDeployer implements Deployer, HornetQComponent
    public abstract void deploy(final Node node) throws Exception;
 
    /**
-    * Validate the DOM 
+    * Validate the DOM
     */
    public abstract void validate(final Node rootNode) throws Exception;
 
    /**
-    * undeploys an element
+    * Undeploys an element.
     * @param node the element to undeploy
     * @throws Exception .
     */
