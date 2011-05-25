@@ -363,9 +363,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       SessionQueueQueryResponseMessage response = (SessionQueueQueryResponseMessage)channel.sendBlocking(request);
 
-      return new QueueQueryImpl(response.getId(),
-                                 response.getName(),
-                                 response.isDurable(),
+      return new QueueQueryImpl(response.isDurable(),
                                 response.getConsumerCount(),
                                 response.getMessageCount(),
                                 response.getFilterString(),
@@ -1857,11 +1855,9 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
    private static class QueueQueryImpl implements QueueQuery
    {
-      private final long id;
-
-      private final SimpleString name;
 
       private final boolean exists;
+
       private final boolean durable;
 
       private final long messageCount;
@@ -1872,27 +1868,20 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
       private final SimpleString address;
 
-      public QueueQueryImpl(final long id,
-                            final SimpleString name,
-                            final boolean durable,
+      public QueueQueryImpl(final boolean durable,
                             final int consumerCount,
                             final long messageCount,
                             final SimpleString filterString,
                             final SimpleString address,
                             final boolean exists)
       {
-         this.id = id;
-         this.name = name;
+
          this.durable = durable;
          this.consumerCount = consumerCount;
          this.messageCount = messageCount;
          this.filterString = filterString;
          this.address = address;
          this.exists = exists;
-      }
-
-      public long getId() {
-         return id;
       }
 
       public SimpleString getAddress()
@@ -1925,8 +1914,5 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          return exists;
       }
 
-      public SimpleString getName() {
-         return name;
-      }
    }
 }

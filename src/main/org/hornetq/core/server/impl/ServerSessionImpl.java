@@ -494,8 +494,7 @@ public class ServerSessionImpl implements ServerSession , FailureListener
 
          SimpleString filterString = filter == null ? null : filter.getFilterString();
 
-         response = new QueueQueryResult(queue.getID(),
-                                         name,
+         response = new QueueQueryResult(name,
                                          binding.getAddress(),
                                          queue.isDurable(),
                                          queue.isTemporary(),

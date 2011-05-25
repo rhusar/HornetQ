@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.jms.TextMessage;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -40,10 +41,13 @@ import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
+import org.hornetq.api.core.client.ClientRequestor;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.api.core.management.ManagementHelper;
+import org.hornetq.api.core.management.ResourceNames;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.config.impl.FileConfiguration;
@@ -493,7 +497,7 @@ public class ManageDataTool extends JournalStorageManager
       final Map<Long, Long> queueMapping = new HashMap<Long, Long>();
 
       ClientSessionFactory sf = null;
-      
+
       try
       {
          sf = serverLocator.createSessionFactory();
@@ -516,8 +520,10 @@ public class ManageDataTool extends JournalStorageManager
                      queueQuery = coreSession.queueQuery(SimpleString.toSimpleString(queue.getName()));
                   }
 
+                  // todo: get new queue id
                   if (!queueMapping.containsKey(queue.getId())) {
-                     queueMapping.put(queue.getId(), queueQuery.getId());
+                     long newQueueId = getNewQueueId(queue);
+                     queueMapping.put(queue.getId(), newQueueId);
                   }
                }
 
@@ -525,6 +531,15 @@ public class ManageDataTool extends JournalStorageManager
                ClientMessage clientMessage = generateClientMessage(message);
                producer.send(clientMessage);
                producer.close();
+            }
+
+            private long getNewQueueId(QueueType queue) throws Exception {
+               ClientRequestor requestor = new ClientRequestor(coreSession, ConfigurationImpl.DEFAULT_MANAGEMENT_ADDRESS);
+               ClientMessage m = coreSession.createMessage(false);
+               ManagementHelper.putAttribute(m, ResourceNames.CORE_QUEUE + queue.getName(), "ID");
+
+               final TextMessage reply = (TextMessage) requestor.request(m);
+               return Long.parseLong(reply.getText());
             }
 
             private ClientMessage generateClientMessage(MessageType message) throws IOException

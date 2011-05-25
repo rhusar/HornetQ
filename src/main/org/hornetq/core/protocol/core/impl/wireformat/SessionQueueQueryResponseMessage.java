@@ -27,8 +27,6 @@ import org.hornetq.core.server.QueueQueryResult;
  */
 public class SessionQueueQueryResponseMessage extends PacketImpl
 {
-   private long id;
-
    private SimpleString name;
    
    private boolean exists;
@@ -47,28 +45,13 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
 
    public SessionQueueQueryResponseMessage(final QueueQueryResult result)
    {
-      this(result.getId(), result.getName(), result.getAddress(), result.isDurable(), result.isTemporary(),
+      this(result.getName(), result.getAddress(), result.isDurable(), result.isTemporary(),
            result.getFilterString(), result.getConsumerCount(), result.getMessageCount(), result.isExists());
    }
 
    public SessionQueueQueryResponseMessage()
    {
       this(null, null, false, false, null, 0, 0, false);
-   }
-
-   private SessionQueueQueryResponseMessage(final long id,
-                                            final SimpleString name,
-                                            final SimpleString address,
-                                            final boolean durable,
-                                            final boolean temporary,
-                                            final SimpleString filterString,
-                                            final int consumerCount,
-                                            final long messageCount,
-                                            final boolean exists)
-   {
-      this(name,address, durable, temporary, filterString, consumerCount, messageCount, exists);
-      this.id = id;
-
    }
 
    private SessionQueueQueryResponseMessage(final SimpleString name,
@@ -97,10 +80,6 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
       this.name = name;
 
       this.exists = exists;
-   }
-
-   public long getId() {
-      return id;
    }
 
    @Override
@@ -160,7 +139,6 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
       buffer.writeNullableSimpleString(filterString);
       buffer.writeNullableSimpleString(address);
       buffer.writeNullableSimpleString(name);
-      buffer.writeLong(id);
    }
 
    @Override
@@ -174,7 +152,6 @@ public class SessionQueueQueryResponseMessage extends PacketImpl
       filterString = buffer.readNullableSimpleString();
       address = buffer.readNullableSimpleString();
       name = buffer.readNullableSimpleString();
-      id = buffer.readLong();
    }
 
    @Override
