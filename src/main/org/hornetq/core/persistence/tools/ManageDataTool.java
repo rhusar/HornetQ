@@ -504,6 +504,7 @@ public class ManageDataTool extends JournalStorageManager
          final ClientSession coreSession = sf.createSession();
 
          // message notification callback
+         final ClientSessionFactory finalSf = sf;
          final MessagesExportType.Listener listener = new MessagesExportType.Listener()
          {
             public void handleMessage(MessageType message) throws Exception {
@@ -534,11 +535,12 @@ public class ManageDataTool extends JournalStorageManager
             }
 
             private long getNewQueueId(QueueType queue) throws Exception {
-               ClientRequestor requestor = new ClientRequestor(coreSession, ConfigurationImpl.DEFAULT_MANAGEMENT_ADDRESS);
-               ClientMessage m = coreSession.createMessage(false);
+               final ClientSession requestorSession = finalSf.createSession(true, true);
+               ClientRequestor requestor = new ClientRequestor(requestorSession, ConfigurationImpl.DEFAULT_MANAGEMENT_ADDRESS);
+               ClientMessage m = requestorSession.createMessage(false);
                ManagementHelper.putAttribute(m, ResourceNames.CORE_QUEUE + queue.getName(), "ID");
 
-               final TextMessage reply = (TextMessage) requestor.request(m);
+               final TextMessage reply = (TextMessage) requestor.request(m, 5000);
                return Long.parseLong(reply.getText());
             }
 
