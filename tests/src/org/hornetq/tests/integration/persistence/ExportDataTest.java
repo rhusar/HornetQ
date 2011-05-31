@@ -117,6 +117,9 @@ public class ExportDataTest extends ServiceTestBase {
          {
             ClientMessage msg = cons.receive(1000);
             assertNotNull(msg);
+            for (int b = 0; b < msg.getBodyBuffer().readableBytes(); b++) {
+               assertEquals(getSamplebyte(b), msg.getBodyBuffer().readByte());
+            }
             msg.acknowledge();
             assertEquals(i, msg.getIntProperty("count").intValue());
          }

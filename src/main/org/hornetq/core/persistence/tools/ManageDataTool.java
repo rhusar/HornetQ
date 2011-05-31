@@ -37,6 +37,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
+import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
@@ -347,12 +348,12 @@ public class ManageDataTool extends JournalStorageManager
 
    private static void handleAddMessage(MessagesExportType journalType, RecordInfo info)
    {
-      JournalStorageManager.MessageDescribe message = (JournalStorageManager.MessageDescribe)JournalStorageManager.newObjectEncoding(info);
+      final Message msg = ((MessageDescribe)JournalStorageManager.newObjectEncoding(info)).msg;
+      MessageType messageType = new MessageType((ServerMessage) msg);
 
-      MessageType messageType = new MessageType((ServerMessage)message.msg);
-
-      byte[] data = info.data;
-      messageType.setPayload(Base64.encodeBytes(data, 0, data.length, Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
+      final HornetQBuffer bodyBuffer = msg.getBodyBuffer();
+      byte[] data = bodyBuffer.toByteBuffer().array();
+      messageType.setPayload(Base64.encodeBytes(data, MessageImpl.BODY_OFFSET, ((ServerMessage) msg).getEndOfBodyPosition() - MessageImpl.BODY_OFFSET, Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
 
       journalType.getMessage().add(messageType);
    }
@@ -520,7 +521,6 @@ public class ManageDataTool extends JournalStorageManager
                      queueQuery = coreSession.queueQuery(SimpleString.toSimpleString(queue.getName()));
                   }
 
-                  // todo: get new queue id
                   if (!queueMapping.containsKey(queue.getId())) {
                      long newQueueId = getNewQueueId(queue);
                      queueMapping.put(queue.getId(), newQueueId);
@@ -586,8 +586,7 @@ public class ManageDataTool extends JournalStorageManager
                }
 
                // Payload
-               HornetQBuffer buffer = clientMessage.getBodyBuffer();
-               buffer.writeBytes(Base64.decode(message.getPayload(), Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
+               clientMessage.getBodyBuffer().writeBytes(Base64.decode(message.getPayload(), Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
 
                // UserID
                // todo: need to set?
