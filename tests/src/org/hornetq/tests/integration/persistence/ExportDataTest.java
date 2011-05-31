@@ -39,6 +39,7 @@ import org.hornetq.tests.util.ServiceTestBase;
 public class ExportDataTest extends ServiceTestBase {
 
    protected static HornetQJMSConnectionFactory myCf;
+   private static final int MSG_SIZE = 1024;
 
    public void testExportImport() throws Exception {
 
@@ -65,7 +66,7 @@ public class ExportDataTest extends ServiceTestBase {
             ClientMessage msg = session.createMessage(true);
             msg.putStringProperty("prop", "TST1");
             msg.putIntProperty("count", i);
-            for (int b = 0; b < 1024; b++)
+            for (int b = 0; b < MSG_SIZE; b++)
             {
                msg.getBodyBuffer().writeByte(getSamplebyte(b));
             }
@@ -117,6 +118,7 @@ public class ExportDataTest extends ServiceTestBase {
          {
             ClientMessage msg = cons.receive(1000);
             assertNotNull(msg);
+            assertEquals(MSG_SIZE, msg.getBodyBuffer().readableBytes());
             for (int b = 0; b < msg.getBodyBuffer().readableBytes(); b++) {
                assertEquals(getSamplebyte(b), msg.getBodyBuffer().readByte());
             }
