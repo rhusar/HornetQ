@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.jms.TextMessage;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -535,13 +534,23 @@ public class ManageDataTool extends JournalStorageManager
             }
 
             private long getNewQueueId(QueueType queue) throws Exception {
-               final ClientSession requestorSession = finalSf.createSession(true, true);
+               final ClientSession requestorSession = finalSf.createSession(false, true, true);
+               requestorSession.start();
                ClientRequestor requestor = new ClientRequestor(requestorSession, ConfigurationImpl.DEFAULT_MANAGEMENT_ADDRESS);
                ClientMessage m = requestorSession.createMessage(false);
                ManagementHelper.putAttribute(m, ResourceNames.CORE_QUEUE + queue.getName(), "ID");
 
-               final TextMessage reply = (TextMessage) requestor.request(m, 5000);
-               return Long.parseLong(reply.getText());
+               try
+               {
+                  final ClientMessage reply = requestor.request(m);
+                  Object result = ManagementHelper.getResult(reply);
+
+                  return ((Integer) result).longValue();
+               }
+               catch (Exception e)
+               {
+                  throw new IllegalStateException(e);
+               }
             }
 
             private ClientMessage generateClientMessage(MessageType message) throws IOException
