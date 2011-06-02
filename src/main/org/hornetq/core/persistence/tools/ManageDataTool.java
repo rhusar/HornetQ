@@ -289,7 +289,8 @@ public class ManageDataTool extends JournalStorageManager
 
       JAXBContext jc = JAXBContext.newInstance(HornetQExport.class);
       Marshaller m = jc.createMarshaller();
-      m.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+      //m.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+      m.setProperty(Marshaller.JAXB_ENCODING, System.getProperty("file.encoding"));
       m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
       m.marshal(hqJournalExport, os);
    }
