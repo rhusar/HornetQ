@@ -38,7 +38,7 @@ import org.hornetq.jms.referenceable.SerializableObjectRefAddr;
 
 /**
  * HornetQ implementation of a JMS ConnectionFactory.
- * 
+ *
  * @author <a href="mailto:ovidiu@feodorov.com">Ovidiu Feodorov</a>
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @version <tt>$Revision$</tt> $Id$
@@ -65,18 +65,21 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
 
    private boolean readOnly;
 
+   private boolean useTCCL = true;
+
    // Constructors ---------------------------------------------------------------------------------
 
    public HornetQConnectionFactory()
    {
       serverLocator = null;
    }
-   
+
    public HornetQConnectionFactory(final ServerLocator serverLocator)
    {
       this.serverLocator = serverLocator;
-      
+
       serverLocator.disableFinalizeCheck();
+      serverLocator.setUseTCCL(useTCCL);
    }
 
    public HornetQConnectionFactory(final boolean ha, final DiscoveryGroupConfiguration groupConfiguration)
@@ -89,8 +92,9 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       {
          serverLocator = HornetQClient.createServerLocatorWithoutHA(groupConfiguration);
       }
-      
+
       serverLocator.disableFinalizeCheck();
+      serverLocator.setUseTCCL(useTCCL);
    }
 
    public HornetQConnectionFactory(final boolean ha, final TransportConfiguration... initialConnectors)
@@ -103,8 +107,9 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       {
          serverLocator = HornetQClient.createServerLocatorWithoutHA(initialConnectors);
       }
-      
+
       serverLocator.disableFinalizeCheck();
+      serverLocator.setUseTCCL(useTCCL);
    }
 
    // ConnectionFactory implementation -------------------------------------------------------------
@@ -128,7 +133,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
 
    public QueueConnection createQueueConnection(final String username, final String password) throws JMSException
    {
-      return (QueueConnection)createConnectionInternal(username, password, false, HornetQConnection.TYPE_QUEUE_CONNECTION);
+      return createConnectionInternal(username, password, false, HornetQConnection.TYPE_QUEUE_CONNECTION);
    }
 
    // TopicConnectionFactory implementation --------------------------------------------------------
@@ -140,7 +145,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
 
    public TopicConnection createTopicConnection(final String username, final String password) throws JMSException
    {
-      return (TopicConnection)createConnectionInternal(username, password, false, HornetQConnection.TYPE_TOPIC_CONNECTION);
+      return createConnectionInternal(username, password, false, HornetQConnection.TYPE_TOPIC_CONNECTION);
    }
 
    // XAConnectionFactory implementation -----------------------------------------------------------
@@ -473,7 +478,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       checkWrite();
       return serverLocator.getInitialConnectAttempts();
    }
-   
+
    public synchronized boolean isFailoverOnInitialConnection()
    {
       return serverLocator.isFailoverOnInitialConnection();
@@ -538,22 +543,22 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
    {
       return serverLocator.getGroupID();
    }
-   
+
    public boolean isCompressLargeMessage()
    {
       return serverLocator.isCompressLargeMessage();
    }
-   
-   public void setCompressLargeMessage(boolean compress)
+
+   public void setCompressLargeMessage(final boolean compress)
    {
       serverLocator.setCompressLargeMessage(compress);
    }
-   
+
    public void close()
    {
       serverLocator.close();
    }
-   
+
    public ServerLocator getServerLocator()
    {
       return serverLocator;
@@ -564,7 +569,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       return JMSFactoryType.CF.intValue();
    }
    /**
-    * 
+    *
     * @deprecated use {@link ServerLocator#createSessionFactory()}
     * @return
     */
@@ -582,7 +587,12 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
          throw ex;
       }
    }
-   
+
+   public void setUseTCCL(final boolean useTCCL)
+   {
+      this.useTCCL = useTCCL;
+   }
+
    // Package protected ----------------------------------------------------------------------------
 
    // Protected ------------------------------------------------------------------------------------
@@ -595,7 +605,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       readOnly = true;
 
       ClientSessionFactory factory;
-      
+
       try
       {
          factory = serverLocator.createSessionFactory();
@@ -603,15 +613,15 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       catch (Exception e)
       {
          JMSException jmse = new JMSException("Failed to create session factory");
-         
+
          jmse.initCause(e);
          jmse.setLinkedException(e);
-         
+
          throw jmse;
       }
 
       HornetQConnection connection = null;
-      
+
       if (isXA)
       {
          if (type == HornetQConnection.TYPE_GENERIC_CONNECTION)
@@ -676,7 +686,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
                                                     dupsOKBatchSize,
                                                     transactionBatchSize,
                                                     factory);
-         }         
+         }
       }
       connection.setReference(this);
       try
@@ -708,6 +718,7 @@ public class HornetQConnectionFactory implements Serializable, Referenceable
       }
    }
 
+   @Override
    public void finalize() throws Throwable
    {
       try

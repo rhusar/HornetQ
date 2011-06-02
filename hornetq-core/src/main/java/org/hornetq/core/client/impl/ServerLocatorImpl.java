@@ -18,8 +18,19 @@ import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQException;
@@ -35,6 +46,7 @@ import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.utils.ClassloadingUtil;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -57,13 +69,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
 
-   private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
+   private final Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
    private TransportConfiguration[] initialConnectors;
 
-   private DiscoveryGroupConfiguration discoveryGroupConfiguration;
+   private final DiscoveryGroupConfiguration discoveryGroupConfiguration;
 
-   private StaticConnector staticConnector = new StaticConnector();
+   private final StaticConnector staticConnector = new StaticConnector();
 
    private Topology topology = new Topology();
 
@@ -157,15 +169,17 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private boolean backup;
 
+   private boolean useTCCL = true;
+
    private final Exception e = new Exception();
-   
+
    // To be called when there are ServerLocator being finalized.
    // To be used on test assertions
    public static Runnable finalizeCallback = null;
-   
+
    public static synchronized void clearThreadPools()
    {
-      
+
       if (globalThreadPool != null)
       {
          globalThreadPool.shutdown();
@@ -184,7 +198,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             globalThreadPool = null;
          }
       }
-      
+
       if (globalScheduledThreadPool != null)
       {
          globalScheduledThreadPool.shutdown();
@@ -283,25 +297,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          throw new IllegalStateException("Please specify a load balancing policy class name on the session factory");
       }
 
-      AccessController.doPrivileged(new PrivilegedAction<Object>()
-      {
-         public Object run()
-         {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            try
-            {
-               Class<?> clazz = loader.loadClass(connectionLoadBalancingPolicyClassName);
-               loadBalancingPolicy = (ConnectionLoadBalancingPolicy)clazz.newInstance();
-               return null;
-            }
-            catch (Exception e)
-            {
-               throw new IllegalArgumentException("Unable to instantiate load balancing policy \"" + connectionLoadBalancingPolicyClassName +
-                                                           "\"",
-                                                  e);
-            }
-         }
-      });
+      loadBalancingPolicy =
+               (ConnectionLoadBalancingPolicy)ClassloadingUtil.safeInitNewInstance(connectionLoadBalancingPolicyClassName,
+                                                                                   useTCCL);
    }
 
    private synchronized void initialise() throws Exception
@@ -348,13 +346,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                              final TransportConfiguration[] transportConfigs)
    {
       e.fillInStackTrace();
-      this.ha = useHA;
+      ha = useHA;
 
       this.discoveryGroupConfiguration = discoveryGroupConfiguration;
 
-      this.initialConnectors = transportConfigs;
+      initialConnectors = transportConfigs;
 
-      this.nodeID = UUIDGenerator.getInstance().generateStringUUID();
+      nodeID = UUIDGenerator.getInstance().generateStringUUID();
 
       clientFailureCheckPeriod = HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD;
 
@@ -458,7 +456,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public void start(Executor executor) throws Exception
+   public void start(final Executor executor) throws Exception
    {
       initialise();
 
@@ -922,7 +920,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       this.reconnectAttempts = reconnectAttempts;
    }
 
-   public void setInitialConnectAttempts(int initialConnectAttempts)
+   public void setInitialConnectAttempts(final int initialConnectAttempts)
    {
       checkWrite();
       this.initialConnectAttempts = initialConnectAttempts;
@@ -935,13 +933,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    public synchronized boolean isFailoverOnInitialConnection()
    {
-      return this.failoverOnInitialConnection;
+      return failoverOnInitialConnection;
    }
 
    public synchronized void setFailoverOnInitialConnection(final boolean failover)
    {
       checkWrite();
-      this.failoverOnInitialConnection = failover;
+      failoverOnInitialConnection = failover;
    }
 
    public synchronized String getConnectionLoadBalancingPolicyClassName()
@@ -957,7 +955,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    public TransportConfiguration[] getStaticTransportConfigurations()
    {
-      return this.initialConnectors;
+      return initialConnectors;
    }
 
    public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()
@@ -1008,9 +1006,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    /* (non-Javadoc)
     * @see org.hornetq.api.core.client.ServerLocator#setCompressLargeMessage(boolean)
     */
-   public void setCompressLargeMessage(boolean compress)
+   public void setCompressLargeMessage(final boolean compress)
    {
-      this.compressLargeMessage = compress;
+      compressLargeMessage = compress;
    }
 
    private void checkWrite()
@@ -1021,7 +1019,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public void setNodeID(String nodeID)
+   public void setNodeID(final String nodeID)
    {
       this.nodeID = nodeID;
    }
@@ -1031,7 +1029,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return nodeID;
    }
 
-   public void setClusterConnection(boolean clusterConnection)
+   public void setClusterConnection(final boolean clusterConnection)
    {
       this.clusterConnection = clusterConnection;
    }
@@ -1046,9 +1044,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return clusterTransportConfiguration;
    }
 
-   public void setClusterTransportConfiguration(TransportConfiguration tc)
+   public void setClusterTransportConfiguration(final TransportConfiguration tc)
    {
-      this.clusterTransportConfiguration = tc;
+      clusterTransportConfiguration = tc;
    }
 
    public boolean isBackup()
@@ -1056,9 +1054,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return backup;
    }
 
-   public void setBackup(boolean backup)
+   public void setBackup(final boolean backup)
    {
       this.backup = backup;
+   }
+
+   public void setUseTCCL(final boolean useTCCL)
+   {
+      this.useTCCL = useTCCL;
+   }
+
+   public boolean isUseTCCL()
+   {
+      return useTCCL;
    }
 
    @Override
@@ -1236,13 +1244,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       List<DiscoveryEntry> newConnectors = discoveryGroup.getDiscoveryEntries();
 
-      this.initialConnectors = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class,
+      initialConnectors = (TransportConfiguration[])Array.newInstance(TransportConfiguration.class,
                                                                            newConnectors.size());
 
       int count = 0;
       for (DiscoveryEntry entry : newConnectors)
       {
-         this.initialConnectors[count++] = entry.getConnector();
+         initialConnectors[count++] = entry.getConnector();
       }
 
       if (ha && clusterConnection && !receivedTopology && initialConnectors.length > 0)
@@ -1294,7 +1302,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       topologyListeners.remove(listener);
    }
 
-   public synchronized void addFactory(ClientSessionFactoryInternal factory)
+   public synchronized void addFactory(final ClientSessionFactoryInternal factory)
    {
       if (factory != null)
       {
@@ -1344,14 +1352,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          try
          {
-            
+
             List<Future<ClientSessionFactory>> futuresList = new ArrayList<Future<ClientSessionFactory>>();
-            
+
             for (Connector conn : connectors)
             {
                futuresList.add(threadPool.submit(conn));
             }
-            
+
             for (int i = 0, futuresSize = futuresList.size(); i < futuresSize; i++)
             {
                Future<ClientSessionFactory> future = futuresList.get(i);
@@ -1359,7 +1367,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                {
                   csf = future.get();
                   if (csf != null)
+                  {
                      break;
+                  }
                }
                catch (Exception e)
                {
@@ -1423,7 +1433,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                      System.identityHashCode(this));
 
             log.warn("The ServerLocator you didn't close was created here:", e);
-            
+
             if (ServerLocatorImpl.finalizeCallback != null)
             {
                ServerLocatorImpl.finalizeCallback.run();
@@ -1437,7 +1447,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       class Connector implements Callable<ClientSessionFactory>
       {
-         private TransportConfiguration initialConnector;
+         private final TransportConfiguration initialConnector;
 
          private volatile ClientSessionFactoryInternal factory;
 
@@ -1447,7 +1457,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          private Exception e;
 
-         public Connector(TransportConfiguration initialConnector, ClientSessionFactoryInternal factory)
+         public Connector(final TransportConfiguration initialConnector, final ClientSessionFactoryInternal factory)
          {
             this.initialConnector = initialConnector;
             this.factory = factory;
