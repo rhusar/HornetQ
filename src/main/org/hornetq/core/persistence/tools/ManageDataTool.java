@@ -380,7 +380,8 @@ public class ManageDataTool extends JournalStorageManager
    private static MessageType getMessage(MessagesExportType journalType, RecordInfo info)
    {
       List<MessageType> messages = journalType.getMessage();
-      return messages.get(messages.indexOf(new MessageType(info.id)));
+      final int index = messages.indexOf(new MessageType(info.id));
+      return index == -1 ? null : messages.get(index);
    }
 
    private static void handleAckRef(MessagesExportType journalType, RecordInfo info)
