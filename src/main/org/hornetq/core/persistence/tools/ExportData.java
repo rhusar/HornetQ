@@ -37,6 +37,7 @@ public class ExportData {
       PrintStream output = System.out;
       if (args.length == 3) {
          try {
+            new File(args[2]).delete();
             output = new PrintStream(new FileOutputStream(args[2],true));
          } catch (FileNotFoundException e) {
             e.printStackTrace();
