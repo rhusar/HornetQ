@@ -25,13 +25,21 @@ public class ImportData
    
    public static void main(String args[])
    {
-      if (args.length != 3) {
-         System.out.println("Usage Export: java org.hornetq.core.persistence.tools.ImportData <import-file-name> <hq-config-file> <connector-name>");
+      if (args.length != 3 && args.length != 5) {
+         System.out.println("Usage Export: java org.hornetq.core.persistence.tools.ImportData <import-file-name> " +
+                                  "<hq-config-file> <connector-name> [user] [password]");
          System.exit(-1);
       }
       try
       {
-         ManageDataTool.importMessages(args[0], args[1], args[2]);
+         String user = null;
+         String password = null;
+
+         if (args.length == 5) {
+            user = args[3];
+            password = args[4];
+         }
+         ManageDataTool.importMessages(args[0], args[1], args[2], user, password);
       }
       catch (Exception e)
       {

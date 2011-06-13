@@ -25,7 +25,6 @@ import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.persistence.tools.ManageDataTool;
 import org.hornetq.core.server.HornetQServer;
-import org.hornetq.jms.client.HornetQJMSConnectionFactory;
 import org.hornetq.tests.util.ServiceTestBase;
 
 /**
@@ -38,7 +37,6 @@ import org.hornetq.tests.util.ServiceTestBase;
  */
 public class ExportDataTest extends ServiceTestBase {
 
-   protected static HornetQJMSConnectionFactory myCf;
    private static final int MSG_SIZE = 1024;
 
    public void testExportImport() throws Exception {
@@ -106,7 +104,7 @@ public class ExportDataTest extends ServiceTestBase {
          
          locator = createInVMNonHALocator();
          
-         ManageDataTool.importMessages(is, locator);
+         ManageDataTool.importMessages(is, locator, "a", "b");
          
          ClientSessionFactory csf = locator.createSessionFactory();
          

@@ -76,8 +76,8 @@ public class FailoverTest extends FailoverTestBase
    public FailoverTest(final String name)
    {
       super(name);
-   }
 
+   }
    public FailoverTest()
    {
    }

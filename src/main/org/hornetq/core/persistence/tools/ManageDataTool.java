@@ -71,20 +71,19 @@ import org.hornetq.core.persistence.tools.xmlmodel.QueueType;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.utils.Base64;
 import org.hornetq.utils.ExecutorFactory;
+import org.hornetq.utils.UUID;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 
 /**
  * @author <a href="mailto:torben@redhat.com">Torben Jaeger</a>
  */
-public class ManageDataTool extends JournalStorageManager
-{
+public class ManageDataTool extends JournalStorageManager {
    private static final Logger log = Logger.getLogger(ManageDataTool.class);
 
    private static long messageCounter = 0;
 
-   private ManageDataTool(final Configuration config, final ExecutorFactory executorFactory)
-   {
+   private ManageDataTool(final Configuration config, final ExecutorFactory executorFactory) {
       super(config, executorFactory);
    }
 
@@ -113,15 +112,13 @@ public class ManageDataTool extends JournalStorageManager
     * @param messagesDir directory with the messages journal
     * @throws Exception if something goes wrong
     */
-   public static void exportMessages(final String bindingsDir, final String messagesDir, final OutputStream out) throws Exception
-   {
+   public static void exportMessages(final String bindingsDir, final String messagesDir, final OutputStream out) throws Exception {
 
       // Will use only default values. The load function should adapt to anything different
       ConfigurationImpl defaultValues = new ConfigurationImpl();
       defaultValues.setJournalDirectory(messagesDir);
 
-      if (log.isInfoEnabled())
-      {
+      if (log.isInfoEnabled()) {
          log.info("Generating backup of original journal ...");
       }
 
@@ -147,34 +144,28 @@ public class ManageDataTool extends JournalStorageManager
 
       HornetQExport hqJournalExport = new HornetQExport();
 
-      if (log.isInfoEnabled())
-      {
+      if (log.isInfoEnabled()) {
          log.info("Exporting bindings ...");
       }
       hqJournalExport.setQueues(exportBindings(bindingsJournal));
 
-      if (log.isInfoEnabled())
-      {
+      if (log.isInfoEnabled()) {
          log.info("Exporting journal ...");
       }
       hqJournalExport.setMessages(exportMessages(messagesJournal));
 
-      if (log.isInfoEnabled())
-      {
+      if (log.isInfoEnabled()) {
          log.info("Writing export file ...");
       }
       writeExportToFile(hqJournalExport, out);
 
-      if (log.isInfoEnabled())
-      {
+      if (log.isInfoEnabled()) {
          log.info("Export done!");
       }
    }
 
-   private static BindingsJournalType exportBindings(JournalImpl original) throws Exception
-   {
-      try
-      {
+   private static BindingsJournalType exportBindings(JournalImpl original) throws Exception {
+      try {
          final List<RecordInfo> records = new LinkedList<RecordInfo>();
          final Set<Long> recordsToDelete = new HashSet<Long>();
 
@@ -182,9 +173,7 @@ public class ManageDataTool extends JournalStorageManager
 
          return buildXmlBindings(records);
 
-      }
-      finally
-      {
+      } finally {
          original.stop();
       }
    }
@@ -196,11 +185,9 @@ public class ManageDataTool extends JournalStorageManager
     * @return an XML representation of the journal
     * @throws Exception if the journal is corrupt
     */
-   private static MessagesExportType exportMessages(JournalImpl original) throws Exception
-   {
+   private static MessagesExportType exportMessages(JournalImpl original) throws Exception {
 
-      try
-      {
+      try {
          final List<RecordInfo> records = new LinkedList<RecordInfo>();
          final Set<Long> recordsToDelete = new HashSet<Long>();
 
@@ -212,61 +199,48 @@ public class ManageDataTool extends JournalStorageManager
 
          return journal;
 
-      }
-      finally
-      {
+      } finally {
          original.stop();
       }
 
    }
 
-   private static void loadData(Journal original, final List<RecordInfo> records, final Set<Long> recordsToDelete) throws Exception
-   {
+   private static void loadData(Journal original, final List<RecordInfo> records, final Set<Long> recordsToDelete) throws Exception {
       original.start();
 
-      original.load(new LoaderCallback()
-      {
-         private void logNotExportedRecord(long id, String reason)
-         {
-            if (log.isDebugEnabled())
-            {
+      original.load(new LoaderCallback() {
+         private void logNotExportedRecord(long id, String reason) {
+            if (log.isDebugEnabled()) {
                log.debug("Record " + id + " will not be exported due to " + reason + "!");
             }
          }
 
-         private void addToNotExportedRecords(List<RecordInfo> list, String reason)
-         {
-            for (RecordInfo record : list)
-            {
+         private void addToNotExportedRecords(List<RecordInfo> list, String reason) {
+            for (RecordInfo record : list) {
                logNotExportedRecord(record.id, reason);
                recordsToDelete.add(record.id);
             }
          }
 
-         public void addPreparedTransaction(PreparedTransactionInfo preparedTransaction)
-         {
+         public void addPreparedTransaction(PreparedTransactionInfo preparedTransaction) {
             addToNotExportedRecords(preparedTransaction.records, "prepared TX");
             addToNotExportedRecords(preparedTransaction.recordsToDelete, "prepared TX");
          }
 
-         public void addRecord(RecordInfo info)
-         {
+         public void addRecord(RecordInfo info) {
             records.add(info);
          }
 
-         public void deleteRecord(long id)
-         {
+         public void deleteRecord(long id) {
             logNotExportedRecord(id, "DEL");
             recordsToDelete.add(id);
          }
 
-         public void updateRecord(RecordInfo info)
-         {
+         public void updateRecord(RecordInfo info) {
             records.add(info);
          }
 
-         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> _recordsToDelete)
-         {
+         public void failedTransaction(long transactionID, List<RecordInfo> records, List<RecordInfo> _recordsToDelete) {
             addToNotExportedRecords(records, "failed TX");
             addToNotExportedRecords(_recordsToDelete, "failed TX");
          }
@@ -279,11 +253,10 @@ public class ManageDataTool extends JournalStorageManager
     *
     * @param hqJournalExport the root JAXB context
     * @throws java.io.FileNotFoundException if the export file could not be created
-    * @throws javax.xml.bind.JAXBException if an error occurs during marshalling
+    * @throws javax.xml.bind.JAXBException  if an error occurs during marshalling
     */
    private static void writeExportToFile(HornetQExport hqJournalExport, OutputStream os) throws JAXBException,
-                                                                                        FileNotFoundException
-   {
+         FileNotFoundException {
 
       // todo: http://jaxb.java.net/guide/Different_ways_of_marshalling.html#Marshalling_into_a_subtree
 
@@ -302,23 +275,19 @@ public class ManageDataTool extends JournalStorageManager
     * @param recordsToDelete records which are @see DeleteRecord
     * @return @see BindingsJournalType or @see MessagesJournalType
     */
-   private static MessagesExportType buildXmlMessages(List<RecordInfo> records, Set<Long> recordsToDelete)
-   {
+   private static MessagesExportType buildXmlMessages(List<RecordInfo> records, Set<Long> recordsToDelete) {
 
       MessagesExportType journalType = new MessagesExportType();
 
       // Export Journal
-      for (RecordInfo info : records)
-      {
+      for (RecordInfo info : records) {
 
-         if (recordsToDelete.contains(info.id))
-         {
+         if (recordsToDelete.contains(info.id)) {
             // deleted records are not exported
             continue;
          }
 
-         switch (info.getUserRecordType())
-         {
+         switch (info.getUserRecordType()) {
 
             case JournalStorageManager.ADD_MESSAGE:
                handleAddMessage(journalType, info);
@@ -333,12 +302,11 @@ public class ManageDataTool extends JournalStorageManager
                break;
 
             default:
-               if (log.isDebugEnabled())
-               {
+               if (log.isDebugEnabled()) {
                   log.debug(new StringBuilder().append("Record ")
-                                               .append(info.id)
-                                               .append(" is not exported!")
-                                               .toString());
+                                  .append(info.id)
+                                  .append(" is not exported!")
+                                  .toString());
                }
                break;
          }
@@ -347,9 +315,8 @@ public class ManageDataTool extends JournalStorageManager
       return journalType;
    }
 
-   private static void handleAddMessage(MessagesExportType journalType, RecordInfo info)
-   {
-      final Message msg = ((MessageDescribe)JournalStorageManager.newObjectEncoding(info)).msg;
+   private static void handleAddMessage(MessagesExportType journalType, RecordInfo info) {
+      final Message msg = ((MessageDescribe) JournalStorageManager.newObjectEncoding(info)).msg;
       MessageType messageType = new MessageType((ServerMessage) msg);
 
       final HornetQBuffer bodyBuffer = msg.getBodyBuffer();
@@ -359,14 +326,12 @@ public class ManageDataTool extends JournalStorageManager
       journalType.getMessage().add(messageType);
    }
 
-   private static void handleAddRef(MessagesExportType journalType, RecordInfo info)
-   {
-      JournalStorageManager.ReferenceDescribe ref = (JournalStorageManager.ReferenceDescribe)JournalStorageManager.newObjectEncoding(info);
+   private static void handleAddRef(MessagesExportType journalType, RecordInfo info) {
+      JournalStorageManager.ReferenceDescribe ref = (JournalStorageManager.ReferenceDescribe) JournalStorageManager.newObjectEncoding(info);
 
       MessageType message = getMessage(journalType, info);
 
-      if (message == null)
-      {
+      if (message == null) {
          throw new IllegalStateException("Journal is corrupt: AddRef without Add!");
       }
 
@@ -377,21 +342,18 @@ public class ManageDataTool extends JournalStorageManager
 
    }
 
-   private static MessageType getMessage(MessagesExportType journalType, RecordInfo info)
-   {
+   private static MessageType getMessage(MessagesExportType journalType, RecordInfo info) {
       List<MessageType> messages = journalType.getMessage();
       final int index = messages.indexOf(new MessageType(info.id));
       return index == -1 ? null : messages.get(index);
    }
 
-   private static void handleAckRef(MessagesExportType journalType, RecordInfo info)
-   {
-      JournalStorageManager.AckDescribe ack = (JournalStorageManager.AckDescribe)JournalStorageManager.newObjectEncoding(info);
+   private static void handleAckRef(MessagesExportType journalType, RecordInfo info) {
+      JournalStorageManager.AckDescribe ack = (JournalStorageManager.AckDescribe) JournalStorageManager.newObjectEncoding(info);
 
       MessageType message = getMessage(journalType, info);
 
-      if (message == null)
-      {
+      if (message == null) {
          throw new IllegalStateException("Journal is corrupt: Ack without Add!");
       }
 
@@ -402,29 +364,25 @@ public class ManageDataTool extends JournalStorageManager
 
    }
 
-   private static BindingsJournalType buildXmlBindings(List<RecordInfo> records)
-   {
+   private static BindingsJournalType buildXmlBindings(List<RecordInfo> records) {
 
       BindingsJournalType journalType = new BindingsJournalType();
 
       // Export Journal
-      for (RecordInfo info : records)
-      {
+      for (RecordInfo info : records) {
 
-         switch (info.getUserRecordType())
-         {
+         switch (info.getUserRecordType()) {
 
             case JournalStorageManager.QUEUE_BINDING_RECORD:
                handleQBindingRecord(journalType, info);
                break;
 
             default:
-               if (log.isDebugEnabled())
-               {
+               if (log.isDebugEnabled()) {
                   log.debug(new StringBuilder().append("Record ")
-                                               .append(info.id)
-                                               .append(" is not exported!")
-                                               .toString());
+                                  .append(info.id)
+                                  .append(" is not exported!")
+                                  .toString());
                }
                break;
 
@@ -435,8 +393,7 @@ public class ManageDataTool extends JournalStorageManager
       return journalType;
    }
 
-   private static void handleQBindingRecord(BindingsJournalType journalType, RecordInfo info)
-   {
+   private static void handleQBindingRecord(BindingsJournalType journalType, RecordInfo info) {
       JournalStorageManager.PersistentQueueBindingEncoding persistentQueueBindingEncoding = JournalStorageManager.newBindingEncoding(info.id,
                                                                                                                                      HornetQBuffers.wrappedBuffer(info.data));
 
@@ -455,43 +412,41 @@ public class ManageDataTool extends JournalStorageManager
 
    /**
     * Imports messages which were exported as a XML representation using @see #exportMessages(String,String,String).
-    *
+    * <p/>
     * This is done by starting an embedded HQ server which connects the queues transparently.
     *
-    * @param importFile  full qualified name of the import file (/path/file)
+    * @param importFile        full qualified name of the import file (/path/file)
     * @param configurationFile the configuration URL of a running HQ server
-    * @param connectorName the name of the connector used to connect to the HQ server
+    * @param connectorName     the name of the connector used to connect to the HQ server
     * @return the number of imported records
     * @throws Exception if an error occurs while importing
     */
-   public static long importMessages(final String importFile, final String configurationFile, final String connectorName) throws Exception
-   {
+   public static long importMessages(final String importFile, final String configurationFile,
+                                     final String connectorName, final String user,
+                                     final String password) throws Exception {
       FileConfiguration configuration = null;
-      try
-      {
+      try {
          configuration = new FileConfiguration();
          configuration.setConfigurationUrl(configurationFile);
          configuration.start();
-      }
-      finally
-      {
-         if (configuration != null)
-         {
+      } finally {
+         if (configuration != null) {
             configuration.stop();
          }
       }
 
       ServerLocator serverLocator = HornetQClient.createServerLocatorWithoutHA(configuration.getConnectorConfigurations()
-                                                                                            .get(connectorName));
+                                                                                     .get(connectorName));
 
       FileInputStream input = new FileInputStream(new File(importFile));
 
-      return importMessages(input, serverLocator);
+      return importMessages(input, serverLocator, user, password);
    }
 
    public static long importMessages(final InputStream importFile,
-                                     final ServerLocator serverLocator) throws Exception
-   {
+                                     final ServerLocator serverLocator,
+                                     final String user,
+                                     final String password) throws Exception {
       final JAXBContext context = JAXBContext.newInstance(HornetQExport.class);
 
       final Unmarshaller unmarshaller = context.createUnmarshaller();
@@ -500,15 +455,24 @@ public class ManageDataTool extends JournalStorageManager
 
       ClientSessionFactory sf = null;
 
-      try
-      {
+      try {
          sf = serverLocator.createSessionFactory();
-         final ClientSession coreSession = sf.createSession();
+         final ClientSession coreSession;
+         if (user != null && password != null) {
+            coreSession = sf.createSession(user,
+                                           password,
+                                           false,
+                                           true,
+                                           true,
+                                           serverLocator.isPreAcknowledge(),
+                                           serverLocator.getAckBatchSize());
+         } else {
+            coreSession = sf.createSession();
+         }
 
          // message notification callback
          final ClientSessionFactory finalSf = sf;
-         final MessagesExportType.Listener listener = new MessagesExportType.Listener()
-         {
+         final MessagesExportType.Listener listener = new MessagesExportType.Listener() {
             public void handleMessage(MessageType message) throws Exception {
                final List<QueueType> originalQueues = message.getAllPreviousBindings().getQueue();
                final List<QueueRefType> originalBindings = message.getBindings().getQueue();
@@ -536,27 +500,29 @@ public class ManageDataTool extends JournalStorageManager
             }
 
             private long getNewQueueId(QueueType queue) throws Exception {
-               final ClientSession requestorSession = finalSf.createSession(false, true, true);
+               final ClientSession requestorSession = finalSf.createSession(user,
+                                           password,
+                                           false,
+                                           true,
+                                           true,
+                                           serverLocator.isPreAcknowledge(),
+                                           serverLocator.getAckBatchSize());
                requestorSession.start();
                ClientRequestor requestor = new ClientRequestor(requestorSession, ConfigurationImpl.DEFAULT_MANAGEMENT_ADDRESS);
                ClientMessage m = requestorSession.createMessage(false);
                ManagementHelper.putAttribute(m, ResourceNames.CORE_QUEUE + queue.getName(), "ID");
 
-               try
-               {
+               try {
                   final ClientMessage reply = requestor.request(m);
                   Object result = ManagementHelper.getResult(reply);
 
                   return ((Integer) result).longValue();
-               }
-               catch (Exception e)
-               {
+               } catch (Exception e) {
                   throw new IllegalStateException(e);
                }
             }
 
-            private ClientMessage generateClientMessage(MessageType message) throws IOException
-            {
+            private ClientMessage generateClientMessage(MessageType message) throws IOException {
                ClientMessage clientMessage = coreSession.createMessage(message.getType(),
                                                                        message.isDurable(),
                                                                        message.getExpiration(),
@@ -571,10 +537,8 @@ public class ManageDataTool extends JournalStorageManager
 
                // Routing
                // only map Q if not already ACKed
-               for (QueueRefType binding : bindings)
-               {
-                  if (!ackedQueues.contains(new QueueRefType(binding.getId())))
-                  {
+               for (QueueRefType binding : bindings) {
+                  if (!ackedQueues.contains(new QueueRefType(binding.getId()))) {
                      queues.add(queueMapping.get(binding.getId()));
                   }
                }
@@ -582,41 +546,39 @@ public class ManageDataTool extends JournalStorageManager
 
                // Properties
                List<PropertyType> properties = message.getProperties().getProperty();
-               for (PropertyType property : properties)
-               {
+               for (PropertyType property : properties) {
                   clientMessage.putStringProperty(property.getKey(), property.getValue());
                }
 
                // Payload
-               clientMessage.getBodyBuffer().writeBytes(Base64.decode(message.getPayload(), Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
+               clientMessage.getBodyBuffer().writeBytes(Base64.decode(message.getPayload(),
+                                                                      Base64.DONT_BREAK_LINES | Base64.URL_SAFE));
 
                // UserID
-               // todo: need to set?
+               // todo: need to set or regenerate?
+               String userId = message.getUserId();
+               if (userId != null && !"".equals(userId)) {
+                  clientMessage.setUserID(new UUID(UUID.TYPE_TIME_BASED,
+                                                   Base64.decode(userId,
+                                                                 Base64.DONT_BREAK_LINES | Base64.URL_SAFE)));
+               }
 
                return clientMessage;
             }
 
-            private byte[] getByteArrayOf(List<Long> queues) throws IOException
-            {
+            private byte[] getByteArrayOf(List<Long> queues) throws IOException {
                ByteArrayOutputStream bos = new ByteArrayOutputStream();
                DataOutputStream dos = new DataOutputStream(bos);
-               try
-               {
-                  for (long id : queues)
-                  {
+               try {
+                  for (long id : queues) {
                      dos.writeLong(id);
                   }
                   dos.flush();
-               }
-               finally
-               {
-                  try
-                  {
+               } finally {
+                  try {
                      dos.close();
                      bos.close();
-                  }
-                  catch (IOException e)
-                  {
+                  } catch (IOException e) {
                      // could not close streams
                   }
                }
@@ -629,24 +591,19 @@ public class ManageDataTool extends JournalStorageManager
          messageCounter = 0;
 
          // install the callback on all message instances
-         unmarshaller.setListener(new Unmarshaller.Listener()
-         {
-            public void beforeUnmarshal(Object target, Object parent)
-            {
-               if (target instanceof MessagesExportType)
-               {
-                  ((MessagesExportType)target).setMessageListener(listener);
+         unmarshaller.setListener(new Unmarshaller.Listener() {
+            public void beforeUnmarshal(Object target, Object parent) {
+               if (target instanceof MessagesExportType) {
+                  ((MessagesExportType) target).setMessageListener(listener);
                   if (((MessagesExportType) target).getBindings() == null) {
-                     ((MessagesExportType)target).setOriginalBindings(((HornetQExport)parent).getQueues());
+                     ((MessagesExportType) target).setOriginalBindings(((HornetQExport) parent).getQueues());
                   }
                }
             }
 
-            public void afterUnmarshal(Object target, Object parent)
-            {
-               if (target instanceof MessagesExportType)
-               {
-                  ((MessagesExportType)target).setMessageListener(null);
+            public void afterUnmarshal(Object target, Object parent) {
+               if (target instanceof MessagesExportType) {
+                  ((MessagesExportType) target).setMessageListener(null);
                   messageCounter++;
                }
             }
@@ -658,11 +615,8 @@ public class ManageDataTool extends JournalStorageManager
          reader.setContentHandler(unmarshaller.getUnmarshallerHandler());
 
          reader.parse(new InputSource(importFile));
-      }
-      finally
-      {
-         if (sf != null)
-         {
+      } finally {
+         if (sf != null) {
             sf.close();
          }
       }
@@ -670,13 +624,11 @@ public class ManageDataTool extends JournalStorageManager
       return messageCounter;
    }
 
-   private static Map<String, Long> loadBindings(final String bindingsDirectry) throws Exception
-   {
+   private static Map<String, Long> loadBindings(final String bindingsDirectry) throws Exception {
       final Map<String, Long> queueMapping;
 
       JournalImpl bindingsJournal = null;
-      try
-      {
+      try {
 
          SequentialFileFactory bindingsFF = new NIOSequentialFileFactory(bindingsDirectry);
          bindingsJournal = new JournalImpl(FileConfiguration.DEFAULT_JOURNAL_FILE_SIZE,
@@ -695,21 +647,16 @@ public class ManageDataTool extends JournalStorageManager
 
          queueMapping = new HashMap<String, Long>();
 
-         for (RecordInfo bindingRecord : committedRecordsB)
-         {
-            if (bindingRecord.getUserRecordType() == JournalStorageManager.QUEUE_BINDING_RECORD)
-            {
+         for (RecordInfo bindingRecord : committedRecordsB) {
+            if (bindingRecord.getUserRecordType() == JournalStorageManager.QUEUE_BINDING_RECORD) {
                // mapping old/new queue binding
                PersistentQueueBindingEncoding queueBinding = JournalStorageManager.newBindingEncoding(bindingRecord.id,
                                                                                                       HornetQBuffers.wrappedBuffer(bindingRecord.data));
                queueMapping.put(queueBinding.getAddress().toString(), queueBinding.getId());
             }
          }
-      }
-      finally
-      {
-         if (bindingsJournal != null)
-         {
+      } finally {
+         if (bindingsJournal != null) {
             bindingsJournal.stop();
          }
       }

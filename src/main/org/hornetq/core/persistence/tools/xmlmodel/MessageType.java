@@ -9,6 +9,8 @@ import javax.xml.bind.annotation.XmlType;
 
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.utils.Base64;
+import org.hornetq.utils.TypedProperties;
 
 
 /**
@@ -97,19 +99,41 @@ public class MessageType {
       for (SimpleString propName : msg.getPropertyNames()) {
          PropertyType propertyType = new PropertyType();
          propertyType.setKey(propName.toString());
-         propertyType.setValue(msg.getSimpleStringProperty(propName).toString());
+         // ie. _HQ_DUPL_ID cannot be handled as a SimpleString prop because it's a byte array
+         if (isInternalProperty(propName)) {
+            Object objectProperty = msg.getObjectProperty(propName);
+            propertyType.setValue(getObjectPropertyValue(objectProperty));
+         } else {
+            propertyType.setValue(msg.getSimpleStringProperty(propName).toString());
+         }
          properties.getProperty().add(propertyType);
       }
       setProperties(properties);
       setPriority(msg.getPriority());
       if (msg.getUserID() != null)
       {
-         setUserId(msg.getUserID().toString());
+         setUserId(Base64.encodeBytes(msg.getUserID().asBytes(),Base64.DONT_BREAK_LINES|Base64.URL_SAFE));
       }
       else
       {
          setUserId("");
       }
+   }
+
+   private String getObjectPropertyValue(Object objectProperty) {
+      if (objectProperty instanceof SimpleString) {
+         return objectProperty.toString();
+      } else {
+         try {
+            return Base64.encodeBytes((byte[]) objectProperty, Base64.DONT_BREAK_LINES | Base64.URL_SAFE);
+         } catch (Exception e) {
+            return "could not decode property value";
+         }
+      }
+   }
+
+   private boolean isInternalProperty(SimpleString propName) {
+      return propName.startsWith(new SimpleString("_HQ"));
    }
 
    /**

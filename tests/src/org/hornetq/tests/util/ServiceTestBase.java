@@ -15,10 +15,7 @@ package org.hornetq.tests.util;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.management.MBeanServer;
 
@@ -38,6 +35,7 @@ import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
+import org.hornetq.core.security.Role;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.NodeManager;
@@ -48,6 +46,7 @@ import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
 import org.hornetq.spi.core.security.HornetQSecurityManagerImpl;
+import org.hornetq.tests.integration.cluster.util.TestableServer;
 
 /**
  * 
@@ -272,9 +271,32 @@ public abstract class ServiceTestBase extends UnitTestCase
       return createServer(realFiles, false);
    }
 
-   protected HornetQServer createServer(final boolean realFiles, final boolean netty)
+   protected HornetQServer createServer(final boolean realFiles, final boolean netty) {
+      return createServer(realFiles, netty, false);
+   }
+
+   protected HornetQServer createServer(final boolean realFiles, final boolean netty, final boolean secured)
    {
-      return createServer(realFiles, createDefaultConfig(netty), -1, -1, new HashMap<String, AddressSettings>());
+      Configuration defaultConfig = createDefaultConfig(netty);
+      defaultConfig.setSecurityEnabled(secured);
+
+      HornetQServer server = createServer(realFiles, defaultConfig, -1, -1, new HashMap<String, AddressSettings>());
+      if (secured) {
+         installSecurity(server);
+      }
+      return server;
+   }
+
+   protected HornetQSecurityManager installSecurity(HornetQServer server)
+   {
+      HornetQSecurityManager securityManager = server.getSecurityManager();
+      securityManager.addUser("a", "b");
+      Role role = new Role("arole", true, true, true, true, true, true, true);
+      Set<Role> roles = new HashSet<Role>();
+      roles.add(role);
+      server.getSecurityRepository().addMatch("#", roles);
+      securityManager.addRole("a", "arole");
+      return securityManager;
    }
 
    protected HornetQServer createServer(final boolean realFiles, final Configuration configuration)
