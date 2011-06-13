@@ -544,7 +544,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             }
             else
             {
-               log.info("Reattaching nodeID=" + nodeID);  
+               log.info("Reattaching nodeID=" + nodeID);
                if (record.isClosed())
                {
                   record.resume();
@@ -787,7 +787,6 @@ public class ClusterConnectionImpl implements ClusterConnection
          isClosed = false;
          this.bridge = createBridge(this);
          bridge.start();
-         bridge.activate();
       }
       
       public boolean isClosed()

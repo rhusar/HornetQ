@@ -400,7 +400,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          return HandleStatus.NO_MATCH;
       }
-      
+
       synchronized (this)
       {
          if (!active)
@@ -518,37 +518,44 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          active = false;
       }
 
-      try
-      {
+
          if (!session.getConnection().isDestroyed())
          {
             if (beforeReconnect)
             {
-               synchronized (this)
-               {
-                  log.debug(name + "::Connection is destroyed, active = false now");
-               }
+               try {
+                  synchronized (this)
+                  {
+                     log.debug(name + "::Connection is destroyed, active = false now");
+                  }
 
-               cancelRefs();
+                  cancelRefs();
+               }
+               catch (Exception e)
+               {
+                   BridgeImpl.log.error("Failed to cancel refs", e);
+               }
             }
             else
             {
-               afterConnect();
-
-               log.debug(name + "::After reconnect, setting active=true now");
-               active = true;
-
-               if (queue != null)
+               try
                {
-                  queue.deliverAsync();
+                  afterConnect();
+
+                  log.debug(name + "::After reconnect, setting active=true now");
+                  active = true;
+
+                  if (queue != null)
+                  {
+                     queue.deliverAsync();
+                  }
+               }
+               catch (Exception e)
+               {
+                  BridgeImpl.log.error("Failed to call after connect", e);
                }
             }
          }
-      }
-      catch (Exception e)
-      {
-         BridgeImpl.log.error("Failed to cancel refs", e);
-      }
    }
 
    /* Hook for doing extra stuff after connection */
@@ -709,6 +716,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             if (session != null)
             {
                session.close();
+               session.removeFailureListener(BridgeImpl.this);
             }
 
             synchronized (BridgeImpl.this)
