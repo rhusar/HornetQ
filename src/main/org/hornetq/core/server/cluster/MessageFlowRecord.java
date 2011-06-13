@@ -33,6 +33,10 @@ public interface MessageFlowRecord extends MessageHandler
    Bridge getBridge();
 
    void close() throws Exception;
+   
+   public void resume() throws Exception;
+   
+   boolean isClosed();
 
    void reset() throws Exception;
 

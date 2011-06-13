@@ -13,6 +13,8 @@
 
 package org.hornetq.core.server.cluster;
 
+import java.util.concurrent.Executor;
+
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.server.Consumer;
 import org.hornetq.core.server.HornetQComponent;
@@ -33,6 +35,12 @@ import org.hornetq.spi.core.protocol.RemotingConnection;
 public interface Bridge extends Consumer, HornetQComponent
 {
    SimpleString getName();
+   
+   /**
+    * Get the executor that is on the context of this bridge
+    * @return
+    */
+   Executor getExecutor();
 
    Queue getQueue();
 
@@ -43,7 +51,9 @@ public interface Bridge extends Consumer, HornetQComponent
    boolean isUseDuplicateDetection();
 
    void activate();
-
+   
+   void flushExecutor();
+   
    void setNotificationService(NotificationService notificationService);
 
    RemotingConnection getForwardingConnection();
