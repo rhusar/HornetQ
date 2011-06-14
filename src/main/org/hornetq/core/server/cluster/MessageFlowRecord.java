@@ -40,4 +40,7 @@ public interface MessageFlowRecord extends MessageHandler
 
    void reset() throws Exception;
 
+   void pause() throws Exception;
+
+    boolean isPaused();
 }

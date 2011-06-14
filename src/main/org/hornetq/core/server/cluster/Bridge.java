@@ -57,4 +57,8 @@ public interface Bridge extends Consumer, HornetQComponent
    void setNotificationService(NotificationService notificationService);
 
    RemotingConnection getForwardingConnection();
+
+   void pause() throws Exception;
+
+   void resume() throws Exception;
 }

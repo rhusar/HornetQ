@@ -451,7 +451,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       closed = true;
    }
 
-   public ServerLocator getServerLocator()
+    public boolean isClosed()
+    {
+        return closed;
+    }
+
+    public ServerLocator getServerLocator()
    {
       return serverLocator;
    }

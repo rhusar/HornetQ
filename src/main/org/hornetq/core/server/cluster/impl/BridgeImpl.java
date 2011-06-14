@@ -291,7 +291,35 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       }
    }
 
-   public boolean isStarted()
+   public void pause() throws Exception
+   {
+      log.info("Bridge " + this.name + " being paused");
+
+      executor.execute(new PauseRunnable());
+
+      if (notificationService != null)
+      {
+         TypedProperties props = new TypedProperties();
+         props.putSimpleStringProperty(new SimpleString("name"), name);
+         Notification notification = new Notification(nodeUUID.toString(), NotificationType.BRIDGE_STOPPED, props);
+         try
+         {
+            notificationService.sendNotification(notification);
+         }
+         catch (Exception e)
+         {
+            BridgeImpl.log.warn("unable to send notification when broadcast group is stopped", e);
+         }
+      }
+   }
+
+    public void resume() throws Exception
+    {
+        queue.addConsumer(BridgeImpl.this);
+        queue.deliverAsync();
+    }
+
+    public boolean isStarted()
    {
       return started;
    }
@@ -596,20 +624,20 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
          try
          {
-            csf = createSessionFactory();
-            // Session is pre-acknowledge
-            session = (ClientSessionInternal)csf.createSession(user, password, false, true, true, true, 1);
-            
-            try
+            if (csf == null || csf.isClosed())
             {
-               session.addMetaData("Session-for-bridge", name.toString());
-               session.addMetaData("nodeUUID", nodeUUID.toString());
+                csf = createSessionFactory();
+                // Session is pre-acknowledge
+                session = (ClientSessionInternal)csf.createSession(user, password, false, true, true, true, 1);try
+                {
+                   session.addMetaData("Session-for-bridge", name.toString());
+                   session.addMetaData("nodeUUID", nodeUUID.toString());
+                }
+                catch (Throwable dontCare)
+                {
+                   // addMetaData here is just for debug purposes
+                }
             }
-            catch (Throwable dontCare)
-            {
-               // addMetaData here is just for debug purposes
-            }
-
 
             if (forwardingAddress != null)
             {
@@ -774,6 +802,40 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          catch (Exception e)
          {
             BridgeImpl.log.error("Failed to stop bridge", e);
+         }
+      }
+   }
+
+   private class PauseRunnable implements Runnable
+   {
+      public void run()
+      {
+         try
+         {
+            synchronized (BridgeImpl.this)
+            {
+               log.debug("Closing Session for bridge " + BridgeImpl.this.name);
+
+               started = false;
+
+               active = false;
+
+            }
+
+            queue.removeConsumer(BridgeImpl.this);
+
+            cancelRefs();
+
+            if (queue != null)
+            {
+               queue.deliverAsync();
+            }
+
+            log.info("paused bridge " + name);
+         }
+         catch (Exception e)
+         {
+            BridgeImpl.log.error("Failed to pause bridge", e);
          }
       }
    }

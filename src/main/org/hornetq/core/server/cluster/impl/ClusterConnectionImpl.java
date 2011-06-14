@@ -466,7 +466,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             {
                log.trace("Closing clustering record " + record);
             }
-            record.close();
+            record.pause();
          }
          catch (Exception e)
          {
@@ -545,7 +545,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             else
             {
                log.info("Reattaching nodeID=" + nodeID);
-               if (record.isClosed())
+               if (record.isPaused())
                {
                   record.resume();
                }
@@ -714,6 +714,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       private volatile boolean isClosed = false;
 
+      private volatile boolean paused = false;
+
       private volatile boolean firstReset = false;
 
       public MessageFlowRecordImpl(final String nodeID,
@@ -781,12 +783,23 @@ public class ClusterConnectionImpl implements ClusterConnection
          
          bridge.stop();
       }
-      
-      public void resume() throws Exception
+
+      public void pause() throws Exception
       {
-         isClosed = false;
-         this.bridge = createBridge(this);
-         bridge.start();
+           paused = true;
+           clearBindings();
+           bridge.pause();
+      }
+
+       public boolean isPaused()
+       {
+           return paused;
+       }
+
+       public void resume() throws Exception
+      {
+         paused = false;
+         bridge.resume();
       }
       
       public boolean isClosed()
@@ -799,7 +812,8 @@ public class ClusterConnectionImpl implements ClusterConnection
          clearBindings();
       }
 
-      public void setBridge(final Bridge bridge)
+
+       public void setBridge(final Bridge bridge)
       {
          this.bridge = bridge;
       }
