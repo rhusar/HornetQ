@@ -406,10 +406,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    public void causeExit()
    {
-      exitLoop = true;
       synchronized (waitLock)
       {
-         waitLock.notify();
+         exitLoop = true;
+         waitLock.notifyAll();
       }
    }
 
@@ -420,7 +420,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          return;
       }
 
-      // we need to stopthe factory from connecting if it is in the middle aof trying to failover before we get the lock
+      // we need to stop the factory from connecting if it is in the middle of trying to failover before we get the lock
       causeExit();
       synchronized (createSessionLock)
       {
@@ -764,6 +764,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                ChannelHandler handler = new ClientSessionPacketHandler(session, sessionChannel);
 
                sessionChannel.setHandler(handler);
+               
+               log.info("Creating session "  + session);
 
                return new DelegatingSession(session);
             }
@@ -889,13 +891,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
       synchronized (waitLock)
       {
-         while (true)
+         while (!exitLoop)
          {
-            if (exitLoop)
-            {
-               return;
-            }
-
             if (log.isDebugEnabled())
             {
                log.debug("Trying reconnection attempt " + count);
@@ -927,12 +924,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   
                   try
                   {
-                     waitLock.wait(interval);
+                      waitLock.wait(interval);
                   }
                   catch (InterruptedException ignore)
                   {
                   }
-
+                  
                   // Exponential back-off
                   long newInterval = (long)(interval * retryIntervalMultiplier);
 
@@ -1283,6 +1280,21 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          if (type == PacketImpl.DISCONNECT)
          {
+//            ClientSessionFactoryImpl.this.closed = true;
+//            
+//            for (ClientSessionInternal session : ClientSessionFactoryImpl.this.sessions)
+//            {
+//               try
+//               {
+//                  log.info("cleanup session on Factory " + session);
+//                  session.cleanUp(false);
+//               }
+//               catch (Exception e)
+//               {
+//                  log.warn("Error cleaning up session " + session, e);
+//               }
+//             }
+//            
             final DisconnectMessage msg = (DisconnectMessage)packet;
             
             closeExecutor.execute(new Runnable()

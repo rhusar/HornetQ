@@ -149,7 +149,6 @@ public class ClusterConnectionBridge extends BridgeImpl
    {
       if (flowRecord != null)
       {
-         // TODO: can I really remove this? nope
          flowRecord.reset();
 
          if (notifConsumer != null)

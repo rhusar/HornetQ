@@ -242,24 +242,33 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    public void stop() throws Exception
    {
-      if (started)
-      {
-         executor.execute(new Runnable()
-         {
-            public void run()
-            {
-               // We need to stop the csf here otherwise the stop runnable never runs since the createobjectsrunnable is
-               // trying to connect to the target
-               // server which isn't up in an infinite loop
-               if (csf != null)
-               {
-                  //csf.close();
-                  csf = null; 
-               }
-            }
-         });
-      }
       
+         // TODO: Remove this during merge:
+         // If we close the csf, at the same time we could have the bridge calling close and proper cancellations (not just reseting as we used to do)
+         // we could have either Dead locks or very slow shutdowns on the testsuite.
+         // The solution I could find so far was to just leave the csf on
+      
+          // TODO: Need to find a better way to close the CSF
+      
+      
+//      if (started)
+//      {
+//         executor.execute(new Runnable()
+//         {
+//            public void run()
+//            {
+//               // We need to stop the csf here otherwise the stop runnable never runs since the createobjectsrunnable is
+//               // trying to connect to the target
+//               // server which isn't up in an infinite loop
+//               if (csf != null)
+//               {
+//                  csf.close();
+//                  csf = null; 
+//               }
+//            }
+//         });
+//      }
+//      
       log.info("Bridge " + this.name + " being stopped");
       
       stopping = true;
@@ -590,6 +599,17 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             csf = createSessionFactory();
             // Session is pre-acknowledge
             session = (ClientSessionInternal)csf.createSession(user, password, false, true, true, true, 1);
+            
+            try
+            {
+               session.addMetaData("Session-for-bridge", name.toString());
+               session.addMetaData("nodeUUID", nodeUUID.toString());
+            }
+            catch (Throwable dontCare)
+            {
+               // addMetaData here is just for debug purposes
+            }
+
 
             if (forwardingAddress != null)
             {
@@ -661,6 +681,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          }
          catch (HornetQException e)
          {
+            e.printStackTrace();
+            System.out.println("ex " + e);
             if (csf != null)
             {
                csf.close();
@@ -707,14 +729,18 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private class StopRunnable implements Runnable
    {
+      Exception created = new Exception ("Stop bridge called at for session = " + session);
       public void run()
       {
          try
          {
             // We need to close the session outside of the lock,
             // so any pending operation will be canceled right away
+            csf = null;
             if (session != null)
             {
+               log.info("Stopping bridge called at ", created);
+               log.info("Cleaning up session " + session);
                session.close();
                session.removeFailureListener(BridgeImpl.this);
             }
