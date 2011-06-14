@@ -736,6 +736,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          {
             // We need to close the session outside of the lock,
             // so any pending operation will be canceled right away
+            
+            // TODO: Why closing the CSF will make a few clustering and failover tests to 
+            //       either deadlock or take forever on waiting 
+            //       locks
+            //csf.close();
             csf = null;
             if (session != null)
             {
