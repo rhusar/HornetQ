@@ -726,14 +726,21 @@ public class ClusterManagerImpl implements ClusterManager
       }
    }
 
-   public synchronized void destroyBridge(final String name) throws Exception
+   public void destroyBridge(final String name) throws Exception
    {
-      Bridge bridge = bridges.remove(name);
-      if (bridge != null)
+      Bridge bridge;
+      
+      synchronized (this)
       {
-         bridge.stop();
-         managementService.unregisterBridge(name);
+         bridge = bridges.remove(name);
+         if (bridge != null)
+         {
+            bridge.stop();
+            managementService.unregisterBridge(name);
+         }
       }
+      
+      bridge.flushExecutor();
    }
 
    private synchronized void deployClusterConnection(final ClusterConnectionConfiguration config) throws Exception

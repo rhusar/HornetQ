@@ -23,10 +23,10 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.client.ClientProducer;
+import org.hornetq.api.core.client.ClientSession.BindingQuery;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.SendAcknowledgementHandler;
 import org.hornetq.api.core.client.SessionFailureListener;
-import org.hornetq.api.core.client.ClientSession.BindingQuery;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ClientSessionInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
@@ -242,34 +242,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    public void stop() throws Exception
    {
-      
-         // TODO: Remove this during merge:
-         // If we close the csf, at the same time we could have the bridge calling close and proper cancellations (not just reseting as we used to do)
-         // we could have either Dead locks or very slow shutdowns on the testsuite.
-         // The solution I could find so far was to just leave the csf on
-      
-          // TODO: Need to find a better way to close the CSF
-      
-      
-//      if (started)
-//      {
-//         executor.execute(new Runnable()
-//         {
-//            public void run()
-//            {
-//               // We need to stop the csf here otherwise the stop runnable never runs since the createobjectsrunnable is
-//               // trying to connect to the target
-//               // server which isn't up in an infinite loop
-//               if (csf != null)
-//               {
-//                  csf.close();
-//                  csf = null; 
-//               }
-//            }
-//         });
-//      }
-//      
-      log.info("Bridge " + this.name + " being stopped");
+      log.debug("Bridge " + this.name + " being stopped");
       
       stopping = true;
 
@@ -757,7 +730,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private class StopRunnable implements Runnable
    {
-      Exception created = new Exception ("Stop bridge called at for session = " + session);
       public void run()
       {
          try
@@ -768,11 +740,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             // TODO: Why closing the CSF will make a few clustering and failover tests to 
             //       either deadlock or take forever on waiting 
             //       locks
-            //csf.close();
+            csf.close();
             csf = null;
             if (session != null)
             {
-               log.info("Stopping bridge called at ", created);
                log.info("Cleaning up session " + session);
                session.close();
                session.removeFailureListener(BridgeImpl.this);
