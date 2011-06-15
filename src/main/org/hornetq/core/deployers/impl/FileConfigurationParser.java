@@ -1021,7 +1021,7 @@ public class FileConfigurationParser
       
       long maxRetryInterval = XMLConfigurationUtil.getLong(e, "max-retry-interval", ConfigurationImpl.DEFAULT_CLUSTER_MAX_RETRY_INTERVAL, Validators.GT_ZERO);
       
-      int reconnectAttempts = XMLConfigurationUtil.getInteger(e, "reconnect-attempts", ConfigurationImpl.DEFAULT_CLUSTER_RECONNECT_ATTEMPTS, Validators.GT_ZERO);
+      int reconnectAttempts = XMLConfigurationUtil.getInteger(e, "reconnect-attempts", ConfigurationImpl.DEFAULT_CLUSTER_RECONNECT_ATTEMPTS, Validators.MINUS_ONE_OR_GE_ZERO);
 
 
       int confirmationWindowSize = XMLConfigurationUtil.getInteger(e,
