@@ -185,7 +185,7 @@ public class ClusterManagerImpl implements ClusterManager
       started = true;
    }
 
-   public synchronized void stop() throws Exception
+   public void stop() throws Exception
    {
       if (!started)
       {
@@ -338,7 +338,7 @@ public class ClusterManagerImpl implements ClusterManager
       topology.sendTopology(listener);
    }
 
-   public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
+   public void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                           final boolean clusterConnection)
    {
       if (clusterConnection)
