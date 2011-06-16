@@ -44,6 +44,7 @@ import org.hornetq.utils.UUIDGenerator;
  * A ClusterConnectionBridge
  *
  * @author tim
+ * @author Clebert Suconic
  *
  *
  */
@@ -68,6 +69,10 @@ public class ClusterConnectionBridge extends BridgeImpl
    private final String targetNodeID;
 
    public ClusterConnectionBridge(final ServerLocatorInternal serverLocator,
+                                  final int reconnectAttempts,
+                                  final long retryInterval,
+                                  final double retryMultiplier,
+                                  final long maxRetryInterval,
                                   final UUID nodeUUID,
                                   final String targetNodeID,
                                   final SimpleString name,
@@ -88,6 +93,10 @@ public class ClusterConnectionBridge extends BridgeImpl
                                   final TransportConfiguration connector) throws Exception
    {
       super(serverLocator,
+            reconnectAttempts,
+            retryInterval,
+            retryMultiplier,
+            maxRetryInterval,
             nodeUUID,
             name,
             queue,
@@ -231,34 +240,15 @@ public class ClusterConnectionBridge extends BridgeImpl
       super.stop();
    }
    
-   @Override
-   protected ClientSessionFactory createSessionFactory() throws Exception
+   protected void failed(final boolean permanently)
    {
-      //We create the session factory using the specified connector
+      super.fail(permanently);
       
-      return serverLocator.createSessionFactory(connector);      
-   }
-   
-   @Override
-   public void connectionFailed(HornetQException me, boolean failedOver)
-   {
-	  if (isTrace)
-	  {
-	     log.trace("Connection Failed on ClusterConnectionBridge, failedOver = " + failedOver + ", sessionClosed = " + session.isClosed(), new Exception ("trace"));
-	  }
-
-      if (!failedOver && !session.isClosed())
+      if (permanently)
       {
-         try
-         {
-            session.cleanUp(true);
-         }
-         catch (Exception e)
-         {
-            log.warn("Unable to clean up the session after a connection failure", e);
-         }
+         log.debug("cluster node for bridge " + this.getName() + " is permanently down");
          serverLocator.notifyNodeDown(targetNodeID);
       }
-      super.connectionFailed(me, failedOver);
+      
    }
 }

@@ -641,7 +641,7 @@ public class ManagementServiceImpl implements ManagementService
       {
          log.trace("Sending Notification = "  + notification + 
                    ", notificationEnabled=" + notificationsEnabled + 
-                   " messagingServerControl=" + messagingServerControl, new Exception ("trace"));
+                   " messagingServerControl=" + messagingServerControl);
       }
       if (messagingServerControl != null && notificationsEnabled)
       {

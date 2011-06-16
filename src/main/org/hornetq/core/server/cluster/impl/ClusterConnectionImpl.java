@@ -397,12 +397,17 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          serverLocator.setNodeID(nodeUUID.toString());
 
-         serverLocator.setReconnectAttempts(reconnectAttempts);
+         serverLocator.setReconnectAttempts(0);
 
          serverLocator.setClusterConnection(true);
          serverLocator.setClusterTransportConfiguration(connector);
          serverLocator.setBackup(server.getConfiguration().isBackup());
          serverLocator.setInitialConnectAttempts(-1);
+//         serverLocator.setInitialConnectAttempts(1);
+         
+         serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
+         serverLocator.setConnectionTTL(connectionTTL);
+
          if (serverLocator.getConfirmationWindowSize() < 0)
          {
         	// We can't have confirmationSize = -1 on the cluster Bridge
@@ -466,7 +471,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             {
                log.trace("Closing clustering record " + record);
             }
-            record.pause();
+            record.close();
          }
          catch (Exception e)
          {
@@ -481,6 +486,10 @@ public class ClusterConnectionImpl implements ClusterConnection
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
+      if (log.isDebugEnabled())
+      {
+         log.debug("node " + nodeID + " connectionPair = " + connectorPair + " is up");
+      }
       // discard notifications about ourselves unless its from our backup
 
       if (nodeID.equals(nodeUUID.toString()))
@@ -677,24 +686,28 @@ public class ClusterConnectionImpl implements ClusterConnection
    protected Bridge createBridge(MessageFlowRecordImpl record) throws Exception
    {
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(serverLocator,
-                                                  nodeUUID,
-                                                  record.getNodeID(),
-                                                  record.getQueueName(),
-                                                  record.getQueue(),
-                                                  executorFactory.getExecutor(),
-                                                  null,
-                                                  null,
-                                                  scheduledExecutor,
-                                                  null,
-                                                  useDuplicateDetection,
-                                                  clusterUser,
-                                                  clusterPassword,
-                                                  !backup,
-                                                  server.getStorageManager(),
-                                                  managementService.getManagementAddress(),
-                                                  managementService.getManagementNotificationAddress(),
-                                                  record,
-                                                  record.getConnector());
+                                                                   reconnectAttempts,
+                                                                   retryInterval,
+                                                                   retryIntervalMultiplier,
+                                                                   maxRetryInterval,
+                                                                   nodeUUID,
+                                                                   record.getNodeID(),
+                                                                   record.getQueueName(),
+                                                                   record.getQueue(),
+                                                                   executorFactory.getExecutor(),
+                                                                   null,
+                                                                   null,
+                                                                   scheduledExecutor,
+                                                                   null,
+                                                                   useDuplicateDetection,
+                                                                   clusterUser,
+                                                                   clusterPassword,
+                                                                   !backup,
+                                                                   server.getStorageManager(),
+                                                                   managementService.getManagementAddress(),
+                                                                   managementService.getManagementNotificationAddress(),
+                                                                   record,
+                                                                   record.getConnector());
 
        return bridge;
    }

@@ -687,12 +687,14 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       serverLocator.setConfirmationWindowSize(config.getConfirmationWindowSize());
-      serverLocator.setReconnectAttempts(config.getReconnectAttempts());
-      serverLocator.setRetryInterval(config.getRetryInterval());
-      serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());
-      serverLocator.setMaxRetryInterval(config.getMaxRetryInterval());
+      
+      // We are going to manually retry on the bridge in case of failure
+      serverLocator.setReconnectAttempts(0);
+      serverLocator.setInitialConnectAttempts(1);
+
+      
+      
       serverLocator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
-      serverLocator.setInitialConnectAttempts(config.getReconnectAttempts());
       serverLocator.setBlockOnDurableSend(!config.isUseDuplicateDetection());
       serverLocator.setBlockOnNonDurableSend(!config.isUseDuplicateDetection());
       if (!config.isUseDuplicateDetection())
@@ -702,6 +704,10 @@ public class ClusterManagerImpl implements ClusterManager
       }
       clusterLocators.add(serverLocator);
       Bridge bridge = new BridgeImpl(serverLocator,
+                                     config.getReconnectAttempts(),
+                                     config.getRetryInterval(),
+                                     config.getRetryIntervalMultiplier(),
+                                     config.getMaxRetryInterval(),
                                      nodeUUID,
                                      new SimpleString(config.getName()),
                                      queue,

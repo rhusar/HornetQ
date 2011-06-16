@@ -1457,7 +1457,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          {
             try
             {
-               factory.connect(reconnectAttempts, failoverOnInitialConnection);
+               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {

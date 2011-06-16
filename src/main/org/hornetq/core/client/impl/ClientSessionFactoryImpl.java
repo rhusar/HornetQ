@@ -129,7 +129,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final long maxRetryInterval;
 
-   private final int reconnectAttempts;
+   private int reconnectAttempts;
 
    private final Set<SessionFailureListener> listeners = new ConcurrentHashSet<SessionFailureListener>();
 
@@ -439,6 +439,44 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   session.close();
                }
                catch (HornetQException e)
+               {
+                  log.warn("Unable to close session", e);
+               }
+            }
+
+            checkCloseConnection();
+         }
+      }
+
+      closed = true;
+   }
+   
+   public void cleanup()
+   {
+      if (closed)
+      {
+         return;
+      }
+
+      // we need to stop the factory from connecting if it is in the middle of trying to failover before we get the lock
+      causeExit();
+      synchronized (createSessionLock)
+      {
+         synchronized (failoverLock)
+         {
+            HashSet<ClientSessionInternal> sessionsToClose;
+            synchronized (sessions)
+            {
+               sessionsToClose = new HashSet<ClientSessionInternal>(sessions);
+            }
+            // work on a copied set. the session will be removed from sessions when session.close() is called
+            for (ClientSessionInternal session : sessionsToClose)
+            {
+               try
+               {
+                  session.cleanUp(false);
+               }
+               catch (Exception e)
                {
                   log.warn("Unable to close session", e);
                }
@@ -1447,4 +1485,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          cancelled = true;
       }
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.client.impl.ClientSessionFactoryInternal#setReconnectAttempts(int)
+    */
+   public void setReconnectAttempts(int attempts)
+   {
+      this.reconnectAttempts = attempts;
+   }
+
 }
