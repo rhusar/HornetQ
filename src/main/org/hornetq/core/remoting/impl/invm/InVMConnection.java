@@ -169,4 +169,15 @@ public class InVMConnection implements Connection
    public void removeReadyListener(ReadyListener listener)
    {
    }
+
+   /* (non-Javadoc)
+    * @see java.lang.Object#toString()
+    */
+   @Override
+   public String toString()
+   {
+      return "InVMConnection [serverID=" + serverID + ", id=" + id + "]";
+   }
+   
+   
 }
