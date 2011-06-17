@@ -248,15 +248,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                   final int consumerCount,
                                   final boolean local) throws Exception
    {
-      // System.out.println("waiting for bindings on node " + node +
-      // " address " +
-      // address +
-      // " count " +
-      // count +
-      // " consumerCount " +
-      // consumerCount +
-      // " local " +
-      // local);
+      log.debug("waiting for bindings on node " + node +
+                " address " +
+                address +
+                " count " +
+                count +
+                " consumerCount " +
+                consumerCount +
+                " local " +
+                local);
+
       HornetQServer server = servers[node];
 
       if (server == null)
@@ -301,11 +302,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
 
-      // System.out.println(threadDump(" - fired by ClusterTestBase::waitForBindings"));
-
-      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount +
+      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount + " (expecting " + count + ") "+
                    ", totConsumers = " +
-                   totConsumers +
+                   totConsumers + " (expecting " + consumerCount + ")" + 
                    ")";
 
       ClusterTestBase.log.error(msg);
@@ -1714,6 +1713,32 @@ public abstract class ClusterTestBase extends ServiceTestBase
          pairs.add(serverTotc.getName());
       }
 
+      ClusterConnectionConfiguration clusterConf = createClusterConfig(name,
+                                                                       address,
+                                                                       forwardWhenNoConsumers,
+                                                                       maxHops,
+                                                                       connectorFrom,
+                                                                       pairs);
+
+      serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
+   }
+
+   /**
+    * @param name
+    * @param address
+    * @param forwardWhenNoConsumers
+    * @param maxHops
+    * @param connectorFrom
+    * @param pairs
+    * @return
+    */
+   protected ClusterConnectionConfiguration createClusterConfig(final String name,
+                                                              final String address,
+                                                              final boolean forwardWhenNoConsumers,
+                                                              final int maxHops,
+                                                              TransportConfiguration connectorFrom,
+                                                              List<String> pairs)
+   {
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       connectorFrom.getName(),
@@ -1723,8 +1748,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                                                       maxHops,
                                                                                       1024,
                                                                                       pairs, false);
-
-      serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
+      return clusterConf;
    }
 
    protected void setupClusterConnectionWithBackups(final String name,

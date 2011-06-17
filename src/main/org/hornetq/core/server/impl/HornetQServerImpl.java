@@ -316,7 +316,14 @@ public class HornetQServerImpl implements HornetQServer
 
             initialisePart2();
 
-            log.info("Server is now live");
+            if (identity != null)
+            {
+               log.info("Server " + identity + " is now live");
+            }
+            else
+            {
+               log.info("Server is now live");
+            }
          }
          catch (Exception e)
          {
@@ -1134,7 +1141,7 @@ public class HornetQServerImpl implements HornetQServer
       activateCallbacks.remove(callback);
    }
 
-   public synchronized ExecutorFactory getExecutorFactory()
+   public ExecutorFactory getExecutorFactory()
    {
       return executorFactory;
    }

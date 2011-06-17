@@ -47,6 +47,7 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
    @Override
    protected void tearDown() throws Exception
    {
+      log.info("#test Tear down");
       closeAllConsumers();
 
       closeAllSessionFactories();
@@ -98,6 +99,20 @@ public class OnewayTwoNodeClusterTest extends ClusterTestBase
       verifyNotReceive(0);
    }
 
+   public void testLoop() throws Exception
+   {
+      for (int i = 0 ; i < 10; i++)
+      {
+         log.info("#test " + i);
+         testStartSourceServerBeforeTargetServer();
+         if (i + 1 < 100000)
+         {  
+            tearDown();
+            setUp();
+         }
+      }
+      
+   }
    public void testStartSourceServerBeforeTargetServer() throws Exception
    {
       startServers(0, 1);
