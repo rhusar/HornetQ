@@ -1461,6 +1461,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
             catch (HornetQException e)
             {
+               log.debug("Exception on establish connector initial connection", e);
                if (!interrupted)
                {
                   this.e = e;
@@ -1500,6 +1501,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                factory = null;
             }
          }
+
+         /* (non-Javadoc)
+          * @see java.lang.Object#toString()
+          */
+         @Override
+         public String toString()
+         {
+            return "Connector [initialConnector=" + initialConnector + "]";
+         }
+         
+         
+         
       }
    }
 }
