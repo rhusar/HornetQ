@@ -85,6 +85,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private static final Logger log = Logger.getLogger(ClientSessionFactoryImpl.class);
    
    private static final boolean isTrace = log.isTraceEnabled();
+   
+   private static final boolean isDebug = log.isDebugEnabled();
 
    // Attributes
    // -----------------------------------------------------------------------------------
@@ -234,7 +236,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    {
       if(live.equals(connectorConfig) && backUp != null)
       {
-         if (log.isDebugEnabled())
+         if (isDebug)
          {
               log.debug("Setting up backup config = " + backUp + " for live = " + live);
          }
@@ -242,7 +244,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
       else
       {
-         if (log.isDebugEnabled())
+         if (isDebug)
          {
             log.debug("ClientSessionFactoryImpl received backup update for live/backup pair = " + live + " / " + backUp + " but it didn't belong to " + this.connectorConfig);
          }
@@ -928,6 +930,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private void getConnectionWithRetry(final int reconnectAttempts)
    {
+      log.info("getConnectionWithRetry::" + reconnectAttempts);
+      
       long interval = retryInterval;
 
       int count = 0;
@@ -936,7 +940,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          while (!exitLoop)
          {
-            if (log.isDebugEnabled())
+            if (isDebug)
             {
                log.debug("Trying reconnection attempt " + count);
             }
@@ -985,6 +989,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                }
                else
                {
+                  log.debug("Could not connect to any server. Didn't have reconnection configured on the ClientSessionFactory");
                   return;
                }
             }
@@ -1062,7 +1067,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                connector.start();
 
-               if (log.isDebugEnabled())
+               if (isDebug)
                {
                   log.debug("Trying to connect at the main server using connector :" + connectorConfig);
                }
@@ -1071,7 +1076,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
                if (tc == null)
                {
-                  if (log.isDebugEnabled())
+                  if (isDebug)
                   {
                      log.debug("Main server is not up. Hopefully there's a backup configured now!");
                   }
@@ -1090,7 +1095,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             //if connection fails we can try the backup in case it has come live
             if(connector == null && backupConfig != null)
             {
-               if (log.isDebugEnabled())
+               if (isDebug)
                {
                   log.debug("Trying backup config = " + backupConfig);
                }
@@ -1109,7 +1114,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
                   if (tc == null)
                   {
-                     if (log.isDebugEnabled())
+                     if (isDebug)
                      {
                         log.debug("Backup is not active yet");
                      }
@@ -1128,7 +1133,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   {
                      /*looks like the backup is now live, lets use that*/
                      
-                     if (log.isDebugEnabled())
+                     if (isDebug)
                      {
                         log.debug("Connected to the backup at " + backupConfig);
                      }
@@ -1145,7 +1150,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                if (isTrace)
                {
-                  log.trace("No Backup configured!");
+                  log.trace("No Backup configured!", new Exception ("trace"));
                }
             }
          }
@@ -1185,11 +1190,20 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          if (tc == null)
          {
+            if (isDebug)
+            {
+               log.debug("returning connection = " + connection + " as tc == null");
+            }
             return connection;
          }
 
          connection = new RemotingConnectionImpl(tc, callTimeout, interceptors);
 
+         if (isDebug)
+         {
+            log.debug("Defined connection " + connection);
+         }
+         
          connection.addFailureListener(new DelegatingFailureListener(connection.getID()));
 
          Channel channel0 = connection.getChannel(0, -1);
@@ -1219,10 +1233,19 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
          if (serverLocator.isHA())
          {
+            if (isDebug)
+            {
+               log.debug("Subscribing Topology");
+            }
+            
             channel0.send(new SubscribeClusterTopologyUpdatesMessage(serverLocator.isClusterConnection()));
             if (serverLocator.isClusterConnection())
             {
                TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
+               if (isDebug)
+               {
+                  log.debug("Announcing node " + serverLocator.getNodeID() + ", isBackup=" + serverLocator.isBackup());
+               }
                channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(),
                                                      serverLocator.isBackup(),
                                                      config));
@@ -1349,7 +1372,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             if (topMessage.isExit())
             {
-               if (log.isDebugEnabled())
+               if (isDebug)
                {
                   log.debug("Notifying " + topMessage.getNodeID() + " going down");
                }
@@ -1357,7 +1380,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             }
             else
             {
-               if (log.isDebugEnabled())
+               if (isDebug)
                {
                   log.debug("Node " + topMessage.getNodeID() + " going up, connector = " + topMessage.getPair() + ", isLast=" + topMessage.isLast());
                }
