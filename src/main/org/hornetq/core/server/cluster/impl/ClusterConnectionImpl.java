@@ -387,6 +387,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return;
       }
+      
+      log.debug("Activating cluster connection nodeID=" + nodeUUID);
 
       backup = false;
 
@@ -403,7 +405,6 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.setClusterTransportConfiguration(connector);
          serverLocator.setBackup(server.getConfiguration().isBackup());
          serverLocator.setInitialConnectAttempts(-1);
-//         serverLocator.setInitialConnectAttempts(1);
          
          serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          serverLocator.setConnectionTTL(connectionTTL);
@@ -440,6 +441,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          Notification notification = new Notification(nodeUUID.toString(),
                                                       NotificationType.CLUSTER_CONNECTION_STARTED,
                                                       props);
+         log.debug("sending notification: " + notification);
          managementService.sendNotification(notification);
       }
    }
@@ -453,7 +455,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    public synchronized void nodeDown(final String nodeID)
    {
-      log.debug("node " + nodeID + " being considered down on cluster connection for nodeID=" + nodeUUID, new Exception ("trace"));
+      if (log.isDebugEnabled())
+      {
+         log.debug(this + " receiving nodeDown for nodeID=" + nodeID, new Exception("trace"));
+      }
       if (nodeID.equals(nodeUUID.toString()))
       {
          return;
@@ -461,7 +466,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       //Remove the flow record for that node
       
-      MessageFlowRecord record = records.get(nodeID);
+      MessageFlowRecord record = records.remove(nodeID);
 
       if (record != null)
       {
@@ -482,13 +487,17 @@ public class ClusterConnectionImpl implements ClusterConnection
       server.getClusterManager().notifyNodeDown(nodeID);
    }
 
+
+   // TODO: does it need to be sync?
    public synchronized void nodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
+      log.warn(this + " WTF nodeUP nodeID=" + nodeID, new Exception ("trace"));
       if (log.isDebugEnabled())
       {
-         log.debug("node " + nodeID + " connectionPair = " + connectorPair + " is up");
+         log.debug(this + "receiving nodeUP for nodeID=" + nodeID + 
+                   " connectionPair=" + connectorPair, new Exception ("trace"));
       }
       // discard notifications about ourselves unless its from our backup
 
@@ -570,9 +579,10 @@ public class ClusterConnectionImpl implements ClusterConnection
    public void nodeAnnounced(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair)
    {
-      if (isTrace)
+      log.warn(this + " WTF nodeAnnounced nodeID=" + nodeID, new Exception ("trace"));
+      if (log.isDebugEnabled())
       {
-         log.trace("nodeAnnouncedUp:" + nodeID);
+         log.debug(this + " received nodeAnnouncedUp for " + nodeID + ", connectorPair=" + connectorPair);
       }
       
       if (nodeID.equals(nodeUUID.toString()))
@@ -583,9 +593,9 @@ public class ClusterConnectionImpl implements ClusterConnection
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
       if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
       {
-         if (isTrace)
+         if (log.isDebugEnabled())
          {
-            log.trace("Ignoring nodeUp message as it only allows direct connections");
+            log.debug("Ignoring nodeUp message as it only allows direct connections");
          }
          return;
       }
@@ -594,18 +604,18 @@ public class ClusterConnectionImpl implements ClusterConnection
       // and empty static connectors to create bridges... ulgy!
       if (serverLocator == null)
       {
-         if (isTrace)
+         if (log.isDebugEnabled())
          {
-            log.trace("Ignoring nodeUp as serverLocator==null");
+            log.debug("Ignoring nodeUp as serverLocator==null");
          }
          return;
       }
       /*we dont create bridges to backups*/
       if(connectorPair.a == null)
       {
-         if (isTrace)
+         if (log.isDebugEnabled())
          {
-            log.trace("Igoring nodeup as connectorPair.a==null (backup)");
+            log.debug("Igoring nodeup as connectorPair.a==null (backup)");
          }
          return;
       }
@@ -685,7 +695,8 @@ public class ClusterConnectionImpl implements ClusterConnection
     */
    protected Bridge createBridge(MessageFlowRecordImpl record) throws Exception
    {
-      ClusterConnectionBridge bridge = new ClusterConnectionBridge(serverLocator,
+      ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
+                                                                   serverLocator,
                                                                    reconnectAttempts,
                                                                    retryInterval,
                                                                    retryIntervalMultiplier,
@@ -840,7 +851,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          if (isTrace)
          {
-            log.trace("Receiving message "  + message);
+            log.trace("Flow record on " + clusterConnector + " Receiving message "  + message);
          }
          try
          {
@@ -1227,6 +1238,15 @@ public class ClusterConnectionImpl implements ClusterConnection
       return records;
    }
    
+   /* (non-Javadoc)
+    * @see java.lang.Object#toString()
+    */
+   @Override
+   public String toString()
+   {
+      return "ClusterConnectionImpl [nodeUUID=" + nodeUUID + ", connector=" + connector + ", address=" + address + "]";
+   }
+
    public String description()
    {
       String out = name + " connected to\n";
