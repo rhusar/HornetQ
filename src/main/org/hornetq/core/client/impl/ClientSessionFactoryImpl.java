@@ -449,6 +449,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       closed = true;
+      
+      serverLocator.factoryClosed(this);
    }
    
    public void cleanup()
