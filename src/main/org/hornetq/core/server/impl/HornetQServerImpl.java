@@ -904,7 +904,7 @@ public class HornetQServerImpl implements HornetQServer
       return version;
    }
 
-   public synchronized boolean isStarted()
+   public boolean isStarted()
    {
       return started;
    }
