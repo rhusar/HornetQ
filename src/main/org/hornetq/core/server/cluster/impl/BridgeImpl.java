@@ -771,9 +771,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          {
          }
       }
-
-      csf = null;
-      session = null;
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("Scheduling retry for bridge " + this.name + "in " + milliseconds + " milliseconds");
+      }
 
       futureScheduledReconnection = scheduledExecutor.schedule(new FutureConnectRunnable(), milliseconds, TimeUnit.MILLISECONDS);
    }
@@ -795,7 +797,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
             if (csf != null)
             {
-               csf.close();
+               csf.cleanup();
             }
 
             synchronized (BridgeImpl.this)
@@ -809,6 +811,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
             }
 
             queue.removeConsumer(BridgeImpl.this);
+
+            internalCancelReferences();
 
             log.info("stopped bridge " + name);
          }
