@@ -338,8 +338,7 @@ public class ClusterManagerImpl implements ClusterManager
       topology.sendTopology(listener);
    }
 
-   // TODO: needs to be sync?
-   public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
+   public void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                           final boolean clusterConnection)
    {
       if (clusterConnection)
