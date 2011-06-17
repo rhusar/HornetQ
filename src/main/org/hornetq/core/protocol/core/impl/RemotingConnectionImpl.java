@@ -145,8 +145,27 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
       this.creationTime = System.currentTimeMillis();
    }
 
+   
+   
+   
    // RemotingConnection implementation
    // ------------------------------------------------------------
+
+   /* (non-Javadoc)
+    * @see java.lang.Object#toString()
+    */
+   @Override
+   public String toString()
+   {
+      return "RemotingConnectionImpl [clientID=" + clientID +
+             ", decoder=" +
+             decoder +
+             ", nodeID=" +
+             nodeID +
+             ", transportConnection=" +
+             transportConnection +
+             "]";
+   }
 
    public Connection getTransportConnection()
    {
