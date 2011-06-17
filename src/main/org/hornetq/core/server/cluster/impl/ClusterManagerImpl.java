@@ -185,7 +185,7 @@ public class ClusterManagerImpl implements ClusterManager
       started = true;
    }
 
-   public void stop() throws Exception
+   public synchronized void stop() throws Exception
    {
       if (!started)
       {
@@ -290,7 +290,7 @@ public class ClusterManagerImpl implements ClusterManager
       {
          for (ClusterConnection clusterConnection : clusterConnections.values())
          {
-            clusterConnection.nodeAnnounced(nodeID, connectorPair);
+            clusterConnection.nodeUP(nodeID, connectorPair, last);
          }
       }
    }
@@ -338,7 +338,8 @@ public class ClusterManagerImpl implements ClusterManager
       topology.sendTopology(listener);
    }
 
-   public void removeClusterTopologyListener(final ClusterTopologyListener listener,
+   // TODO: needs to be sync?
+   public synchronized void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                           final boolean clusterConnection)
    {
       if (clusterConnection)
