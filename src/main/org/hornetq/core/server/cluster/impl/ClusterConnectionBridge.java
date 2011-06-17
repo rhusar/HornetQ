@@ -35,6 +35,7 @@ import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.postoffice.BindingType;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.MessageFlowRecord;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.utils.UUID;
@@ -53,6 +54,8 @@ public class ClusterConnectionBridge extends BridgeImpl
    private static final Logger log = Logger.getLogger(ClusterConnectionBridge.class);
    
    private static final boolean isTrace = log.isTraceEnabled();
+   
+   private final ClusterConnection clusterConnection;
 
    private final MessageFlowRecord flowRecord;
 
@@ -64,11 +67,10 @@ public class ClusterConnectionBridge extends BridgeImpl
 
    private final SimpleString idsHeaderName;
 
-   private final TransportConfiguration connector;
-
    private final String targetNodeID;
 
-   public ClusterConnectionBridge(final ServerLocatorInternal serverLocator,
+   public ClusterConnectionBridge(final ClusterConnection clusterConnection,
+                                  final ServerLocatorInternal serverLocator,
                                   final int reconnectAttempts,
                                   final long retryInterval,
                                   final double retryMultiplier,
@@ -112,12 +114,13 @@ public class ClusterConnectionBridge extends BridgeImpl
             storageManager);
 
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
+      
+      this.clusterConnection = clusterConnection;
 
       this.targetNodeID = targetNodeID;
       this.managementAddress = managementAddress;
       this.managementNotificationAddress = managementNotificationAddress;
       this.flowRecord = flowRecord;
-      this.connector = connector;
       
       // we need to disable DLQ check on the clustered bridges
       queue.setInternalQueue(true);
@@ -156,6 +159,7 @@ public class ClusterConnectionBridge extends BridgeImpl
 
    private void setupNotificationConsumer() throws Exception
    {
+      log.debug("Setting up notificationConsumer for " + flowRecord + " on bridge " + this.getName());
       if (flowRecord != null)
       {
          flowRecord.reset();
@@ -164,6 +168,7 @@ public class ClusterConnectionBridge extends BridgeImpl
          {
             try
             {
+               log.debug("Closing notification Consumer for reopening " + notifConsumer + " on bridge " + this.getName());
                notifConsumer.close();
 
                notifConsumer = null;
@@ -224,6 +229,11 @@ public class ClusterConnectionBridge extends BridgeImpl
 
          ClientProducer prod = session.createProducer(managementAddress);
 
+         if (log.isDebugEnabled())
+         {
+            log.debug("Cluster connetion bridge on " + clusterConnection + " requesting information on queues");
+         }
+         
          prod.send(message);
       }
    }
@@ -242,6 +252,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    
    protected void failed(final boolean permanently)
    {
+      log.debug("Cluster Bridge " + this.getName() + " failed, permanently=" + permanently);
       super.fail(permanently);
       
       if (permanently)
