@@ -305,7 +305,7 @@ public class PacketImpl implements Packet
 
    protected String getParentString()
    {
-      return "PACKET[type=" + type + ", channelID=" + channelID;
+      return "PACKET[type=" + type + ", channelID=" + channelID + ", packetObject=" + this.getClass().getSimpleName();
    }
 
    // Protected -----------------------------------------------------
