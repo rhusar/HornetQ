@@ -422,6 +422,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          return;
       }
 
+      synchronized (exitLock)
+      {
+         exitLock.notifyAll();
+      }
+
+      forceReturnChannel1();
+
       // we need to stop the factory from connecting if it is in the middle of trying to failover before we get the lock
       causeExit();
       synchronized (createSessionLock)
@@ -942,7 +949,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             if (isDebug)
             {
-               log.debug("Trying reconnection attempt " + count);
+               log.debug("Trying reconnection attempt " + count + "/" + reconnectAttempts);
             }
 
             getConnection();
@@ -1055,6 +1062,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          try
          {
             DelegatingBufferHandler handler = new DelegatingBufferHandler();
+            
+            if (log.isDebugEnabled())
+            {
+               log.debug("Trying to connect with connector = " + connectorFactory + ", parameters = " + connectorConfig.getParams());
+            }
 
             connector = connectorFactory.createConnector(connectorConfig.getParams(),
                                                          handler,

@@ -489,7 +489,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
 
    // TODO: does it need to be sync?
-   public synchronized void nodeUP(final String nodeID,
+   public void nodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
@@ -563,10 +563,6 @@ public class ClusterConnectionImpl implements ClusterConnection
             else
             {
                log.info("Reattaching nodeID=" + nodeID);
-               if (record.isPaused())
-               {
-                  record.resume();
-               }
             }
          }
          catch (Exception e)
@@ -808,25 +804,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          bridge.stop();
       }
 
-      public void pause() throws Exception
-      {
-           paused = true;
-           clearBindings();
-           bridge.pause();
-      }
-
-       public boolean isPaused()
-       {
-           return paused;
-       }
-
-       public void resume() throws Exception
-      {
-         paused = false;
-         bridge.resume();
-      }
-      
-      public boolean isClosed()
+       public boolean isClosed()
       {
          return isClosed;
       }
@@ -835,7 +813,6 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          clearBindings();
       }
-
 
        public void setBridge(final Bridge bridge)
       {
@@ -972,6 +949,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private synchronized void clearBindings() throws Exception
       {
+         log.debug(ClusterConnectionImpl.this + " clearing bindings");
          for (RemoteQueueBinding binding : new HashSet<RemoteQueueBinding>(bindings.values()))
          {
             removeBinding(binding.getClusterName());
@@ -980,6 +958,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private synchronized void doBindingAdded(final ClientMessage message) throws Exception
       {
+         if (log.isTraceEnabled())
+         {
+            log.trace(ClusterConnectionImpl.this + " Adding binding " + message);
+         }
          if (!message.containsProperty(ManagementHelper.HDR_DISTANCE))
          {
             throw new IllegalStateException("distance is null");
@@ -1039,6 +1021,11 @@ public class ClusterConnectionImpl implements ClusterConnection
 
             return;
          }
+         
+         if (isTrace)
+         {
+            log.trace("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this);
+         }
 
          bindings.put(clusterName, binding);
 
@@ -1058,6 +1045,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private void doBindingRemoved(final ClientMessage message) throws Exception
       {
+         if (log.isTraceEnabled())
+         {
+            log.trace(ClusterConnectionImpl.this + " Removing binding " + message);
+         }
          if (!message.containsProperty(ManagementHelper.HDR_CLUSTER_NAME))
          {
             throw new IllegalStateException("clusterName is null");
@@ -1082,6 +1073,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private synchronized void doConsumerCreated(final ClientMessage message) throws Exception
       {
+         if (log.isTraceEnabled())
+         {
+            log.trace(ClusterConnectionImpl.this + " Consumer created " + message);
+         }
          if (!message.containsProperty(ManagementHelper.HDR_DISTANCE))
          {
             throw new IllegalStateException("distance is null");
@@ -1136,6 +1131,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private synchronized void doConsumerClosed(final ClientMessage message) throws Exception
       {
+         if (log.isTraceEnabled())
+         {
+            log.trace(ClusterConnectionImpl.this + " Consumer closed " + message);
+         }
          if (!message.containsProperty(ManagementHelper.HDR_DISTANCE))
          {
             throw new IllegalStateException("distance is null");
@@ -1187,49 +1186,6 @@ public class ClusterConnectionImpl implements ClusterConnection
          managementService.sendNotification(notification);
       }
 
-   }
-
-   public void handleReplicatedAddBinding(final SimpleString address,
-                                          final SimpleString uniqueName,
-                                          final SimpleString routingName,
-                                          final long queueID,
-                                          final SimpleString filterString,
-                                          final SimpleString queueName,
-                                          final int distance) throws Exception
-   {
-      Binding queueBinding = postOffice.getBinding(queueName);
-
-      if (queueBinding == null)
-      {
-         throw new IllegalStateException("Cannot find s & f queue " + queueName);
-      }
-
-      Queue queue = (Queue)queueBinding.getBindable();
-
-      RemoteQueueBinding binding = new RemoteQueueBindingImpl(server.getStorageManager().generateUniqueID(),
-                                                              address,
-                                                              uniqueName,
-                                                              routingName,
-                                                              queueID,
-                                                              filterString,
-                                                              queue,
-                                                              queueName,
-                                                              distance);
-
-      if (postOffice.getBinding(uniqueName) != null)
-      {
-         ClusterConnectionImpl.log.warn("Remoting queue binding " + uniqueName +
-                                        " has already been bound in the post office. Most likely cause for this is you have a loop " +
-                                        "in your cluster due to cluster max-hops being too large or you have multiple cluster connections to the same nodes using overlapping addresses");
-
-         return;
-      }
-
-      postOffice.addBinding(binding);
-
-      Bindings theBindings = postOffice.getBindingsForAddress(address);
-
-      theBindings.setRouteWhenNoConsumers(routeWhenNoConsumers);
    }
 
    // for testing only
@@ -1286,6 +1242,17 @@ public class ClusterConnectionImpl implements ClusterConnection
             return null;
          }
       }
+
+      /* (non-Javadoc)
+       * @see java.lang.Object#toString()
+       */
+      @Override
+      public String toString()
+      {
+         return "StaticClusterConnector [tcConfigs=" + Arrays.toString(tcConfigs) + "]";
+      }
+      
+      
    }
 
    private class DiscoveryClusterConnector implements ClusterConnector

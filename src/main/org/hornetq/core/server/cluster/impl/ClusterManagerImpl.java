@@ -97,13 +97,7 @@ public class ClusterManagerImpl implements ClusterManager
    // the cluster connections which links this node to other cluster nodes
    private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
 
-   // regular client listeners to be notified of cluster topology changes.
-   // they correspond to regular clients using a HA ServerLocator
-   private Set<ClusterTopologyListener> clientListeners = new ConcurrentHashSet<ClusterTopologyListener>();
-
-   // cluster connections listeners to be notified of cluster topology changes
-   // they correspond to cluster connections on *other nodes connected to this one*
-   private Set<ClusterTopologyListener> clusterConnectionListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   private Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
    private Topology topology = new Topology();
 
@@ -208,8 +202,7 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterCluster(clusterConnection.getName().toString());
          }
 
-         clusterConnectionListeners.clear();
-         clientListeners.clear();
+         topologyListeners.clear();
          clusterConnections.clear();
          topology.clear();
 
@@ -249,12 +242,7 @@ public class ClusterManagerImpl implements ClusterManager
       if (removed)
       {
 
-         for (ClusterTopologyListener listener : clientListeners)
-         {
-            listener.nodeDown(nodeID);
-         }
-
-         for (ClusterTopologyListener listener : clusterConnectionListeners)
+         for (ClusterTopologyListener listener : topologyListeners)
          {
             listener.nodeDown(nodeID);
          }
@@ -274,12 +262,7 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
 
-      for (ClusterTopologyListener listener : clientListeners)
-      {
-         listener.nodeUP(nodeID, member.getConnector(), last);
-      }
-
-      for (ClusterTopologyListener listener : clusterConnectionListeners)
+      for (ClusterTopologyListener listener : topologyListeners)
       {
          listener.nodeUP(nodeID, member.getConnector(), last);
       }
@@ -322,18 +305,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public void addClusterTopologyListener(final ClusterTopologyListener listener, final boolean clusterConnection)
    {
-      synchronized (this)
-      {
-         if (clusterConnection)
-         {
-            this.clusterConnectionListeners.add(listener);
-         }
-         else
-         {
-            this.clientListeners.add(listener);
-         }
-      }
-
+      topologyListeners.add(listener);
       // We now need to send the current topology to the client
       topology.sendTopology(listener);
    }
@@ -341,14 +313,7 @@ public class ClusterManagerImpl implements ClusterManager
    public void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                           final boolean clusterConnection)
    {
-      if (clusterConnection)
-      {
-         this.clusterConnectionListeners.remove(listener);
-      }
-      else
-      {
-         this.clientListeners.remove(listener);
-      }
+      topologyListeners.add(listener);
    }
 
    public Topology getTopology()
@@ -425,13 +390,12 @@ public class ClusterManagerImpl implements ClusterManager
             }
          }
 
-         for (ClusterTopologyListener listener : clientListeners)
+         for (ClusterTopologyListener listener : topologyListeners)
          {
-            listener.nodeUP(nodeID, member.getConnector(), false);
-         }
-
-         for (ClusterTopologyListener listener : clusterConnectionListeners)
-         {
+            if (log.isDebugEnabled())
+            {
+               log.debug("Informing client listener " + listener + " about itself node " + nodeID + " with connector=" + member.getConnector());
+            }
             listener.nodeUP(nodeID, member.getConnector(), false);
          }
       }
@@ -499,16 +463,10 @@ public class ClusterManagerImpl implements ClusterManager
 
       // Propagate the announcement
 
-      for (ClusterTopologyListener listener : clientListeners)
+      for (ClusterTopologyListener listener : topologyListeners)
       {
          listener.nodeUP(nodeID, member.getConnector(), false);
       }
-
-      for (ClusterTopologyListener listener : clusterConnectionListeners)
-      {
-         listener.nodeUP(nodeID, member.getConnector(), false);
-      }
-
    }
 
    private synchronized void deployBroadcastGroup(final BroadcastGroupConfiguration config) throws Exception

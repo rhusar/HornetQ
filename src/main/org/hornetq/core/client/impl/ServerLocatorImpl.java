@@ -65,7 +65,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private StaticConnector staticConnector = new StaticConnector();
 
-   private Topology topology = new Topology();
+   private final Topology topology = new Topology();
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
@@ -599,7 +599,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                                                       threadPool,
                                                       scheduledThreadPool,
                                                       interceptors);
-               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
+               factory.connect(reconnectAttempts, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {
@@ -1096,8 +1096,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          staticConnector.disconnect();
       }
+      
+      Set<ClientSessionFactory> clonedFactory = new HashSet<ClientSessionFactory>(factories);
 
-      for (ClientSessionFactory factory : factories)
+      for (ClientSessionFactory factory : clonedFactory)
       {
          factory.close();
       }
@@ -1263,16 +1265,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public synchronized void factoryClosed(final ClientSessionFactory factory)
    {
       factories.remove(factory);
-
-      if (factories.isEmpty())
-      {
-         // Go back to using the broadcast or static list
-
-         receivedTopology = false;
-
-         topology = null;
-
-      }
    }
 
    public Topology getTopology()

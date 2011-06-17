@@ -41,14 +41,6 @@ public interface ClusterConnection extends HornetQComponent, ClusterTopologyList
     */
    Map<String, String> getNodes();
 
-   void handleReplicatedAddBinding(SimpleString address,
-                                   SimpleString uniqueName,
-                                   SimpleString routingName,
-                                   long queueID,
-                                   SimpleString filterString,
-                                   SimpleString queueName,
-                                   int distance) throws Exception;
-
    void activate() throws Exception;
    
    TransportConfiguration getConnector();

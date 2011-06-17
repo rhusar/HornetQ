@@ -617,7 +617,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    protected ClientSessionFactoryInternal createSessionFactory() throws Exception
    {
       ClientSessionFactoryInternal csf = (ClientSessionFactoryInternal)serverLocator.createSessionFactory();
-      // csf.setReconnectAttempts(0);
+      csf.setReconnectAttempts(0);
       //csf.setInitialReconnectAttempts(1);
       return csf;
    }
