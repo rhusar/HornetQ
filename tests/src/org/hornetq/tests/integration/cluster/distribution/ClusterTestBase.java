@@ -244,17 +244,17 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    protected void waitForBindings(final int node,
                                   final String address,
-                                  final int count,
-                                  final int consumerCount,
+                                  final int expectedBindingCount,
+                                  final int expectedConsumerCount,
                                   final boolean local) throws Exception
    {
       log.debug("waiting for bindings on node " + node +
                 " address " +
                 address +
-                " count " +
-                count +
+                " expectedBindingCount " +
+                expectedBindingCount +
                 " consumerCount " +
-                consumerCount +
+                expectedConsumerCount +
                 " local " +
                 local);
 
@@ -285,6 +285,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             if (binding instanceof LocalQueueBinding && local || binding instanceof RemoteQueueBinding && !local)
             {
+               if (local)
+               {
+                  log.debug("found binding " + binding +  " on node " + server);
+               }
+               else
+               {
+                  log.debug("found remote binding " + binding + " on node " + server);
+               }
                QueueBinding qBinding = (QueueBinding)binding;
 
                bindingCount++;
@@ -293,7 +301,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             }
          }
 
-         if (bindingCount == count && totConsumers == consumerCount)
+         if (bindingCount == expectedBindingCount && totConsumers == expectedConsumerCount)
          {
             return;
          }
@@ -302,9 +310,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
 
-      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount + " (expecting " + count + ") "+
+      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount + " (expecting " + expectedConsumerCount + ") "+
                    ", totConsumers = " +
-                   totConsumers + " (expecting " + consumerCount + ")" + 
+                   totConsumers + " (expecting " + expectedConsumerCount + ")" + 
                    ")";
 
       ClusterTestBase.log.error(msg);

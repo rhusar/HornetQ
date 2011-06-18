@@ -1321,9 +1321,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private void forceReturnChannel1()
    {
-      Channel channel1 = connection.getChannel(1, -1);
-
-      channel1.returnBlocking();
+      if (connection != null)
+      {
+         Channel channel1 = connection.getChannel(1, -1);
+   
+         if (channel1 != null)
+         {
+            channel1.returnBlocking();
+         }
+      }
    }
 
    private void checkTransportKeys(final ConnectorFactory factory, final Map<String, Object> params)
