@@ -112,6 +112,8 @@ public class ClusterConnectionBridge extends BridgeImpl
             password,
             activated,
             storageManager);
+      
+      System.out.println("ClusterConnectionBridge");
 
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
       
@@ -221,6 +223,7 @@ public class ClusterConnectionBridge extends BridgeImpl
 
          ClientMessage message = session.createMessage(false);
 
+         System.out.println("Requesting sendQueueInfoToQueue");
          ManagementHelper.putOperationInvocation(message,
                                                  ResourceNames.CORE_SERVER,
                                                  "sendQueueInfoToQueue",
@@ -241,6 +244,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    @Override
    protected void afterConnect() throws Exception
    {
+      System.out.println("afterConnect");
       setupNotificationConsumer();
    }
    

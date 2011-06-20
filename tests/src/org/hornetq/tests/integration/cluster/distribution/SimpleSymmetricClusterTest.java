@@ -77,7 +77,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
    public void tearDown() throws Exception
    {
-      stopServers(0, 1);
+      stopServers(0, 1, 2);
       super.tearDown();
    }
    
@@ -110,16 +110,25 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       setupSessionFactory(1, isNetty());
       setupSessionFactory(2, isNetty());
       
+      //Thread.sleep(1500);
+      
       createQueue(0, "queues.testaddress", "queue0", null, false);
+      //Thread.sleep(1500);
       createQueue(1, "queues.testaddress", "queue0", null, false);
+      //Thread.sleep(1500);
       createQueue(2, "queues.testaddress", "queue0", null, false);
+      //Thread.sleep(1500);
 
       addConsumer(0, 0, "queue0", null);
+      //Thread.sleep(1500);
       addConsumer(1, 1, "queue0", null);
-      addConsumer(2, 1, "queue0", null);
+      //Thread.sleep(1500);
+      addConsumer(2, 2, "queue0", null);
+      //Thread.sleep(1500);
 
       waitForBindings(0, "queues.testaddress", 1, 1, true);
       waitForBindings(1, "queues.testaddress", 1, 1, true);
+      waitForBindings(2, "queues.testaddress", 1, 1, true);
 
       waitForBindings(0, "queues.testaddress", 2, 2, false);
       waitForBindings(1, "queues.testaddress", 2, 2, false);

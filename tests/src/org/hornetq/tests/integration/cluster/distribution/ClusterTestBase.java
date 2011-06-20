@@ -319,7 +319,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       // Sending thread dump into junit report.. trying to get some information about the server case the binding didn't
       // arrive
-      System.out.println(UnitTestCase.threadDump(msg));
+      // System.out.println(UnitTestCase.threadDump(msg));
 
       Bindings bindings = po.getBindingsForAddress(new SimpleString(address));
 
@@ -1845,7 +1845,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          * This is to avoid split brain on startup
          * */
          // TODO: Do we really need this?
-         Thread.sleep(500);
+         Thread.sleep(1000);
       }
       for (int node : nodes)
       {

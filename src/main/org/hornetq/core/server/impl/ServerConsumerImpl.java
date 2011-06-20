@@ -262,7 +262,7 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
             // the updateDeliveryCount would still be updated after c
             if (strictUpdateDeliveryCount)
             {
-               if (ref.getMessage().isDurable() && ref.getQueue().isDurable() && !ref.getQueue().isInternalQueue())
+               if (ref.getMessage().isDurable() && ref.getQueue().isDurable() && !ref.getQueue().isInternalQueue() && !ref.isPaged())
                {
                   storageManager.updateDeliveryCount(ref);
                }

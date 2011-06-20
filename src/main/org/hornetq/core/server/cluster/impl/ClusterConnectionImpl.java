@@ -493,7 +493,6 @@ public class ClusterConnectionImpl implements ClusterConnection
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
-      log.warn(this + " WTF nodeUP nodeID=" + nodeID, new Exception ("trace"));
       if (log.isDebugEnabled())
       {
          log.debug(this + "receiving nodeUP for nodeID=" + nodeID + 
@@ -1026,6 +1025,11 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.trace("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this);
          }
+         
+         synchronized (System.err)
+         {
+            new Exception("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this).printStackTrace(System.out);
+         }
 
          bindings.put(clusterName, binding);
 
@@ -1055,6 +1059,8 @@ public class ClusterConnectionImpl implements ClusterConnection
          }
 
          SimpleString clusterName = message.getSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME);
+         
+         System.out.println("Removing clusterName=" + clusterName + " on " + ClusterConnectionImpl.this);
 
          removeBinding(clusterName);
       }
@@ -1096,10 +1102,15 @@ public class ClusterConnectionImpl implements ClusterConnection
          SimpleString filterString = message.getSimpleStringProperty(ManagementHelper.HDR_FILTERSTRING);
 
          RemoteQueueBinding binding = bindings.get(clusterName);
+         
+         synchronized (System.err)
+         {
+            new Exception("Looking for consumer on " + clusterName + " binding = " + binding).printStackTrace(System.out);
+         }
 
          if (binding == null)
          {
-            throw new IllegalStateException("Cannot find binding for " + clusterName);
+            throw new IllegalStateException("Cannot find binding for " + clusterName + " on " + ClusterConnectionImpl.this);
          }
 
          binding.addConsumer(filterString);
