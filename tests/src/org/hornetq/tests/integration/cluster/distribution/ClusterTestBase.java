@@ -13,6 +13,8 @@
 
 package org.hornetq.tests.integration.cluster.distribution;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +40,6 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
@@ -337,14 +338,66 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       System.out.println("=======================================================================");
 
-      for (HornetQServer hornetQServer : servers)
+      try
       {
-         if (hornetQServer != null)
+         for (HornetQServer hornetQServer : servers)
          {
-            System.out.println(clusterDescription(hornetQServer));
+            if (hornetQServer != null)
+            {
+               System.out.println(clusterDescription(hornetQServer));
+               System.out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
+            }
+         }
+         
+         for (HornetQServer hornetQServer : servers)
+         {
+            System.out.println("Management bindings on " + hornetQServer);
+            if (hornetQServer != null)
+            {
+               System.out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
+            }
          }
       }
+      catch (Throwable dontCare)
+      {
+      }
+      
+      
       throw new IllegalStateException(msg);
+   }
+   
+   
+   protected String debugBindings(final HornetQServer server, final String address) throws Exception
+   {
+      
+      StringWriter str = new StringWriter();
+      PrintWriter out = new PrintWriter(str);
+      
+      if (server == null)
+      {
+         return "server is shutdown";
+      }
+      PostOffice po = server.getPostOffice();
+
+      if (po == null)
+      {
+         return "server is shutdown";
+      }
+      Bindings bindings = po.getBindingsForAddress(new SimpleString(address));
+
+      out.println("=======================================================================");
+      out.println("Binding information for address = " + address + " on "  + server);
+
+      for (Binding binding : bindings.getBindings())
+      {
+         QueueBinding qBinding = (QueueBinding)binding;
+
+         out.println("Binding = " + qBinding + ", queue=" + qBinding.getQueue());
+      }
+      out.println("=======================================================================");
+      
+      return str.toString();
+
    }
 
    protected void createQueue(final int node,
@@ -368,6 +421,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          filterString = ClusterTestBase.FILTER_PROP.toString() + "='" + filterVal + "'";
       }
+      
+      log.info("Creating " + queueName + " , address " + address + " on " + servers[node]);
 
       session.createQueue(address, queueName, filterString, durable);
 
@@ -832,7 +887,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          for (ClusterConnection cc : clusterManager.getClusterConnections())
          {
-            out += cc.description() + "\n";
+            out += cc.describe() + "\n";
          }
       }
       out += "\n\nfull topology:";
@@ -1837,24 +1892,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
          servers[node].setIdentity("server " + node);
          ClusterTestBase.log.info("starting server " + servers[node]);
          servers[node].start();
+
          ClusterTestBase.log.info("started server " + servers[node]);
 
          ClusterTestBase.log.info("started server " + node);
-         /*
-         * we need to wait a lil while between server start up to allow the server to communicate in some order.
-         * This is to avoid split brain on startup
-         * */
-         // TODO: Do we really need this?
-         Thread.sleep(1000);
-      }
-      for (int node : nodes)
-      {
-         //wait for each server to start, it may be a backup and started in a separate thread
+
          waitForServer(servers[node]);
       }
    }
 
-   private void waitForServer(HornetQServer server)
+   protected void waitForServer(HornetQServer server)
          throws InterruptedException
    {
       long timetowait =System.currentTimeMillis() + 5000;
