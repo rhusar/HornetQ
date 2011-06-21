@@ -312,7 +312,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
 
-      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount + " (expecting " + expectedConsumerCount + ") "+
+      String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount + " (expecting " + expectedBindingCount + ") "+
                    ", totConsumers = " +
                    totConsumers + " (expecting " + expectedConsumerCount + ")" + 
                    ")";
@@ -951,21 +951,32 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       for (int i = 0; i < numMessages; i++)
       {
-         ConsumerHolder holder = consumers[consumerIDs[count]];
-
-         if (holder == null)
+         // We may use a negative number in some tests to ignore the consumer, case we know the server is down
+         if (consumerIDs[count] >= 0)
          {
-            throw new IllegalArgumentException("No consumer at " + consumerIDs[i]);
+            ConsumerHolder holder = consumers[consumerIDs[count]];
+   
+            if (holder == null)
+            {
+               throw new IllegalArgumentException("No consumer at " + consumerIDs[i]);
+            }
+   
+            ClientMessage message = holder.consumer.receive(WAIT_TIMEOUT);
+            
+            message.acknowledge();
+            
+            consumers[consumerIDs[count]].session.commit();
+            
+            System.out.println("Msg: " + message);
+   
+            Assert.assertNotNull("consumer " + consumerIDs[count] + " did not receive message " + i, message);
+   
+            Assert.assertEquals("consumer " + consumerIDs[count] + " message " + i,
+                                i,
+                                message.getObjectProperty(ClusterTestBase.COUNT_PROP));
+
          }
-
-         ClientMessage message = holder.consumer.receive(WAIT_TIMEOUT);
-
-         Assert.assertNotNull("consumer " + consumerIDs[count] + " did not receive message " + i, message);
-
-         Assert.assertEquals("consumer " + consumerIDs[count] + " message " + i,
-                             i,
-                             message.getObjectProperty(ClusterTestBase.COUNT_PROP));
-
+         
          count++;
 
          if (count == consumerIDs.length)

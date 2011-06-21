@@ -549,7 +549,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    public void beforeReconnect(final HornetQException exception)
    {
       log.warn(name + "::Connection failed before reconnect ", exception);
-      fail(true);
+      fail(false);
    }
 
    // Package protected ---------------------------------------------
