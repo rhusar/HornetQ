@@ -87,6 +87,68 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       return false;
    }
 
+   public void testSimpleWithBackup() throws Exception
+   {
+      // The backups
+      setupBackupServer(0, 3, isFileStorage(), true, isNetty());
+      setupBackupServer(1, 4, isFileStorage(), true, isNetty());
+      setupBackupServer(2, 5, isFileStorage(), true, isNetty());
+
+      // The lives
+      setupLiveServer(3, isFileStorage(), true, isNetty());
+      setupLiveServer(4, isFileStorage(), true, isNetty());
+      setupLiveServer(5, isFileStorage(), true, isNetty());
+
+      setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 3, 4, 5);
+
+      setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 4, 3, 5);
+
+      setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 5, 3, 4);
+
+      setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 4, 5);
+
+      setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 3, 5);
+
+      setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 3, 4);
+
+
+      // startServers(3, 4, 5, 0, 1, 2);
+      startServers(0, 1, 2, 3, 4, 5);
+      
+      Thread.sleep(1000);
+
+      log.info("");
+      for (int i = 0; i <= 5; i++)
+      {
+         log.info(servers[i].describe());
+         log.info(debugBindings(servers[i], servers[i].getConfiguration().getManagementNotificationAddress().toString()));
+      }
+      log.info("");
+      
+      //stopServers(3);
+      
+      Thread.sleep(1000);
+
+      log.info("");
+      for (int i = 0; i <= 5; i++)
+      {
+         log.info(servers[i].describe());
+         log.info(debugBindings(servers[i], servers[i].getConfiguration().getManagementNotificationAddress().toString()));
+      }
+      log.info("");
+      
+
+      
+//      setupSessionFactory(0, isNetty());
+//      setupSessionFactory(1, isNetty());
+//      setupSessionFactory(2, isNetty());
+      // System.exit(-1);
+      
+      stopServers(0, 1, 2, 3, 4, 5);
+
+   }
+   
+
    public void testSimple() throws Exception
    {
       setupServer(0, true, isNetty());
