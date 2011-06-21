@@ -40,6 +40,7 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
@@ -1786,6 +1787,52 @@ public abstract class ClusterTestBase extends ServiceTestBase
       serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
    }
 
+   protected void setupClusterConnection(final String name,
+                                         final String address,
+                                         final boolean forwardWhenNoConsumers,
+                                         final int maxHops,
+                                         final int reconnectAttempts,
+                                         final long retryInterval,
+                                         final boolean netty,
+                                         final int nodeFrom,
+                                         final int... nodesTo)
+   {
+      HornetQServer serverFrom = servers[nodeFrom];
+
+      if (serverFrom == null)
+      {
+         throw new IllegalStateException("No server at node " + nodeFrom);
+      }
+
+      TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
+      serverFrom.getConfiguration().getConnectorConfigurations().put(connectorFrom.getName(), connectorFrom);
+      
+      List<String> pairs = new ArrayList<String>();
+      for (int element : nodesTo)
+      {
+         TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(element, netty));
+         serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
+         pairs.add(serverTotc.getName());
+      }
+      ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
+           address,
+           connectorFrom.getName(),
+           ConfigurationImpl.DEFAULT_CLUSTER_FAILURE_CHECK_PERIOD,
+           ConfigurationImpl.DEFAULT_CLUSTER_CONNECTION_TTL,
+           retryInterval,
+           ConfigurationImpl.DEFAULT_CLUSTER_RETRY_INTERVAL_MULTIPLIER,
+           ConfigurationImpl.DEFAULT_CLUSTER_MAX_RETRY_INTERVAL,
+           reconnectAttempts,
+           true,
+           forwardWhenNoConsumers,
+           maxHops,
+           1024,
+           pairs,
+           false);
+
+      serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
+   }
+
    /**
     * @param name
     * @param address
@@ -1796,23 +1843,23 @@ public abstract class ClusterTestBase extends ServiceTestBase
     * @return
     */
    protected ClusterConnectionConfiguration createClusterConfig(final String name,
-                                                              final String address,
-                                                              final boolean forwardWhenNoConsumers,
-                                                              final int maxHops,
-                                                              TransportConfiguration connectorFrom,
-                                                              List<String> pairs)
-   {
-      ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
-                                                                                      address,
-                                                                                      connectorFrom.getName(),
-                                                                                      250,
-                                                                                      true,
-                                                                                      forwardWhenNoConsumers,
-                                                                                      maxHops,
-                                                                                      1024,
-                                                                                      pairs, false);
-      return clusterConf;
-   }
+                                                                final String address,
+                                                                final boolean forwardWhenNoConsumers,
+                                                                final int maxHops,
+                                                                TransportConfiguration connectorFrom,
+                                                                List<String> pairs)
+     {
+        ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
+                                                                                        address,
+                                                                                        connectorFrom.getName(),
+                                                                                        250,
+                                                                                        true,
+                                                                                        forwardWhenNoConsumers,
+                                                                                        maxHops,
+                                                                                        1024,
+                                                                                        pairs, false);
+        return clusterConf;
+     }
 
    protected void setupClusterConnectionWithBackups(final String name,
                                                     final String address,

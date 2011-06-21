@@ -746,7 +746,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          return;
       }
 
-      long timeout = (long)(this.retryCount * this.retryMultiplier * this.retryMultiplier);
+      long timeout = (long)(this.retryInterval * Math.pow(this.retryMultiplier, retryCount));
       if (timeout == 0)
       {
          timeout = this.retryInterval;
@@ -755,6 +755,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          timeout = maxRetryInterval;
       }
+      
+      log.debug("Bridge " + this + " retrying connection #" + retryCount + ", maxRetry=" + reconnectAttemptsInUse + ", timeout=" + timeout);
 
       scheduleRetryConnectFixedTimeout(timeout);
    }

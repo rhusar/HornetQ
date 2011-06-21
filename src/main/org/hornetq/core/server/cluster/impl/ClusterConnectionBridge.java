@@ -265,6 +265,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    @Override
    protected void afterConnect() throws Exception
    {
+      super.afterConnect();
       System.out.println("afterConnect");
       setupNotificationConsumer();
    }
@@ -275,7 +276,7 @@ public class ClusterConnectionBridge extends BridgeImpl
       super.stop();
    }
 
-   protected void failed(final boolean permanently)
+   protected void fail(final boolean permanently)
    {
       log.debug("Cluster Bridge " + this.getName() + " failed, permanently=" + permanently);
       super.fail(permanently);

@@ -506,7 +506,8 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       if (log.isDebugEnabled())
       {
-         log.debug(this + "receiving nodeUP for nodeID=" + nodeID + 
+         String ClusterTestBase = "receiving nodeUP for nodeID=";
+         log.debug(this + ClusterTestBase + nodeID + 
                    " connectionPair=" + connectorPair, new Exception ("trace"));
       }
       // discard notifications about ourselves unless its from our backup
