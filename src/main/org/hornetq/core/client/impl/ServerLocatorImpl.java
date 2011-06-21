@@ -1323,6 +1323,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    class StaticConnector implements Serializable
    {
+      private static final long serialVersionUID = 6772279632415242634l;
+
       private List<Connector> connectors;
 
       public ClientSessionFactory connect() throws HornetQException
