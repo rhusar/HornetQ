@@ -1061,11 +1061,6 @@ public class ClusterConnectionImpl implements ClusterConnection
 
          RemoteQueueBinding binding = bindings.get(clusterName);
          
-         synchronized (System.err)
-         {
-            new Exception("Looking for consumer on " + clusterName + " binding = " + binding).printStackTrace(System.out);
-         }
-
          if (binding == null)
          {
             throw new IllegalStateException("Cannot find binding for " + clusterName + " on " + ClusterConnectionImpl.this);
