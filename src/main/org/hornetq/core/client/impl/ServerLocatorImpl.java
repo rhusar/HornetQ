@@ -18,8 +18,19 @@ import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQException;
@@ -665,258 +676,258 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public synchronized boolean isHA()
+   public boolean isHA()
    {
       return ha;
    }
 
-   public synchronized boolean isCacheLargeMessagesClient()
+   public boolean isCacheLargeMessagesClient()
    {
       return cacheLargeMessagesClient;
    }
 
-   public synchronized void setCacheLargeMessagesClient(final boolean cached)
+   public void setCacheLargeMessagesClient(final boolean cached)
    {
       cacheLargeMessagesClient = cached;
    }
 
-   public synchronized long getClientFailureCheckPeriod()
+   public long getClientFailureCheckPeriod()
    {
       return clientFailureCheckPeriod;
    }
 
-   public synchronized void setClientFailureCheckPeriod(final long clientFailureCheckPeriod)
+   public void setClientFailureCheckPeriod(final long clientFailureCheckPeriod)
    {
       checkWrite();
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
    }
 
-   public synchronized long getConnectionTTL()
+   public long getConnectionTTL()
    {
       return connectionTTL;
    }
 
-   public synchronized void setConnectionTTL(final long connectionTTL)
+   public void setConnectionTTL(final long connectionTTL)
    {
       checkWrite();
       this.connectionTTL = connectionTTL;
    }
 
-   public synchronized long getCallTimeout()
+   public long getCallTimeout()
    {
       return callTimeout;
    }
 
-   public synchronized void setCallTimeout(final long callTimeout)
+   public void setCallTimeout(final long callTimeout)
    {
       checkWrite();
       this.callTimeout = callTimeout;
    }
 
-   public synchronized int getMinLargeMessageSize()
+   public int getMinLargeMessageSize()
    {
       return minLargeMessageSize;
    }
 
-   public synchronized void setMinLargeMessageSize(final int minLargeMessageSize)
+   public void setMinLargeMessageSize(final int minLargeMessageSize)
    {
       checkWrite();
       this.minLargeMessageSize = minLargeMessageSize;
    }
 
-   public synchronized int getConsumerWindowSize()
+   public int getConsumerWindowSize()
    {
       return consumerWindowSize;
    }
 
-   public synchronized void setConsumerWindowSize(final int consumerWindowSize)
+   public void setConsumerWindowSize(final int consumerWindowSize)
    {
       checkWrite();
       this.consumerWindowSize = consumerWindowSize;
    }
 
-   public synchronized int getConsumerMaxRate()
+   public int getConsumerMaxRate()
    {
       return consumerMaxRate;
    }
 
-   public synchronized void setConsumerMaxRate(final int consumerMaxRate)
+   public void setConsumerMaxRate(final int consumerMaxRate)
    {
       checkWrite();
       this.consumerMaxRate = consumerMaxRate;
    }
 
-   public synchronized int getConfirmationWindowSize()
+   public int getConfirmationWindowSize()
    {
       return confirmationWindowSize;
    }
 
-   public synchronized void setConfirmationWindowSize(final int confirmationWindowSize)
+   public void setConfirmationWindowSize(final int confirmationWindowSize)
    {
       checkWrite();
       this.confirmationWindowSize = confirmationWindowSize;
    }
 
-   public synchronized int getProducerWindowSize()
+   public int getProducerWindowSize()
    {
       return producerWindowSize;
    }
 
-   public synchronized void setProducerWindowSize(final int producerWindowSize)
+   public void setProducerWindowSize(final int producerWindowSize)
    {
       checkWrite();
       this.producerWindowSize = producerWindowSize;
    }
 
-   public synchronized int getProducerMaxRate()
+   public int getProducerMaxRate()
    {
       return producerMaxRate;
    }
 
-   public synchronized void setProducerMaxRate(final int producerMaxRate)
+   public void setProducerMaxRate(final int producerMaxRate)
    {
       checkWrite();
       this.producerMaxRate = producerMaxRate;
    }
 
-   public synchronized boolean isBlockOnAcknowledge()
+   public boolean isBlockOnAcknowledge()
    {
       return blockOnAcknowledge;
    }
 
-   public synchronized void setBlockOnAcknowledge(final boolean blockOnAcknowledge)
+   public void setBlockOnAcknowledge(final boolean blockOnAcknowledge)
    {
       checkWrite();
       this.blockOnAcknowledge = blockOnAcknowledge;
    }
 
-   public synchronized boolean isBlockOnDurableSend()
+   public boolean isBlockOnDurableSend()
    {
       return blockOnDurableSend;
    }
 
-   public synchronized void setBlockOnDurableSend(final boolean blockOnDurableSend)
+   public void setBlockOnDurableSend(final boolean blockOnDurableSend)
    {
       checkWrite();
       this.blockOnDurableSend = blockOnDurableSend;
    }
 
-   public synchronized boolean isBlockOnNonDurableSend()
+   public boolean isBlockOnNonDurableSend()
    {
       return blockOnNonDurableSend;
    }
 
-   public synchronized void setBlockOnNonDurableSend(final boolean blockOnNonDurableSend)
+   public void setBlockOnNonDurableSend(final boolean blockOnNonDurableSend)
    {
       checkWrite();
       this.blockOnNonDurableSend = blockOnNonDurableSend;
    }
 
-   public synchronized boolean isAutoGroup()
+   public boolean isAutoGroup()
    {
       return autoGroup;
    }
 
-   public synchronized void setAutoGroup(final boolean autoGroup)
+   public void setAutoGroup(final boolean autoGroup)
    {
       checkWrite();
       this.autoGroup = autoGroup;
    }
 
-   public synchronized boolean isPreAcknowledge()
+   public boolean isPreAcknowledge()
    {
       return preAcknowledge;
    }
 
-   public synchronized void setPreAcknowledge(final boolean preAcknowledge)
+   public void setPreAcknowledge(final boolean preAcknowledge)
    {
       checkWrite();
       this.preAcknowledge = preAcknowledge;
    }
 
-   public synchronized int getAckBatchSize()
+   public int getAckBatchSize()
    {
       return ackBatchSize;
    }
 
-   public synchronized void setAckBatchSize(final int ackBatchSize)
+   public void setAckBatchSize(final int ackBatchSize)
    {
       checkWrite();
       this.ackBatchSize = ackBatchSize;
    }
 
-   public synchronized boolean isUseGlobalPools()
+   public boolean isUseGlobalPools()
    {
       return useGlobalPools;
    }
 
-   public synchronized void setUseGlobalPools(final boolean useGlobalPools)
+   public void setUseGlobalPools(final boolean useGlobalPools)
    {
       checkWrite();
       this.useGlobalPools = useGlobalPools;
    }
 
-   public synchronized int getScheduledThreadPoolMaxSize()
+   public int getScheduledThreadPoolMaxSize()
    {
       return scheduledThreadPoolMaxSize;
    }
 
-   public synchronized void setScheduledThreadPoolMaxSize(final int scheduledThreadPoolMaxSize)
+   public void setScheduledThreadPoolMaxSize(final int scheduledThreadPoolMaxSize)
    {
       checkWrite();
       this.scheduledThreadPoolMaxSize = scheduledThreadPoolMaxSize;
    }
 
-   public synchronized int getThreadPoolMaxSize()
+   public int getThreadPoolMaxSize()
    {
       return threadPoolMaxSize;
    }
 
-   public synchronized void setThreadPoolMaxSize(final int threadPoolMaxSize)
+   public void setThreadPoolMaxSize(final int threadPoolMaxSize)
    {
       checkWrite();
       this.threadPoolMaxSize = threadPoolMaxSize;
    }
 
-   public synchronized long getRetryInterval()
+   public long getRetryInterval()
    {
       return retryInterval;
    }
 
-   public synchronized void setRetryInterval(final long retryInterval)
+   public void setRetryInterval(final long retryInterval)
    {
       checkWrite();
       this.retryInterval = retryInterval;
    }
 
-   public synchronized long getMaxRetryInterval()
+   public long getMaxRetryInterval()
    {
       return maxRetryInterval;
    }
 
-   public synchronized void setMaxRetryInterval(final long retryInterval)
+   public void setMaxRetryInterval(final long retryInterval)
    {
       checkWrite();
       maxRetryInterval = retryInterval;
    }
 
-   public synchronized double getRetryIntervalMultiplier()
+   public double getRetryIntervalMultiplier()
    {
       return retryIntervalMultiplier;
    }
 
-   public synchronized void setRetryIntervalMultiplier(final double retryIntervalMultiplier)
+   public void setRetryIntervalMultiplier(final double retryIntervalMultiplier)
    {
       checkWrite();
       this.retryIntervalMultiplier = retryIntervalMultiplier;
    }
 
-   public synchronized int getReconnectAttempts()
+   public int getReconnectAttempts()
    {
       return reconnectAttempts;
    }
 
-   public synchronized void setReconnectAttempts(final int reconnectAttempts)
+   public void setReconnectAttempts(final int reconnectAttempts)
    {
       checkWrite();
       this.reconnectAttempts = reconnectAttempts;
@@ -933,23 +944,23 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return initialConnectAttempts;
    }
 
-   public synchronized boolean isFailoverOnInitialConnection()
+   public boolean isFailoverOnInitialConnection()
    {
       return this.failoverOnInitialConnection;
    }
 
-   public synchronized void setFailoverOnInitialConnection(final boolean failover)
+   public void setFailoverOnInitialConnection(final boolean failover)
    {
       checkWrite();
       this.failoverOnInitialConnection = failover;
    }
 
-   public synchronized String getConnectionLoadBalancingPolicyClassName()
+   public String getConnectionLoadBalancingPolicyClassName()
    {
       return connectionLoadBalancingPolicyClassName;
    }
 
-   public synchronized void setConnectionLoadBalancingPolicyClassName(final String loadBalancingPolicyClassName)
+   public void setConnectionLoadBalancingPolicyClassName(final String loadBalancingPolicyClassName)
    {
       checkWrite();
       connectionLoadBalancingPolicyClassName = loadBalancingPolicyClassName;
@@ -975,12 +986,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return interceptors.remove(interceptor);
    }
 
-   public synchronized int getInitialMessagePacketSize()
+   public int getInitialMessagePacketSize()
    {
       return initialMessagePacketSize;
    }
 
-   public synchronized void setInitialMessagePacketSize(final int size)
+   public void setInitialMessagePacketSize(final int size)
    {
       checkWrite();
       initialMessagePacketSize = size;

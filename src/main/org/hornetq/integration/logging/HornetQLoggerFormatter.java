@@ -38,7 +38,7 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
       
       StringBuffer sb = new StringBuffer();
       
-      sb.append("[").append(Thread.currentThread().getName()).append("] ");
+      sb.append("* [").append(Thread.currentThread().getName()).append("] ");
       sb.append(calendar.get(GregorianCalendar.HOUR_OF_DAY) + ":" +
                 calendar.get(GregorianCalendar.MINUTE) +
                 ":" +
@@ -49,6 +49,7 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
       
       sb.append(record.getLevel()).append(" [");
       sb.append(stripPackage(record.getLoggerName())).append("]").append("  ");
+      sb.append(HornetQLoggerFormatter.LINE_SEPARATOR);
       sb.append(record.getMessage());
 
       sb.append(HornetQLoggerFormatter.LINE_SEPARATOR);
@@ -66,6 +67,8 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
          {
          }
       }
+      sb.append(HornetQLoggerFormatter.LINE_SEPARATOR);
+
       return sb.toString();
    }
 

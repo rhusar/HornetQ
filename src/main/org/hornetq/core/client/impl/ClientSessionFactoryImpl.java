@@ -83,9 +83,9 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private static final long serialVersionUID = 2512460695662741413L;
 
    private static final Logger log = Logger.getLogger(ClientSessionFactoryImpl.class);
-   
+
    private static final boolean isTrace = log.isTraceEnabled();
-   
+
    private static final boolean isDebug = log.isDebugEnabled();
 
    // Attributes
@@ -206,7 +206,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       closeExecutor = orderedExecutorFactory.getExecutor();
 
       this.interceptors = interceptors;
- 
+
    }
 
    public void connect(int initialConnectAttempts, boolean failoverOnInitialConnection) throws HornetQException
@@ -217,12 +217,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       if (connection == null)
       {
          StringBuffer msg = new StringBuffer("Unable to connect to server using configuration ").append(connectorConfig);
-         if(backupConfig != null)
+         if (backupConfig != null)
          {
             msg.append(" and backup configuration ").append(backupConfig);
          }
-         throw new HornetQException(HornetQException.NOT_CONNECTED,
-               msg.toString());
+         throw new HornetQException(HornetQException.NOT_CONNECTED, msg.toString());
       }
 
    }
@@ -234,11 +233,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    public void setBackupConnector(TransportConfiguration live, TransportConfiguration backUp)
    {
-      if(live.equals(connectorConfig) && backUp != null)
+      if (live.equals(connectorConfig) && backUp != null)
       {
          if (isDebug)
          {
-              log.debug("Setting up backup config = " + backUp + " for live = " + live);
+            log.debug("Setting up backup config = " + backUp + " for live = " + live);
          }
          backupConfig = backUp;
       }
@@ -246,7 +245,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          if (isDebug)
          {
-            log.debug("ClientSessionFactoryImpl received backup update for live/backup pair = " + live + " / " + backUp + " but it didn't belong to " + this.connectorConfig);
+            log.debug("ClientSessionFactoryImpl received backup update for live/backup pair = " + live +
+                      " / " +
+                      backUp +
+                      " but it didn't belong to " +
+                      this.connectorConfig);
          }
       }
    }
@@ -381,7 +384,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          sessions.remove(session);
       }
    }
-   
+
    public void connectionReadyForWrites(final Object connectionID, final boolean ready)
    {
    }
@@ -458,10 +461,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       closed = true;
-      
+
       serverLocator.factoryClosed(this);
    }
-   
+
    public void cleanup()
    {
       if (closed)
@@ -473,39 +476,36 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       causeExit();
       synchronized (createSessionLock)
       {
-         synchronized (failoverLock)
+         HashSet<ClientSessionInternal> sessionsToClose;
+         synchronized (sessions)
          {
-            HashSet<ClientSessionInternal> sessionsToClose;
-            synchronized (sessions)
-            {
-               sessionsToClose = new HashSet<ClientSessionInternal>(sessions);
-            }
-            // work on a copied set. the session will be removed from sessions when session.close() is called
-            for (ClientSessionInternal session : sessionsToClose)
-            {
-               try
-               {
-                  session.cleanUp(false);
-               }
-               catch (Exception e)
-               {
-                  log.warn("Unable to close session", e);
-               }
-            }
-
-            checkCloseConnection();
+            sessionsToClose = new HashSet<ClientSessionInternal>(sessions);
          }
+         // work on a copied set. the session will be removed from sessions when session.close() is called
+         for (ClientSessionInternal session : sessionsToClose)
+         {
+            try
+            {
+               session.cleanUp(false);
+            }
+            catch (Exception e)
+            {
+               log.warn("Unable to close session", e);
+            }
+         }
+
+         checkCloseConnection();
       }
 
       closed = true;
    }
 
-    public boolean isClosed()
-    {
-        return closed;
-    }
+   public boolean isClosed()
+   {
+      return closed;
+   }
 
-    public ServerLocator getServerLocator()
+   public ServerLocator getServerLocator()
    {
       return serverLocator;
    }
@@ -517,7 +517,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    {
       stopPingingAfterOne = true;
    }
-   
+
    public void resumePinging()
    {
       stopPingingAfterOne = false;
@@ -553,12 +553,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             return;
          }
 
-         
          if (isTrace)
          {
             log.trace("Client Connection failed, calling failure listeners and trying to reconnect, reconnectAttempts=" + reconnectAttempts);
          }
-         
+
          // We call before reconnection occurs to give the user a chance to do cleanup, like cancel messages
          callFailureListeners(me, false, false);
 
@@ -586,7 +585,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          // It should then return its connections, with channel 1 lock still held
          // It can then release the channel 1 lock, and retry (which will cause locking on failoverLock
          // until failover is complete
-
 
          if (reconnectAttempts != 0)
          {
@@ -928,7 +926,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       {
          sessionsToFailover = new HashSet<ClientSessionInternal>(sessions);
       }
-      
+
       for (ClientSessionInternal session : sessionsToFailover)
       {
          session.handleFailover(connection);
@@ -938,7 +936,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    private void getConnectionWithRetry(final int reconnectAttempts)
    {
       log.info("getConnectionWithRetry::" + reconnectAttempts);
-      
+
       long interval = retryInterval;
 
       int count = 0;
@@ -961,7 +959,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                if (reconnectAttempts != 0)
                {
                   count++;
-                  
+
                   if (reconnectAttempts != -1 && count == reconnectAttempts)
                   {
                      log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up on reconnecting it.");
@@ -971,19 +969,21 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
                   if (isTrace)
                   {
-                     log.trace("Waiting " + interval + 
-                               " milliseconds before next retry. RetryInterval=" + retryInterval + 
-                                  " and multiplier = " + retryIntervalMultiplier);
+                     log.trace("Waiting " + interval +
+                               " milliseconds before next retry. RetryInterval=" +
+                               retryInterval +
+                               " and multiplier = " +
+                               retryIntervalMultiplier);
                   }
-                  
+
                   try
                   {
-                      waitLock.wait(interval);
+                     waitLock.wait(interval);
                   }
                   catch (InterruptedException ignore)
                   {
                   }
-                  
+
                   // Exponential back-off
                   long newInterval = (long)(interval * retryIntervalMultiplier);
 
@@ -1062,10 +1062,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          try
          {
             DelegatingBufferHandler handler = new DelegatingBufferHandler();
-            
+
             if (log.isDebugEnabled())
             {
-               log.debug("Trying to connect with connector = " + connectorFactory + ", parameters = " + connectorConfig.getParams());
+               log.debug("Trying to connect with connector = " + connectorFactory +
+                         ", parameters = " +
+                         connectorConfig.getParams());
             }
 
             connector = connectorFactory.createConnector(connectorConfig.getParams(),
@@ -1083,7 +1085,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                {
                   log.debug("Trying to connect at the main server using connector :" + connectorConfig);
                }
-               
+
                tc = connector.createConnection();
 
                if (tc == null)
@@ -1092,7 +1094,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   {
                      log.debug("Main server is not up. Hopefully there's a backup configured now!");
                   }
-                  
+
                   try
                   {
                      connector.close();
@@ -1104,8 +1106,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   connector = null;
                }
             }
-            //if connection fails we can try the backup in case it has come live
-            if(connector == null && backupConfig != null)
+            // if connection fails we can try the backup in case it has come live
+            if (connector == null && backupConfig != null)
             {
                if (isDebug)
                {
@@ -1113,11 +1115,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                }
                ConnectorFactory backupConnectorFactory = instantiateConnectorFactory(backupConfig.getFactoryClassName());
                connector = backupConnectorFactory.createConnector(backupConfig.getParams(),
-                                                         handler,
-                                                         this,
-                                                         closeExecutor,
-                                                         threadPool,
-                                                         scheduledThreadPool);
+                                                                  handler,
+                                                                  this,
+                                                                  closeExecutor,
+                                                                  threadPool,
+                                                                  scheduledThreadPool);
                if (connector != null)
                {
                   connector.start();
@@ -1130,7 +1132,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                      {
                         log.debug("Backup is not active yet");
                      }
-                     
+
                      try
                      {
                         connector.close();
@@ -1144,12 +1146,12 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   else
                   {
                      /*looks like the backup is now live, lets use that*/
-                     
+
                      if (isDebug)
                      {
                         log.debug("Connected to the backup at " + backupConfig);
                      }
-                     
+
                      connectorConfig = backupConfig;
 
                      backupConfig = null;
@@ -1162,7 +1164,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                if (isTrace)
                {
-                  log.trace("No Backup configured!", new Exception ("trace"));
+                  log.trace("No Backup configured!", new Exception("trace"));
                }
             }
          }
@@ -1215,7 +1217,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             log.debug("Defined connection " + connection);
          }
-         
+
          connection.addFailureListener(new DelegatingFailureListener(connection.getID()));
 
          Channel channel0 = connection.getChannel(0, -1);
@@ -1249,7 +1251,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                log.debug("Subscribing Topology");
             }
-            
+
             channel0.send(new SubscribeClusterTopologyUpdatesMessage(serverLocator.isClusterConnection()));
             if (serverLocator.isClusterConnection())
             {
@@ -1258,9 +1260,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                {
                   log.debug("Announcing node " + serverLocator.getNodeID() + ", isBackup=" + serverLocator.isBackup());
                }
-               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(),
-                                                     serverLocator.isBackup(),
-                                                     config));
+               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
             }
          }
       }
@@ -1324,7 +1324,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       if (connection != null)
       {
          Channel channel1 = connection.getChannel(1, -1);
-   
+
          if (channel1 != null)
          {
             channel1.returnBlocking();
@@ -1365,7 +1365,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          if (type == PacketImpl.DISCONNECT)
          {
             final DisconnectMessage msg = (DisconnectMessage)packet;
-            
+
             closeExecutor.execute(new Runnable()
             {
                // Must be executed on new thread since cannot block the netty thread for a long time and fail can
@@ -1400,11 +1400,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                if (isDebug)
                {
-                  log.debug("Node " + topMessage.getNodeID() + " going up, connector = " + topMessage.getPair() + ", isLast=" + topMessage.isLast());
+                  log.debug("Node " + topMessage.getNodeID() +
+                            " going up, connector = " +
+                            topMessage.getPair() +
+                            ", isLast=" +
+                            topMessage.isLast());
                }
-               serverLocator.notifyNodeUp(topMessage.getNodeID(),
-                                          topMessage.getPair(),
-                                          topMessage.isLast());
+               serverLocator.notifyNodeUp(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
             }
          }
       }
@@ -1477,8 +1479,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          first = false;
 
          long now = System.currentTimeMillis();
-         
-         if (clientFailureCheckPeriod != -1 && connectionTTL != -1 && now >= lastCheck + connectionTTL )
+
+         if (clientFailureCheckPeriod != -1 && connectionTTL != -1 && now >= lastCheck + connectionTTL)
          {
             if (!connection.checkDataReceived())
             {

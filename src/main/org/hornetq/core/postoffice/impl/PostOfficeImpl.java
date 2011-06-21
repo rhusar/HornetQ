@@ -213,7 +213,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    {
       if (isTrace)
       {
-         log.trace("Receiving notification : " + notification);
+         log.trace("Receiving notification : " + notification + " on server " + this.server);
       }
       synchronized (notificationLock)
       {
@@ -471,7 +471,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
       String uid = UUIDGenerator.getInstance().generateStringUUID();
       
-      System.out.println("Seding notification for addBinding " + binding);
+      if (isTrace)
+      {
+         log.trace("Seding notification for addBinding " + binding + " from server " + server);
+      }
 
       managementService.sendNotification(new Notification(uid, NotificationType.BINDING_ADDED, props));
    }

@@ -14,6 +14,8 @@
 package org.hornetq.core.server.impl;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.nio.channels.ClosedChannelException;
 import java.security.AccessController;
@@ -830,7 +832,16 @@ public class HornetQServerImpl implements HornetQServer
    // HornetQServer implementation
    // -----------------------------------------------------------
 
-   
+   public String describe()
+   {
+      StringWriter str = new StringWriter();
+      PrintWriter out = new PrintWriter(str);
+      
+      out.println("Information about server " + this.identity);
+      out.println("Cluster Connection:" + this.getClusterManager().describe());
+      
+      return str.toString();
+   }
    public void setIdentity(String identity)
    {
       this.identity = identity;

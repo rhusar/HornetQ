@@ -28,11 +28,11 @@ import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSession.BindingQuery;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.SendAcknowledgementHandler;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ClientSessionInternal;
-import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.filter.Filter;
 import org.hornetq.core.filter.impl.FilterImpl;
 import org.hornetq.core.logging.Logger;
@@ -77,7 +77,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private static final SimpleString JMS_TOPIC_ADDRESS_PREFIX = new SimpleString("jms.topic.");
 
-   protected final ServerLocatorInternal serverLocator;
+   protected final ServerLocator serverLocator;
 
    private final UUID nodeUUID;
 
@@ -140,7 +140,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    // Public --------------------------------------------------------
 
-   public BridgeImpl(final ServerLocatorInternal serverLocator,
+   public BridgeImpl(final ServerLocator serverLocator,
                      final int reconnectAttempts,
                      final long retryInterval,
                      final double retryMultiplier,

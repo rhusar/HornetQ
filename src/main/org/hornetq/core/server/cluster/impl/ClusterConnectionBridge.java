@@ -24,7 +24,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientConsumer;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientProducer;
-import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.ResourceNames;
@@ -52,9 +52,9 @@ import org.hornetq.utils.UUIDGenerator;
 public class ClusterConnectionBridge extends BridgeImpl
 {
    private static final Logger log = Logger.getLogger(ClusterConnectionBridge.class);
-   
+
    private static final boolean isTrace = log.isTraceEnabled();
-   
+
    private final ClusterConnection clusterConnection;
 
    private final MessageFlowRecord flowRecord;
@@ -69,8 +69,13 @@ public class ClusterConnectionBridge extends BridgeImpl
 
    private final String targetNodeID;
 
+   private final TransportConfiguration connector;
+
+   private final ServerLocatorInternal discoveryLocator;
+
    public ClusterConnectionBridge(final ClusterConnection clusterConnection,
-                                  final ServerLocatorInternal serverLocator,
+                                  final ServerLocator targetLocator,
+                                  final ServerLocatorInternal discoveryLocator,
                                   final int reconnectAttempts,
                                   final long retryInterval,
                                   final double retryMultiplier,
@@ -94,7 +99,7 @@ public class ClusterConnectionBridge extends BridgeImpl
                                   final MessageFlowRecord flowRecord,
                                   final TransportConfiguration connector) throws Exception
    {
-      super(serverLocator,
+      super(targetLocator,
             reconnectAttempts,
             retryInterval,
             retryMultiplier,
@@ -112,18 +117,21 @@ public class ClusterConnectionBridge extends BridgeImpl
             password,
             activated,
             storageManager);
-      
+
       System.out.println("ClusterConnectionBridge");
 
+      this.discoveryLocator = discoveryLocator;
+
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
-      
+
       this.clusterConnection = clusterConnection;
 
       this.targetNodeID = targetNodeID;
       this.managementAddress = managementAddress;
       this.managementNotificationAddress = managementNotificationAddress;
       this.flowRecord = flowRecord;
-      
+      this.connector = connector;
+
       // we need to disable DLQ check on the clustered bridges
       queue.setInternalQueue(true);
    }
@@ -161,7 +169,16 @@ public class ClusterConnectionBridge extends BridgeImpl
 
    private void setupNotificationConsumer() throws Exception
    {
-      log.debug("Setting up notificationConsumer for " + flowRecord + " on bridge " + this.getName());
+      if (log.isDebugEnabled())
+      {
+         log.debug("Setting up notificationConsumer between " + this.clusterConnection.getConnector() +
+                   " and " +
+                   flowRecord.getBridge().getForwardingConnection() +
+                   " clusterConnection = " +
+                   this.clusterConnection.getName() +
+                   " on server " +
+                   clusterConnection.getServer());
+      }
       if (flowRecord != null)
       {
          flowRecord.reset();
@@ -170,7 +187,9 @@ public class ClusterConnectionBridge extends BridgeImpl
          {
             try
             {
-               log.debug("Closing notification Consumer for reopening " + notifConsumer + " on bridge " + this.getName());
+               log.debug("Closing notification Consumer for reopening " + notifConsumer +
+                         " on bridge " +
+                         this.getName());
                notifConsumer.close();
 
                notifConsumer = null;
@@ -183,7 +202,9 @@ public class ClusterConnectionBridge extends BridgeImpl
 
          // Get the queue data
 
-         String qName = "notif." + UUIDGenerator.getInstance().generateStringUUID();
+         String qName = "notif." + UUIDGenerator.getInstance().generateStringUUID() +
+                        "." +
+                        clusterConnection.getServer();
 
          SimpleString notifQueueName = new SimpleString(qName);
 
@@ -236,7 +257,7 @@ public class ClusterConnectionBridge extends BridgeImpl
          {
             log.debug("Cluster connetion bridge on " + clusterConnection + " requesting information on queues");
          }
-         
+
          prod.send(message);
       }
    }
@@ -247,23 +268,23 @@ public class ClusterConnectionBridge extends BridgeImpl
       System.out.println("afterConnect");
       setupNotificationConsumer();
    }
-   
+
    @Override
    public void stop() throws Exception
    {
       super.stop();
    }
-   
+
    protected void failed(final boolean permanently)
    {
       log.debug("Cluster Bridge " + this.getName() + " failed, permanently=" + permanently);
       super.fail(permanently);
-      
+
       if (permanently)
       {
          log.debug("cluster node for bridge " + this.getName() + " is permanently down");
-         serverLocator.notifyNodeDown(targetNodeID);
+         discoveryLocator.notifyNodeDown(targetNodeID);
       }
-      
+
    }
 }

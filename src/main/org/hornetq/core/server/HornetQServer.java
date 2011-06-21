@@ -60,6 +60,8 @@ public interface HornetQServer extends HornetQComponent
    
    String getIdentity();
    
+   String describe();
+   
    Configuration getConfiguration();
 
    RemotingService getRemotingService();

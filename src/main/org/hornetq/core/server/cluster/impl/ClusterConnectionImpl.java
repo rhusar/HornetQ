@@ -16,6 +16,8 @@ package org.hornetq.core.server.cluster.impl;
 import static org.hornetq.api.core.management.NotificationType.CONSUMER_CLOSED;
 import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
@@ -367,6 +370,11 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       return nodeUUID.toString();
    }
+   
+   public HornetQServer getServer()
+   {
+      return server;
+   }
 
    public synchronized Map<String, String> getNodes()
    {
@@ -388,7 +396,10 @@ public class ClusterConnectionImpl implements ClusterConnection
          return;
       }
       
-      log.debug("Activating cluster connection nodeID=" + nodeUUID);
+      if (log.isDebugEnabled())
+      {
+         log.debug("Activating cluster connection nodeID=" + nodeUUID + " for server=" + this.server);
+      }
 
       backup = false;
 
@@ -522,7 +533,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       // and empty static connectors to create bridges... ulgy!
       if (serverLocator == null)
       {
-         return;
+          return;
       }
       /*we dont create bridges to backups*/
       if(connectorPair.a == null)
@@ -538,6 +549,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
             if (record == null)
             {
+
                // New node - create a new flow record
 
                final SimpleString queueName = new SimpleString("sf." + name + "." + nodeID);
@@ -559,10 +571,6 @@ public class ClusterConnectionImpl implements ClusterConnection
 
                createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
             }
-            else
-            {
-               log.info("Reattaching nodeID=" + nodeID);
-            }
          }
          catch (Exception e)
          {
@@ -571,109 +579,22 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
    }
 
-   public void nodeAnnounced(final String nodeID,
-                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair)
-   {
-      log.warn(this + " WTF nodeAnnounced nodeID=" + nodeID, new Exception ("trace"));
-      if (log.isDebugEnabled())
-      {
-         log.debug(this + " received nodeAnnouncedUp for " + nodeID + ", connectorPair=" + connectorPair);
-      }
-      
-      if (nodeID.equals(nodeUUID.toString()))
-      {
-         return;
-      }
-
-      // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-      if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
-      {
-         if (log.isDebugEnabled())
-         {
-            log.debug("Ignoring nodeUp message as it only allows direct connections");
-         }
-         return;
-      }
-
-      // FIXME required to prevent cluster connections w/o discovery group
-      // and empty static connectors to create bridges... ulgy!
-      if (serverLocator == null)
-      {
-         if (log.isDebugEnabled())
-         {
-            log.debug("Ignoring nodeUp as serverLocator==null");
-         }
-         return;
-      }
-      /*we dont create bridges to backups*/
-      if(connectorPair.a == null)
-      {
-         if (log.isDebugEnabled())
-         {
-            log.debug("Igoring nodeup as connectorPair.a==null (backup)");
-         }
-         return;
-      }
-
-      synchronized (records)
-      {
-         if (isTrace)
-         {
-            log.trace("Adding record for nodeID=" + nodeID);
-         }
-         try
-         {
-            MessageFlowRecord record = records.get(nodeID);
-            
-            if (record == null)
-            {
-               // New node - create a new flow record
-
-               final SimpleString queueName = new SimpleString("sf." + name + "." + nodeID);
-
-               Binding queueBinding = postOffice.getBinding(queueName);
-
-               Queue queue;
-
-               if (queueBinding != null)
-               {
-                  queue = (Queue)queueBinding.getBindable();
-               }
-               else
-               {
-                  // Add binding in storage so the queue will get reloaded on startup and we can find it - it's never
-                  // actually routed to at that address though
-                  queue = server.createQueue(queueName, queueName, null, true, false);
-               }
-
-               createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
-            }
-            else
-            {
-               if (isTrace)
-               {
-                  log.trace("It already had a node created before, ignoring the nodeUp message");
-               }
-            }
-         }
-         catch (Exception e)
-         {
-            log.error("Failed to update topology", e);
-         }
-      }
-   }
-   
-   private void createNewRecord(final String nodeID,
+   private void createNewRecord(final String targetNodeID,
                                 final TransportConfiguration connector,
                                 final SimpleString queueName,
                                 final Queue queue,
                                 final boolean start) throws Exception
    {
-      MessageFlowRecordImpl record = new MessageFlowRecordImpl(nodeID, connector, queueName, queue);
+      MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetNodeID, connector, queueName, queue);
 
-      records.put(nodeID, record);
+      records.put(targetNodeID, record);
 
-      Bridge bridge = createBridge(record);
+      Bridge bridge = createClusteredBridge(record);
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("PORRA creating record between " + this.connector + " and " + connector + bridge);
+      }
       
       record.setBridge(bridge);
 
@@ -688,16 +609,36 @@ public class ClusterConnectionImpl implements ClusterConnection
     * @return
     * @throws Exception
     */
-   protected Bridge createBridge(MessageFlowRecordImpl record) throws Exception
+   protected Bridge createClusteredBridge(MessageFlowRecordImpl record) throws Exception
    {
+      
+      ServerLocator targetLocator = HornetQClient.createServerLocatorWithoutHA(record.getConnector());
+      
+      targetLocator.setReconnectAttempts(0);
+
+      targetLocator.setInitialConnectAttempts(0);
+      targetLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
+      targetLocator.setConnectionTTL(connectionTTL);
+      targetLocator.setInitialConnectAttempts(0);
+
+      targetLocator.setConfirmationWindowSize(serverLocator.getConfirmationWindowSize());
+      targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
+      targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
+
+      if(retryInterval > 0)
+      {
+         targetLocator.setRetryInterval(retryInterval);
+      }
+
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
+                                                                   targetLocator,
                                                                    serverLocator,
                                                                    reconnectAttempts,
                                                                    retryInterval,
                                                                    retryIntervalMultiplier,
                                                                    maxRetryInterval,
                                                                    nodeUUID,
-                                                                   record.getNodeID(),
+                                                                   record.getTargetNodeID(),
                                                                    record.getQueueName(),
                                                                    record.getQueue(),
                                                                    executorFactory.getExecutor(),
@@ -724,7 +665,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       private Bridge bridge;
 
-      private final String nodeID;
+      private final String targetNodeID;
       private final TransportConfiguration connector;
       private final SimpleString queueName;
       private final Queue queue;
@@ -733,20 +674,42 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       private volatile boolean isClosed = false;
 
-      private volatile boolean paused = false;
-
       private volatile boolean firstReset = false;
 
-      public MessageFlowRecordImpl(final String nodeID,
+      public MessageFlowRecordImpl(final String targetNodeID,
                                    final TransportConfiguration connector,
                                    final SimpleString queueName,
                                    final Queue queue)
       {
          this.queue = queue;
-         this.nodeID = nodeID;
+         this.targetNodeID = targetNodeID;
          this.connector = connector;
          this.queueName = queueName;
       }
+      
+      
+
+      /* (non-Javadoc)
+       * @see java.lang.Object#toString()
+       */
+      @Override
+      public String toString()
+      {
+         return "MessageFlowRecordImpl [nodeID=" + targetNodeID +
+                ", connector=" +
+                connector +
+                ", queueName=" +
+                queueName +
+                ", queue=" +
+                queue +
+                ", isClosed=" +
+                isClosed +
+                ", firstReset=" +
+                firstReset + 
+                "]";
+      }
+
+
 
       public String getAddress()
       {
@@ -756,9 +719,9 @@ public class ClusterConnectionImpl implements ClusterConnection
       /**
        * @return the nodeID
        */
-      public String getNodeID()
+      public String getTargetNodeID()
       {
-         return nodeID;
+         return targetNodeID;
       }
 
       /**
@@ -1026,11 +989,6 @@ public class ClusterConnectionImpl implements ClusterConnection
             log.trace("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this);
          }
          
-         synchronized (System.err)
-         {
-            new Exception("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this).printStackTrace(System.out);
-         }
-
          bindings.put(clusterName, binding);
 
          try
@@ -1214,18 +1172,24 @@ public class ClusterConnectionImpl implements ClusterConnection
       return "ClusterConnectionImpl [nodeUUID=" + nodeUUID + ", connector=" + connector + ", address=" + address + "]";
    }
 
-   public String description()
+   public String describe()
    {
-      String out = name + " connected to\n";
+      StringWriter str = new StringWriter();
+      PrintWriter out = new PrintWriter(str);
+
+
+      out.println(this);
+      out.println("***************************************");
+      out.println(name + " connected to");
       for (Entry<String, MessageFlowRecord> messageFlow : records.entrySet())
       {
-         String nodeID = messageFlow.getKey();
-         Bridge bridge = messageFlow.getValue().getBridge();
-         
-         out += "\t" + nodeID + " -- " + bridge.isStarted() + "\n";
+         out.println("\t Bridge = "  + messageFlow.getValue().getBridge());
+         out.println("\t Flow Record = " + messageFlow.getValue());
       }
+      out.println("***************************************");
       
-      return out;
+      
+      return str.toString();
    }
 
    interface ClusterConnector

@@ -15,6 +15,8 @@ package org.hornetq.core.server.cluster.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -141,6 +143,25 @@ public class ClusterManagerImpl implements ClusterManager
       this.backup = backup;
 
       this.clustered = clustered;
+   }
+   
+   public String describe()
+   {
+      StringWriter str = new StringWriter();
+      PrintWriter out = new PrintWriter(str);
+      
+      out.println("Information on " + this);
+      out.println("*******************************************************");
+      out.println("Topology: " + topology.describe());
+      
+      for (ClusterConnection conn : this.clusterConnections.values())
+      {
+         out.println(conn.describe());
+      }
+      
+      out.println("*******************************************************");
+
+      return str.toString();
    }
 
    public synchronized void start() throws Exception
@@ -648,7 +669,7 @@ public class ClusterManagerImpl implements ClusterManager
       
       // We are going to manually retry on the bridge in case of failure
       serverLocator.setReconnectAttempts(0);
-      serverLocator.setInitialConnectAttempts(1);
+      serverLocator.setInitialConnectAttempts(-1);
 
       
       
