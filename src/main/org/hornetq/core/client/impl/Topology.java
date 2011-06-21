@@ -149,7 +149,7 @@ public class Topology implements Serializable
       return count;
    }
 
-   public String describe()
+   public synchronized String describe()
    {
 
       String desc = "";
