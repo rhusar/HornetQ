@@ -588,6 +588,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          boolean retry;
          int attempts = 0;
+         int cfAttempts = 0;
          do
          {
             retry = false;
@@ -610,7 +611,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                                                       threadPool,
                                                       scheduledThreadPool,
                                                       interceptors);
-               factory.connect(reconnectAttempts, failoverOnInitialConnection);
+               factory.connect(1, failoverOnInitialConnection);
             }
             catch (HornetQException e)
             {
@@ -618,14 +619,20 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                factory = null;
                if (e.getCode() == HornetQException.NOT_CONNECTED)
                {
-                  attempts++;
-
-                  if (topologyArray != null && attempts == topologyArray.length)
+                  cfAttempts ++;
+                  if (topologyArray != null && cfAttempts == topologyArray.length)
                   {
-                     throw new HornetQException(HornetQException.NOT_CONNECTED,
-                                                "Cannot connect to server(s). Tried with all available servers.");
+                     attempts++;
+                     cfAttempts = 0;
+                     wait(retryInterval);
                   }
-                  if (topologyArray == null && initialConnectors != null && attempts == initialConnectors.length)
+                  if (topologyArray == null && initialConnectors != null && cfAttempts == initialConnectors.length)
+                  {
+                     attempts++;
+                     cfAttempts = 0;
+                     wait(retryInterval);
+                  }
+                  if (initialConnectAttempts != -1 && attempts >= initialConnectAttempts)
                   {
                      throw new HornetQException(HornetQException.NOT_CONNECTED,
                                                 "Cannot connect to server(s). Tried with all available servers.");
