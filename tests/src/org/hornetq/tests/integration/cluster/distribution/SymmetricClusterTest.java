@@ -42,6 +42,7 @@ public class SymmetricClusterTest extends ClusterTestBase
    @Override
    protected void tearDown() throws Exception
    {
+      log.info("#test tearDown");
       stopServers();
 
       super.tearDown();
@@ -50,6 +51,20 @@ public class SymmetricClusterTest extends ClusterTestBase
    protected boolean isNetty()
    {
       return false;
+   }
+   
+   public void _testLoop() throws Throwable
+   {
+      for (int i = 0 ; i < 1000; i++)
+      {
+         log.info("#test " + i);
+         testStopAllStartAll();
+         if (i + 1  < 1000)
+         {
+            tearDown();
+            setUp();
+         }
+      }
    }
 
    public void testStopAllStartAll() throws Throwable

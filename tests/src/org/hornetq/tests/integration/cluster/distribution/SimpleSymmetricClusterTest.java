@@ -18,7 +18,6 @@ import java.util.List;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.server.HornetQServer;
 
 /**
  * A SimpleSymmetricClusterTest
@@ -78,7 +77,8 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
    public void tearDown() throws Exception
    {
-      stopServers(0, 1, 2);
+      log.info("#test tearDown " + loopNumber);
+      stopServers(0, 1, 2, 3, 4);
       super.tearDown();
    }
 
@@ -114,8 +114,6 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
       // startServers(3, 4, 5, 0, 1, 2);
       startServers(0, 1, 2, 3, 4, 5);
-      
-      Thread.sleep(1000);
 
       log.info("");
       for (int i = 0; i <= 5; i++)
@@ -148,7 +146,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
    }
    
-
+   
    public void testSimple() throws Exception
    {
       setupServer(0, true, isNetty());
@@ -157,11 +155,9 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
       setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1, 2);
       setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 2, 0);
-      setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 2, 0, 1);
+      setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 0, 1);
 
       startServers(0, 1, 2);
-
-      Thread.sleep(1000);
 
       for (int i = 0; i < 10; i++)
          log.info("****************************");
@@ -200,6 +196,83 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       waitForBindings(0, "queues.testaddress", 2, 2, false);
       waitForBindings(1, "queues.testaddress", 2, 2, false);
       waitForBindings(2, "queues.testaddress", 2, 2, false);
+
+   }
+   static int loopNumber;
+   public void _testLoop() throws Throwable
+   {
+      for (int i = 0 ; i < 1000; i++)
+      {
+         loopNumber = i;
+         log.info("#test " + i);
+         testSimple2();
+         if (i + 1  < 1000)
+         {
+            tearDown();
+            setUp();
+         }
+      }
+   }
+
+
+   
+
+   public void testSimple2() throws Exception
+   {
+      setupServer(0, true, isNetty());
+      setupServer(1, true, isNetty());
+      setupServer(2, true, isNetty());
+      setupServer(3, true, isNetty());
+      setupServer(4, true, isNetty());
+
+      setupClusterConnection("cluster0", "queues", false, 1, isNetty(), 0, 1, 2, 3, 4);
+
+      setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 0, 2, 3, 4);
+
+      setupClusterConnection("cluster2", "queues", false, 1, isNetty(), 2, 0, 1, 3, 4);
+
+      setupClusterConnection("cluster3", "queues", false, 1, isNetty(), 3, 0, 1, 2, 4);
+
+      setupClusterConnection("cluster4", "queues", false, 1, isNetty(), 4, 0, 1, 2, 3);
+
+      startServers(0, 1, 2, 3, 4);
+      
+      for (int i = 0 ; i <= 4; i++)
+      {
+         waitForTopology(servers[i], 5);
+      }
+      
+      log.info("All the servers have been started already!");
+
+      for (int i = 0; i <= 4; i++)
+      {
+         log.info("*************************************\n " + servers[i] +
+                  " topology:\n" +
+                  servers[i].getClusterManager().getTopology().describe());
+      }
+      
+      for (int i = 0; i <= 4; i++)
+      {
+         setupSessionFactory(i, isNetty());
+      }
+
+      for (int i = 0 ; i <= 4; i++)
+      {
+         createQueue(i, "queues.testaddress", "queue0", null, false);
+      }
+
+      for (int i = 0 ; i <= 4; i++)
+      {
+         addConsumer(i, i, "queue0", null);
+      }
+
+      waitForBindings(0, "queues.testaddress", 1, 1, true);
+      waitForBindings(1, "queues.testaddress", 1, 1, true);
+      waitForBindings(2, "queues.testaddress", 1, 1, true);
+
+      waitForBindings(0, "queues.testaddress", 4, 4, false);
+      waitForBindings(1, "queues.testaddress", 4, 4, false);
+      waitForBindings(2, "queues.testaddress", 4, 4, false);
 
    }
    
