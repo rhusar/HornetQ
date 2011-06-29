@@ -613,7 +613,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    protected Bridge createClusteredBridge(MessageFlowRecordImpl record) throws Exception
    {
       
-      ServerLocator targetLocator = HornetQClient.createServerLocatorWithoutHA(record.getConnector());
+      ServerLocatorInternal targetLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(record.getConnector());
       
       targetLocator.setReconnectAttempts(0);
 
@@ -625,6 +625,11 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setConfirmationWindowSize(serverLocator.getConfirmationWindowSize());
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
+      targetLocator.setClusterConnection(true);
+      
+      targetLocator.setNodeID(serverLocator.getNodeID());
+      
+      targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());
 
       if(retryInterval > 0)
       {

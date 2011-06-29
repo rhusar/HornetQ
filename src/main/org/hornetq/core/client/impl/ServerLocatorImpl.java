@@ -76,7 +76,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private StaticConnector staticConnector = new StaticConnector();
 
-   private final Topology topology = new Topology();
+   private final Topology topology = new Topology(this);
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 

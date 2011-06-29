@@ -1245,7 +1245,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             }
          }
 
-         if (serverLocator.isHA())
+         if (serverLocator.isHA() || serverLocator.isClusterConnection())
          {
             if (isDebug)
             {

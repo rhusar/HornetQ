@@ -37,6 +37,21 @@ public class Topology implements Serializable
    
 
    private static final Logger log = Logger.getLogger(Topology.class);
+   
+   /** Used to debug operations.
+    * 
+    *  Someone may argue this is not needed. But it's impossible to debg anything related to topology without knowing what node
+    *  or what object missed a Topology update.
+    *  
+    *  Hence I added some information to locate debugging here. 
+    *  */
+   private final Object owner;
+   
+   
+   public Topology(final Object owner)
+   {
+      this.owner = owner;
+   }
 
    /*
     * topology describes the other cluster nodes that this server knows about:
@@ -54,7 +69,7 @@ public class Topology implements Serializable
       TopologyMember currentMember = topology.get(nodeId);
       if (debug)
       {
-         log.debug("adding = " + nodeId + ":" + member.getConnector());
+         log.debug(this + "::adding = " + nodeId + ":" + member.getConnector(), new Exception ("trace"));
          log.debug("before----------------------------------");
          log.debug(describe());
       }
@@ -87,7 +102,7 @@ public class Topology implements Serializable
       }
       if(debug)
       {
-         log.debug("Topology updated=" + replaced);
+         log.debug(this + "::Topology updated=" + replaced);
          log.debug(describe());
       }
       return replaced;
@@ -192,4 +207,21 @@ public class Topology implements Serializable
    {
       debug = b;
    }
+
+   /* (non-Javadoc)
+    * @see java.lang.Object#toString()
+    */
+   @Override
+   public String toString()
+   {
+      if (owner == null)
+      {
+         return super.toString();
+      }
+      else
+      {
+         return "Topology [owner=" + owner + "]";
+      }
+   }
+   
 }

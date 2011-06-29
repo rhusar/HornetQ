@@ -118,8 +118,6 @@ public class ClusterConnectionBridge extends BridgeImpl
             activated,
             storageManager);
 
-      System.out.println("ClusterConnectionBridge");
-
       this.discoveryLocator = discoveryLocator;
 
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
@@ -134,6 +132,11 @@ public class ClusterConnectionBridge extends BridgeImpl
 
       // we need to disable DLQ check on the clustered bridges
       queue.setInternalQueue(true);
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("Setting up bridge between " + clusterConnection.getConnector() + " and " + targetLocator, new Exception ("trace"));
+      }
    }
 
    @Override

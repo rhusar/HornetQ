@@ -500,9 +500,9 @@ public class HornetQServerImpl implements HornetQServer
                nodeManager.interrupt();
 
                backupActivationThread.interrupt();
+               
+               backupActivationThread.join(500);
 
-               // TODO: do we really need this?
-               Thread.sleep(1000);
             }
 
             if (System.currentTimeMillis() - start >= timeout)

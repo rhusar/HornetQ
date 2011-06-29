@@ -101,7 +101,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    private Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
-   private Topology topology = new Topology();
+   private Topology topology = new Topology(this);
 
    private volatile ServerLocatorInternal backupServerLocator;
 
@@ -164,6 +164,11 @@ public class ClusterManagerImpl implements ClusterManager
       return str.toString();
    }
 
+   public String toString()
+   {
+      return "ClusterManagerImpl[server=" + server + "]";
+   }
+   
    public synchronized void start() throws Exception
    {
       if (started)
@@ -327,8 +332,15 @@ public class ClusterManagerImpl implements ClusterManager
    public void addClusterTopologyListener(final ClusterTopologyListener listener, final boolean clusterConnection)
    {
       topologyListeners.add(listener);
+
       // We now need to send the current topology to the client
-      topology.sendTopology(listener);
+      executor.execute(new Runnable(){
+         public void run()
+         {
+            topology.sendTopology(listener);
+            
+         }
+      });
    }
 
    public void removeClusterTopologyListener(final ClusterTopologyListener listener,
