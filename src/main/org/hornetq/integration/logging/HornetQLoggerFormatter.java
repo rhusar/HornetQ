@@ -59,15 +59,21 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
          {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            record.getThrown().printStackTrace(pw);
+            
+            pw.println(record.getThrown() );
+            StackTraceElement[] trace = record.getThrown().getStackTrace();
+            for (int i=0; i < trace.length; i++)
+                pw.println("\tat " + trace[i]);
             pw.close();
+
             sb.append(sw.toString());
          }
          catch (Exception ex)
          {
          }
       }
-      //sb.append(HornetQLoggerFormatter.LINE_SEPARATOR);
+      
+      sb.append(HornetQLoggerFormatter.LINE_SEPARATOR);
 
       return sb.toString();
    }

@@ -158,8 +158,6 @@ public class RemotingConnectionImpl implements BufferHandler, CoreRemotingConnec
    public String toString()
    {
       return "RemotingConnectionImpl [clientID=" + clientID +
-             ", decoder=" +
-             decoder +
              ", nodeID=" +
              nodeID +
              ", transportConnection=" +

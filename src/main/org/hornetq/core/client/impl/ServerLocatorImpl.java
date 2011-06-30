@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1231,6 +1232,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       // Notify if waiting on getting topology
       notify();
+   }
+   
+   /* (non-Javadoc)
+    * @see java.lang.Object#toString()
+    */
+   @Override
+   public String toString()
+   {
+      return "ServerLocatorImpl [initialConnectors=" + Arrays.toString(initialConnectors) +
+             ", discoveryGroupConfiguration=" +
+             discoveryGroupConfiguration +
+             "]";
    }
 
    private void updateArraysAndPairs()

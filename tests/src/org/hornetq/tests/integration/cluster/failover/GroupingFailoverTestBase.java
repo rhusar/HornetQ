@@ -79,7 +79,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
          waitForBindings(0, "queues.testaddress", 1, 1, true);
          waitForBindings(1, "queues.testaddress", 1, 1, true);
 
-         waitForServerTopology(servers[1], 3, 5);
+         waitForTopology(servers[1], 3);
 
          sendWithProperty(0, "queues.testaddress", 10, false, Message.HDR_GROUP_ID, new SimpleString("id1"));
 
@@ -162,7 +162,7 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
          waitForBindings(0, "queues.testaddress", 1, 1, true);
          waitForBindings(1, "queues.testaddress", 1, 1, true);
 
-         waitForServerTopology(servers[1], 3, 5);
+         waitForTopology(servers[1], 3);
 
 
          sendWithProperty(0, "queues.testaddress", 10, false, Message.HDR_GROUP_ID, new SimpleString("id1"));
@@ -212,21 +212,6 @@ public abstract class GroupingFailoverTestBase extends ClusterTestBase
          closeAllServerLocatorsFactories();
 
          stopServers(0, 1, 2);
-      }
-   }
-
-   private void waitForServerTopology(HornetQServer server, int nodes, int seconds)
-         throws InterruptedException
-   {
-      Topology topology = server.getClusterManager().getTopology();
-      long timeToWait = System.currentTimeMillis() + (seconds * 1000);
-      while(topology.nodes()!= nodes)
-      {
-         Thread.sleep(100);
-         if(System.currentTimeMillis() > timeToWait)
-         {
-            fail("timed out waiting for server topology");
-         }
       }
    }
 

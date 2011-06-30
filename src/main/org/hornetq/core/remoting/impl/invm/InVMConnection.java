@@ -169,6 +169,11 @@ public class InVMConnection implements Connection
    public void removeReadyListener(ReadyListener listener)
    {
    }
+   
+   public Executor getExecutor()
+   {
+      return executor;
+   }
 
    /* (non-Javadoc)
     * @see java.lang.Object#toString()

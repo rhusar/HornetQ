@@ -472,7 +472,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
          if (isTrace)
          {
-            log.trace("Bridge " + name + " is handling reference=" + ref);
+            log.trace("Bridge " + this + " is handling reference=" + ref);
          }
          ref.handled();
 
@@ -518,16 +518,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    public final void connectionFailed(final HornetQException me, boolean failedOver)
    {
-      log.warn(name + "::Connection failed with failedOver=" + failedOver, me);
-      if (isTrace)
-      {
-         log.trace("Calling BridgeImpl::connectionFailed(HOrnetQException me=" + me +
-                   ", boolean failedOver=" +
-                   failedOver);
-      }
+      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
+      
       try
       {
-         csf.cleanup();
+         // csf.cleanup();
       }
       catch (Throwable dontCare)
       {
@@ -535,21 +530,29 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       try
       {
-         session.cleanUp(false);
+         // session.cleanUp(false);
       }
       catch (Throwable dontCare)
       {
       }
-
-      fail(false);
-
-      scheduleRetryConnect();
+      
+      if (me.getCode() == HornetQException.DISCONNECTED)
+      {
+         log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
+         fail(true);
+      }
+      else
+      {
+         log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
+         fail(false);
+         scheduleRetryConnect();
+      }
    }
 
    public void beforeReconnect(final HornetQException exception)
    {
-      log.warn(name + "::Connection failed before reconnect ", exception);
-      fail(false);
+//      log.warn(name + "::Connection failed before reconnect ", exception);
+//      fail(false);
    }
 
    // Package protected ---------------------------------------------
@@ -564,28 +567,12 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    @Override
    public String toString()
    {
-      return this.getClass().getName() + " [name=" +
-             name +
-             ", nodeUUID=" +
-             nodeUUID +
-             ", queue=" +
-             queue +
-             ", filter=" +
-             filter +
-             ", forwardingAddress=" +
-             forwardingAddress +
-             ", useDuplicateDetection=" +
-             useDuplicateDetection +
-             ", active=" +
-             active +
-             ", stopping=" +
-             stopping +
-             "]";
+      return this.getClass().getName() + " [name=" + name + ", queue=" + queue + " targetConnector=" + this.serverLocator + "]";
    }
 
    protected void fail(final boolean permanently)
    {
-      log.debug(name + "::BridgeImpl::fail being called, permanently=" + permanently);
+      log.debug(this + "::fail being called, permanently=" + permanently);
 
       if (queue != null)
       {
@@ -625,7 +612,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    /* This is called only when the bridge is activated */
    protected void connect()
    {
-      BridgeImpl.log.info("Connecting bridge " + name + " to its destination [" + nodeUUID.toString() + "], csf=" + this.csf);
+      BridgeImpl.log.info("Connecting  " + this + " to its destination [" + nodeUUID.toString() + "], csf=" + this.csf);
 
       retryCount++;
 
@@ -702,7 +689,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          queue.addConsumer(BridgeImpl.this);
          queue.deliverAsync();
 
-         BridgeImpl.log.info("Bridge " + name + " is connected [" + nodeUUID + "-> " + name + "]");
+         BridgeImpl.log.info("Bridge " + this + " is connected");
 
          return;
       }
@@ -720,12 +707,12 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          }
          else
          {
-            BridgeImpl.log.warn("Bridge " + name + " is unable to connect to destination. Retrying", e);
+            BridgeImpl.log.warn("Bridge " + this + " is unable to connect to destination. Retrying", e);
          }
       }
       catch (Exception e)
       {
-         BridgeImpl.log.warn("Bridge " + name + " is unable to connect to destination. It will be disabled.", e);
+         BridgeImpl.log.warn("Bridge " + this + " is unable to connect to destination. It will be disabled.", e);
       }
 
       scheduleRetryConnect();

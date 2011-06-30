@@ -52,21 +52,6 @@ public class SymmetricClusterTest extends ClusterTestBase
    {
       return false;
    }
-   
-   public void _testLoop() throws Throwable
-   {
-      for (int i = 0 ; i < 1000; i++)
-      {
-         log.info("#test " + i);
-         testStopAllStartAll();
-         if (i + 1  < 1000)
-         {
-            tearDown();
-            setUp();
-         }
-      }
-   }
-
    public void testStopAllStartAll() throws Throwable
    {
       try
@@ -1620,6 +1605,22 @@ public class SymmetricClusterTest extends ClusterTestBase
       verifyReceiveRoundRobinInSomeOrder(10, 26, 27);
    }
 
+   
+   public void _testLoop() throws Throwable
+   {
+      for (int i = 0 ; i < 1000; i++)
+      {
+         log.info("#test " + i);
+         testStopSuccessiveServers();
+         if (i + 1  < 1000)
+         {
+            tearDown();
+            setUp();
+         }
+      }
+   }
+
+
    public void testStopSuccessiveServers() throws Exception
    {
       setupCluster();
@@ -1842,5 +1843,12 @@ public class SymmetricClusterTest extends ClusterTestBase
 
       stopServers(0, 1, 2, 3, 4);
    }
+   
+
+   protected boolean isFileStorage()
+   {
+      return false;
+   }
+
 
 }

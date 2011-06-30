@@ -13,9 +13,11 @@
 
 package org.hornetq.tests.integration.cluster.distribution;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -360,25 +362,27 @@ public abstract class ClusterTestBase extends ServiceTestBase
             System.out.println("Binding = " + qBinding + ", queue=" + qBinding.getQueue());
          }
       }
-      System.out.println("=======================================================================");
 
+      StringWriter writer = new StringWriter();
+      PrintWriter out = new PrintWriter(writer);
+      
       try
       {
          for (HornetQServer hornetQServer : servers)
          {
             if (hornetQServer != null)
             {
-               System.out.println(clusterDescription(hornetQServer));
-               System.out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
+               out.println(clusterDescription(hornetQServer));
+               out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
             }
          }
          
          for (HornetQServer hornetQServer : servers)
          {
-            System.out.println("Management bindings on " + hornetQServer);
+            out.println("Management bindings on " + hornetQServer);
             if (hornetQServer != null)
             {
-               System.out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
+               out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration().getManagementNotificationAddress().toString()));
             }
          }
       }
@@ -387,7 +391,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       
       
-      throw new IllegalStateException(msg);
+      throw new IllegalStateException(msg + "\n" + writer.toString());
    }
    
    
@@ -2016,6 +2020,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    protected void stopServers(final int... nodes) throws Exception
    {
+      log.info("Stopping nodes "  + Arrays.toString(nodes));
       for (int node : nodes)
       {
          if (servers[node] != null && servers[node].isStarted())
