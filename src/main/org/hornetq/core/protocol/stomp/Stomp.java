@@ -62,6 +62,8 @@ public interface Stomp
       String ABORT = "ABORT";
 
       String ACK = "ACK";
+      
+      String NACK = "NACK";
    }
 
    public interface Responses
@@ -153,6 +155,8 @@ public interface Stomp
             String AUTO = "auto";
 
             String CLIENT = "client";
+            
+            String CLIENT_INDIVIDUAL = "client-individual";
          }
       }
 
@@ -201,6 +205,15 @@ public interface Stomp
       public interface Ack
       {
          String MESSAGE_ID = "message-id";
+         
+         String SUBSCRIPTION = "subscription";
+      }
+      
+      public interface Nack
+      {
+         String MESSAGE_ID = "message-id";
+
+         String SUBSCRIPTION = "subscription";
       }
    }
 }

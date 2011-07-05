@@ -205,6 +205,10 @@ class StompProtocolManager implements ProtocolManager
             {
                response = onAck(request, conn);
             }
+            else if (Stomp.Commands.NACK.equals(command))
+            {
+               response = onNack(request, conn);
+            }
             else if (Stomp.Commands.BEGIN.equals(command))
             {
                response = onBegin(request, server, conn);
@@ -336,7 +340,12 @@ class StompProtocolManager implements ProtocolManager
       }
       else
       {
-         if (destination == null)
+         if (Stomp.Versions.V11.equals(connection.getVersion()))
+         {            
+            // Subscription id is mandatory in version 1.1 of STOMP
+            throw new StompException("Client must set id header to a SUBSCRIBE command");
+         }
+         else if (destination == null)
          {
             throw new StompException("Client must set destination or id header to a SUBSCRIBE command");
          }
@@ -375,7 +384,12 @@ class StompProtocolManager implements ProtocolManager
       }
       else
       {
-         if (destination == null)
+         if (Stomp.Versions.V11.equals(connection.getVersion()))
+         {
+            // Subscription id is mandatory in version 1.1 of STOMP
+            throw new StompException("Must specify the subscription's id you are unsubscribing from");
+         }
+         else if (destination == null)
          {
             throw new StompException("Must specify the subscription's id or the destination you are unsubscribing from");
          }
@@ -397,16 +411,56 @@ class StompProtocolManager implements ProtocolManager
       String messageID = (String)headers.get(Stomp.Headers.Ack.MESSAGE_ID);
       String txID = (String)headers.get(Stomp.Headers.TRANSACTION);
       StompSession stompSession = null;
+      stompSession = getSession(connection);
+      if (connection.getVersion() == Stomp.Versions.V11)
+      {
+         String subscriptionID = (String)headers.get(Stomp.Headers.Ack.SUBSCRIPTION);
+         if (subscriptionID == null)
+         {
+            throw new StompException("Subscription header is mandatory in ACK command when using STOMP 1.1");         
+         }
+         if (!stompSession.containsSubscription(subscriptionID))
+         {
+            throw new StompException("No subscription with the given id was found in this session");
+         }
+      }
       if (txID != null)
       {
          log.warn("Transactional acknowledgement is not supported");
       }
-      stompSession = getSession(connection);
       stompSession.acknowledge(messageID);
 
       return null;
    }
 
+   private StompFrame onNack(StompFrame frame, StompConnection connection) throws Exception
+   {
+      Map<String, Object> headers = frame.getHeaders();
+      String messageID = (String)headers.get(Stomp.Headers.Nack.MESSAGE_ID);
+      String txID = (String)headers.get(Stomp.Headers.TRANSACTION);
+      StompSession stompSession = null;
+      stompSession = getSession(connection);
+      if (connection.getVersion() == Stomp.Versions.V11)
+      {
+         String subscriptionID = (String)headers.get(Stomp.Headers.Nack.SUBSCRIPTION);
+         if (subscriptionID == null)
+         {
+            throw new StompException("Subscription header is mandatory in NACK command");         
+         }
+         if (!stompSession.containsSubscription(subscriptionID))
+         {
+            throw new StompException("No subscription with the given id was found in this session");
+         }
+      }
+      if (txID != null)
+      {
+         log.warn("Transactional acknowledgement is not supported");
+      }
+      stompSession.nacknowledge(messageID);
+      
+      return null;
+   }
+   
    private StompFrame onBegin(StompFrame frame, HornetQServer server, StompConnection connection) throws Exception
    {
       Map<String, Object> headers = frame.getHeaders();

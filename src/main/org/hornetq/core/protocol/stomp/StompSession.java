@@ -176,6 +176,19 @@ class StompSession implements SessionCallback
       session.commit();
    }
 
+   public void nacknowledge(String messageID) throws Exception
+   {
+      long id = Long.parseLong(messageID);
+      long consumerID = messagesToAck.remove(id);
+      StompSubscription subscription = subscriptions.get(consumerID);
+      boolean nackAllNonAckedMessages = true;
+      if (subscription.getAck() == Stomp.Headers.Subscribe.AckModeValues.CLIENT_INDIVIDUAL)
+      {
+         nackAllNonAckedMessages = false;
+      }
+      
+   }
+   
    public void addSubscription(long consumerID,
                                String subscriptionID,
                                String clientID,
