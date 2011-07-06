@@ -945,7 +945,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private void getConnectionWithRetry(final int reconnectAttempts)
    {
-      log.info("getConnectionWithRetry::" + reconnectAttempts);
+      if (log.isTraceEnabled())
+      {
+         log.trace("getConnectionWithRetry::" + reconnectAttempts + " with retryInterval = " + retryInterval + " multiplier = " + retryIntervalMultiplier, new Exception ("trace"));
+      }
 
       long interval = retryInterval;
 

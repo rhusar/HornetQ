@@ -518,7 +518,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    public final void connectionFailed(final HornetQException me, boolean failedOver)
    {
-      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, new Exception (me.getMessage()));
+      
+      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
       
       try
       {
@@ -538,12 +539,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       
       if (me.getCode() == HornetQException.DISCONNECTED)
       {
-         log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
          fail(true);
       }
       else
       {
-         log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
          fail(false);
          scheduleRetryConnect();
       }
@@ -612,7 +611,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    /* This is called only when the bridge is activated */
    protected void connect()
    {
-      BridgeImpl.log.info("Connecting  " + this + " to its destination [" + nodeUUID.toString() + "], csf=" + this.csf);
+      BridgeImpl.log.debug("Connecting  " + this + " to its destination [" + nodeUUID.toString() + "], csf=" + this.csf);
 
       retryCount++;
 
@@ -763,7 +762,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       
       if (log.isDebugEnabled())
       {
-         log.debug("Scheduling retry for bridge " + this.name + "in " + milliseconds + " milliseconds");
+         log.debug("Scheduling retry for bridge " + this.name + " in " + milliseconds + " milliseconds");
       }
 
       futureScheduledReconnection = scheduledExecutor.schedule(new FutureConnectRunnable(), milliseconds, TimeUnit.MILLISECONDS);

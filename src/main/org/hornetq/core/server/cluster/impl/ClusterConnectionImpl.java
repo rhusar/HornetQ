@@ -627,6 +627,10 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);
       
+      targetLocator.setRetryInterval(retryInterval);
+      targetLocator.setMaxRetryInterval(maxRetryInterval);
+      targetLocator.setRetryIntervalMultiplier(retryIntervalMultiplier);
+      
       targetLocator.setNodeID(serverLocator.getNodeID());
       
       targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());

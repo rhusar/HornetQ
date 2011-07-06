@@ -682,9 +682,9 @@ public class ClusterManagerImpl implements ClusterManager
       // We are going to manually retry on the bridge in case of failure
       serverLocator.setReconnectAttempts(0);
       serverLocator.setInitialConnectAttempts(-1);
-
-      
-      
+      serverLocator.setRetryInterval(config.getRetryInterval());
+      serverLocator.setMaxRetryInterval(config.getMaxRetryInterval());
+      serverLocator.setRetryIntervalMultiplier(config.getRetryIntervalMultiplier());
       serverLocator.setClientFailureCheckPeriod(config.getClientFailureCheckPeriod());
       serverLocator.setBlockOnDurableSend(!config.isUseDuplicateDetection());
       serverLocator.setBlockOnNonDurableSend(!config.isUseDuplicateDetection());
