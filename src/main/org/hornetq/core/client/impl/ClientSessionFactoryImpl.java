@@ -368,7 +368,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    {
       // It has to use the same executor as the disconnect message is being sent through
       
-      final HornetQException ex = new HornetQException(HornetQException.DISCONNECTED, "Channel disconnected");
+      final HornetQException ex = new HornetQException(HornetQException.NOT_CONNECTED, "Channel disconnected");
       
       closeExecutor.execute(new Runnable()
       {
