@@ -147,31 +147,32 @@ public class InVMConnection implements Connection
                }
             }
          });
+         
+         if (flush)
+         {
+            final CountDownLatch latch = new CountDownLatch(1);
+            executor.execute(new Runnable(){
+               public void run()
+               {
+                  latch.countDown();
+               }
+            });
+            
+            try
+            {
+               latch.await(10, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e)
+            {
+               log.debug(e.getMessage(), e);
+            }
+         }
       }
       catch (RejectedExecutionException e)
       {
          // Ignore - this can happen if server/client is shutdown and another request comes in
       }
       
-      if (flush)
-      {
-         final CountDownLatch latch = new CountDownLatch(1);
-         executor.execute(new Runnable(){
-            public void run()
-            {
-               latch.countDown();
-            }
-         });
-         
-         try
-         {
-            latch.await(10, TimeUnit.SECONDS);
-         }
-         catch (InterruptedException e)
-         {
-            log.debug(e.getMessage(), e);
-         }
-      }
    }
 
    public String getRemoteAddress()
