@@ -139,40 +139,6 @@ public class ClusterConnectionBridge extends BridgeImpl
       }
    }
    
-   public void connectionFailed(final HornetQException me, boolean failedOver)
-   {
-      
-      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
-      
-      try
-      {
-         // csf.cleanup();
-      }
-      catch (Throwable dontCare)
-      {
-      }
-
-      try
-      {
-         // session.cleanUp(false);
-      }
-      catch (Throwable dontCare)
-      {
-      }
-      
-      if (me.getCode() == HornetQException.DISCONNECTED)
-      {
-         fail(true);
-      }
-      else
-      {
-         fail(false);
-         scheduleRetryConnect();
-      }
-   }
-
-
-
    @Override
    protected ServerMessage beforeForward(ServerMessage message)
    {
