@@ -12,8 +12,10 @@
  */
 package org.hornetq.core.remoting.impl.invm;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
@@ -139,7 +141,7 @@ public class InVMConnection implements Connection
                }
                catch (Exception e)
                {
-                  final String msg = "Failed to write to handler";
+                  final String msg = "Failed to write to handler on connector " + this;
                   InVMConnection.log.error(msg, e);
                   throw new IllegalStateException(msg, e);
                }
@@ -149,6 +151,26 @@ public class InVMConnection implements Connection
       catch (RejectedExecutionException e)
       {
          // Ignore - this can happen if server/client is shutdown and another request comes in
+      }
+      
+      if (flush)
+      {
+         final CountDownLatch latch = new CountDownLatch(1);
+         executor.execute(new Runnable(){
+            public void run()
+            {
+               latch.countDown();
+            }
+         });
+         
+         try
+         {
+            latch.await(10, TimeUnit.SECONDS);
+         }
+         catch (InterruptedException e)
+         {
+            log.debug(e.getMessage(), e);
+         }
       }
    }
 

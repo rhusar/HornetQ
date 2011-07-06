@@ -594,7 +594,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       if (log.isDebugEnabled())
       {
-         log.debug("PORRA creating record between " + this.connector + " and " + connector + bridge);
+         log.debug("creating record between " + this.connector + " and " + connector + bridge);
       }
       
       record.setBridge(bridge);

@@ -518,7 +518,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    public final void connectionFailed(final HornetQException me, boolean failedOver)
    {
-      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
+      log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, new Exception (me.getMessage()));
       
       try
       {
@@ -777,6 +777,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          try
          {
+            log.debug("stopping bridge " + BridgeImpl.this);
+            
             if (session != null)
             {
                log.debug("Cleaning up session " + session);

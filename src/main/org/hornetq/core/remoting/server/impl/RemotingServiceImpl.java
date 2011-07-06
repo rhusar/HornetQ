@@ -64,6 +64,8 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
    // Constants -----------------------------------------------------
 
    private static final Logger log = Logger.getLogger(RemotingServiceImpl.class);
+   
+   private static final boolean isTrace = log.isTraceEnabled();
 
    public static final long CONNECTION_TTL_CHECK_INTERVAL = 2000;
 
@@ -369,6 +371,11 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
       ConnectionEntry entry = pmgr.createConnectionEntry(connection);
 
+      if (isTrace)
+      {
+         log.trace("Connection created " + connection);
+      }
+      
       connections.put(connection.getID(), entry);
 
       if (config.isBackup())
@@ -379,6 +386,12 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
    
    public void connectionDestroyed(final Object connectionID)
    {
+
+	  if (isTrace)
+	  {
+	     log.trace("Connection removed " + connectionID, new Exception ("trace"));
+	  }
+      
       ConnectionEntry conn = connections.get(connectionID);
 
       if (conn != null)
@@ -457,6 +470,13 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          if (conn != null)
          {
             conn.connection.bufferReceived(connectionID, buffer);
+         }
+         else
+         {
+        	if (log.isTraceEnabled())
+        	{
+        	   log.trace("ConnectionID = "  + connectionID + " was already closed, so ignoring packet");
+        	}
          }
       }
    }
