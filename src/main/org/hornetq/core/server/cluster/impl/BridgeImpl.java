@@ -516,7 +516,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    // FailureListener implementation --------------------------------
 
-   public final void connectionFailed(final HornetQException me, boolean failedOver)
+   public void connectionFailed(final HornetQException me, boolean failedOver)
    {
       
       log.warn(this + "::Connection failed with failedOver=" + failedOver + "-" + me, me);
@@ -544,8 +544,9 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       else
       {
          fail(false);
-         scheduleRetryConnect();
       }
+
+      scheduleRetryConnect();
    }
 
    public void beforeReconnect(final HornetQException exception)
