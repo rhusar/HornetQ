@@ -1379,7 +1379,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             final DisconnectMessage msg = (DisconnectMessage)packet;
             
-            log.info("PUTZ10 Disconnect arrived: " + msg);
+            if (log.isTraceEnabled())
+            {
+               log.trace("Disconnect being called on client:" + msg);
+            }
 
             closeExecutor.execute(new Runnable()
             {
@@ -1393,7 +1396,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                      serverLocator.notifyNodeDown(msg.getNodeID().toString());
                   }
 
-                  log.info("Disconnect being called on connection");
                   conn.fail(new HornetQException(HornetQException.DISCONNECTED,
                                                  "The connection was disconnected because of server shutdown"));
 
