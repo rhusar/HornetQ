@@ -1890,7 +1890,6 @@ public class JournalStorageManager implements StorageManager
 
             if (removed != null)
             {
-               log.info("PUTZ  Adding referencesToACK: " + removed);
                referencesToAck.add(removed);
             }
 
@@ -1898,8 +1897,6 @@ public class JournalStorageManager implements StorageManager
 
          for (MessageReference ack : referencesToAck)
          {
-            log.info("PUTZ Ack = " + ack);
-            log.info("PUTZ ACK.getQueue() = " + ack.getQueue());
             ack.getQueue().reacknowledge(tx, ack);
          }
 
