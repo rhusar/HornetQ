@@ -81,6 +81,11 @@ public class SameProcessHornetQServer implements TestableServer
 
    public void crash(ClientSession... sessions) throws Exception
    {
+      crash(true, sessions);
+   }
+
+   public void crash(boolean waitFailure, ClientSession... sessions) throws Exception
+   {
       final CountDownLatch latch = new CountDownLatch(sessions.length);
 
       class MyListener implements SessionFailureListener
@@ -105,6 +110,12 @@ public class SameProcessHornetQServer implements TestableServer
       clusterManager.clear();
       server.stop(true);
 
+      if (waitFailure)
+      {
+         // Wait to be informed of failure
+         boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
+         Assert.assertTrue(ok);
+      }
    }
 
    /* (non-Javadoc)

@@ -400,6 +400,11 @@ public abstract class FailoverTestBase extends ServiceTestBase
       liveServer.crash(sessions);
    }
 
+   protected void crash(final boolean waitFailure, final ClientSession... sessions) throws Exception
+   {
+      liveServer.crash(waitFailure, sessions);
+   }
+
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------

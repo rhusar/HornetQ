@@ -86,7 +86,7 @@ public class FailoverOnFlowControlTest extends FailoverTestBase
                      InVMConnection.flushEnabled = false;
                      try
                      {
-                        crash(sessionList.get(0));
+                        crash(false, sessionList.get(0));
                      }
                      finally
                      {
