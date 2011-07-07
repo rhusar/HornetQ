@@ -22,6 +22,7 @@ import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.SessionFailureListener;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
 
@@ -34,6 +35,7 @@ import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
  */
 public class SameProcessHornetQServer implements TestableServer
 {
+   private static Logger log = Logger.getLogger(SameProcessHornetQServer.class);
    
    private HornetQServer server;
 
@@ -85,12 +87,13 @@ public class SameProcessHornetQServer implements TestableServer
       {
          public void connectionFailed(final HornetQException me, boolean failedOver)
          {
+            log.debug("MyListener.connectionFailed failedOver=" + failedOver, me);
             latch.countDown();
          }
 
          public void beforeReconnect(HornetQException exception)
          {
-            System.out.println("MyListener.beforeReconnect");
+            log.debug("MyListener.beforeReconnect", exception);
          }
       }
       for (ClientSession session : sessions)
@@ -102,11 +105,6 @@ public class SameProcessHornetQServer implements TestableServer
       clusterManager.clear();
       server.stop(true);
 
-
-      // Wait to be informed of failure
-      boolean ok = latch.await(10000, TimeUnit.MILLISECONDS);
-
-      Assert.assertTrue(ok);
    }
 
    /* (non-Javadoc)

@@ -25,9 +25,12 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionProducerCreditsMessage;
+import org.hornetq.core.remoting.impl.invm.InVMConnection;
 import org.hornetq.spi.core.protocol.RemotingConnection;
+import org.hornetq.spi.core.remoting.Connection;
 
 /**
  * A FailoverOnFlowControlTest
@@ -39,6 +42,8 @@ import org.hornetq.spi.core.protocol.RemotingConnection;
 public class FailoverOnFlowControlTest extends FailoverTestBase
 {
 
+   
+   private static Logger log = Logger.getLogger(FailoverOnFlowControlTest.class);
 
    // Constants -----------------------------------------------------
 
@@ -58,24 +63,35 @@ public class FailoverOnFlowControlTest extends FailoverTestBase
       locator.setBlockOnDurableSend(true);
       locator.setReconnectAttempts(-1);
       locator.setProducerWindowSize(1000);
+      locator.setRetryInterval(123);
       final ArrayList<ClientSession> sessionList = new ArrayList<ClientSession>();
       Interceptor interceptorClient = new Interceptor()
       {
          AtomicInteger count = new AtomicInteger(0);
          public boolean intercept(Packet packet, RemotingConnection connection) throws HornetQException
          {
-            System.out.println("Intercept..." + packet.getClass().getName());
+            log.debug("Intercept..." + packet.getClass().getName());
             
             if (packet instanceof SessionProducerCreditsMessage )
             {
                SessionProducerCreditsMessage credit = (SessionProducerCreditsMessage)packet;
                
-               System.out.println("Credits: " + credit.getCredits());
+               log.debug("Credits: " + credit.getCredits());
                if (count.incrementAndGet() == 2)
                {
                   try
                   {
-                     crash(sessionList.get(0));
+                     log.debug("### crashing server");
+                      
+                     InVMConnection.flushEnabled = false;
+                     try
+                     {
+                        crash(sessionList.get(0));
+                     }
+                     finally
+                     {
+                        InVMConnection.flushEnabled = true;
+                     }
                   }
                   catch (Exception e)
                   {

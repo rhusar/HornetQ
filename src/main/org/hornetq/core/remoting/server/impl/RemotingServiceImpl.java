@@ -267,11 +267,21 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       }
 
       failureCheckAndFlushThread.close();
+      
 
       // We need to stop them accepting first so no new connections are accepted after we send the disconnect message
       for (Acceptor acceptor : acceptors)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug("Pausing acceptor " + acceptor);
+         }
          acceptor.pause();
+      }
+
+      if (log.isDebugEnabled())
+      {
+         log.debug("Sending disconnect on live connections");
       }
 
       // Now we ensure that no connections will process any more packets after this method is complete
@@ -279,6 +289,11 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
       for (ConnectionEntry entry : connections.values())
       {
          RemotingConnection conn = entry.connection;
+         
+         if (log.isTraceEnabled())
+         {
+            log.trace("Sending connection.disconnection packet to " + conn);
+         }
 
          conn.disconnect();
       }

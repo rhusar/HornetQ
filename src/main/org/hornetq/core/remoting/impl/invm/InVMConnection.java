@@ -37,6 +37,8 @@ public class InVMConnection implements Connection
 {
 
    private static final Logger log = Logger.getLogger(InVMConnection.class);
+   
+   private static final boolean isTrace = log.isTraceEnabled();
 
    private final BufferHandler handler;
 
@@ -45,6 +47,9 @@ public class InVMConnection implements Connection
    private final String id;
 
    private boolean closed;
+   
+   // Used on tests
+   public static boolean flushEnabled = true;
 
    private final int serverID;
 
@@ -135,7 +140,10 @@ public class InVMConnection implements Connection
                   if (!closed)
                   {
                      copied.readInt(); // read and discard
-
+                     if (isTrace)
+                     {
+                        log.trace(InVMConnection.this + "::Sending inVM packet");
+                     }
                      handler.bufferReceived(id, copied);
                   }
                }
@@ -145,10 +153,17 @@ public class InVMConnection implements Connection
                   InVMConnection.log.error(msg, e);
                   throw new IllegalStateException(msg, e);
                }
+               finally
+               {
+                  if (isTrace)
+                  {
+                     log.trace(InVMConnection.this + "::packet sent done");
+                  }
+               }
             }
          });
          
-         if (flush)
+         if (flush && flushEnabled)
          {
             final CountDownLatch latch = new CountDownLatch(1);
             executor.execute(new Runnable(){
@@ -160,7 +175,10 @@ public class InVMConnection implements Connection
             
             try
             {
-               latch.await(10, TimeUnit.SECONDS);
+               if (!latch.await(10, TimeUnit.SECONDS))
+               {
+                  log.warn("Timed out flushing channel on InVMConnection");
+               }
             }
             catch (InterruptedException e)
             {
@@ -191,6 +209,11 @@ public class InVMConnection implements Connection
 
    public void removeReadyListener(ReadyListener listener)
    {
+   }
+   
+   public void disableFlush()
+   {
+      flushEnabled = false;
    }
    
    public Executor getExecutor()
