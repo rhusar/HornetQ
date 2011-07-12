@@ -1174,7 +1174,14 @@ public class ClusterConnectionImpl implements ClusterConnection
    @Override
    public String toString()
    {
-      return "ClusterConnectionImpl [nodeUUID=" + nodeUUID + ", connector=" + connector + ", address=" + address + "]";
+      return "ClusterConnectionImpl [nodeUUID=" + nodeUUID +
+             ", connector=" +
+             connector +
+             ", address=" +
+             address +
+             ", server=" +
+             server +
+             "]";
    }
 
    public String describe()
@@ -1215,6 +1222,10 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          if(tcConfigs != null && tcConfigs.length > 0)
          {
+            if (log.isDebugEnabled())
+            {
+               log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
+            }
             return (ServerLocatorInternal) HornetQClient.createServerLocatorWithHA(tcConfigs);
          }
          else

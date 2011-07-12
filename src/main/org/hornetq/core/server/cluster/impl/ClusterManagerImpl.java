@@ -152,7 +152,7 @@ public class ClusterManagerImpl implements ClusterManager
       
       out.println("Information on " + this);
       out.println("*******************************************************");
-      out.println("Topology: " + topology.describe());
+      out.println("Topology: " + topology.describe("Toopology on " + this));
       
       for (ClusterConnection conn : this.clusterConnections.values())
       {
@@ -166,7 +166,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public String toString()
    {
-      return "ClusterManagerImpl[server=" + server + "]";
+      return "ClusterManagerImpl[server=" + server + "]@" + System.identityHashCode(this);
    }
    
    public synchronized void start() throws Exception
@@ -282,6 +282,11 @@ public class ClusterManagerImpl implements ClusterManager
    {
       TopologyMember member = new TopologyMember(connectorPair);
       boolean updated = topology.addMember(nodeID, member);
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug(this + "::NodeUp " + nodeID + connectorPair);
+      }
 
       if (!updated)
       {
@@ -887,6 +892,10 @@ public class ClusterManagerImpl implements ClusterManager
          {
             try
             {
+               if (log.isDebugEnabled())
+               {
+                  log.debug(ClusterManagerImpl.this + ":: announcing " + connector + " to " + backupServerLocator);
+               }
                ClientSessionFactory backupSessionFactory = backupServerLocator.connect();
                if (backupSessionFactory != null)
                {

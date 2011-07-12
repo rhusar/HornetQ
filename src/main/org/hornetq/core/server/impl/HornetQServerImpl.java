@@ -444,8 +444,13 @@ public class HornetQServerImpl implements HornetQServer
                               {
                                  try
                                  {
+                                    log.debug(HornetQServerImpl.this + "::Stopping live node in favor of failback");
                                     stop(true);
+                                    // We need to wait some time before we start the backup again
+                                    // otherwise we may eventually start before the live had a chance to get it
+                                    Thread.sleep(configuration.getFailbackDelay());
                                     configuration.setBackup(true);
+                                    log.debug(HornetQServerImpl.this + "::Starting backup node now after failback");
                                     start();
                                  }
                                  catch (Exception e)
@@ -601,7 +606,7 @@ public class HornetQServerImpl implements HornetQServer
          }
          started = true;
 
-         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "] started");
+         HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() + "]" + (this.identity != null ? " (" + identity : ")") + " started");
       }
 
 

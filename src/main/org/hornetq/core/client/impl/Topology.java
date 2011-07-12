@@ -70,8 +70,7 @@ public class Topology implements Serializable
       if (debug)
       {
          log.debug(this + "::adding = " + nodeId + ":" + member.getConnector(), new Exception ("trace"));
-         log.debug("before----------------------------------");
-         log.debug(describe());
+         log.debug(describe("Before:"));
       }
       if(currentMember == null)
       {
@@ -103,7 +102,7 @@ public class Topology implements Serializable
       if(debug)
       {
          log.debug(this + "::Topology updated=" + replaced);
-         log.debug(describe());
+         log.debug(describe("After:"));
       }
       return replaced;
    }
@@ -163,11 +162,15 @@ public class Topology implements Serializable
       }
       return count;
    }
-
    public synchronized String describe()
    {
+      return describe("");
+   }
 
-      String desc = "";
+   public synchronized String describe(String text)
+   {
+
+      String desc = text + "\n";
       for (Entry<String, TopologyMember> entry : new HashMap<String, TopologyMember>(topology).entrySet())
       {
          desc += "\t" + entry.getKey() + " => " + entry.getValue() + "\n";

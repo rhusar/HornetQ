@@ -278,6 +278,8 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
    
    public void testSimpleRoundRobbin() throws Exception
    {
+      
+      //TODO make this test to crash a node
       setupServer(0, true, isNetty());
       setupServer(1, true, isNetty());
       setupServer(2, true, isNetty());
@@ -361,6 +363,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
    
    public void testSimpleRoundRobbinNoFailure() throws Exception
    {
+      //TODO make this test to crash a node
       setupServer(0, true, isNetty());
       setupServer(1, true, isNetty());
       setupServer(2, true, isNetty());
