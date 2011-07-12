@@ -1367,7 +1367,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             
             for (Connector conn : connectors)
             {
-               futuresList.add(threadPool.submit(conn));
+                // TODO:   Why using submit here? if we are waiting for it anyway?
+                log.info("XXX Submitting call towards " + conn);
+                futuresList.add(threadPool.submit(conn));
             }
             
             for (int i = 0, futuresSize = futuresList.size(); i < futuresSize; i++)
@@ -1473,6 +1475,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          public ClientSessionFactory call() throws HornetQException
          {
+            if (log.isDebugEnabled())
+            {
+               log.debug("Executing connection to " + factory + " through threadPool.submission()");
+            }
             try
             {
                factory.connect(initialConnectAttempts, failoverOnInitialConnection);

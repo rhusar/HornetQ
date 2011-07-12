@@ -866,6 +866,7 @@ public class ClusterManagerImpl implements ClusterManager
 
          backupServerLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(tcConfigs);
          backupServerLocator.setReconnectAttempts(-1);
+         backupServerLocator.setInitialConnectAttempts(-1);
       }
       else if (config.getDiscoveryGroupName() != null)
       {
@@ -880,6 +881,7 @@ public class ClusterManagerImpl implements ClusterManager
 
          backupServerLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(dg);
          backupServerLocator.setReconnectAttempts(-1);
+         backupServerLocator.setInitialConnectAttempts(-1);
       }
       else
       {
@@ -907,7 +909,7 @@ public class ClusterManagerImpl implements ClusterManager
             }
             catch (Exception e)
             {
-               log.warn("Unable to announce backup", e);
+               log.warn("Unable to announce backup, retrying", e);
             }
          }
       });

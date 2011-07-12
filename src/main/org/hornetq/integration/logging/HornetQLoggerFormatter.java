@@ -29,6 +29,8 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
    {
       return clazzName.substring(clazzName.lastIndexOf(".") + 1);
    }
+   
+   private static String [] MONTHS = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
    @Override
    public String format(final LogRecord record)
@@ -37,9 +39,10 @@ public class HornetQLoggerFormatter extends java.util.logging.Formatter
       calendar.setTimeInMillis(record.getMillis());
       
       StringBuffer sb = new StringBuffer();
-      
+        
       sb.append("* [").append(Thread.currentThread().getName()).append("] ");
-      sb.append(calendar.get(GregorianCalendar.HOUR_OF_DAY) + ":" +
+      sb.append(calendar.get(GregorianCalendar.DAY_OF_MONTH) + "-" + MONTHS[calendar.get(GregorianCalendar.MONTH)] + " " + 
+                calendar.get(GregorianCalendar.HOUR_OF_DAY) + ":" +
                 calendar.get(GregorianCalendar.MINUTE) +
                 ":" +
                 calendar.get(GregorianCalendar.SECOND) +

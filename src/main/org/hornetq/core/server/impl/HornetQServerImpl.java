@@ -754,7 +754,7 @@ public class HornetQServerImpl implements HornetQServer
 
          for (Runnable task : tasks)
          {
-            HornetQServerImpl.log.debug("Waiting for " + task);
+            HornetQServerImpl.log.debug(this + "::Waiting for " + task);
          }
 
          if (memoryManager != null)
