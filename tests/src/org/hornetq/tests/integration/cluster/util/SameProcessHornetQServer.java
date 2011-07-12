@@ -54,6 +54,11 @@ public class SameProcessHornetQServer implements TestableServer
       //To change body of implemented methods use File | Settings | File Templates.
    }
 
+   public void setIdentity(String identity)
+   {
+      server.setIdentity(identity);
+   }
+   
    public boolean isStarted()
    {
       return server.isStarted();

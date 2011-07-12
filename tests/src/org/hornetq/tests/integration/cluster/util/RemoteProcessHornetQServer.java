@@ -186,4 +186,11 @@ public class RemoteProcessHornetQServer implements TestableServer
    {
       return null;
    }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.tests.integration.cluster.util.TestableServer#setIdentity(java.lang.String)
+    */
+   public void setIdentity(String identity)
+   {
+   }
 }

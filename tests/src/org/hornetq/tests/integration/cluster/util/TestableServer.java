@@ -28,6 +28,8 @@ public interface TestableServer
 {
 
    HornetQServer getServer();
+   
+   public void setIdentity(String identity);
 
    public void start() throws Exception;
 
