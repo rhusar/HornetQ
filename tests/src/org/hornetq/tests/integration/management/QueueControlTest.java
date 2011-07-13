@@ -922,7 +922,7 @@ public class QueueControlTest extends ManagementTestBase
       // the message IDs are set on the server
       Map<String, Object>[] messages = queueControl.listMessages(null);
       Assert.assertEquals(50, messages.length);
-      assertEquals(50, ((Integer)messages[0].get("count")).intValue());
+      assertEquals(50, ((Long)messages[0].get("count")).intValue());
       long messageID = (Long)messages[0].get("messageID");
 
       // delete 1st message
