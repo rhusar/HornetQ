@@ -1376,9 +1376,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                    
                    csf = conn.tryConnect();
                    
-                   if (csf != null || ServerLocatorImpl.this.closed || ServerLocatorImpl.this.closing)
+                   if (csf != null)
                    {
-                      break;
+                      return csf;
                    }
                }
                
@@ -1387,7 +1387,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   break;
                }
                
-               Thread.sleep (retryInterval);
+               if (!closed && !closing)
+               {
+                  Thread.sleep (retryInterval);
+               }
             }
             
          }
