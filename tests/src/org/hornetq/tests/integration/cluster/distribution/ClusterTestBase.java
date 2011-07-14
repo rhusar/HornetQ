@@ -1303,7 +1303,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       if (sfs[node] != null)
       {
-         throw new IllegalArgumentException("Already a server at " + node);
+         throw new IllegalArgumentException("Already a factory at " + node);
       }
 
       Map<String, Object> params = generateParams(node, netty);
@@ -1332,6 +1332,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       locators[node].setBlockOnDurableSend(true);
       ClientSessionFactory sf = locators[node].createSessionFactory();
 
+      sf.createSession().close();
       sfs[node] = sf;
    }
 
@@ -1482,6 +1483,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
                server = HornetQServers.newHornetQServer(configuration, false);
             }
          }
+         
+         server.setIdentity(this.getClass().getSimpleName() + "/Live(" + node + ")");
          servers[node] = server;
       }
 
@@ -1557,6 +1560,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             server = HornetQServers.newHornetQServer(configuration, false);
          }
       }
+      server.setIdentity(this.getClass().getSimpleName() + "/Backup(" + node + " of live " + liveNode + ")");
       servers[node] = server;
    }
 
