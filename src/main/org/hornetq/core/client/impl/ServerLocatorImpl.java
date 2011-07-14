@@ -1478,11 +1478,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             catch (HornetQException e)
             {
                log.debug("Exception on establish connector initial connection", e);
-               if (!interrupted)
-               {
-                  this.e = e;
-                  throw e;
-               }
                return null;
             }
          }
