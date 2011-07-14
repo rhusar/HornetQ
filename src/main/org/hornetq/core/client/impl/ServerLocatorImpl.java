@@ -1363,8 +1363,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          try
          {
             
+            int retryNumber = 0;
             while (csf == null && !ServerLocatorImpl.this.closed && !ServerLocatorImpl.this.closing)
             {
+               retryNumber ++;
                for (Connector conn : connectors)
                {
                    if (log.isDebugEnabled())
@@ -1378,6 +1380,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                    {
                       break;
                    }
+               }
+               
+               if (initialConnectAttempts >=0 && retryNumber > initialConnectAttempts)
+               {
+                  break;
                }
                
                Thread.sleep (retryInterval);
