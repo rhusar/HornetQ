@@ -1363,33 +1363,26 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          try
          {
             
-            List<Future<ClientSessionFactory>> futuresList = new ArrayList<Future<ClientSessionFactory>>();
-            
-            for (Connector conn : connectors)
+            while (csf == null && !ServerLocatorImpl.this.closed && !ServerLocatorImpl.this.closing)
             {
-                // TODO:   Why using submit here? if we are waiting for it anyway?
-                log.info("XXX Submitting call towards " + conn);
-                futuresList.add(threadPool.submit(conn));
-            }
-            
-            for (int i = 0, futuresSize = futuresList.size(); i < futuresSize; i++)
-            {
-               Future<ClientSessionFactory> future = futuresList.get(i);
-               try
+               for (Connector conn : connectors)
                {
-                  csf = future.get();
-                  if (csf != null)
-                     break;
+                   if (log.isDebugEnabled())
+                   {
+                      log.debug("Submitting connect towards " + conn);
+                   }
+                   
+                   csf = conn.tryConnect();
+                   
+                   if (csf != null || ServerLocatorImpl.this.closed || ServerLocatorImpl.this.closing)
+                   {
+                      break;
+                   }
                }
-               catch (Exception e)
-               {
-                  log.debug("unable to connect with static connector " + connectors.get(i).initialConnector);
-               }
+               
+               Thread.sleep (retryInterval);
             }
-            if (csf == null && !closed)
-            {
-               throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
-            }
+            
          }
          catch (Exception e)
          {
@@ -1455,13 +1448,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          super.finalize();
       }
 
-      class Connector implements Callable<ClientSessionFactory>
+      class Connector 
       {
          private TransportConfiguration initialConnector;
 
          private volatile ClientSessionFactoryInternal factory;
-
-         private boolean isConnected = false;
 
          private boolean interrupted = false;
 
@@ -1473,15 +1464,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             this.factory = factory;
          }
 
-         public ClientSessionFactory call() throws HornetQException
+         public ClientSessionFactory tryConnect() throws HornetQException
          {
             if (log.isDebugEnabled())
             {
-               log.debug("Executing connection to " + factory + " through threadPool.submission()");
+               log.debug("Trying to connect to " + factory);
             }
             try
             {
-               factory.connect(initialConnectAttempts, failoverOnInitialConnection);
+               factory.connect(1, false);
+               return factory;
             }
             catch (HornetQException e)
             {
@@ -1491,27 +1483,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                   this.e = e;
                   throw e;
                }
-               /*if(factory != null)
-               {
-                  factory.close();
-                  factory = null;
-               }*/
                return null;
             }
-            isConnected = true;
-            for (Connector connector : connectors)
-            {
-               if (!connector.isConnected())
-               {
-                  connector.disconnect();
-               }
-            }
-            return factory;
-         }
-
-         public boolean isConnected()
-         {
-            return isConnected;
          }
 
          public void disconnect()
