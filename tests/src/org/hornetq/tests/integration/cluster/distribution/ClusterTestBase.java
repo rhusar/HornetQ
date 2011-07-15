@@ -839,6 +839,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                    final int... consumerIDs) throws Exception
    {
       boolean outOfOrder = false;
+      String firstOutOfOrderMessage = null;
       for (int consumerID : consumerIDs)
       {
          ConsumerHolder holder = consumers[consumerID];
@@ -860,10 +861,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
                dumpConsumers();
 
-               Assert.assertNotNull("consumer " + consumerID + " did not receive message " + j, message);
+               Assert.fail("consumer " + consumerID + " did not receive message " + j);
             }
-
-
+            
+            log.info("msg on ClusterTestBase = " + message);            
 
             if (ack)
             {
@@ -877,15 +878,22 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (j != (Integer)message.getObjectProperty(ClusterTestBase.COUNT_PROP))
             {
+               if (firstOutOfOrderMessage == null)
+               {
+                  firstOutOfOrderMessage = "expected " + j + " received " + message.getObjectProperty(ClusterTestBase.COUNT_PROP);
+               }
                outOfOrder = true;
                System.out.println("Message j=" + j +
+                                  " was received out of order = " +
+                                  message.getObjectProperty(ClusterTestBase.COUNT_PROP));
+               log.info("Message j=" + j +
                                   " was received out of order = " +
                                   message.getObjectProperty(ClusterTestBase.COUNT_PROP));
             }
          }
       }
 
-      Assert.assertFalse("Messages were consumed out of order, look at System.out for more information", outOfOrder);
+      Assert.assertFalse("Messages were consumed out of order::" + firstOutOfOrderMessage, outOfOrder);
    }
 
    private void dumpConsumers() throws Exception

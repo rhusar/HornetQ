@@ -546,6 +546,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          fail(false);
       }
 
+      scheduleRetryReconnect(me.getCode());
+   }
+   
+   protected void scheduleRetryReconnect(int errorCode)
+   {
       scheduleRetryConnect();
    }
 

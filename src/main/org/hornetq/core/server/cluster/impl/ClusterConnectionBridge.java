@@ -140,6 +140,15 @@ public class ClusterConnectionBridge extends BridgeImpl
    }
    
    @Override
+   protected void scheduleRetryReconnect(int errorCode)
+   {
+      if (errorCode != HornetQException.DISCONNECTED)
+      {
+         scheduleRetryConnect();
+      }
+   }
+
+   @Override
    protected ServerMessage beforeForward(ServerMessage message)
    {
       // We make a copy of the message, then we strip out the unwanted routing id headers and leave
