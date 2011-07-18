@@ -1790,7 +1790,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       name,
-                                                                                      500,
+                                                                                      100,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
