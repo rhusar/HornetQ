@@ -13,7 +13,6 @@
 
 package org.hornetq.tests.integration.cluster.distribution;
 
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -913,7 +912,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       String br = "-------------------------\n";
       String out = br;
-      out += "HornetQ server " + server.getNodeID() + "\n";
+      out += "HornetQ server " + server + "\n";
       ClusterManager clusterManager = server.getClusterManager();
       if (clusterManager == null)
       {
@@ -1791,7 +1790,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       name,
-                                                                                      100,
+                                                                                      500,
                                                                                       true,
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
@@ -1995,6 +1994,19 @@ public abstract class ClusterTestBase extends ServiceTestBase
          ClusterTestBase.log.info("started server " + node);
 
          waitForServer(servers[node]);
+         
+         for (int i = 0 ; i <= node; i++)
+         {
+            try
+            {
+               log.info("Describing Server " + servers[i]);
+               log.info(servers[i].describe());
+            }
+            catch (Throwable ignored)
+            {
+               
+            }
+         }
       }
    }
 
@@ -2041,7 +2053,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             {
                ClusterTestBase.log.info("stopping server " + node);
                servers[node].stop();
-               ClusterTestBase.log.info("server stopped");
+               ClusterTestBase.log.info("server " + node + " stopped");
             }
             catch (Exception e)
             {

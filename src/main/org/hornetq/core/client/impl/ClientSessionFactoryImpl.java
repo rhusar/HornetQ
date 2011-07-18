@@ -660,7 +660,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
          else
          {
-            connection.destroy();
+            if (connection != null)
+            {
+               connection.destroy();
+            }
 
             connection = null;
          }
@@ -975,7 +978,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
                   if (reconnectAttempts != -1 && count == reconnectAttempts)
                   {
-                     log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up on reconnecting it.");
+                     if (reconnectAttempts != 1)
+                     {
+                        log.warn("Tried " + reconnectAttempts + " times to connect. Now giving up on reconnecting it.");
+                     }
+                     else
+                     if (reconnectAttempts == 1)
+                     {
+                        log.debug("Trying to connect towards " + this);
+                     }
 
                      return;
                   }

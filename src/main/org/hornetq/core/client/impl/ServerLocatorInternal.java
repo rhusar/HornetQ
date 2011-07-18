@@ -13,13 +13,12 @@
 
 package org.hornetq.core.client.impl;
 
-import org.hornetq.api.core.HornetQException;
+import java.util.concurrent.Executor;
+
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ServerLocator;
-
-import java.util.concurrent.Executor;
 
 /**
  * A ServerLocatorInternal
