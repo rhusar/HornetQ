@@ -378,15 +378,18 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    public synchronized Map<String, String> getNodes()
    {
-      Map<String, String> nodes = new HashMap<String, String>();
-      for (Entry<String, MessageFlowRecord> record : records.entrySet())
+      synchronized (records)
       {
-         if (record.getValue().getBridge().getForwardingConnection() != null)
+         Map<String, String> nodes = new HashMap<String, String>();
+         for (Entry<String, MessageFlowRecord> record : records.entrySet())
          {
-            nodes.put(record.getKey(), record.getValue().getBridge().getForwardingConnection().getRemoteAddress());
+            if (record.getValue().getBridge().getForwardingConnection() != null)
+            {
+               nodes.put(record.getKey(), record.getValue().getBridge().getForwardingConnection().getRemoteAddress());
+            }
          }
+         return nodes;
       }
-      return nodes;
    }
 
    public synchronized void activate() throws Exception
