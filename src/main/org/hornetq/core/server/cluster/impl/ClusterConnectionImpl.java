@@ -588,8 +588,6 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetNodeID, connector, queueName, queue);
 
-      records.put(targetNodeID, record);
-
       Bridge bridge = createClusteredBridge(record);
       
       if (log.isDebugEnabled())
@@ -598,6 +596,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
       
       record.setBridge(bridge);
+
+      records.put(targetNodeID, record);
 
       if (start)
       {
