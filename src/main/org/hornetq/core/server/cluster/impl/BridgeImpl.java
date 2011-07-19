@@ -537,7 +537,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
       }
       
-      fail(false);
+      fail(me.getCode() == HornetQException.DISCONNECTED);
 
       scheduleRetryConnect();
    }
