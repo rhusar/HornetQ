@@ -523,7 +523,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       
       try
       {
-         // csf.cleanup();
+         csf.cleanup();
       }
       catch (Throwable dontCare)
       {
@@ -531,7 +531,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       try
       {
-         // session.cleanUp(false);
+         session.cleanUp(false);
       }
       catch (Throwable dontCare)
       {
