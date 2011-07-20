@@ -279,6 +279,15 @@ public class ClusterConnectionBridge extends BridgeImpl
       super.stop();
    }
 
+   protected void tryScheduleRetryReconnect(final int code)
+   {
+      if (code != HornetQException.DISCONNECTED)
+      {
+         scheduleRetryConnect();
+      }
+   }
+
+
    protected void fail(final boolean permanently)
    {
       log.debug("Cluster Bridge " + this.getName() + " failed, permanently=" + permanently);

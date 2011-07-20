@@ -112,8 +112,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
    private volatile boolean active;
 
-   private volatile boolean stopping;
-
    private final String user;
 
    private final String password;
@@ -286,8 +284,6 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          log.debug("Bridge " + this.name + " being stopped");
       }
-
-      stopping = true;
       
       if (futureScheduledReconnection != null)
       {
@@ -408,6 +404,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
          if (ref != null)
          {
+            if (isTrace)
+            {
+               log.trace(this + " Acking " + ref + " on queue " + ref.getQueue());
+            }
             ref.getQueue().acknowledge(ref);
          }
       }
@@ -466,7 +466,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          if (!active)
          {
-            log.debug(name + "::Ignoring reference on bridge as it is set to iniactive ref=" + ref);
+            if (log.isDebugEnabled())
+            {
+            	log.debug(this + "::Ignoring reference on bridge as it is set to iniactive ref=" + ref);
+            }
             return HandleStatus.BUSY;
          }
 
@@ -503,7 +506,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          }
          catch (HornetQException e)
          {
-            log.warn("Unable to send message, will try again once bridge reconnects", e);
+            log.warn("Unable to send message " + ref + ", will try again once bridge reconnects", e);
 
             refs.remove(ref);
 
@@ -539,6 +542,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       
       fail(me.getCode() == HornetQException.DISCONNECTED);
 
+      tryScheduleRetryReconnect(me.getCode());
+   }
+   
+   protected void tryScheduleRetryReconnect(final int code)
+   {
       scheduleRetryConnect();
    }
 
@@ -560,7 +568,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    @Override
    public String toString()
    {
-      return this.getClass().getName() + " [name=" + name + ", queue=" + queue + " targetConnector=" + this.serverLocator + "]";
+      return this.getClass().getSimpleName() + "@" + Integer.toHexString(System.identityHashCode(this)) + " [name=" + name + ", queue=" + queue + " targetConnector=" + this.serverLocator + "]";
    }
 
    protected void fail(final boolean permanently)
@@ -571,6 +579,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       {
          try
          {
+            if (isTrace)
+            {
+               log.trace("Removing consumer on fail " + this + " from queue " + queue);
+            }
             queue.removeConsumer(this);
          }
          catch (Exception dontcare)
@@ -591,6 +603,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    {
       retryCount = 0;
       reconnectAttemptsInUse = reconnectAttempts;
+      if (futureScheduledReconnection != null)
+      {
+         futureScheduledReconnection.cancel(true);
+         futureScheduledReconnection = null;
+      }
    }
 
    /* Hook for creating session factory */
@@ -794,6 +811,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
             }
 
+            if (isTrace)
+            {
+               log.trace("Removing consumer on stopRunnable " + this + " from queue " + queue);
+            }
             queue.removeConsumer(BridgeImpl.this);
 
             internalCancelReferences();
