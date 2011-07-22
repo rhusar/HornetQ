@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import junit.framework.Assert;
+import junit.framework.TestSuite;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientConsumer;
@@ -30,6 +31,7 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.ConnectorServiceConfiguration;
 import org.hornetq.core.config.CoreQueueConfiguration;
+import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.ConnectorService;
 import org.hornetq.core.server.HornetQServer;
@@ -75,6 +77,28 @@ public class TwitterTest extends ServiceTestBase
 
    // incoming
    
+   
+
+   public static TestSuite suite()
+   {
+      TestSuite suite = new TestSuite(TwitterTest.class.getName() + " testsuite");
+
+      if (AIOSequentialFileFactory.isSupported())
+      {
+         suite.addTestSuite(TwitterTest.class);
+      }
+      else
+      {
+         // System.out goes towards JUnit report
+         String errorMsg = "Test " + TwitterTest.class.getName() +
+                           " ignored as twitter.consumerKey, twitter.consumerSecret, twitter.accessToken and twitter.accessTokenSecuret is not set in system property  * * *";
+         System.out.println(errorMsg);
+         log.warn(errorMsg);
+      }
+
+      return suite;
+   }
+
    public void testSimpleIncoming() throws Exception
    {
       internalTestIncoming(true,false);
