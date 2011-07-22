@@ -158,7 +158,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private static ExecutorService globalThreadPool;
    
-   private static Executor startExecutor;
+   private Executor startExecutor;
 
    private static ScheduledExecutorService globalScheduledThreadPool;
 
