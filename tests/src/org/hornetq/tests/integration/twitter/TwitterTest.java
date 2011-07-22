@@ -65,16 +65,6 @@ public class TwitterTest extends ServiceTestBase
    private static final String TWITTER_ACCESS_TOKEN = System.getProperty("twitter.accessToken");
    private static final String TWITTER_ACCESS_TOKEN_SECRET = System.getProperty("twitter.accessTokenSecret");
 
-   @Override
-   protected void setUp() throws Exception
-   {
-      if(TWITTER_CONSUMER_KEY == null || TWITTER_CONSUMER_SECRET == null || TWITTER_ACCESS_TOKEN == null || TWITTER_ACCESS_TOKEN_SECRET == null)
-      {
-         throw new Exception("* * *  Please set twitter.consumerKey, twitter.consumerSecret, twitter.accessToken and twitter.accessTokenSecuret in system property  * * *");
-      }
-      super.setUp();
-   }
-
    // incoming
    
    
