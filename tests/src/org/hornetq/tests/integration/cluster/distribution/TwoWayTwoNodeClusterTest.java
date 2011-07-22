@@ -154,15 +154,15 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       
       closeSessionFactory(1);
       
+      log.info("*********** Stopping server 1");
       stopServers(1);
+      log.info("*********** Stopped server 1");
       
-      Thread.sleep(12000);
+      Thread.sleep(1000);
 
       System.out.println(clusterDescription(servers[0]));
 
       startServers(1);
-      
-      Thread.sleep(3000);
 
       System.out.println(clusterDescription(servers[0]));
       System.out.println(clusterDescription(servers[1]));
