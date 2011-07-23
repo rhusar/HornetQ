@@ -73,7 +73,7 @@ public class TwitterTest extends ServiceTestBase
    {
       TestSuite suite = new TestSuite(TwitterTest.class.getName() + " testsuite");
 
-      if (AIOSequentialFileFactory.isSupported())
+      if (TWITTER_CONSUMER_KEY != null)
       {
          suite.addTestSuite(TwitterTest.class);
       }
