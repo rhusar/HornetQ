@@ -67,13 +67,18 @@ public class TwitterTest extends ServiceTestBase
 
    // incoming
    
+   public void setUp() throws Exception
+   {
+      super.setUp();
+   }
+   
    
 
    public static TestSuite suite()
    {
       TestSuite suite = new TestSuite(TwitterTest.class.getName() + " testsuite");
 
-      if (TWITTER_CONSUMER_KEY != null)
+      if (TWITTER_CONSUMER_KEY != null && !TWITTER_CONSUMER_KEY.equals("null"))
       {
          suite.addTestSuite(TwitterTest.class);
       }
