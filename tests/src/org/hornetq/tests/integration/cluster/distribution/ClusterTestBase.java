@@ -117,6 +117,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
    @Override
    protected void tearDown() throws Exception
    {
+      log.info("#test tearDown");
       for (ServerLocator locator : locators)
       {
          try

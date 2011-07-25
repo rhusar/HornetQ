@@ -404,7 +404,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
 
 	  if (isTrace)
 	  {
-	     log.trace("Connection removed " + connectionID, new Exception ("trace"));
+	     log.trace("Connection removed " + connectionID + " from server " + this.server, new Exception ("trace"));
 	  }
       
       ConnectionEntry conn = connections.get(connectionID);

@@ -52,6 +52,7 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
    @Override
    protected void tearDown() throws Exception
    {
+      log.info("#test tearDown");
       closeAllConsumers();
 
       closeAllSessionFactories();
@@ -126,6 +127,17 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
       stopServers(0, 1);
    }
+   
+   public void testLoop() throws Exception
+   {
+      for (int i = 0 ; i < 100; i++)
+      {
+         log.info("#test " + i);
+         testStopStart();
+         tearDown();
+         setUp();
+      }
+   }
 
    public void testStopStart() throws Exception
    {
@@ -157,15 +169,17 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       log.info("*********** Stopping server 1");
       stopServers(1);
       log.info("*********** Stopped server 1");
-      
-      Thread.sleep(1000);
 
       System.out.println(clusterDescription(servers[0]));
+      
+      Thread.sleep(5000);
 
+      log.info ("********* Starting server 1");
       startServers(1);
 
-      System.out.println(clusterDescription(servers[0]));
-      System.out.println(clusterDescription(servers[1]));
+      log.info ("********* Describing servers");
+      log.info(servers[0].describe());
+      log.info(servers[1].describe());
 
       setupSessionFactory(1, isNetty());
 

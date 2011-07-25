@@ -473,7 +473,8 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       
       if (isTrace)
       {
-         log.trace("Seding notification for addBinding " + binding + " from server " + server);
+         //log.trace("Sending notification for addBinding " + binding + " from server " + server);
+         log.trace("XXX Sending notification for addBinding " + binding + " from server " + server, new Exception("trace"));
       }
 
       managementService.sendNotification(new Notification(uid, NotificationType.BINDING_ADDED, props));

@@ -321,7 +321,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.removeClusterTopologyListener(this);
       }
       
-      log.debug("Cluster connection being stopped for node" + nodeUUID);
+      log.debug("Cluster connection being stopped for node" + nodeUUID + ", server = " + this.server + " serverLocator = " + serverLocator );
 
       synchronized (this)
       {

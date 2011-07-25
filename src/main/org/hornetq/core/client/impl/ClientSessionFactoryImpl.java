@@ -1131,64 +1131,67 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                }
             }
             // if connection fails we can try the backup in case it has come live
-            if (connector == null && backupConfig != null)
+            if (connector == null)
             {
-               if (isDebug)
+               if (backupConfig != null)
                {
-                  log.debug("Trying backup config = " + backupConfig);
-               }
-               ConnectorFactory backupConnectorFactory = instantiateConnectorFactory(backupConfig.getFactoryClassName());
-               connector = backupConnectorFactory.createConnector(backupConfig.getParams(),
-                                                                  handler,
-                                                                  this,
-                                                                  closeExecutor,
-                                                                  threadPool,
-                                                                  scheduledThreadPool);
-               if (connector != null)
-               {
-                  connector.start();
-
-                  tc = connector.createConnection();
-
-                  if (tc == null)
+                  if (isDebug)
                   {
-                     if (isDebug)
-                     {
-                        log.debug("Backup is not active yet");
-                     }
-
-                     try
-                     {
-                        connector.close();
-                     }
-                     catch (Throwable t)
-                     {
-                     }
-
-                     connector = null;
+                     log.debug("Trying backup config = " + backupConfig);
                   }
-                  else
+                  ConnectorFactory backupConnectorFactory = instantiateConnectorFactory(backupConfig.getFactoryClassName());
+                  connector = backupConnectorFactory.createConnector(backupConfig.getParams(),
+                                                                     handler,
+                                                                     this,
+                                                                     closeExecutor,
+                                                                     threadPool,
+                                                                     scheduledThreadPool);
+                  if (connector != null)
                   {
-                     /*looks like the backup is now live, lets use that*/
-
-                     if (isDebug)
+                     connector.start();
+   
+                     tc = connector.createConnection();
+   
+                     if (tc == null)
                      {
-                        log.debug("Connected to the backup at " + backupConfig);
+                        if (isDebug)
+                        {
+                           log.debug("Backup is not active yet");
+                        }
+   
+                        try
+                        {
+                           connector.close();
+                        }
+                        catch (Throwable t)
+                        {
+                        }
+   
+                        connector = null;
                      }
-
-                     connectorConfig = backupConfig;
-
-                     backupConfig = null;
-
-                     connectorFactory = backupConnectorFactory;
+                     else
+                     {
+                        /*looks like the backup is now live, lets use that*/
+   
+                        if (isDebug)
+                        {
+                           log.debug("Connected to the backup at " + backupConfig);
+                        }
+   
+                        connectorConfig = backupConfig;
+   
+                        backupConfig = null;
+   
+                        connectorFactory = backupConnectorFactory;
+                     }
                   }
                }
-            }
-            else
-            {
-               if (isTrace)
+               else
                {
-                  log.trace("No Backup configured!", new Exception("trace"));
+                  if (isTrace)
+                  {
+                     log.trace("No Backup configured!", new Exception("trace"));
+                  }
                }
             }
          }
@@ -1287,6 +1290,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
             }
          }
+      }
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("returning " + connection);
       }
 
       return connection;

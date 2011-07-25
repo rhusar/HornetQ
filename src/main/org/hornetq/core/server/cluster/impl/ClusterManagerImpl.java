@@ -788,6 +788,12 @@ public class ClusterManagerImpl implements ClusterManager
          {
             ClusterManagerImpl.log.warn("No discovery group with name '" + config.getDiscoveryGroupName() +
                                         "'. The cluster connection will not be deployed.");
+            return;
+         }
+         
+         if (log.isDebugEnabled())
+         {
+            log.debug("XXX " + this + " Starting a Discovery Group Cluster Connection, name=" + config.getDiscoveryGroupName() + ", dg=" + dg);
          }
 
          clusterConnection = new ClusterConnectionImpl(dg,
@@ -819,6 +825,11 @@ public class ClusterManagerImpl implements ClusterManager
       {
          TransportConfiguration[] tcConfigs = config.getStaticConnectors() != null ? connectorNameListToArray(config.getStaticConnectors())
                                                                                   : null;
+         
+         if (log.isDebugEnabled())
+         {
+            log.debug("XXX " + this + " defining cluster connection towards " + tcConfigs);
+         }
 
          clusterConnection = new ClusterConnectionImpl(tcConfigs,
                                                        connector,
@@ -850,6 +861,10 @@ public class ClusterManagerImpl implements ClusterManager
 
       clusterConnections.put(config.getName(), clusterConnection);
 
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX ClusterConnection.start at " + clusterConnection, new Exception ("trace"));
+      }
       clusterConnection.start();
 
       if (backup)

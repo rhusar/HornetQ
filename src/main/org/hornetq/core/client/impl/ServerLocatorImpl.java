@@ -1400,6 +1400,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                            }
                         }
                      });
+                     
+                     if (log.isDebugEnabled())
+                     {
+                        log.debug("XXX Returning " + csf + " after " + retryNumber + " retries on StaticConnector " + ServerLocatorImpl.this);
+                     }
 
                      return csf;
                   }
@@ -1419,13 +1424,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
          catch (Exception e)
          {
+            log.warn("XXX " + e.getMessage(), e);
             throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors", e);
          }
 
          if (csf == null && !closed)
          {
+            log.warn("XXX Failed to connecto to any static connector, throwing exception now");
             throw new HornetQException(HornetQException.NOT_CONNECTED, "Failed to connect to any static connectors");
          }
+         log.warn("Returning " + csf + " on " + ServerLocatorImpl.this);
          return csf;
       }
 
