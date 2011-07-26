@@ -24,6 +24,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.config.Configuration;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.ChannelHandler;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
@@ -49,6 +50,10 @@ import org.hornetq.spi.core.remoting.Connection;
  */
 public class CoreProtocolManager implements ProtocolManager
 {
+   private static final Logger log = Logger.getLogger(CoreProtocolManager.class);
+   
+   private static final boolean isTrace = log.isTraceEnabled();
+   
    private final HornetQServer server;
 
    private final List<Interceptor> interceptors;
@@ -146,6 +151,10 @@ public class CoreProtocolManager implements ProtocolManager
                else
                {
                   pair = new Pair<TransportConfiguration, TransportConfiguration>(msg.getConnector(), null);
+               }
+               if (isTrace)
+               {
+                  log.trace("XXX Server " + server + " receiving nodeUp from NodeID=" + msg.getNodeID() + ", pair=" + pair);
                }
                server.getClusterManager().notifyNodeUp(msg.getNodeID(), pair, false, true);
             }

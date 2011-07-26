@@ -1400,7 +1400,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             
             if (log.isTraceEnabled())
             {
-               log.trace("Disconnect being called on client:" + msg);
+               log.trace("XXX Disconnect being called on client:" + msg, new Exception ("trace"));
             }
 
             closeExecutor.execute(new Runnable()
@@ -1410,6 +1410,10 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                public void run()
                {
                   SimpleString nodeID = msg.getNodeID();
+                  if (log.isTraceEnabled())
+                  {
+                     log.trace("XXX notify nodeID=" + msg.getNodeID() + " on serverLocator=" + serverLocator);
+                  }
                   if (nodeID != null)
                   {
                      serverLocator.notifyNodeDown(msg.getNodeID().toString());

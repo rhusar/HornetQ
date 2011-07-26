@@ -542,6 +542,11 @@ public class ClusterConnectionImpl implements ClusterConnection
       /*we dont create bridges to backups*/
       if(connectorPair.a == null)
       {
+         if (isTrace)
+         {
+            log.trace(this + " ignoring call with nodeID="  + nodeID + 
+                      ", connectorPair=" + connectorPair + ", last=" + last);
+         }
          return;
       }
 
@@ -553,6 +558,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
             if (record == null)
             {
+               if (log.isDebugEnabled())
+               {
+                  log.debug(this + "::Creating record for nodeID=" + nodeID + ", connectorPair=" + connectorPair);
+               }
 
                // New node - create a new flow record
 
@@ -575,6 +584,13 @@ public class ClusterConnectionImpl implements ClusterConnection
 
                createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
             }
+            else
+            {
+               if (isTrace)
+               {
+                  log.trace ("XXX " + this + " ignored nodeUp record for " + connectorPair + " on nodeID=" + nodeID + " as the record already existed");
+               }
+            }
          }
          catch (Exception e)
          {
@@ -595,7 +611,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       
       if (log.isDebugEnabled())
       {
-         log.debug("creating record between " + this.connector + " and " + connector + bridge);
+         log.debug("XXX creating record between " + this.connector + " and " + connector + bridge);
       }
       
       record.setBridge(bridge);

@@ -135,7 +135,7 @@ public class ClusterConnectionBridge extends BridgeImpl
       
       if (log.isDebugEnabled())
       {
-         log.debug("Setting up bridge between " + clusterConnection.getConnector() + " and " + targetLocator, new Exception ("trace"));
+         log.debug("XXX Setting up bridge between " + clusterConnection.getConnector() + " and " + targetLocator, new Exception ("trace"));
       }
    }
    
@@ -247,7 +247,7 @@ public class ClusterConnectionBridge extends BridgeImpl
 
          ClientMessage message = session.createMessage(false);
 
-         System.out.println("Requesting sendQueueInfoToQueue");
+         log.debug("XXX Requesting sendQueueInfoToQueue through " + this, new Exception ("trace"));
          ManagementHelper.putOperationInvocation(message,
                                                  ResourceNames.CORE_SERVER,
                                                  "sendQueueInfoToQueue",

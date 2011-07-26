@@ -110,9 +110,9 @@ public class Topology implements Serializable
    public synchronized boolean removeMember(String nodeId)
    {
       TopologyMember member = topology.remove(nodeId);
-      if (debug)
+      if (log.isDebugEnabled())
       {
-         log.debug("Removing member " + member);
+         log.debug("XXX Removing member " + member, new Exception ("trace"));
       }
       return (member != null);
    }

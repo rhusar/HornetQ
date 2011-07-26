@@ -753,6 +753,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
       {
          throw new IllegalStateException("Cannot find queue " + queueName);
       }
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX PostOffice.sendQueueInfoToQueue on server=" + this.server + ", queueName=" + queueName + " and address=" + address,
+                   new Exception ("trace"));
+      }
 
       Queue queue = (Queue)binding.getBindable();
 
@@ -769,6 +775,10 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          for (QueueInfo info : queueInfos.values())
          {
+            if (log.isDebugEnabled())
+            {
+               log.debug("XXX QueueInfo on sendQueueInfoToQueue = " + info);
+            }
             if (info.getAddress().startsWith(address))
             {
                message = createQueueInfoMessage(NotificationType.BINDING_ADDED, queueName);
@@ -789,7 +799,7 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
                   message = createQueueInfoMessage(NotificationType.CONSUMER_CREATED, queueName);
 
                   message.putStringProperty(ManagementHelper.HDR_ADDRESS, info.getAddress());
-                  message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());
+                  message.putStringProperty(ManagementHelper.HDR_CLUSTER_NAME, info.getClusterName());   
                   message.putStringProperty(ManagementHelper.HDR_ROUTING_NAME, info.getRoutingName());
                   message.putIntProperty(ManagementHelper.HDR_DISTANCE, info.getDistance());
 

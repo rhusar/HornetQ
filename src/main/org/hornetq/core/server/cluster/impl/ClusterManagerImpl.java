@@ -20,6 +20,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -262,6 +263,8 @@ public class ClusterManagerImpl implements ClusterManager
       {
          return;
       }
+      
+      log.info("XXX " + this + "::removing nodeID=" + nodeID);
 
       boolean removed = topology.removeMember(nodeID);
 
@@ -280,16 +283,20 @@ public class ClusterManagerImpl implements ClusterManager
                             final boolean last,
                             final boolean nodeAnnounce)
    {
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX " + this + "::NodeUp " + nodeID + connectorPair + ", nodeAnnounce=" + nodeAnnounce);
+      }
+
       TopologyMember member = new TopologyMember(connectorPair);
       boolean updated = topology.addMember(nodeID, member);
       
-      if (log.isDebugEnabled())
-      {
-         log.debug(this + "::NodeUp " + nodeID + connectorPair);
-      }
-
       if (!updated)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug("XXX " + this + " ignored notifyNodeUp on nodeID=" + nodeID + " pair=" + connectorPair + " as the topology already knew about it");
+         }
          return;
       }
 
@@ -298,12 +305,27 @@ public class ClusterManagerImpl implements ClusterManager
          listener.nodeUP(nodeID, member.getConnector(), last);
       }
 
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX " + this + " received notifyNodeUp nodeID=" + nodeID + " connectorPair=" + connectorPair + 
+                   ", nodeAnnounce=" + nodeAnnounce + ", last=" + last);
+      }
+      
       // if this is a node being announced we are hearing it direct from the nodes CM so need to inform our cluster
       // connections.
       if (nodeAnnounce)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug("Informing " + nodeID + " to " + clusterConnections.toString());
+         }
          for (ClusterConnection clusterConnection : clusterConnections.values())
          {
+            if (log.isTraceEnabled())
+            {
+               log.trace("XXX " + this + " information clusterConnection=" + clusterConnection + 
+                         " nodeID=" + nodeID + " connectorPair=" + connectorPair + " last=" + last);
+            }
             clusterConnection.nodeUP(nodeID, connectorPair, last);
          }
       }
@@ -828,7 +850,7 @@ public class ClusterManagerImpl implements ClusterManager
          
          if (log.isDebugEnabled())
          {
-            log.debug("XXX " + this + " defining cluster connection towards " + tcConfigs);
+            log.debug("XXX " + this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
          }
 
          clusterConnection = new ClusterConnectionImpl(tcConfigs,

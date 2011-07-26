@@ -644,7 +644,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
          while (retry);
 
-         if (ha)
+         if (ha || clusterConnection)
          {
             long toWait = 30000;
             long start = System.currentTimeMillis();
@@ -1164,9 +1164,18 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       boolean removed = false;
 
-      if (!ha)
+      if (!clusterConnection && !ha)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug("ignoring notifyNodeDown=" + nodeID + " as isHA=false");
+         }
          return;
+      }
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX " + this + "::Notify nodeID=" + nodeID + " as being down");
       }
 
       removed = topology.removeMember(nodeID);
@@ -1200,8 +1209,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                                          final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                          final boolean last)
    {
-      if (!ha)
+      if (!clusterConnection && !ha)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug(this + "::Ignoring notifyNodeUp for " + nodeID + " connectorPair=" + connectorPair + ", since ha=false and clusterConnection=false");
+         }
          return;
       }
 
@@ -1274,7 +1287,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          this.initialConnectors[count++] = entry.getConnector();
       }
 
-      if (ha && clusterConnection && !receivedTopology && initialConnectors.length > 0)
+      if (clusterConnection && !receivedTopology && initialConnectors.length > 0)
       {
          // FIXME the node is alone in the cluster. We create a connection to the new node
          // to trigger the node notification to form the cluster.
