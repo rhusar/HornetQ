@@ -128,7 +128,7 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       stopServers(0, 1);
    }
    
-   public void testLoop() throws Exception
+   public void _testLoop() throws Exception
    {
       for (int i = 0 ; i < 100; i++)
       {
