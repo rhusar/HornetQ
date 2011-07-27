@@ -93,22 +93,22 @@ public class ClusterManagerImpl implements ClusterManager
 
    private volatile boolean started;
 
-   private boolean backup;
+   private volatile boolean backup;
 
    private final boolean clustered;
 
    // the cluster connections which links this node to other cluster nodes
    private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
 
-   private Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   private final Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
-   private Topology topology = new Topology(this);
+   private final Topology topology = new Topology(this);
 
    private volatile ServerLocatorInternal backupServerLocator;
 
    private final List<ServerLocatorInternal> clusterLocators = new ArrayList<ServerLocatorInternal>();
 
-   private Executor executor;
+   private final Executor executor;
 
    public ClusterManagerImpl(final ExecutorFactory executorFactory,
                              final HornetQServer server,
@@ -229,10 +229,6 @@ public class ClusterManagerImpl implements ClusterManager
             managementService.unregisterCluster(clusterConnection.getName().toString());
          }
 
-         topologyListeners.clear();
-         clusterConnections.clear();
-         topology.clear();
-
       }
 
       for (Bridge bridge : bridges.values())
@@ -255,6 +251,11 @@ public class ClusterManagerImpl implements ClusterManager
       }
       clusterLocators.clear();
       started = false;
+
+      topologyListeners.clear();
+      clusterConnections.clear();
+      topology.clear();
+
    }
 
    public void notifyNodeDown(String nodeID)

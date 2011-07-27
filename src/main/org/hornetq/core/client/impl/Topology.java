@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
@@ -60,46 +61,37 @@ public class Topology implements Serializable
     * keys are node IDs
     * values are a pair of live/backup transport configurations
     */
-   private Map<String, TopologyMember> topology = new ConcurrentHashMap<String, TopologyMember>();
+   private final ConcurrentMap<String, TopologyMember> topologyMap = new ConcurrentHashMap<String, TopologyMember>();
 
    private boolean debug = log.isDebugEnabled();
 
    public synchronized boolean addMember(String nodeId, TopologyMember member)
    {
       boolean replaced = false;
-      TopologyMember currentMember = topology.get(nodeId);
+      TopologyMember oldMember = topologyMap.put(nodeId, member);
       if (debug)
       {
-         log.debug(this + "::adding = " + nodeId + ":" + member.getConnector(), new Exception ("trace"));
+         log.debug(this + "::adding nodeId=" + nodeId + ", " + member.getConnector(), new Exception ("trace"));
          log.debug(describe("Before:"));
       }
-      if(currentMember == null)
+      
+      if(oldMember == null)
       {
-         topology.put(nodeId, member);
          replaced = true;
       }
       else
       {
-         if(hasChanged(currentMember.getConnector().a, member.getConnector().a) && member.getConnector().a != null)
+         if(hasChanged(oldMember.getConnector().a, member.getConnector().a) && member.getConnector().a != null)
          {
-            currentMember.getConnector().a =  member.getConnector().a;
             replaced = true;
          }
-         if(hasChanged(currentMember.getConnector().b, member.getConnector().b) && member.getConnector().b != null)
+         if(hasChanged(oldMember.getConnector().b, member.getConnector().b) && member.getConnector().b != null)
          {
-            currentMember.getConnector().b =  member.getConnector().b;
+            oldMember.getConnector().b =  member.getConnector().b;
             replaced = true;
-         }
-
-         if(member.getConnector().a == null)
-         {
-            member.getConnector().a = currentMember.getConnector().a;
-         }
-         if(member.getConnector().b == null)
-         {
-            member.getConnector().b = currentMember.getConnector().b;
          }
       }
+
       if(debug)
       {
          log.debug(this + "::Topology updated=" + replaced);
@@ -110,7 +102,7 @@ public class Topology implements Serializable
 
    public synchronized boolean removeMember(String nodeId)
    {
-      TopologyMember member = topology.remove(nodeId);
+      TopologyMember member = topologyMap.remove(nodeId);
       if (log.isDebugEnabled())
       {
          log.debug("XXX " + this + " removing nodeID=" + nodeId + ", result=" + member, new Exception ("trace"));
@@ -124,7 +116,7 @@ public class Topology implements Serializable
       Map<String, TopologyMember> copy;
       synchronized (this)
       {
-         copy = new HashMap<String, TopologyMember>(topology);
+         copy = new HashMap<String, TopologyMember>(topologyMap);
       }
       for (Map.Entry<String, TopologyMember> entry : copy.entrySet())
       {
@@ -134,23 +126,23 @@ public class Topology implements Serializable
 
    public TopologyMember getMember(String nodeID)
    {
-      return topology.get(nodeID);
+      return topologyMap.get(nodeID);
    }
 
    public boolean isEmpty()
    {
-      return topology.isEmpty();
+      return topologyMap.isEmpty();
    }
 
    public Collection<TopologyMember> getMembers()
    {
-      return topology.values();
+      return topologyMap.values();
    }
 
    public int nodes()
    {
       int count = 0;
-      for (TopologyMember member : topology.values())
+      for (TopologyMember member : topologyMap.values())
       {
          if (member.getConnector().a != null)
          {
@@ -172,7 +164,7 @@ public class Topology implements Serializable
    {
 
       String desc = text + "\n";
-      for (Entry<String, TopologyMember> entry : new HashMap<String, TopologyMember>(topology).entrySet())
+      for (Entry<String, TopologyMember> entry : new HashMap<String, TopologyMember>(topologyMap).entrySet())
       {
          desc += "\t" + entry.getKey() + " => " + entry.getValue() + "\n";
       }
@@ -182,12 +174,13 @@ public class Topology implements Serializable
 
    public void clear()
    {
-      topology.clear();
+      // TODO: place this back
+      //topologyMap.clear();
    }
 
    public int members()
    {
-      return topology.size();
+      return topologyMap.size();
    }
 
    private boolean hasChanged(TransportConfiguration currentConnector, TransportConfiguration connector)
@@ -197,7 +190,7 @@ public class Topology implements Serializable
 
    public TransportConfiguration getBackupForConnector(TransportConfiguration connectorConfiguration)
    {
-      for (TopologyMember member : topology.values())
+      for (TopologyMember member : topologyMap.values())
       {
          if(member.getConnector().a != null && member.getConnector().a.equals(connectorConfiguration))
          {
