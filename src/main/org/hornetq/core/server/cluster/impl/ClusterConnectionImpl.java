@@ -31,6 +31,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
+import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
@@ -652,8 +653,10 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setRetryIntervalMultiplier(retryIntervalMultiplier);
       
       targetLocator.setNodeID(serverLocator.getNodeID());
-      
+
       targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());
+      
+      targetLocator.addClusterTopologyListener(this);
 
       if(retryInterval > 0)
       {
