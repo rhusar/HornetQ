@@ -172,7 +172,9 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
       System.out.println(clusterDescription(servers[0]));
       
-      Thread.sleep(5000);
+      // Sleep some time as the node should be retrying
+      // The retry here is part of the test
+      Thread.sleep(1000);
 
       log.info ("********* Starting server 1");
       startServers(1);
