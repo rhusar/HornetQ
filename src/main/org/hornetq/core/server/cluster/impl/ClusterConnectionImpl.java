@@ -412,6 +412,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       if (serverLocator != null)
       {
          serverLocator.setNodeID(nodeUUID.toString());
+         serverLocator.setIdentity(server.toString());
 
          serverLocator.setReconnectAttempts(0);
 
@@ -502,8 +503,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    }
 
 
-   // TODO: does it need to be sync?
-   public void nodeUP(final String nodeID,
+   public synchronized void nodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {
@@ -645,6 +645,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);
+      targetLocator.setIdentity("Cluster-connection-bridge on ClusterConnectionImpl=" + this.toString());
       
       targetLocator.setRetryInterval(retryInterval);
       targetLocator.setMaxRetryInterval(maxRetryInterval);
