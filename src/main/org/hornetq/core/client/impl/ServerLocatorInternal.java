@@ -32,6 +32,9 @@ public interface ServerLocatorInternal extends ServerLocator
    void start(Executor executor) throws Exception;
    
    void factoryClosed(final ClientSessionFactory factory);
+   
+   /** Used to better identify Cluster Connection Locators on logs while debugging logs */
+   void setIdentity(String identity);
 
    void setNodeID(String nodeID);
 

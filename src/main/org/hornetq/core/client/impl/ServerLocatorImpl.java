@@ -65,6 +65,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private boolean finalizeCheck = true;
 
    private boolean clusterConnection;
+   
+   private String identity;
 
    private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
 
@@ -1035,6 +1037,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          throw new IllegalStateException("Cannot set attribute on SessionFactory after it has been used");
       }
    }
+   
+   public void setIdentity(String identity)
+   {
+      this.identity = identity;
+   }
 
    public void setNodeID(String nodeID)
    {
@@ -1168,14 +1175,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          if (log.isDebugEnabled())
          {
-            log.debug("ignoring notifyNodeDown=" + nodeID + " as isHA=false");
+            log.debug(this + "::ignoring notifyNodeDown=" + nodeID + " as isHA=false");
          }
          return;
       }
       
       if (log.isDebugEnabled())
       {
-         log.debug("XXX " + this + "::Notify nodeID=" + nodeID + " as being down");
+         log.debug("XXX YYY " + this + "::Notify nodeID=" + nodeID + " as being down");
       }
 
       removed = topology.removeMember(nodeID);
@@ -1218,6 +1225,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          return;
       }
 
+      if (log.isDebugEnabled())
+      {
+         log.debug("XXX YYY " + this + "::notifyNodeUp " + nodeID + ", connctorPair=" + connectorPair);
+      }
+
       topology.addMember(nodeID, new TopologyMember(connectorPair));
 
       TopologyMember actMember = topology.getMember(nodeID);
@@ -1256,10 +1268,20 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    @Override
    public String toString()
    {
-      return "ServerLocatorImpl [initialConnectors=" + Arrays.toString(initialConnectors) +
-             ", discoveryGroupConfiguration=" +
-             discoveryGroupConfiguration +
-             "]";
+      if (clusterConnection)
+      {
+         return "ServerLocatorImpl (clusterConnection identity="  + identity + ") [initialConnectors=" + Arrays.toString(initialConnectors) +
+                ", discoveryGroupConfiguration=" +
+                discoveryGroupConfiguration +
+                "]";
+      }
+      else
+      {
+         return "ServerLocatorImpl [initialConnectors=" + Arrays.toString(initialConnectors) +
+                ", discoveryGroupConfiguration=" +
+                discoveryGroupConfiguration +
+                "]";
+      }
    }
 
    private void updateArraysAndPairs()
@@ -1317,7 +1339,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       topologyListeners.add(listener);
       if (topology.members() > 0)
       {
-         log.debug("ServerLocatorImpl.addClusterTopologyListener");
+         log.debug(this + "::ServerLocatorImpl.addClusterTopologyListener");
       }
    }
 
@@ -1387,7 +1409,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                {
                   if (log.isDebugEnabled())
                   {
-                     log.debug("Submitting connect towards " + conn);
+                     log.debug(this + "::Submitting connect towards " + conn);
                   }
 
                   csf = conn.tryConnect();
@@ -1522,7 +1544,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          {
             if (log.isDebugEnabled())
             {
-               log.debug("Trying to connect to " + factory);
+               log.debug(this + "::Trying to connect to " + factory);
             }
             try
             {
@@ -1531,7 +1553,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
             catch (HornetQException e)
             {
-               log.debug("Exception on establish connector initial connection", e);
+               log.debug(this + "::Exception on establish connector initial connection", e);
                return null;
             }
          }

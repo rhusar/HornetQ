@@ -1412,7 +1412,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   SimpleString nodeID = msg.getNodeID();
                   if (log.isTraceEnabled())
                   {
-                     log.trace("XXX notify nodeID=" + msg.getNodeID() + " on serverLocator=" + serverLocator);
+                     log.trace("XXX notifyDown nodeID=" + msg.getNodeID() + " on serverLocator=" + serverLocator);
                   }
                   if (nodeID != null)
                   {
