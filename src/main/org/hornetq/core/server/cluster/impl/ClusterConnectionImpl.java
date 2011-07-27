@@ -412,7 +412,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       if (serverLocator != null)
       {
          serverLocator.setNodeID(nodeUUID.toString());
-         serverLocator.setIdentity(server.toString());
+         serverLocator.setIdentity("(main-ClusterConnection::" + server.toString() + ")");
 
          serverLocator.setReconnectAttempts(0);
 
@@ -645,7 +645,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);
-      targetLocator.setIdentity("Cluster-connection-bridge on ClusterConnectionImpl=" + this.toString());
+      targetLocator.setIdentity("(Cluster-connection-bridge::" + this.toString() + ")");
       
       targetLocator.setRetryInterval(retryInterval);
       targetLocator.setMaxRetryInterval(maxRetryInterval);

@@ -1098,7 +1098,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    {
       if (closed)
       {
+         if (log.isDebugEnabled())
+         {
+            log.debug("YYY " + this + " is already closed when calling closed");
+         }
          return;
+      }
+
+      if (log.isDebugEnabled())
+      {
+         log.debug("YYY " + this + " is calling close", new Exception ("trace"));
       }
 
       closing = true;
@@ -1182,7 +1191,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       
       if (log.isDebugEnabled())
       {
-         log.debug("XXX YYY " + this + "::Notify nodeID=" + nodeID + " as being down");
+         log.debug("XXX YYY nodeDown " + this + " nodeID=" + nodeID + " as being down", new Exception("trace"));
       }
 
       removed = topology.removeMember(nodeID);
@@ -1227,7 +1236,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       if (log.isDebugEnabled())
       {
-         log.debug("XXX YYY " + this + "::notifyNodeUp " + nodeID + ", connctorPair=" + connectorPair);
+         log.debug("XXX YYY NodeUp " + this + "::nodeID=" + nodeID + ", connectorPair=" + connectorPair);
       }
 
       topology.addMember(nodeID, new TopologyMember(connectorPair));

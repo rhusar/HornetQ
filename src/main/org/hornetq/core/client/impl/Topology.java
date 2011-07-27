@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClusterTopologyListener;
@@ -59,7 +60,7 @@ public class Topology implements Serializable
     * keys are node IDs
     * values are a pair of live/backup transport configurations
     */
-   private Map<String, TopologyMember> topology = new HashMap<String, TopologyMember>();
+   private Map<String, TopologyMember> topology = new ConcurrentHashMap<String, TopologyMember>();
 
    private boolean debug = log.isDebugEnabled();
 
@@ -112,12 +113,12 @@ public class Topology implements Serializable
       TopologyMember member = topology.remove(nodeId);
       if (log.isDebugEnabled())
       {
-         log.debug("XXX Removing member " + member, new Exception ("trace"));
+         log.debug("XXX " + this + " removing nodeID=" + nodeId + ", result=" + member, new Exception ("trace"));
       }
       return (member != null);
    }
 
-   public void sendTopology(ClusterTopologyListener listener)
+   public synchronized void sendTopology(ClusterTopologyListener listener)
    {
       int count = 0;
       Map<String, TopologyMember> copy;
