@@ -78,7 +78,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private StaticConnector staticConnector = new StaticConnector();
 
-   private final Topology topology = new Topology(this);
+   private final Topology topology;
 
    private Pair<TransportConfiguration, TransportConfiguration>[] topologyArray;
 
@@ -358,11 +358,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   private ServerLocatorImpl(final boolean useHA,
+   private ServerLocatorImpl(final Topology topology,
+                             final boolean useHA,
                              final DiscoveryGroupConfiguration discoveryGroupConfiguration,
                              final TransportConfiguration[] transportConfigs)
    {
       e.fillInStackTrace();
+      
+      this.topology = topology;
       this.ha = useHA;
 
       this.discoveryGroupConfiguration = discoveryGroupConfiguration;
@@ -440,7 +443,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     */
    public ServerLocatorImpl(final boolean useHA, final DiscoveryGroupConfiguration groupConfiguration)
    {
-      this(useHA, groupConfiguration, null);
+      this(new Topology(null), useHA, groupConfiguration, null);
    }
 
    /**
@@ -450,7 +453,28 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     */
    public ServerLocatorImpl(final boolean useHA, final TransportConfiguration... transportConfigs)
    {
-      this(useHA, null, transportConfigs);
+      this(new Topology(null), useHA, null, transportConfigs);
+   }
+
+   /**
+    * Create a ServerLocatorImpl using UDP discovery to lookup cluster
+    *
+    * @param discoveryAddress
+    * @param discoveryPort
+    */
+   public ServerLocatorImpl(final Topology topology, final boolean useHA, final DiscoveryGroupConfiguration groupConfiguration)
+   {
+      this(topology, useHA, groupConfiguration, null);
+   }
+
+   /**
+    * Create a ServerLocatorImpl using a static list of live servers
+    *
+    * @param transportConfigs
+    */
+   public ServerLocatorImpl(final Topology topology, final boolean useHA, final TransportConfiguration... transportConfigs)
+   {
+      this(topology, useHA, null, transportConfigs);
    }
 
    private TransportConfiguration selectConnector()
@@ -1187,7 +1211,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       if (log.isDebugEnabled())
       {
-         log.debug("XXX YYY nodeDown " + this + " nodeID=" + nodeID + " as being down", new Exception("trace"));
+         log.debug("XXX ZZZ nodeDown " + this + " nodeID=" + nodeID + " as being down", new Exception("trace"));
       }
 
       removed = topology.removeMember(nodeID);
@@ -1236,7 +1260,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       if (log.isDebugEnabled())
       {
-         log.debug("XXX YYY NodeUp " + this + "::nodeID=" + nodeID + ", connectorPair=" + connectorPair);
+         log.debug("XXX ZZZ NodeUp " + this + "::nodeID=" + nodeID + ", connectorPair=" + connectorPair, new Exception ("trace"));
       }
 
       topology.addMember(nodeID, new TopologyMember(connectorPair));

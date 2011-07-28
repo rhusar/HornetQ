@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
@@ -34,7 +35,9 @@ import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
@@ -70,7 +73,11 @@ public class ClusterConnectionImpl implements ClusterConnection
    
    private static final boolean isTrace = log.isTraceEnabled();
 
-   private final org.hornetq.utils.ExecutorFactory executorFactory;
+   private final ExecutorFactory executorFactory;
+   
+   private final Topology clusterManagerTopology;
+   
+   private final Executor executor;
 
    private final HornetQServer server;
 
@@ -127,6 +134,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final ClusterManagerImpl manager;
    
    public ClusterConnectionImpl(final ClusterManagerImpl manager,
+                                final Topology clusterManagerTopology,
                                 final TransportConfiguration[] tcConfigs,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
@@ -183,6 +191,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.routeWhenNoConsumers = routeWhenNoConsumers;
 
       this.executorFactory = executorFactory;
+      
+      this.executor = executorFactory.getExecutor();
 
       this.server = server;
 
@@ -203,6 +213,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
       
       this.manager = manager;
+      
+      this.clusterManagerTopology = clusterManagerTopology;
 
       clusterConnector = new StaticClusterConnector(tcConfigs);
 
@@ -219,6 +231,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    }
 
    public ClusterConnectionImpl(final ClusterManagerImpl manager,
+                                final Topology clusterManagerTopology,
                                 DiscoveryGroupConfiguration dg,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
@@ -275,6 +288,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.routeWhenNoConsumers = routeWhenNoConsumers;
 
       this.executorFactory = executorFactory;
+      
+      this.executor = executorFactory.getExecutor();
 
       this.server = server;
 
@@ -297,6 +312,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       clusterConnector = new DiscoveryClusterConnector(dg);
       
       this.manager = manager;
+      
+      this.clusterManagerTopology = clusterManagerTopology;
    }
 
    public synchronized void start() throws Exception
@@ -352,12 +369,18 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                          props);
             managementService.sendNotification(notification);
          }
+         
+         executor.execute(new Runnable(){
+            public void run()
+            {
+               if(serverLocator != null)
+               {
+                  serverLocator.close();
+                  serverLocator = null;
+               }
 
-         if(serverLocator != null)
-         {
-            serverLocator.close();
-            serverLocator = null;
-         }
+            }
+         });
 
          started = false;
       }
@@ -1258,7 +1281,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             {
                log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
             }
-            return (ServerLocatorInternal) HornetQClient.createServerLocatorWithHA(tcConfigs);
+            return new ServerLocatorImpl(clusterManagerTopology, true, tcConfigs);
          }
          else
          {
@@ -1289,7 +1312,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       public ServerLocatorInternal createServerLocator()
       {
-         return (ServerLocatorInternal) HornetQClient.createServerLocatorWithHA(dg);
+         return new ServerLocatorImpl(clusterManagerTopology, true, dg);
       }
    }
 }

@@ -13,6 +13,7 @@
 package org.hornetq.core.client.impl;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +53,7 @@ public class Topology implements Serializable
    public Topology(final Object owner)
    {
       this.owner = owner;
+      log.debug("ZZZ III Topology@" + Integer.toHexString(System.identityHashCode(this)) + " CREATE", new Exception ("trace")); // Delete this line
    }
 
    /*
@@ -75,8 +77,12 @@ public class Topology implements Serializable
       }
       if(currentMember == null)
       {
-         topology.put(nodeId, member);
          replaced = true;
+        if (log.isDebugEnabled())
+         {
+            log.debug("ZZZ " + this + " MEMBER WAS NULL, Add member nodeId=" + nodeId + " member = " + member + " replaced = " + replaced + " size = " + topology.size(), new Exception ("trace"));
+         }
+         topology.put(nodeId, member);
       }
       else
       {
@@ -103,8 +109,14 @@ public class Topology implements Serializable
       if(debug)
       {
          log.debug(this + "::Topology updated=" + replaced);
-         log.debug(describe("After:"));
+         log.debug(describe(this + "::After:"));
       }
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug("ZZZ " + this + " Add member nodeId=" + nodeId + " member = " + member + " replaced = " + replaced + " size = " + topology.size(), new Exception ("trace"));
+      }
+      
       return replaced;
    }
 
@@ -113,12 +125,12 @@ public class Topology implements Serializable
       TopologyMember member = topology.remove(nodeId);
       if (log.isDebugEnabled())
       {
-         log.debug("XXX " + this + " removing nodeID=" + nodeId + ", result=" + member, new Exception ("trace"));
+         log.debug("ZZZ " + this + " removing nodeID=" + nodeId + ", result=" + member + ", size = " + topology.size(), new Exception ("trace"));
       }
       return (member != null);
    }
 
-   public synchronized void sendTopology(ClusterTopologyListener listener)
+   public void sendTopology(ClusterTopologyListener listener)
    {
       int count = 0;
       Map<String, TopologyMember> copy;
@@ -144,14 +156,21 @@ public class Topology implements Serializable
 
    public Collection<TopologyMember> getMembers()
    {
-      return topology.values();
+      ArrayList<TopologyMember> members;
+      synchronized (this)
+      {
+         members = new ArrayList<TopologyMember>(topology.values());
+      }
+      return members;
    }
 
-   public int nodes()
+   public synchronized int nodes()
    {
       int count = 0;
       for (TopologyMember member : topology.values())
       {
+         
+         // ARRUMAR ISSO
          if (member.getConnector().a != null)
          {
             count++;
@@ -182,6 +201,10 @@ public class Topology implements Serializable
 
    public void clear()
    {
+      if (log.isDebugEnabled())
+      {
+         log.debug("ZZZ " + this + "::clear", new Exception ("trace"));
+      }
       topology.clear();
    }
 
@@ -224,7 +247,7 @@ public class Topology implements Serializable
       }
       else
       {
-         return "Topology [owner=" + owner + "]";
+         return "Topology@" + Integer.toHexString(System.identityHashCode(this)) + "[owner=" + owner + "]";
       }
    }
    

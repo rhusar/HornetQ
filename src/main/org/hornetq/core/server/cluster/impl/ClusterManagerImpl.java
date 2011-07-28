@@ -245,13 +245,17 @@ public class ClusterManagerImpl implements ClusterManager
          backupServerLocator = null;
       }
 
-      for (ServerLocator clusterLocator : clusterLocators)
+      executor.execute(new Runnable()
       {
-         log.info("WWW Closing clusterLocator " + clusterLocator);
-         clusterLocator.close();
-         log.info("WWW Closed clusterLocator " + clusterLocator);
-      }
-      clusterLocators.clear();
+         public void run()
+         {
+            for (ServerLocator clusterLocator : clusterLocators)
+            {
+               clusterLocator.close();
+            }
+            clusterLocators.clear();
+         }
+      });
       started = false;
 
       topologyListeners.clear();
@@ -829,6 +833,7 @@ public class ClusterManagerImpl implements ClusterManager
          }
 
          clusterConnection = new ClusterConnectionImpl(this,
+                                                       topology,
                                                        dg,
                                                        connector,
                                                        new SimpleString(config.getName()),
@@ -865,6 +870,7 @@ public class ClusterManagerImpl implements ClusterManager
          }
 
          clusterConnection = new ClusterConnectionImpl(this,
+                                                       topology,
                                                        tcConfigs,
                                                        connector,
                                                        new SimpleString(config.getName()),
