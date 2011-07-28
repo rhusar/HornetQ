@@ -46,7 +46,6 @@ import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.FailureListener;
-import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -69,7 +68,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private String identity;
 
-   private final Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
+   private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
 
    private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
