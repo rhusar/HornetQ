@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
@@ -125,7 +124,10 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    private final Set<TransportConfiguration> allowableConnections = new HashSet<TransportConfiguration>();
    
-   public ClusterConnectionImpl(final TransportConfiguration[] tcConfigs,
+   private final ClusterManagerImpl manager;
+   
+   public ClusterConnectionImpl(final ClusterManagerImpl manager,
+                                final TransportConfiguration[] tcConfigs,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
                                 final SimpleString address,
@@ -199,6 +201,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.clusterPassword = clusterPassword;
 
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
+      
+      this.manager = manager;
 
       clusterConnector = new StaticClusterConnector(tcConfigs);
 
@@ -214,7 +218,8 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    }
 
-   public ClusterConnectionImpl(DiscoveryGroupConfiguration dg,
+   public ClusterConnectionImpl(final ClusterManagerImpl manager,
+                                DiscoveryGroupConfiguration dg,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
                                 final SimpleString address,
@@ -290,6 +295,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
 
       clusterConnector = new DiscoveryClusterConnector(dg);
+      
+      this.manager = manager;
    }
 
    public synchronized void start() throws Exception
@@ -646,7 +653,6 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);
-      targetLocator.setIdentity("(Cluster-connection-bridge::" + this.toString() + ")");
       
       targetLocator.setRetryInterval(retryInterval);
       targetLocator.setMaxRetryInterval(maxRetryInterval);
@@ -660,6 +666,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          targetLocator.setRetryInterval(retryInterval);
       }
+      
+      manager.addClusterLocator(targetLocator);
 
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
                                                                    targetLocator,
@@ -687,7 +695,10 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                                    record,
                                                                    record.getConnector());
 
-       return bridge;
+
+      targetLocator.setIdentity("(Cluster-connection-bridge::"  + bridge.toString() + "::" + this.toString() + ")");
+
+      return bridge;
    }
 
    // Inner classes -----------------------------------------------------------------------------------

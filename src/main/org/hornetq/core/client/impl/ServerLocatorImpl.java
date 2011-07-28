@@ -648,28 +648,22 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
          if (ha || clusterConnection)
          {
-            long toWait = 30000;
-            long start = System.currentTimeMillis();
-            while (!ServerLocatorImpl.this.closed && !ServerLocatorImpl.this.closing && !receivedTopology && toWait > 0)
+            long timeout = System.currentTimeMillis() + 30000;
+            while (!ServerLocatorImpl.this.closed && !ServerLocatorImpl.this.closing && !receivedTopology && timeout > System.currentTimeMillis())
             {
                // Now wait for the topology
-
+               
                try
                {
-                  wait(toWait);
+                  wait(1000);
                }
                catch (InterruptedException ignore)
                {
                }
 
-               long now = System.currentTimeMillis();
-
-               toWait -= now - start;
-
-               start = now;
             }
 
-            if (toWait <= 0)
+            if (System.currentTimeMillis() > timeout && ! receivedTopology && !closed && !closing)
             {
                throw new HornetQException(HornetQException.CONNECTION_TIMEDOUT,
                                           "Timed out waiting to receive cluster topology");

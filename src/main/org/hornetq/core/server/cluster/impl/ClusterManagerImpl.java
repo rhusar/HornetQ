@@ -19,7 +19,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +36,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.client.impl.TopologyMember;
@@ -106,7 +106,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    private volatile ServerLocatorInternal backupServerLocator;
 
-   private final List<ServerLocatorInternal> clusterLocators = new ArrayList<ServerLocatorInternal>();
+   private final Set<ServerLocator> clusterLocators = new ConcurrentHashSet<ServerLocator>();
 
    private final Executor executor;
 
@@ -245,9 +245,11 @@ public class ClusterManagerImpl implements ClusterManager
          backupServerLocator = null;
       }
 
-      for (ServerLocatorInternal clusterLocator : clusterLocators)
+      for (ServerLocator clusterLocator : clusterLocators)
       {
+         log.info("WWW Closing clusterLocator " + clusterLocator);
          clusterLocator.close();
+         log.info("WWW Closed clusterLocator " + clusterLocator);
       }
       clusterLocators.clear();
       started = false;
@@ -482,6 +484,11 @@ public class ClusterManagerImpl implements ClusterManager
       {
          log.warn("no cluster connections defined, unable to announce backup");
       }
+   }
+   
+   void addClusterLocator(final ServerLocatorInternal serverLocator)
+   {
+      this.clusterLocators.add(serverLocator);
    }
 
    private synchronized void announceNode()
@@ -721,7 +728,9 @@ public class ClusterManagerImpl implements ClusterManager
          log.debug("Bridge " + config.getName() + 
                    " is configured to not use duplicate detecion, it will send messages synchronously");
       }
+      
       clusterLocators.add(serverLocator);
+      
       Bridge bridge = new BridgeImpl(serverLocator,
                                      config.getReconnectAttempts(),
                                      config.getRetryInterval(),
@@ -819,7 +828,8 @@ public class ClusterManagerImpl implements ClusterManager
             log.debug("XXX " + this + " Starting a Discovery Group Cluster Connection, name=" + config.getDiscoveryGroupName() + ", dg=" + dg);
          }
 
-         clusterConnection = new ClusterConnectionImpl(dg,
+         clusterConnection = new ClusterConnectionImpl(this,
+                                                       dg,
                                                        connector,
                                                        new SimpleString(config.getName()),
                                                        new SimpleString(config.getAddress()),
@@ -854,7 +864,8 @@ public class ClusterManagerImpl implements ClusterManager
             log.debug("XXX " + this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
          }
 
-         clusterConnection = new ClusterConnectionImpl(tcConfigs,
+         clusterConnection = new ClusterConnectionImpl(this,
+                                                       tcConfigs,
                                                        connector,
                                                        new SimpleString(config.getName()),
                                                        new SimpleString(config.getAddress()),
