@@ -265,7 +265,7 @@ public class ClusterManagerImpl implements ClusterManager
          return;
       }
       
-      log.info("XXX " + this + "::removing nodeID=" + nodeID);
+      log.debug("XXX " + this + "::removing nodeID=" + nodeID, new Exception ("trace"));
 
       boolean removed = topology.removeMember(nodeID);
 

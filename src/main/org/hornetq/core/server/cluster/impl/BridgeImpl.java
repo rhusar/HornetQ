@@ -625,7 +625,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       BridgeImpl.log.debug("Connecting  " + this + " to its destination [" + nodeUUID.toString() + "], csf=" + this.csf);
 
       retryCount++;
-
+      
       try
       {
          if (csf == null || csf.isClosed())
@@ -712,12 +712,15 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
             // We are not going to count this one as a retry
             retryCount--;
-            scheduleRetryConnectFixedTimeout(100);
+            scheduleRetryConnectFixedTimeout(this.retryInterval);
             return;
          }
          else
          {
-            BridgeImpl.log.warn("Bridge " + this + " is unable to connect to destination. Retrying", e);
+            if (log.isDebugEnabled())
+            {
+               log.debug("Bridge " + this + " is unable to connect to destination. Retrying", e);
+            }
          }
       }
       catch (Exception e)

@@ -46,6 +46,7 @@ import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.FailureListener;
+import org.hornetq.utils.ConcurrentHashSet;
 import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -65,10 +66,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private boolean finalizeCheck = true;
 
    private boolean clusterConnection;
-   
+
    private String identity;
 
-   private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
+   private final Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
 
    private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
@@ -159,7 +160,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private final List<Interceptor> interceptors = new CopyOnWriteArrayList<Interceptor>();
 
    private static ExecutorService globalThreadPool;
-   
+
    private Executor startExecutor;
 
    private static ScheduledExecutorService globalScheduledThreadPool;
@@ -476,7 +477,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public void start(Executor executor) throws Exception
    {
       initialise();
-      
+
       this.startExecutor = executor;
 
       executor.execute(new Runnable()
@@ -650,7 +651,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          {
             long toWait = 30000;
             long start = System.currentTimeMillis();
-            while (!receivedTopology && toWait > 0)
+            while (!ServerLocatorImpl.this.closed && !ServerLocatorImpl.this.closing && !receivedTopology && toWait > 0)
             {
                // Now wait for the topology
 
@@ -674,12 +675,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                throw new HornetQException(HornetQException.CONNECTION_TIMEDOUT,
                                           "Timed out waiting to receive cluster topology");
             }
+
          }
 
          addFactory(factory);
 
          return factory;
       }
+
    }
 
    public boolean isHA()
@@ -1037,7 +1040,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          throw new IllegalStateException("Cannot set attribute on SessionFactory after it has been used");
       }
    }
-   
+
    public void setIdentity(String identity)
    {
       this.identity = identity;
@@ -1107,7 +1110,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       if (log.isDebugEnabled())
       {
-         log.debug("YYY " + this + " is calling close", new Exception ("trace"));
+         log.debug("YYY " + this + " is calling close", new Exception("trace"));
       }
 
       closing = true;
@@ -1188,7 +1191,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          }
          return;
       }
-      
+
       if (log.isDebugEnabled())
       {
          log.debug("XXX YYY nodeDown " + this + " nodeID=" + nodeID + " as being down", new Exception("trace"));
@@ -1229,7 +1232,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       {
          if (log.isDebugEnabled())
          {
-            log.debug(this + "::Ignoring notifyNodeUp for " + nodeID + " connectorPair=" + connectorPair + ", since ha=false and clusterConnection=false");
+            log.debug(this + "::Ignoring notifyNodeUp for " +
+                      nodeID +
+                      " connectorPair=" +
+                      connectorPair +
+                      ", since ha=false and clusterConnection=false");
          }
          return;
       }
@@ -1277,9 +1284,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    @Override
    public String toString()
    {
-      if (clusterConnection)
+      if (identity != null)
       {
-         return "ServerLocatorImpl (clusterConnection identity="  + identity + ") [initialConnectors=" + Arrays.toString(initialConnectors) +
+         return "ServerLocatorImpl (identity=" + identity +
+                ") [initialConnectors=" +
+                Arrays.toString(initialConnectors) +
                 ", discoveryGroupConfiguration=" +
                 discoveryGroupConfiguration +
                 "]";
@@ -1444,10 +1453,14 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
                            }
                         }
                      });
-                     
+
                      if (log.isDebugEnabled())
                      {
-                        log.debug("XXX Returning " + csf + " after " + retryNumber + " retries on StaticConnector " + ServerLocatorImpl.this);
+                        log.debug("XXX Returning " + csf +
+                                  " after " +
+                                  retryNumber +
+                                  " retries on StaticConnector " +
+                                  ServerLocatorImpl.this);
                      }
 
                      return csf;

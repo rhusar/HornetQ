@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
@@ -31,9 +32,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
@@ -498,9 +497,9 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.error("Failed to close flow record", e);
          }
+         
+         server.getClusterManager().notifyNodeDown(nodeID);
       }
-      
-      server.getClusterManager().notifyNodeDown(nodeID);
    }
 
 
@@ -538,6 +537,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       // and empty static connectors to create bridges... ulgy!
       if (serverLocator == null)
       {
+          log.warn("ServerLocator==null FixME!!!!!");
           return;
       }
       /*we dont create bridges to backups*/
@@ -633,7 +633,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    protected Bridge createClusteredBridge(MessageFlowRecordImpl record) throws Exception
    {
       
-      ServerLocatorInternal targetLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(record.getConnector());
+      final ServerLocatorInternal targetLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithoutHA(record.getConnector());
       
       targetLocator.setReconnectAttempts(0);
 
@@ -656,8 +656,6 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());
       
-      targetLocator.addClusterTopologyListener(this);
-
       if(retryInterval > 0)
       {
          targetLocator.setRetryInterval(retryInterval);
