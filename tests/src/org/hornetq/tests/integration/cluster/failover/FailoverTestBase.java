@@ -214,8 +214,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       }
       catch (IOException e)
       {
-         e.printStackTrace();
-         System.exit(9);
+         throw e; 
       }
       try
       {
@@ -224,8 +223,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       }
       catch (IOException e)
       {
-         e.printStackTrace();
-         System.exit(9);
+         throw e;
       }
    }
 

@@ -249,6 +249,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
    
    protected void waitForTopology(final HornetQServer server, final int nodes) throws Exception
    {
+      waitForTopology(server, nodes, WAIT_TIMEOUT);
+   }
+   
+   protected void waitForTopology(final HornetQServer server, final int nodes, final long timeout) throws Exception
+   {
       log.debug("waiting for " + nodes + " on the topology for server = " + server);
 
 
@@ -265,16 +270,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          Thread.sleep(10);
       }
-      while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
+      while (System.currentTimeMillis() - start < timeout);
       
       String msg = "Timed out waiting for cluster topology of " + nodes + " (received " + topology.getMembers().size() + ") nodes on server = " + server + ")\n Current topology:" + topology.describe();
 
       ClusterTestBase.log.error(msg);
       
       throw new Exception (msg);
-
-
-      
    }
 
    protected void waitForBindings(final int node,

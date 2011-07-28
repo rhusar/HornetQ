@@ -88,6 +88,18 @@ public class ClusteredRequestResponseTest extends ClusterTestBase
 
       verifyReceiveAll(10, 0);
    }
+   
+   public void _testLoop() throws Exception
+   {
+      for (int i = 0 ; i < 100; i++)
+      {
+         log.info("#test " + i);
+         testRequestResponseNoWaitForBindings();
+         tearDown();
+         setUp();
+      }
+      
+   }
 
    /*
     * Don't wait for the response queue bindings to get to the other side

@@ -961,6 +961,7 @@ public class UnitTestCase extends TestCase
       if (invmSize > 0)
       {
          InVMRegistry.instance.clear();
+         log.info(threadDump("Thread dump"));
          fail("invm registry still had acceptors registered");
       }
 

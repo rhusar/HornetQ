@@ -36,11 +36,11 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       setupServers();
       setupClusters();
    }
-   
+
    protected void setupServers()
    {
       setupServer(0, isFileStorage(), isNetty());
-      setupServer(1, isFileStorage(), isNetty());      
+      setupServer(1, isFileStorage(), isNetty());
    }
 
    protected void setupClusters()
@@ -95,7 +95,7 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
       stopServers(0, 1);
    }
-   
+
    public void testStartPauseStartOther() throws Exception
    {
 
@@ -104,11 +104,11 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       setupSessionFactory(0, isNetty());
       createQueue(0, "queues", "queue0", null, false);
       addConsumer(0, 0, "queue0", null);
-      
-      // we let the discovery initial timeout expire, 
+
+      // we let the discovery initial timeout expire,
       // #0 will be alone in the cluster
       Thread.sleep(12000);
-      
+
       startServers(1);
       setupSessionFactory(1, isNetty());
       createQueue(1, "queues", "queue0", null, false);
@@ -127,16 +127,46 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
       stopServers(0, 1);
    }
-   
+
    public void _testLoop() throws Exception
    {
-      for (int i = 0 ; i < 100; i++)
+      for (int i = 0; i < 1000; i++)
       {
          log.info("#test " + i);
          testStopStart();
          tearDown();
          setUp();
       }
+   }
+
+   public void testRestartTest() throws Throwable
+   {
+      startServers(0, 1);
+      waitForTopology(servers[0], 2);
+
+      // try
+      // {
+      // stopServers(1);
+      // waitForTopology(servers[0], 1);
+      // startServers(1);
+      // waitForTopology(servers[0], 2);
+      // stopServers(0,1);
+      // }
+      // catch (Throwable e)
+      // {
+      // e.printStackTrace(System.out);
+      // throw e;
+      // }
+      for (int i = 0; i < 100; i++)
+      {
+         log.info("#stop #test #" + i);
+         stopServers(1);
+         waitForTopology(servers[0], 1, 2000);
+         log.info("#start #test #" + i);
+         startServers(1);
+         waitForTopology(servers[0], 2, 2000);
+      }
+
    }
 
    public void testStopStart() throws Exception
@@ -163,23 +193,27 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       verifyNotReceive(0, 1);
 
       removeConsumer(1);
-      
+
       closeSessionFactory(1);
-      
+
       log.info("*********** Stopping server 1");
       stopServers(1);
       log.info("*********** Stopped server 1");
 
       System.out.println(clusterDescription(servers[0]));
-      
+
       // Sleep some time as the node should be retrying
       // The retry here is part of the test
-      Thread.sleep(1000);
+      Thread.sleep(10);
 
-      log.info ("********* Starting server 1");
+      waitForTopology(servers[0], 1);
+
+      log.info("********* Starting server 1");
       startServers(1);
 
-      log.info ("********* Describing servers");
+      waitForTopology(servers[0], 2);
+
+      log.info("********* Describing servers");
       log.info(servers[0].describe());
       log.info(servers[1].describe());
 
@@ -199,6 +233,6 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       verifyReceiveRoundRobin(10, 0, 1);
       verifyNotReceive(0, 1);
 
-       stopServers(0, 1);
+      stopServers(0, 1);
    }
 }
