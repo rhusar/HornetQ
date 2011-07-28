@@ -22,11 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
@@ -726,9 +728,31 @@ public class QueueImpl implements Queue
 
    public long getMessageCount()
    {
-      blockOnExecutorFuture();
+      final CountDownLatch latch = new CountDownLatch(1);
+      final AtomicLong count = new AtomicLong(0);
       
-      return getInstantMessageCount();
+      getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            count.set(getInstantMessageCount());
+            latch.countDown();
+         }
+      });
+      
+      try
+      {
+         if (!latch.await(10, TimeUnit.SECONDS))
+         {
+            throw new IllegalStateException("Timed out on waiting for MessageCount");
+         }
+      }
+      catch (Exception e)
+      {
+         log.warn(e.getMessage(), e);
+      }
+      
+      return count.get();
    }
    
    public long getInstantMessageCount()
