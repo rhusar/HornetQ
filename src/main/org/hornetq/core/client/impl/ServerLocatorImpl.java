@@ -68,8 +68,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private String identity;
 
-   private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
-
    private Set<ClientSessionFactory> factories = new HashSet<ClientSessionFactory>();
 
    private TransportConfiguration[] initialConnectors;
@@ -444,6 +442,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public ServerLocatorImpl(final boolean useHA, final DiscoveryGroupConfiguration groupConfiguration)
    {
       this(new Topology(null), useHA, groupConfiguration, null);
+      topology.setOwner(this);
    }
 
    /**
@@ -454,6 +453,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    public ServerLocatorImpl(final boolean useHA, final TransportConfiguration... transportConfigs)
    {
       this(new Topology(null), useHA, null, transportConfigs);
+      topology.setOwner(this);
    }
 
    /**
@@ -1215,7 +1215,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
 
       removed = topology.removeMember(nodeID);
-
+ 
       if (!topology.isEmpty())
       {
          updateArraysAndPairs();
@@ -1232,13 +1232,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          receivedTopology = false;
       }
 
-      if (removed)
-      {
-         for (ClusterTopologyListener listener : topologyListeners)
-         {
-            listener.nodeDown(nodeID);
-         }
-      }
    }
 
    public synchronized void notifyNodeUp(final String nodeID,
@@ -1263,7 +1256,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          log.debug("XXX ZZZ NodeUp " + this + "::nodeID=" + nodeID + ", connectorPair=" + connectorPair, new Exception ("trace"));
       }
 
-      topology.addMember(nodeID, new TopologyMember(connectorPair));
+      topology.addMember(nodeID, new TopologyMember(connectorPair), last);
 
       TopologyMember actMember = topology.getMember(nodeID);
 
@@ -1284,11 +1277,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       if (last)
       {
          receivedTopology = true;
-      }
-
-      for (ClusterTopologyListener listener : topologyListeners)
-      {
-         listener.nodeUP(nodeID, connectorPair, last);
       }
 
       // Notify if waiting on getting topology
@@ -1371,16 +1359,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    public void addClusterTopologyListener(final ClusterTopologyListener listener)
    {
-      topologyListeners.add(listener);
-      if (topology.members() > 0)
-      {
-         log.debug(this + "::ServerLocatorImpl.addClusterTopologyListener");
-      }
+      topology.addClusterTopologyListener(listener);
    }
 
    public void removeClusterTopologyListener(final ClusterTopologyListener listener)
    {
-      topologyListeners.remove(listener);
+      topology.removeClusterTopologyListener(listener);
    }
 
    public synchronized void addFactory(ClientSessionFactoryInternal factory)

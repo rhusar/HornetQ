@@ -128,21 +128,12 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       stopServers(0, 1);
    }
 
-   public void _testLoop() throws Exception
-   {
-      for (int i = 0; i < 1000; i++)
-      {
-         log.info("#test " + i);
-         testStopStart();
-         tearDown();
-         setUp();
-      }
-   }
-
    public void testRestartTest() throws Throwable
    {
       startServers(0, 1);
       waitForTopology(servers[0], 2);
+      
+      log.info("ZZZ Server 0 " + servers[0].describe());
 
       // try
       // {
@@ -160,13 +151,28 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       for (int i = 0; i < 100; i++)
       {
          log.info("#stop #test #" + i);
+         Thread.sleep(500);
          stopServers(1);
          waitForTopology(servers[0], 1, 2000);
          log.info("#start #test #" + i);
+         Thread.sleep(500);
          startServers(1);
+         Thread.sleep(500);
          waitForTopology(servers[0], 2, 2000);
+         waitForTopology(servers[1], 2, 2000);
       }
 
+   }
+
+   public void testLoop() throws Exception
+   {
+      for (int i = 0; i < 100; i++)
+      {
+         log.info("#test " + i);
+         testStopStart();
+         tearDown();
+         setUp();
+      }
    }
 
    public void testStopStart() throws Exception

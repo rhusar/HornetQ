@@ -18,6 +18,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
@@ -26,6 +27,7 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.ServerLocator;
+import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.ClusterConnection;
@@ -194,6 +196,8 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
       startServers(0);
 
       ServerLocator locator = createHAServerLocator();
+      
+      ((ServerLocatorImpl)locator).getTopology().setOwner("ZZZ III testReceive");
 
       final List<String> nodes = new ArrayList<String>();
       final CountDownLatch upLatch = new CountDownLatch(5);
@@ -207,8 +211,15 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
          {
             if(!nodes.contains(nodeID))
             {
+               System.out.println("Node UP " + nodeID + " added");
+               log.info("ZZZ III Node UP " + nodeID + " added");
                nodes.add(nodeID);
                upLatch.countDown();
+            }
+            else
+            {
+               System.out.println("Node UP " + nodeID + " was already here");
+               log.info("ZZZ III Node UP " + nodeID + " was already here");
             }
          }
 
@@ -216,8 +227,15 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
          {
             if (nodes.contains(nodeID))
             {
+               log.info("ZZZ III Node down " + nodeID + " accepted");
+               System.out.println("Node down " + nodeID + " accepted");
                nodes.remove(nodeID);
                downLatch.countDown();
+            }
+            else
+            {
+               log.info("ZZZ III Node down " + nodeID + " already removed");
+               System.out.println("Node down " + nodeID + " already removed");
             }
          }
       });

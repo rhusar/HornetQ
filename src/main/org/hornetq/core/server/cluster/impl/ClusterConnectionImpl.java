@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -105,7 +106,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    private final boolean routeWhenNoConsumers;
 
-   private final Map<String, MessageFlowRecord> records = new HashMap<String, MessageFlowRecord>();
+   private final Map<String, MessageFlowRecord> records = new ConcurrentHashMap<String, MessageFlowRecord>();
 
    private final ScheduledExecutorService scheduledExecutor;
 
@@ -498,7 +499,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    // ClusterTopologyListener implementation ------------------------------------------------------------------
 
-   public synchronized void nodeDown(final String nodeID)
+   public void nodeDown(final String nodeID)
    {
       if (log.isDebugEnabled())
       {
@@ -533,7 +534,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    }
 
 
-   public synchronized void nodeUP(final String nodeID,
+   public void nodeUP(final String nodeID,
                                    final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                    final boolean last)
    {

@@ -265,14 +265,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          if (nodes == topology.getMembers().size())
          {
-            return;
+            
+           log.info("ZZZ III look up for topology on " + topology + " size = " + topology.getMembers().size());
+           return;
          }
 
          Thread.sleep(10);
       }
       while (System.currentTimeMillis() - start < timeout);
       
-      String msg = "Timed out waiting for cluster topology of " + nodes + " (received " + topology.getMembers().size() + ") nodes on server = " + server + ")\n Current topology:" + topology.describe();
+      String msg = "ZZZ Timed out waiting for cluster topology of " + nodes + " (received " + topology.getMembers().size() + ") topology = " + topology + ")\n Current topology:" + topology.describe();
 
       ClusterTestBase.log.error(msg);
       
@@ -1988,6 +1990,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       for (int node : nodes)
       {
+         log.info("#test start node " + node);
          servers[node].setIdentity("server " + node);
          ClusterTestBase.log.info("starting server " + servers[node]);
          servers[node].start();
@@ -1997,20 +2000,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
          ClusterTestBase.log.info("started server " + node);
 
          waitForServer(servers[node]);
-         
-         for (int i = 0 ; i <= node; i++)
-         {
-            try
-            {
-               log.info("Describing Server " + servers[i]);
-               log.info(servers[i].describe());
-            }
-            catch (Throwable ignored)
-            {
-               
-            }
-         }
       }
+      
+      for (int node: nodes)
+      {
+         System.out.println(servers[node].describe());
+      }
+      
+      
    }
 
    protected void waitForServer(HornetQServer server)
@@ -2050,6 +2047,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       log.info("Stopping nodes "  + Arrays.toString(nodes));
       for (int node : nodes)
       {
+         log.info("#test stop server " + node);
          if (servers[node] != null && servers[node].isStarted())
          {
             try

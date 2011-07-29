@@ -456,7 +456,7 @@ public class HornetQServerImpl implements HornetQServer
                                  }
                                  catch (Exception e)
                                  {
-                                    log.info("unable to restart server, please kill and restart manually", e);
+                                    log.warn("unable to restart server, please kill and restart manually", e);
                                  }
                               }
                            });
@@ -465,6 +465,7 @@ public class HornetQServerImpl implements HornetQServer
                      }
                      catch (Exception e)
                      {
+                        log.debug(e.getMessage(), e);
                         //hopefully it will work next call
                      }
                   }

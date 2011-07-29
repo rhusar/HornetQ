@@ -118,12 +118,17 @@ public class CoreProtocolManager implements ProtocolManager
                {
                   public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last)
                   {
-                      channel0.sendAndFlush(new ClusterTopologyChangeMessage(nodeID, connectorPair, last));
+                      channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last));
                   }
                   
                   public void nodeDown(String nodeID)
                   {
-                      channel0.sendAndFlush(new ClusterTopologyChangeMessage(nodeID));
+                      channel0.send(new ClusterTopologyChangeMessage(nodeID));
+                  }
+                  
+                  public String toString()
+                  {
+                     return "Remote Proxy on channel " + Integer.toHexString(System.identityHashCode(this));
                   }
                };
                

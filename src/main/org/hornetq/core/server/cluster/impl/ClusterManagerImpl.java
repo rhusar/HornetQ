@@ -100,8 +100,6 @@ public class ClusterManagerImpl implements ClusterManager
    // the cluster connections which links this node to other cluster nodes
    private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
 
-   private final Set<ClusterTopologyListener> topologyListeners = new ConcurrentHashSet<ClusterTopologyListener>();
-
    private final Topology topology = new Topology(this);
 
    private volatile ServerLocatorInternal backupServerLocator;
@@ -258,10 +256,7 @@ public class ClusterManagerImpl implements ClusterManager
       });
       started = false;
 
-      topologyListeners.clear();
       clusterConnections.clear();
-      topology.clear();
-
    }
 
    public void notifyNodeDown(String nodeID)
@@ -273,16 +268,8 @@ public class ClusterManagerImpl implements ClusterManager
       
       log.debug("XXX " + this + "::removing nodeID=" + nodeID, new Exception ("trace"));
 
-      boolean removed = topology.removeMember(nodeID);
+      topology.removeMember(nodeID);
 
-      if (removed)
-      {
-
-         for (ClusterTopologyListener listener : topologyListeners)
-         {
-            listener.nodeDown(nodeID);
-         }
-      }
    }
 
    public void notifyNodeUp(final String nodeID,
@@ -296,7 +283,7 @@ public class ClusterManagerImpl implements ClusterManager
       }
 
       TopologyMember member = new TopologyMember(connectorPair);
-      boolean updated = topology.addMember(nodeID, member);
+      boolean updated = topology.addMember(nodeID, member, last);
       
       if (!updated)
       {
@@ -305,11 +292,6 @@ public class ClusterManagerImpl implements ClusterManager
             log.debug("XXX " + this + " ignored notifyNodeUp on nodeID=" + nodeID + " pair=" + connectorPair + " as the topology already knew about it");
          }
          return;
-      }
-
-      for (ClusterTopologyListener listener : topologyListeners)
-      {
-         listener.nodeUP(nodeID, member.getConnector(), last);
       }
 
       if (log.isDebugEnabled())
@@ -365,7 +347,7 @@ public class ClusterManagerImpl implements ClusterManager
 
    public void addClusterTopologyListener(final ClusterTopologyListener listener, final boolean clusterConnection)
    {
-      topologyListeners.add(listener);
+      topology.addClusterTopologyListener(listener);
 
       // We now need to send the current topology to the client
       executor.execute(new Runnable(){
@@ -380,7 +362,7 @@ public class ClusterManagerImpl implements ClusterManager
    public void removeClusterTopologyListener(final ClusterTopologyListener listener,
                                                           final boolean clusterConnection)
    {
-      topologyListeners.add(listener);
+      topology.removeClusterTopologyListener(listener);
    }
 
    public Topology getTopology()
@@ -398,13 +380,9 @@ public class ClusterManagerImpl implements ClusterManager
          String nodeID = server.getNodeID().toString();
 
          TopologyMember member = topology.getMember(nodeID);
-         // we swap the topology backup now = live
-         if (member != null)
-         {
-            member.getConnector().a = member.getConnector().b;
-
-            member.getConnector().b = null;
-         }
+         //swap backup as live and send it to everybody
+         member = new TopologyMember(new Pair<TransportConfiguration, TransportConfiguration>(member.getConnector().b, null));
+         topology.addMember(nodeID, member, false);
 
          if (backupServerLocator != null)
          {
@@ -456,15 +434,8 @@ public class ClusterManagerImpl implements ClusterManager
                log.warn("unable to start bridge " + bridge.getName(), e);
             }
          }
-
-         for (ClusterTopologyListener listener : topologyListeners)
-         {
-            if (log.isDebugEnabled())
-            {
-               log.debug("Informing client listener " + listener + " about itself node " + nodeID + " with connector=" + member.getConnector());
-            }
-            listener.nodeUP(nodeID, member.getConnector(), false);
-         }
+         
+         topology.sendMemberToListeners(nodeID, member);
       }
    }
 
@@ -519,7 +490,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                                                                  null));
          }
 
-         topology.addMember(nodeID, member);
+         topology.addMember(nodeID, member, false);
       }
       else
       {
@@ -531,13 +502,6 @@ public class ClusterManagerImpl implements ClusterManager
          {
             // pair.a = cc.getConnector();
          }
-      }
-
-      // Propagate the announcement
-
-      for (ClusterTopologyListener listener : topologyListeners)
-      {
-         listener.nodeUP(nodeID, member.getConnector(), false);
       }
    }
 
