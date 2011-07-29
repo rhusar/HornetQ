@@ -135,20 +135,7 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
       
       log.info("ZZZ Server 0 " + servers[0].describe());
 
-      // try
-      // {
-      // stopServers(1);
-      // waitForTopology(servers[0], 1);
-      // startServers(1);
-      // waitForTopology(servers[0], 2);
-      // stopServers(0,1);
-      // }
-      // catch (Throwable e)
-      // {
-      // e.printStackTrace(System.out);
-      // throw e;
-      // }
-      for (int i = 0; i < 100; i++)
+      for (int i = 0; i < 5; i++)
       {
          log.info("#stop #test #" + i);
          Thread.sleep(500);
@@ -162,17 +149,6 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
          waitForTopology(servers[1], 2, 2000);
       }
 
-   }
-
-   public void testLoop() throws Exception
-   {
-      for (int i = 0; i < 100; i++)
-      {
-         log.info("#test " + i);
-         testStopStart();
-         tearDown();
-         setUp();
-      }
    }
 
    public void testStopStart() throws Exception
