@@ -402,7 +402,7 @@ public class QueueImpl implements Queue
 
       directDeliver = false;
 
-      executor.execute(concurrentPoller);
+      getExecutor().execute(concurrentPoller);
    }
 
    public void forceDelivery()
@@ -921,9 +921,31 @@ public class QueueImpl implements Queue
 
    public long getMessagesAdded()
    {
-      blockOnExecutorFuture();
+      final CountDownLatch latch = new CountDownLatch(1);
+      final AtomicLong count = new AtomicLong(0);
       
-      return getInstantMessagesAdded();
+      getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            count.set(getInstantMessagesAdded());
+            latch.countDown();
+         }
+      });
+      
+      try
+      {
+         if (!latch.await(10, TimeUnit.SECONDS))
+         {
+            throw new IllegalStateException("Timed out on waiting for MessagesAdded");
+         }
+      }
+      catch (Exception e)
+      {
+         log.warn(e.getMessage(), e);
+      }
+      
+      return count.get();
   }
    
    public long getInstantMessagesAdded()
