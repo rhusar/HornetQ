@@ -546,6 +546,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       addFactory(sf);
       return sf;
    }
+   
+   public boolean isClosed()
+   {
+      return closed || closing;
+   }
 
    public ClientSessionFactory createSessionFactory(final TransportConfiguration transportConfiguration) throws Exception
    {
