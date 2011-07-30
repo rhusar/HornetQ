@@ -509,7 +509,7 @@ public class RemotingServiceImpl implements RemotingService, ConnectionLifeCycle
          this.pauseInterval = pauseInterval;
       }
 
-      public synchronized void close()
+      public void close()
       {
          closed = true;
 
