@@ -979,6 +979,7 @@ public class UnitTestCase extends TestCase
       catch (Throwable e)
       {
          log.info(threadDump(e.getMessage()));
+         System.err.println(threadDump(e.getMessage()));
          throw new RuntimeException (e.getMessage(), e);
       }
    }
