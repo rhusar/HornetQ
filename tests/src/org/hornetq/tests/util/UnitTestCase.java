@@ -363,6 +363,23 @@ public class UnitTestCase extends TestCase
 
       return str.toString();
    }
+   
+   /** Sends the message to both logger and System.out (for unit report) */
+   public void logAndSystemOut(String message, Exception e)
+   {
+      Logger log = Logger.getLogger(this.getClass());
+      log.info(message, e);
+      System.out.println(message);
+      e.printStackTrace(System.out);
+   }
+
+   /** Sends the message to both logger and System.out (for unit report) */
+   public void logAndSystemOut(String message)
+   {
+      Logger log = Logger.getLogger(this.getClass());
+      log.info(message);
+      System.out.println(message);
+   }
 
    protected static TestSuite createAIOTestSuite(final Class<?> clazz)
    {

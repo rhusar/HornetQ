@@ -402,4 +402,18 @@ public class OneWayChainClusterTest extends ClusterTestBase
       assertEquals(records.size(), 1);
       System.out.println("OneWayChainClusterTest.testChainClusterConnections");
    }
+   
+   
+   public void _testLoop() throws Throwable
+   {
+      for (int i = 0 ; i < 500; i++)
+      {
+         log.info("#test " + i);
+         testRoundRobinForwardWhenNoConsumersTrue();
+         tearDown();
+         setUp();
+      }
+   }
+
+   
 }

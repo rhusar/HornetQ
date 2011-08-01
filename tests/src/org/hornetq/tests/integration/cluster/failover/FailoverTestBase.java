@@ -192,6 +192,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
    @Override
    protected void tearDown() throws Exception
    {
+      logAndSystemOut("#test tearDown");
       backupServer.stop();
 
       liveServer.stop();

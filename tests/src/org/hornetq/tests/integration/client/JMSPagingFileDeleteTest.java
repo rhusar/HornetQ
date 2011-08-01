@@ -15,11 +15,14 @@ package org.hornetq.tests.integration.client;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
+
+import junit.framework.Assert;
 
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.logging.Logger;
@@ -30,18 +33,8 @@ import org.hornetq.tests.util.JMSTestBase;
 public class JMSPagingFileDeleteTest extends JMSTestBase
 {
    static Logger log = Logger.getLogger(JMSPagingFileDeleteTest.class);
-   
+
    Topic topic1;
-
-   Connection connection;
-
-   Session session;
-
-   MessageConsumer subscriber1;
-
-   MessageConsumer subscriber2;
-
-   PagingStore pagingStore;
 
    private static final int MESSAGE_SIZE = 1024;
 
@@ -80,90 +73,206 @@ public class JMSPagingFileDeleteTest extends JMSTestBase
       topic1 = null;
       super.tearDown();
    }
-   
+
    public void testTopics() throws Exception
    {
-      connection = null;
+      Connection connection = null;
 
       try
       {
          connection = cf.createConnection();
          connection.setClientID("cid");
 
-         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
          MessageProducer producer = session.createProducer(topic1);
-         subscriber1 = session.createDurableSubscriber(topic1, "subscriber-1");
-         subscriber2 = session.createDurableSubscriber(topic1, "subscriber-2");
+         MessageConsumer subscriber1 = session.createDurableSubscriber(topic1, "subscriber-1");
+         MessageConsumer subscriber2 = session.createDurableSubscriber(topic1, "subscriber-2");
 
-         // -----------------(Step1) Publish Messages to make Paging Files. --------------------
-         System.out.println("---------- Send messages. ----------");
-         BytesMessage bytesMessage = session.createBytesMessage();
-         bytesMessage.writeBytes(new byte[JMSPagingFileDeleteTest.MESSAGE_SIZE]);
-         for (int i = 0; i < JMSPagingFileDeleteTest.MESSAGE_NUM; i++)
-         {
-            producer.send(bytesMessage);
-         }
-         System.out.println("Sent " + JMSPagingFileDeleteTest.MESSAGE_NUM + " messages.");
+         int numMessages = sendMessages(createMessage(session), producer);
 
-         pagingStore = server.getPagingManager().getPageStore(new SimpleString("jms.topic.topic1"));
-         printPageStoreInfo(pagingStore);
+         printPageStoreInfo();
 
-         assertTrue(pagingStore.isPaging());
+         Assert.assertTrue(getPagingStore().isPaging());
 
          connection.start();
 
          // -----------------(Step2) Restart the server. --------------------------------------
-         stopAndStartServer(); // If try this test without restarting server, please comment out this line;
+         // If try this test without restarting server, please comment out this section;
+         close(connection);
+         stopAndStartServer();
+
+         connection = cf.createConnection();
+         connection.setClientID("cid");
+         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+         subscriber1 = session.createDurableSubscriber(topic1, "subscriber-1");
+         subscriber2 = session.createDurableSubscriber(topic1, "subscriber-2");
+         connection.start();
 
          // -----------------(Step3) Subscribe to all the messages from the topic.--------------
          System.out.println("---------- Receive all messages. ----------");
-         for (int i = 0; i < JMSPagingFileDeleteTest.MESSAGE_NUM; i++)
+         for (int i = 0; i < numMessages; i++)
          {
-            Message message1 = subscriber1.receive(JMSPagingFileDeleteTest.RECEIVE_TIMEOUT);
-            assertNotNull(message1);
-            Message message2 = subscriber2.receive(JMSPagingFileDeleteTest.RECEIVE_TIMEOUT);
-            assertNotNull(message2);
+            Assert.assertNotNull(subscriber1.receive(JMSPagingFileDeleteTest.RECEIVE_TIMEOUT));
+            Assert.assertNotNull(subscriber2.receive(JMSPagingFileDeleteTest.RECEIVE_TIMEOUT));
          }
 
-         pagingStore = server.getPagingManager().getPageStore(new SimpleString("jms.topic.topic1"));
-         long timeout = System.currentTimeMillis() + 5000;
-         while (timeout > System.currentTimeMillis() && pagingStore.isPaging())
-         {
-            Thread.sleep(100);
-         }
-         assertFalse(pagingStore.isPaging());
-         
-         printPageStoreInfo(pagingStore);
+         waitUntilPagingStops(5000);
 
-         assertEquals(0, pagingStore.getAddressSize());
+         printPageStoreInfo();
+
+         Assert.assertEquals(0, getPagingStore().getAddressSize());
          // assertEquals(1, pagingStore.getNumberOfPages()); //I expected number of the page is 1, but It was not.
-         assertFalse(pagingStore.isPaging()); // I expected IsPaging is false, but It was true.
+         Assert.assertFalse(getPagingStore().isPaging()); // I expected IsPaging is false, but It was true.
          // If the server is not restart, this test pass.
 
          // -----------------(Step4) Publish a message. the message is stored in the paging file.
          producer = session.createProducer(topic1);
-         bytesMessage = session.createBytesMessage();
-         bytesMessage.writeBytes(new byte[JMSPagingFileDeleteTest.MESSAGE_SIZE]);
-         producer.send(bytesMessage);
+         sendMessage(createMessage(session), producer);
 
-         printPageStoreInfo(pagingStore);
+         printPageStoreInfo();
 
-         assertEquals(1, pagingStore.getNumberOfPages()); //I expected number of the page is 1, but It was not.
+         Assert.assertEquals(1, getPagingStore().getNumberOfPages()); // I expected number of the page is 1, but It was
+                                                                      // not.
       }
       finally
+      {
+         close(connection);
+      }
+   }
+
+   public void testTopics_nonDurable() throws Exception
+   {
+      Connection connection = null;
+
+      try
+      {
+         connection = cf.createConnection();
+
+         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+         MessageProducer producer = session.createProducer(topic1);
+
+         printPageStoreInfo();
+
+         connection.start();
+
+         MessageConsumer subscriber = session.createConsumer(topic1);
+         final Message message = createMessage(session);
+         int numMessages = sendJustEnoughMessagesForPaging(message, producer);
+
+         // ###Works if uncomment this to send one extra message or if use sendMessages instead above
+         // printPageStoreInfo();
+         sendMessage(message, producer);
+         // numMessages++;
+
+         printPageStoreInfo();
+
+         for (int i = 0; i < numMessages; i++)
+         {
+            Assert.assertNotNull(subscriber.receive(JMSPagingFileDeleteTest.RECEIVE_TIMEOUT));
+            System.out.println("Messages recd:" + (i + 1));
+         }
+         
+         assertNull(subscriber.receive(1000));
+
+         waitUntilPagingStops(5000);
+
+         printPageStoreInfo();
+      }
+      finally
+      {
+         close(connection);
+      }
+   }
+
+   private void close(final Connection connection)
+   {
+      try
       {
          if (connection != null)
          {
             connection.close();
          }
       }
+      catch (JMSException e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   private int sendMessages(final Message message, final MessageProducer producer) throws JMSException
+   {
+      System.out.println("---------- Send messages. ----------");
+      for (int i = 0; i < JMSPagingFileDeleteTest.MESSAGE_NUM; i++)
+      {
+         sendMessage(message, producer);
+      }
+      System.out.println("Sent " + JMSPagingFileDeleteTest.MESSAGE_NUM + " messages.");
+
+      return JMSPagingFileDeleteTest.MESSAGE_NUM;
+   }
+
+   private int sendJustEnoughMessagesForPaging(final Message message, final MessageProducer producer) throws Exception
+   {
+      int messagesSendCount = 0;
+      while (!getPagingStore().isPaging())
+      {
+         sendMessage(message, producer);
+         messagesSendCount++;
+      }
+
+      System.out.println(messagesSendCount + " messages sent before paging started");
+
+      return messagesSendCount;
+   }
+
+   private void sendMessage(final Message message, final MessageProducer producer) throws JMSException
+   {
+      producer.send(message);
+   }
+
+   private Message createMessage(final Session session) throws JMSException
+   {
+      BytesMessage bytesMessage = session.createBytesMessage();
+      bytesMessage.writeBytes(new byte[JMSPagingFileDeleteTest.MESSAGE_SIZE]);
+      return bytesMessage;
+   }
+
+   private void waitUntilPagingStops(final int timeoutMillis) throws Exception, InterruptedException
+   {
+      long timeout = System.currentTimeMillis() + timeoutMillis;
+      while (timeout > System.currentTimeMillis() && getPagingStore().isPaging())
+      {
+         Thread.sleep(100);
+      }
+      
+      if (!getPagingStore().isPaging())
+      {
+         System.exit(-1);
+      }
+      Assert.assertFalse("Paging should have stopped", getPagingStore().isPaging());
+   }
+
+   private PagingStore getPagingStore() throws Exception
+   {
+      return server.getPagingManager().getPageStore(new SimpleString("jms.topic.topic1"));
+   }
+
+   private void printPageStoreInfo() throws Exception
+   {
+      PagingStore pagingStore = getPagingStore();
+      System.out.println("---------- Paging Store Info ----------");
+      System.out.println(" CurrentPage = " + pagingStore.getCurrentPage());
+      System.out.println(" FirstPage = " + pagingStore.getFirstPage());
+      System.out.println(" Number of Pages = " + pagingStore.getNumberOfPages());
+      System.out.println(" Address Size = " + pagingStore.getAddressSize());
+      System.out.println(" Is Paging = " + pagingStore.isPaging());
    }
 
    private void stopAndStartServer() throws Exception
    {
       System.out.println("---------- Restart server. ----------");
-      connection.close();
 
       jmsServer.stop();
 
@@ -171,27 +280,6 @@ public class JMSPagingFileDeleteTest extends JMSTestBase
       jmsServer.activated();
       registerConnectionFactory();
 
-      printPageStoreInfo(pagingStore);
-      reconnect();
-   }
-
-   private void reconnect() throws Exception
-   {
-      connection = cf.createConnection();
-      connection.setClientID("cid");
-      session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-      subscriber1 = session.createDurableSubscriber(topic1, "subscriber-1");
-      subscriber2 = session.createDurableSubscriber(topic1, "subscriber-2");
-      connection.start();
-   }
-
-   private void printPageStoreInfo(PagingStore pagingStore) throws Exception
-   {
-      System.out.println("---------- Paging Store Info ----------");
-      System.out.println(" CurrentPage = " + pagingStore.getCurrentPage());
-      System.out.println(" FirstPage = " + pagingStore.getFirstPage());
-      System.out.println(" Number of Pages = " + pagingStore.getNumberOfPages());
-      System.out.println(" Address Size = " + pagingStore.getAddressSize());
-      System.out.println(" Is Paging = " + pagingStore.isPaging());
+      printPageStoreInfo();
    }
 }

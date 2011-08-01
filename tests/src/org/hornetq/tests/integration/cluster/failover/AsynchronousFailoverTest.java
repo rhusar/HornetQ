@@ -81,6 +81,17 @@ public class AsynchronousFailoverTest extends FailoverTestBase
          }
       });
    }
+   
+   public void _testLoop() throws Throwable
+   {
+      for (int i = 0 ; i < 1000; i++)
+      {
+         log.info("#test " + i);
+         testTransactional();
+         tearDown();
+         setUp();
+      }
+   }
 
    public void testTransactional() throws Throwable
    {
@@ -366,10 +377,12 @@ public class AsynchronousFailoverTest extends FailoverTestBase
       }
    }
 
-   private void doTestTransactional(final TestRunner runner) throws Exception
+   private void doTestTransactional(final TestRunner runner) throws Throwable
    {
       // For duplication detection
       int executionId = 0;
+      
+      log.info("#test doTestTransactional starting now");
 
       while (!runner.isFailed())
       {
@@ -411,10 +424,15 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                      
                      addPayload(message);
 
-
+                     if (log.isDebugEnabled())
+                     {
+                        log.debug("Sending message " + message);
+                     }
+                     
                      producer.send(message);
                   }
 
+                  log.debug("Sending commit");
                   session.commit();
 
                   retry = false;
@@ -423,32 +441,37 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                {
                   if (e.getCode() == HornetQException.DUPLICATE_ID_REJECTED)
                   {
+                     logAndSystemOut("#test duplicate id rejected");
                      break;
                   }
                   else
                   if (e.getCode() == HornetQException.TRANSACTION_ROLLED_BACK || e.getCode() == HornetQException.UNBLOCKED)
                   {
+                     log.info("#test transaction rollback retrying");
                      // OK
                      retry = true;
                   }
                   else
                   {
+                     log.info("#test Exception " + e, e);
                      throw e;
                   }
                }
             }
             while (retry);
 
+            logAndSystemOut("Finished sending, starting consumption now");
             
             
             boolean blocked = false;
 
             retry = false;
+            ArrayList<Integer> msgs = new ArrayList<Integer>();
             
             ClientConsumer consumer = null; 
             do
             {
-               ArrayList<Integer> msgs = new ArrayList<Integer>();
+               msgs.clear();
                try
                {
                   if (consumer == null)
@@ -459,10 +482,15 @@ public class AsynchronousFailoverTest extends FailoverTestBase
 
                   for (int i = 0; i < numMessages; i++)
                   {
-                     ClientMessage message = consumer.receive(500);
+                     ClientMessage message = consumer.receive(10000);
                      if (message == null)
                      {
                         break;
+                     }
+                     
+                     if (log.isDebugEnabled())
+                     {
+                        log.debug("Received message " + message);
                      }
 
                      int count = message.getIntProperty("counter");
@@ -473,14 +501,26 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                   }
 
                   session.commit();
-                  
-                  if (blocked)
+
+                  try
                   {
-                     assertTrue("msgs.size is expected to be 0 or "  + numMessages + " but it was " + msgs.size(), msgs.size() == 0 || msgs.size() == numMessages);
+                     if (blocked)
+                     {
+                        assertTrue("msgs.size is expected to be 0 or "  + numMessages + " but it was " + msgs.size(), msgs.size() == 0 || msgs.size() == numMessages);
+                     }
+                     else
+                     {
+                        assertTrue("msgs.size is expected to be "  + numMessages  + " but it was " + msgs.size(), msgs.size() == numMessages);
+                     }
                   }
-                  else
+                  catch (Throwable e)
                   {
-                     assertTrue("msgs.size is expected to be "  + numMessages  + " but it was " + msgs.size(), msgs.size() == numMessages);
+                     logAndSystemOut(e.getMessage() + " messages received");
+                     for (Integer msg : msgs)
+                     {
+                        logAndSystemOut(msg.toString());
+                     }
+                     throw e;
                   }
 
                   int i = 0;
@@ -496,6 +536,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                {
                   if (e.getCode() == HornetQException.TRANSACTION_ROLLED_BACK)
                   {
+                     logAndSystemOut("Transaction rolled back with " + msgs.size(), e);
                      // TODO: https://jira.jboss.org/jira/browse/HORNETQ-369
                      // ATM RolledBack exception is being called with the transaction is committed.
                      // the test will fail if you remove this next line
@@ -503,6 +544,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                   }
                   else if (e.getCode() == HornetQException.UNBLOCKED)
                   {
+                     logAndSystemOut("Unblocked with " + msgs.size(), e);
                      // TODO: https://jira.jboss.org/jira/browse/HORNETQ-369
                      // This part of the test is never being called.
                      blocked = true;
@@ -514,6 +556,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                   }
                   else
                   {
+                     logAndSystemOut(e.getMessage(), e);
                      throw e;
                   }
                }

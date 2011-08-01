@@ -1087,13 +1087,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          {
             DelegatingBufferHandler handler = new DelegatingBufferHandler();
 
-            if (log.isDebugEnabled())
-            {
-               log.debug("Trying to connect with connector = " + connectorFactory +
-                         ", parameters = " +
-                         connectorConfig.getParams());
-            }
-
             connector = connectorFactory.createConnector(connectorConfig.getParams(),
                                                          handler,
                                                          this,
@@ -1101,6 +1094,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                                          threadPool,
                                                          scheduledThreadPool);
 
+            if (log.isDebugEnabled())
+            {
+               log.debug("Trying to connect with connector = " + connectorFactory +
+                         ", parameters = " +
+                         connectorConfig.getParams() + " connector = " + connector);
+            }
+
+            
+            
             if (connector != null)
             {
                connector.start();
