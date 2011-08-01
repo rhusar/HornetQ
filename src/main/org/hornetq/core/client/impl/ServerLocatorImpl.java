@@ -1202,10 +1202,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       closed = true;
    }
 
-   public synchronized void notifyNodeDown(final String nodeID)
+   public void notifyNodeDown(final String nodeID)
    {
-      boolean removed = false;
-
       if (!clusterConnection && !ha)
       {
          if (log.isDebugEnabled())
@@ -1220,7 +1218,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          log.debug("XXX ZZZ nodeDown " + this + " nodeID=" + nodeID + " as being down", new Exception("trace"));
       }
 
-      removed = topology.removeMember(nodeID);
+      topology.removeMember(nodeID);
  
       if (!topology.isEmpty())
       {
@@ -1240,7 +1238,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    }
 
-   public synchronized void notifyNodeUp(final String nodeID,
+   public void notifyNodeUp(final String nodeID,
                                          final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                                          final boolean last)
    {
@@ -1280,13 +1278,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
          updateArraysAndPairs();
       }
 
-      if (last)
+      synchronized (this)
       {
-         receivedTopology = true;
-      }
+         if (last)
+         {
+            receivedTopology = true;
+         }
 
-      // Notify if waiting on getting topology
-      notify();
+         // Notify if waiting on getting topology
+         notifyAll();
+      }
    }
 
    /* (non-Javadoc)
@@ -1313,7 +1314,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   private void updateArraysAndPairs()
+   private synchronized void updateArraysAndPairs()
    {
       Collection<TopologyMember> membersCopy = topology.getMembers();
       
