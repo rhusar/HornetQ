@@ -20,6 +20,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -1314,11 +1315,13 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private void updateArraysAndPairs()
    {
+      Collection<TopologyMember> membersCopy = topology.getMembers();
+      
       topologyArray = (Pair<TransportConfiguration, TransportConfiguration>[])Array.newInstance(Pair.class,
-                                                                                                topology.members());
+                                                                                                membersCopy.size());
 
       int count = 0;
-      for (TopologyMember pair : topology.getMembers())
+      for (TopologyMember pair : membersCopy)
       {
          topologyArray[count++] = pair.getConnector();
       }
