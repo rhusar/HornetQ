@@ -2560,6 +2560,13 @@ public class JournalStorageManager implements StorageManager
       @Override
       public String toString()
       {
+         // this would be useful when testing. Most tests on the testsuite will use a SimpleString on the duplicate ID
+         // and this may be useful to validate the journal on those tests
+         // You may uncomment these two lines on that case and replcate the toString for the PrintData
+
+         // SimpleString simpleStr = new SimpleString(duplID);
+         // return "DuplicateIDEncoding [address=" + address + ", duplID=" + simpleStr + "]";
+         
          return "DuplicateIDEncoding [address=" + address + ", duplID=" + Arrays.toString(duplID) + "]";
       }
 

@@ -181,6 +181,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             locator.setBlockOnNonDurableSend(true);
             locator.setBlockOnDurableSend(true);
             locator.setReconnectAttempts(-1);
+            locator.setConfirmationWindowSize(10 * 1024 * 1024);
             sf = (ClientSessionFactoryInternal) createSessionFactoryAndWaitForTopology(locator, 2);
 
 
@@ -209,6 +210,10 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             // Simulate failure on connection
             synchronized (lockFail)
             {
+               if (log.isDebugEnabled())
+               {
+                  log.debug("#test crashing test");
+               }
                crash((ClientSession) createSession);
             }
 
@@ -381,14 +386,14 @@ public class AsynchronousFailoverTest extends FailoverTestBase
    {
       // For duplication detection
       int executionId = 0;
-      
-      log.info("#test doTestTransactional starting now");
-
+ 
       while (!runner.isFailed())
       {
          ClientSession session = null;
 
          executionId++;
+         
+         log.info("#test doTestTransactional starting now. Execution " + executionId);
 
          try
          {
@@ -441,13 +446,13 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                {
                   if (e.getCode() == HornetQException.DUPLICATE_ID_REJECTED)
                   {
-                     logAndSystemOut("#test duplicate id rejected");
+                     logAndSystemOut("#test duplicate id rejected on sending");
                      break;
                   }
                   else
                   if (e.getCode() == HornetQException.TRANSACTION_ROLLED_BACK || e.getCode() == HornetQException.UNBLOCKED)
                   {
-                     log.info("#test transaction rollback retrying");
+                     log.info("#test transaction rollback retrying on sending");
                      // OK
                      retry = true;
                   }
@@ -460,7 +465,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
             }
             while (retry);
 
-            logAndSystemOut("Finished sending, starting consumption now");
+            logAndSystemOut("#test Finished sending, starting consumption now");
             
             
             boolean blocked = false;
@@ -482,6 +487,10 @@ public class AsynchronousFailoverTest extends FailoverTestBase
 
                   for (int i = 0; i < numMessages; i++)
                   {
+                     if (log.isDebugEnabled())
+                     {
+                        log.debug("Consumer receiving message " + i);
+                     }
                      ClientMessage message = consumer.receive(10000);
                      if (message == null)
                      {
@@ -494,12 +503,18 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                      }
 
                      int count = message.getIntProperty("counter");
+                     
+                     if (count != i)
+                     {
+                        log.warn("count was received out of order, " + count + "!=" + i);
+                     }
 
                      msgs.add(count);
 
                      message.acknowledge();
                   }
 
+                  log.info("#test commit");
                   session.commit();
 
                   try
@@ -515,6 +530,7 @@ public class AsynchronousFailoverTest extends FailoverTestBase
                   }
                   catch (Throwable e)
                   {
+                     log.info(threadDump("Thread dump, messagesReceived = " + msgs.size()));
                      logAndSystemOut(e.getMessage() + " messages received");
                      for (Integer msg : msgs)
                      {

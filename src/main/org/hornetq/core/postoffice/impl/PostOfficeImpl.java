@@ -1131,14 +1131,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
 
          if (rejectDuplicates && isDuplicate)
          {
-            StringBuffer warnMessage = new StringBuffer();
-            warnMessage.append("Duplicate message detected - message will not be routed. Message information:\n");
-            warnMessage.append(message.toString());
-            PostOfficeImpl.log.warn(warnMessage.toString());
+            String warnMessage = "Duplicate message detected - message will not be routed. Message information:" + message.toString();
+            PostOfficeImpl.log.warn(warnMessage);
 
             if (context.getTransaction() != null)
             {
-               context.getTransaction().markAsRollbackOnly(new HornetQException(HornetQException.DUPLICATE_ID_REJECTED, warnMessage.toString()));
+               context.getTransaction().markAsRollbackOnly(new HornetQException(HornetQException.DUPLICATE_ID_REJECTED, warnMessage));
             }
 
             return false;
