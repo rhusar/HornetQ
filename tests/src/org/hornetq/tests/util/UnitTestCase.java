@@ -378,7 +378,7 @@ public class UnitTestCase extends TestCase
    {
       Logger log = Logger.getLogger(this.getClass());
       log.info(message);
-      System.out.println(message);
+      System.out.println(this.getClass().getName() + "::" + message);
    }
 
    protected static TestSuite createAIOTestSuite(final Class<?> clazz)
@@ -887,7 +887,7 @@ public class UnitTestCase extends TestCase
 
       previousThreads = Thread.getAllStackTraces();
 
-      UnitTestCase.log.info("###### starting test " + this.getClass().getName() + "." + getName());
+      logAndSystemOut("#test " + getName());
    }
 
    @Override
