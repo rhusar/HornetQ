@@ -1598,8 +1598,12 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             }
             try
             {
-               factory.connect(1, false);
-               return factory;
+               ClientSessionFactoryInternal factoryToUse = factory;
+               if (factoryToUse != null)
+               {
+                  factory.connect(1, false);
+               }
+               return factoryToUse;
             }
             catch (HornetQException e)
             {
