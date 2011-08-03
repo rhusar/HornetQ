@@ -118,7 +118,6 @@ public class CoreProtocolManager implements ProtocolManager
                {
                   public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last)
                   {
-                      Logger.getLogger(this.getClass()).info("ZZZ send nodeDown on " + this);
                       channel0.send(new ClusterTopologyChangeMessage(nodeID, connectorPair, last));
                   }
                   

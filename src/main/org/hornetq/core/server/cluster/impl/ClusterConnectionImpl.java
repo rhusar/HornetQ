@@ -383,14 +383,10 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             public void run()
             {
-               synchronized (ClusterConnectionImpl.this)
+               if (serverLocator != null)
                {
-                  if (serverLocator != null)
-                  {
-                     serverLocator.removeClusterTopologyListener(ClusterConnectionImpl.this);
-                     serverLocator.close();
-                     serverLocator = null;
-                  }
+                  serverLocator.close();
+                  serverLocator = null;
                }
 
             }
@@ -549,55 +545,55 @@ public class ClusterConnectionImpl implements ClusterConnection
                       final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                       final boolean last)
    {
+      if (log.isDebugEnabled())
+      {
+         String ClusterTestBase = "receiving nodeUP for nodeID=";
+         log.debug(this + ClusterTestBase + nodeID + " connectionPair=" + connectorPair);
+      }
+      // discard notifications about ourselves unless its from our backup
+
+      if (nodeID.equals(nodeUUID.toString()))
+      {
+         if (connectorPair.b != null)
+         {
+            server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
+         }
+         return;
+      }
 
       // we propagate the node notifications to all cluster topology listeners
       server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
 
-      synchronized (this)
+      // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
+      if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
       {
-         if (serverLocator == null)
-         {
-            log.debug("ClusterConnection nodeID=" + nodeID + " has already been stopped, ignoring call");
-            return;
-         }
+         return;
+      }
 
-         if (log.isDebugEnabled())
+      // FIXME required to prevent cluster connections w/o discovery group
+      // and empty static connectors to create bridges... ulgy!
+      if (serverLocator == null)
+      {
+         log.warn("ServerLocator==null FixME!!!!!");
+         return;
+      }
+      /*we dont create bridges to backups*/
+      if (connectorPair.a == null)
+      {
+         if (isTrace)
          {
-            String ClusterTestBase = "receiving nodeUP for nodeID=";
-            log.debug(this + ClusterTestBase + nodeID + " connectionPair=" + connectorPair);
+            log.trace(this + " ignoring call with nodeID=" +
+                      nodeID +
+                      ", connectorPair=" +
+                      connectorPair +
+                      ", last=" +
+                      last);
          }
-         // discard notifications about ourselves unless its from our backup
+         return;
+      }
 
-         if (nodeID.equals(nodeUUID.toString()))
-         {
-            if (connectorPair.b != null)
-            {
-               server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
-            }
-            return;
-         }
-
-         // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-         if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
-         {
-            return;
-         }
-
-         /*we dont create bridges to backups*/
-         if (connectorPair.a == null)
-         {
-            if (isTrace)
-            {
-               log.trace(this + " ignoring call with nodeID=" +
-                         nodeID +
-                         ", connectorPair=" +
-                         connectorPair +
-                         ", last=" +
-                         last);
-            }
-            return;
-         }
-
+      synchronized (records)
+      {
          try
          {
             MessageFlowRecord record = records.get(nodeID);
@@ -645,22 +641,17 @@ public class ClusterConnectionImpl implements ClusterConnection
          }
          catch (Exception e)
          {
-            log.error(this + "::Failed to update topology", e);
+            log.error("Failed to update topology", e);
          }
       }
    }
 
-   private synchronized void createNewRecord(final String targetNodeID,
-                                             final TransportConfiguration connector,
-                                             final SimpleString queueName,
-                                             final Queue queue,
-                                             final boolean start) throws Exception
+   private void createNewRecord(final String targetNodeID,
+                                final TransportConfiguration connector,
+                                final SimpleString queueName,
+                                final Queue queue,
+                                final boolean start) throws Exception
    {
-      if (serverLocator != null)
-      {
-         return;
-      }
-
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetNodeID, connector, queueName, queue);
 
       Bridge bridge = createClusteredBridge(record);
@@ -690,7 +681,8 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       final ServerLocatorInternal targetLocator = new ServerLocatorImpl(this.clusterManagerTopology,
                                                                         false,
-                                                                        server.getThreadPool(), server.getScheduledPool(), 
+                                                                        server.getThreadPool(),
+                                                                        server.getScheduledPool(),
                                                                         record.getConnector());
 
       targetLocator.setReconnectAttempts(0);
@@ -1307,7 +1299,11 @@ public class ClusterConnectionImpl implements ClusterConnection
             {
                log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
             }
-            return new ServerLocatorImpl(clusterManagerTopology, true, server.getThreadPool(), server.getScheduledPool(), tcConfigs);
+            return new ServerLocatorImpl(clusterManagerTopology,
+                                         true,
+                                         server.getThreadPool(),
+                                         server.getScheduledPool(),
+                                         tcConfigs);
          }
          else
          {
@@ -1337,7 +1333,11 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       public ServerLocatorInternal createServerLocator()
       {
-         return new ServerLocatorImpl(clusterManagerTopology, true, server.getThreadPool(), server.getScheduledPool(), dg);
+         return new ServerLocatorImpl(clusterManagerTopology,
+                                      true,
+                                      server.getThreadPool(),
+                                      server.getScheduledPool(),
+                                      dg);
       }
    }
 }

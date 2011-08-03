@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -426,7 +427,13 @@ public class QueueImpl implements Queue
    
    public void deliverAsync()
    {
-      getExecutor().execute(deliverRunner);
+      try
+      {
+         getExecutor().execute(deliverRunner);
+      }
+      catch (RejectedExecutionException ignored)
+      {
+      }
    }
 
    public void close() throws Exception
