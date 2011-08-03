@@ -270,6 +270,8 @@ public class SymmetricClusterWithBackupTest extends SymmetricClusterTest
       setupCluster();
 
       startServers();
+      
+      Thread.sleep(1000);
 
       SymmetricClusterWithBackupTest.log.info("setup session factories: ");
 

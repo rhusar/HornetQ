@@ -265,8 +265,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          if (nodes == topology.getMembers().size())
          {
-            
-           log.info("ZZZ III look up for topology on " + topology + " size = " + topology.getMembers().size());
            return;
          }
 
@@ -274,7 +272,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       while (System.currentTimeMillis() - start < timeout);
       
-      String msg = "ZZZ Timed out waiting for cluster topology of " + nodes + " (received " + topology.getMembers().size() + ") topology = " + topology + ")\n Current topology:" + topology.describe();
+      String msg = "Timed out waiting for cluster topology of " + nodes + " (received " + topology.getMembers().size() + ") topology = " + topology + ")\n Current topology:" + topology.describe();
 
       ClusterTestBase.log.error(msg);
       
@@ -2052,6 +2050,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             try
             {
+               // We need to wait a 
+               Thread.sleep(500);
                ClusterTestBase.log.info("stopping server " + node);
                servers[node].stop();
                ClusterTestBase.log.info("server " + node + " stopped");

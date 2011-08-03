@@ -130,23 +130,30 @@ public class TwoWayTwoNodeClusterTest extends ClusterTestBase
 
    public void testRestartTest() throws Throwable
    {
-      startServers(0, 1);
-      waitForTopology(servers[0], 2);
-      
-      log.info("ZZZ Server 0 " + servers[0].describe());
-
-      for (int i = 0; i < 5; i++)
+      String name = Thread.currentThread().getName();
+      try
       {
-         log.info("#stop #test #" + i);
-         Thread.sleep(500);
-         stopServers(1);
-         waitForTopology(servers[0], 1, 2000);
-         log.info("#start #test #" + i);
-         Thread.sleep(500);
-         startServers(1);
-         Thread.sleep(500);
-         waitForTopology(servers[0], 2, 2000);
-         waitForTopology(servers[1], 2, 2000);
+         Thread.currentThread().setName("ThreadOnTestRestartTest");
+         startServers(0, 1);
+         waitForTopology(servers[0], 2);
+         waitForTopology(servers[1], 2);
+
+         for (int i = 0; i < 5; i++)
+         {
+            log.info("Sleep #test " + i);
+            Thread.sleep(500);
+            log.info("#stop #test #" + i);
+            stopServers(1);
+            waitForTopology(servers[0], 1, 2000);
+            log.info("#start #test #" + i);
+            startServers(1);
+            waitForTopology(servers[0], 2, 2000);
+            waitForTopology(servers[1], 2, 2000);
+         }
+      }
+      finally
+      {
+         Thread.currentThread().setName(name);
       }
 
    }

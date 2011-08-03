@@ -59,6 +59,9 @@ public class SymmetricClusterTest extends ClusterTestBase
          setupCluster();
 
          startServers();
+         
+         // Waiting some time to the servers to get connected
+         Thread.sleep(1000);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());
@@ -115,6 +118,9 @@ public class SymmetricClusterTest extends ClusterTestBase
          stopServers(0, 1, 2, 3, 4);
 
          startServers();
+         
+         // Wait some time so the servers are connected to each other
+         Thread.sleep(2000);
 
          setupSessionFactory(0, isNetty());
          setupSessionFactory(1, isNetty());

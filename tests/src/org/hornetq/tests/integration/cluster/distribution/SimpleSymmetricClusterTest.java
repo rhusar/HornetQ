@@ -137,11 +137,6 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       
 
       
-//      setupSessionFactory(0, isNetty());
-//      setupSessionFactory(1, isNetty());
-//      setupSessionFactory(2, isNetty());
-      // System.exit(-1);
-      
       stopServers(0, 1, 2, 3, 4, 5);
 
    }
@@ -294,7 +289,9 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       setupSessionFactory(1, isNetty());
       setupSessionFactory(2, isNetty());
 
-      // Thread.sleep(1500);
+      // Need to wait some time so the bridges and 
+      // connectors had time to connect properly between the nodes
+      Thread.sleep(1000);
 
       createQueue(0, "queues.testaddress", "queue0", null, true);
       // Thread.sleep(1500);
@@ -321,7 +318,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
       send(0, "queues.testaddress", 33, true, null);
 
       verifyReceiveRoundRobin(33, 0, 1, 2);
-
+      
       stopServers(2);
 
 

@@ -37,6 +37,10 @@ public class ClusterRestartTest extends ClusterTestBase
       setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 0);
 
       startServers(0, 1);
+      
+      // Waiting some time to the servers to connect to each other
+      Thread.sleep(1000);
+
 
       System.out.println("server 0 = " + getServer(0).getNodeID());
       System.out.println("server 1 = " + getServer(1).getNodeID());
@@ -76,8 +80,8 @@ public class ClusterRestartTest extends ClusterTestBase
 
          log.info("stopping******************************************************");
          stopServers(0);
-         log.info("stopped, waiting 2 seconds************************************");
-         Thread.sleep(2000);
+         // Waiting some time after stopped
+         Thread.sleep(1000);
          startServers(0);
          
          waitForBindings(0, "queues.testaddress", 1, 1, true);
@@ -115,6 +119,10 @@ public class ClusterRestartTest extends ClusterTestBase
       setupClusterConnection("cluster1", "queues", false, 1, isNetty(), 1, 0);
 
       startServers(0, 1);
+      
+      
+      // Waiting some time to the servers to connect to each other
+      Thread.sleep(1000);
 
       System.out.println("server 0 = " + getServer(0).getNodeID());
       System.out.println("server 1 = " + getServer(1).getNodeID());
