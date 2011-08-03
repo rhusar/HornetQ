@@ -864,6 +864,11 @@ public class HornetQServerImpl implements HornetQServer
       return scheduledPool;
    }
    
+   public ExecutorService getThreadPool()
+   {
+      return threadPool;
+   }
+   
    public Configuration getConfiguration()
    {
       return configuration;
@@ -1349,7 +1354,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       // Create the pools - we have two pools - one for non scheduled - and another for scheduled
 
-      ThreadFactory tFactory = new HornetQThreadFactory("HornetQ-server-threads" + System.identityHashCode(this),
+      ThreadFactory tFactory = new HornetQThreadFactory("HornetQ-server-" + this.toString(),
                                                         false,
                                                         getThisClassLoader());
 

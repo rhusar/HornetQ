@@ -55,7 +55,7 @@ public class Topology implements Serializable
    public Topology(final Object owner)
    {
       this.owner = owner;
-      Topology.log.debug("ZZZ III Topology@" + Integer.toHexString(System.identityHashCode(this)) + " CREATE",
+      Topology.log.debug("Topology@" + Integer.toHexString(System.identityHashCode(this)) + " CREATE",
                          new Exception("trace")); // Delete this line
    }
 
@@ -115,7 +115,7 @@ public class Topology implements Serializable
             replaced = true;
             if (Topology.log.isDebugEnabled())
             {
-               Topology.log.debug("ZZZ " + this +
+               Topology.log.debug("Add " + this +
                                   " MEMBER WAS NULL, Add member nodeId=" +
                                   nodeId +
                                   " member = " +
@@ -158,7 +158,7 @@ public class Topology implements Serializable
 
          if (Topology.log.isDebugEnabled())
          {
-            Topology.log.debug("ZZZ " + this +
+            Topology.log.debug(this +
                                " Add member nodeId=" +
                                nodeId +
                                " member = " +
@@ -178,10 +178,17 @@ public class Topology implements Serializable
          {
             if (Topology.log.isTraceEnabled())
             {
-               Topology.log.trace("XXX ZZZ " + this + " informing " + listener + " about node up = " + nodeId);
+               Topology.log.trace(this + " informing " + listener + " about node up = " + nodeId);
             }
 
-            listener.nodeUP(nodeId, member.getConnector(), last);
+            try
+            {
+               listener.nodeUP(nodeId, member.getConnector(), last);
+            }
+            catch (Throwable e)
+            {
+               log.warn (e.getMessage(), e);
+            }
          }
       }
 
@@ -209,6 +216,18 @@ public class Topology implements Serializable
       {
          member = topology.remove(nodeId);
       }
+      
+
+      if (Topology.log.isDebugEnabled())
+      {
+         Topology.log.debug("ZZZ removeMember " + this +
+                            " removing nodeID=" +
+                            nodeId +
+                            ", result=" +
+                            member +
+                            ", size = " +
+                            topology.size(), new Exception("trace"));
+      }
 
       if (member != null)
       {
@@ -218,23 +237,11 @@ public class Topology implements Serializable
          {
             if (Topology.log.isTraceEnabled())
             {
-               Topology.log.trace("XXX ZZZ " + this + " informing " + listener + " about node down = " + nodeId);
+               Topology.log.trace(this + " informing " + listener + " about node down = " + nodeId);
             }
             listener.nodeDown(nodeId);
          }
       }
-
-      if (Topology.log.isDebugEnabled())
-      {
-         Topology.log.debug("ZZZ " + this +
-                            " removing nodeID=" +
-                            nodeId +
-                            ", result=" +
-                            member +
-                            ", size = " +
-                            topology.size(), new Exception("trace"));
-      }
-
       return member != null;
    }
 

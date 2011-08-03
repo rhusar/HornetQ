@@ -84,6 +84,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private boolean receivedTopology;
 
    private boolean compressLargeMessage;
+   
+   // if the system should shutdown the pool when shutting down
+   private transient boolean shutdownPool;
 
    private ExecutorService threadPool;
 
@@ -249,6 +252,11 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private void setThreadPools()
    {
+	  if (threadPool != null)
+	  {
+		  return;
+	  }
+	  else
       if (useGlobalPools)
       {
          threadPool = getGlobalThreadPool();
@@ -257,6 +265,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
       else
       {
+         this.shutdownPool = true;
+         
          ThreadFactory factory = new HornetQThreadFactory("HornetQ-client-factory-threads-" + System.identityHashCode(this),
                                                           true,
                                                           getThisClassLoader());
@@ -359,12 +369,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
    private ServerLocatorImpl(final Topology topology,
                              final boolean useHA,
+                             final ExecutorService threadPool, 
+                             final ScheduledExecutorService scheduledExecutor, 
                              final DiscoveryGroupConfiguration discoveryGroupConfiguration,
                              final TransportConfiguration[] transportConfigs)
    {
       e.fillInStackTrace();
       
+      this.scheduledThreadPool = scheduledExecutor;
+      
+      this.threadPool = threadPool;
+      
       this.topology = topology;
+      
       this.ha = useHA;
 
       this.discoveryGroupConfiguration = discoveryGroupConfiguration;
@@ -442,7 +459,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     */
    public ServerLocatorImpl(final boolean useHA, final DiscoveryGroupConfiguration groupConfiguration)
    {
-      this(new Topology(null), useHA, groupConfiguration, null);
+      this(new Topology(null), useHA, null, null, groupConfiguration, null);
       topology.setOwner(this);
    }
 
@@ -453,7 +470,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     */
    public ServerLocatorImpl(final boolean useHA, final TransportConfiguration... transportConfigs)
    {
-      this(new Topology(null), useHA, null, transportConfigs);
+      this(new Topology(null), useHA, null, null, null, transportConfigs);
       topology.setOwner(this);
    }
 
@@ -463,9 +480,10 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     * @param discoveryAddress
     * @param discoveryPort
     */
-   public ServerLocatorImpl(final Topology topology, final boolean useHA, final DiscoveryGroupConfiguration groupConfiguration)
+   public ServerLocatorImpl(final Topology topology, final boolean useHA, final ExecutorService threadPool, final ScheduledExecutorService scheduledExecutor, final DiscoveryGroupConfiguration groupConfiguration)
    {
-      this(topology, useHA, groupConfiguration, null);
+      this(topology, useHA, threadPool, scheduledExecutor, groupConfiguration, null);
+      
    }
 
    /**
@@ -473,9 +491,9 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
     *
     * @param transportConfigs
     */
-   public ServerLocatorImpl(final Topology topology, final boolean useHA, final TransportConfiguration... transportConfigs)
+   public ServerLocatorImpl(final Topology topology, final boolean useHA, final ExecutorService threadPool, final ScheduledExecutorService scheduledExecutor, final TransportConfiguration... transportConfigs)
    {
-      this(topology, useHA, null, transportConfigs);
+      this(topology, useHA, threadPool, scheduledExecutor, null, transportConfigs);
    }
 
    private TransportConfiguration selectConnector()
@@ -1163,7 +1181,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       factories.clear();
 
-      if (!useGlobalPools)
+      if (shutdownPool)
       {
          if (threadPool != null)
          {
@@ -1264,7 +1282,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       TopologyMember actMember = topology.getMember(nodeID);
 
-      if (actMember.getConnector().a != null && actMember.getConnector().b != null)
+      if (actMember != null && actMember.getConnector().a != null && actMember.getConnector().b != null)
       {
          for (ClientSessionFactory factory : factories)
          {

@@ -71,13 +71,13 @@ import org.hornetq.utils.UUID;
 public class ClusterConnectionImpl implements ClusterConnection
 {
    private static final Logger log = Logger.getLogger(ClusterConnectionImpl.class);
-   
+
    private static final boolean isTrace = log.isTraceEnabled();
 
    private final ExecutorFactory executorFactory;
-   
+
    private final Topology clusterManagerTopology;
-   
+
    private final Executor executor;
 
    private final HornetQServer server;
@@ -91,15 +91,15 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final SimpleString address;
 
    private final long clientFailureCheckPeriod;
-   
+
    private final long connectionTTL;
-   
+
    private final long retryInterval;
-   
+
    private final double retryIntervalMultiplier;
-   
+
    private final long maxRetryInterval;
-   
+
    private final int reconnectAttempts;
 
    private final boolean useDuplicateDetection;
@@ -125,15 +125,15 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final ClusterConnector clusterConnector;
 
    private ServerLocatorInternal serverLocator;
-   
+
    private final TransportConfiguration connector;
 
    private final boolean allowDirectConnectionsOnly;
 
    private final Set<TransportConfiguration> allowableConnections = new HashSet<TransportConfiguration>();
-   
+
    private final ClusterManagerImpl manager;
-   
+
    public ClusterConnectionImpl(final ClusterManagerImpl manager,
                                 final Topology clusterManagerTopology,
                                 final TransportConfiguration[] tcConfigs,
@@ -176,15 +176,15 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.address = address;
 
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      
+
       this.connectionTTL = connectionTTL;
-      
+
       this.retryInterval = retryInterval;
-      
+
       this.retryIntervalMultiplier = retryIntervalMultiplier;
-      
+
       this.maxRetryInterval = maxRetryInterval;
-      
+
       this.reconnectAttempts = reconnectAttempts;
 
       this.useDuplicateDetection = useDuplicateDetection;
@@ -192,7 +192,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.routeWhenNoConsumers = routeWhenNoConsumers;
 
       this.executorFactory = executorFactory;
-      
+
       this.executor = executorFactory.getExecutor();
 
       this.server = server;
@@ -212,9 +212,9 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.clusterPassword = clusterPassword;
 
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-      
+
       this.manager = manager;
-      
+
       this.clusterManagerTopology = clusterManagerTopology;
 
       clusterConnector = new StaticClusterConnector(tcConfigs);
@@ -223,7 +223,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          // a cluster connection will connect to other nodes only if they are directly connected
          // through a static list of connectors or broadcasting using UDP.
-         if(allowDirectConnectionsOnly)
+         if (allowDirectConnectionsOnly)
          {
             allowableConnections.addAll(Arrays.asList(tcConfigs));
          }
@@ -237,12 +237,12 @@ public class ClusterConnectionImpl implements ClusterConnection
                                 final TransportConfiguration connector,
                                 final SimpleString name,
                                 final SimpleString address,
-								        final long clientFailureCheckPeriod,
-								        final long connectionTTL,
-								        final long retryInterval,
-								        final double retryIntervalMultiplier,
-								        final long maxRetryInterval,
-								        final int reconnectAttempts,
+                                final long clientFailureCheckPeriod,
+                                final long connectionTTL,
+                                final long retryInterval,
+                                final double retryIntervalMultiplier,
+                                final long maxRetryInterval,
+                                final int reconnectAttempts,
                                 final boolean useDuplicateDetection,
                                 final boolean routeWhenNoConsumers,
                                 final int confirmationWindowSize,
@@ -273,15 +273,15 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.address = address;
 
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      
+
       this.connectionTTL = connectionTTL;
-      
+
       this.retryInterval = retryInterval;
-      
+
       this.retryIntervalMultiplier = retryIntervalMultiplier;
-      
+
       this.maxRetryInterval = maxRetryInterval;
-      
+
       this.reconnectAttempts = reconnectAttempts;
 
       this.useDuplicateDetection = useDuplicateDetection;
@@ -289,7 +289,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.routeWhenNoConsumers = routeWhenNoConsumers;
 
       this.executorFactory = executorFactory;
-      
+
       this.executor = executorFactory.getExecutor();
 
       this.server = server;
@@ -311,9 +311,9 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
 
       clusterConnector = new DiscoveryClusterConnector(dg);
-      
+
       this.manager = manager;
-      
+
       this.clusterManagerTopology = clusterManagerTopology;
    }
 
@@ -325,12 +325,11 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
 
       started = true;
-      
-      if(!backup)
+
+      if (!backup)
       {
          activate();
       }
-
 
    }
 
@@ -340,13 +339,22 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return;
       }
+      
+      if (log.isDebugEnabled())
+      {
+         log.debug(this + "::stopping ClusterConnection");
+      }
 
       if (serverLocator != null)
       {
          serverLocator.removeClusterTopologyListener(this);
       }
-      
-      log.debug("Cluster connection being stopped for node" + nodeUUID + ", server = " + this.server + " serverLocator = " + serverLocator );
+
+      log.debug("Cluster connection being stopped for node" + nodeUUID +
+                ", server = " +
+                this.server +
+                " serverLocator = " +
+                serverLocator);
 
       synchronized (this)
       {
@@ -370,14 +378,19 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                          props);
             managementService.sendNotification(notification);
          }
-         
-         executor.execute(new Runnable(){
+
+         executor.execute(new Runnable()
+         {
             public void run()
             {
-               if(serverLocator != null)
+               synchronized (ClusterConnectionImpl.this)
                {
-                  serverLocator.close();
-                  serverLocator = null;
+                  if (serverLocator != null)
+                  {
+                     serverLocator.removeClusterTopologyListener(ClusterConnectionImpl.this);
+                     serverLocator.close();
+                     serverLocator = null;
+                  }
                }
 
             }
@@ -401,7 +414,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       return nodeUUID.toString();
    }
-   
+
    public HornetQServer getServer()
    {
       return server;
@@ -429,7 +442,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return;
       }
-      
+
       if (log.isDebugEnabled())
       {
          log.debug("Activating cluster connection nodeID=" + nodeUUID + " for server=" + this.server);
@@ -438,7 +451,6 @@ public class ClusterConnectionImpl implements ClusterConnection
       backup = false;
 
       serverLocator = clusterConnector.createServerLocator();
-
 
       if (serverLocator != null)
       {
@@ -451,17 +463,17 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.setClusterTransportConfiguration(connector);
          serverLocator.setBackup(server.getConfiguration().isBackup());
          serverLocator.setInitialConnectAttempts(-1);
-         
+
          serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          serverLocator.setConnectionTTL(connectionTTL);
 
          if (serverLocator.getConfirmationWindowSize() < 0)
          {
-        	// We can't have confirmationSize = -1 on the cluster Bridge
-        	// Otherwise we won't have confirmation working
+            // We can't have confirmationSize = -1 on the cluster Bridge
+            // Otherwise we won't have confirmation working
             serverLocator.setConfirmationWindowSize(0);
          }
-         
+
          if (!useDuplicateDetection)
          {
             log.debug("DuplicateDetection is disabled, sending clustered messages blocked");
@@ -470,7 +482,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.setBlockOnDurableSend(!useDuplicateDetection);
          serverLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
 
-         if(retryInterval > 0)
+         if (retryInterval > 0)
          {
             this.serverLocator.setRetryInterval(retryInterval);
          }
@@ -491,7 +503,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          managementService.sendNotification(notification);
       }
    }
-   
+
    public TransportConfiguration getConnector()
    {
       return connector;
@@ -509,9 +521,9 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return;
       }
-      
-      //Remove the flow record for that node
-      
+
+      // Remove the flow record for that node
+
       MessageFlowRecord record = records.remove(nodeID);
 
       if (record != null)
@@ -528,62 +540,64 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.error("Failed to close flow record", e);
          }
-         
+
          server.getClusterManager().notifyNodeDown(nodeID);
       }
    }
 
-
    public void nodeUP(final String nodeID,
-                                   final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
-                                   final boolean last)
+                      final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
+                      final boolean last)
    {
-      if (log.isDebugEnabled())
-      {
-         String ClusterTestBase = "receiving nodeUP for nodeID=";
-         log.debug(this + ClusterTestBase + nodeID + 
-                   " connectionPair=" + connectorPair);
-      }
-      // discard notifications about ourselves unless its from our backup
-
-      if (nodeID.equals(nodeUUID.toString()))
-      {
-         if(connectorPair.b != null)
-         {
-            server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
-         }
-         return;
-      }
 
       // we propagate the node notifications to all cluster topology listeners
       server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
 
-      // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-      if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
+      synchronized (this)
       {
-         return;
-      }
-
-      // FIXME required to prevent cluster connections w/o discovery group 
-      // and empty static connectors to create bridges... ulgy!
-      if (serverLocator == null)
-      {
-          log.warn("ServerLocator==null FixME!!!!!");
-          return;
-      }
-      /*we dont create bridges to backups*/
-      if(connectorPair.a == null)
-      {
-         if (isTrace)
+         if (serverLocator == null)
          {
-            log.trace(this + " ignoring call with nodeID="  + nodeID + 
-                      ", connectorPair=" + connectorPair + ", last=" + last);
+            log.debug("ClusterConnection nodeID=" + nodeID + " has already been stopped, ignoring call");
+            return;
          }
-         return;
-      }
 
-      synchronized (records)
-      {
+         if (log.isDebugEnabled())
+         {
+            String ClusterTestBase = "receiving nodeUP for nodeID=";
+            log.debug(this + ClusterTestBase + nodeID + " connectionPair=" + connectorPair);
+         }
+         // discard notifications about ourselves unless its from our backup
+
+         if (nodeID.equals(nodeUUID.toString()))
+         {
+            if (connectorPair.b != null)
+            {
+               server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
+            }
+            return;
+         }
+
+         // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
+         if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
+         {
+            return;
+         }
+
+         /*we dont create bridges to backups*/
+         if (connectorPair.a == null)
+         {
+            if (isTrace)
+            {
+               log.trace(this + " ignoring call with nodeID=" +
+                         nodeID +
+                         ", connectorPair=" +
+                         connectorPair +
+                         ", last=" +
+                         last);
+            }
+            return;
+         }
+
          try
          {
             MessageFlowRecord record = records.get(nodeID);
@@ -620,32 +634,42 @@ public class ClusterConnectionImpl implements ClusterConnection
             {
                if (isTrace)
                {
-                  log.trace ("XXX " + this + " ignored nodeUp record for " + connectorPair + " on nodeID=" + nodeID + " as the record already existed");
+                  log.trace("XXX " + this +
+                            " ignored nodeUp record for " +
+                            connectorPair +
+                            " on nodeID=" +
+                            nodeID +
+                            " as the record already existed");
                }
             }
          }
          catch (Exception e)
          {
-            log.error("Failed to update topology", e);
+            log.error(this + "::Failed to update topology", e);
          }
       }
    }
 
-   private void createNewRecord(final String targetNodeID,
-                                final TransportConfiguration connector,
-                                final SimpleString queueName,
-                                final Queue queue,
-                                final boolean start) throws Exception
+   private synchronized void createNewRecord(final String targetNodeID,
+                                             final TransportConfiguration connector,
+                                             final SimpleString queueName,
+                                             final Queue queue,
+                                             final boolean start) throws Exception
    {
+      if (serverLocator != null)
+      {
+         return;
+      }
+
       MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetNodeID, connector, queueName, queue);
 
       Bridge bridge = createClusteredBridge(record);
-      
+
       if (log.isDebugEnabled())
       {
          log.debug("XXX creating record between " + this.connector + " and " + connector + bridge);
       }
-      
+
       record.setBridge(bridge);
 
       records.put(targetNodeID, record);
@@ -663,9 +687,12 @@ public class ClusterConnectionImpl implements ClusterConnection
     */
    protected Bridge createClusteredBridge(MessageFlowRecordImpl record) throws Exception
    {
-      
-      final ServerLocatorInternal targetLocator = new ServerLocatorImpl(this.clusterManagerTopology, false, record.getConnector()); 
-      
+
+      final ServerLocatorInternal targetLocator = new ServerLocatorImpl(this.clusterManagerTopology,
+                                                                        false,
+                                                                        server.getThreadPool(), server.getScheduledPool(), 
+                                                                        record.getConnector());
+
       targetLocator.setReconnectAttempts(0);
 
       targetLocator.setInitialConnectAttempts(0);
@@ -677,20 +704,20 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);
-      
+
       targetLocator.setRetryInterval(retryInterval);
       targetLocator.setMaxRetryInterval(maxRetryInterval);
       targetLocator.setRetryIntervalMultiplier(retryIntervalMultiplier);
-      
+
       targetLocator.setNodeID(serverLocator.getNodeID());
 
       targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());
-      
-      if(retryInterval > 0)
+
+      if (retryInterval > 0)
       {
          targetLocator.setRetryInterval(retryInterval);
       }
-      
+
       manager.addClusterLocator(targetLocator);
 
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
@@ -719,8 +746,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                                    record,
                                                                    record.getConnector());
 
-
-      targetLocator.setIdentity("(Cluster-connection-bridge::"  + bridge.toString() + "::" + this.toString() + ")");
+      targetLocator.setIdentity("(Cluster-connection-bridge::" + bridge.toString() + "::" + this.toString() + ")");
 
       return bridge;
    }
@@ -732,12 +758,15 @@ public class ClusterConnectionImpl implements ClusterConnection
       private Bridge bridge;
 
       private final String targetNodeID;
+
       private final TransportConfiguration connector;
+
       private final SimpleString queueName;
+
       private final Queue queue;
 
       private final Map<SimpleString, RemoteQueueBinding> bindings = new HashMap<SimpleString, RemoteQueueBinding>();
-      
+
       private volatile boolean isClosed = false;
 
       private volatile boolean firstReset = false;
@@ -752,8 +781,6 @@ public class ClusterConnectionImpl implements ClusterConnection
          this.connector = connector;
          this.queueName = queueName;
       }
-      
-      
 
       /* (non-Javadoc)
        * @see java.lang.Object#toString()
@@ -771,11 +798,9 @@ public class ClusterConnectionImpl implements ClusterConnection
                 ", isClosed=" +
                 isClosed +
                 ", firstReset=" +
-                firstReset + 
+                firstReset +
                 "]";
       }
-
-
 
       public String getAddress()
       {
@@ -825,14 +850,14 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.trace("Stopping bridge " + bridge);
          }
-         
+
          isClosed = true;
          clearBindings();
-         
+
          bridge.stop();
       }
 
-       public boolean isClosed()
+      public boolean isClosed()
       {
          return isClosed;
       }
@@ -842,7 +867,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          clearBindings();
       }
 
-       public void setBridge(final Bridge bridge)
+      public void setBridge(final Bridge bridge)
       {
          this.bridge = bridge;
       }
@@ -856,7 +881,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          if (isTrace)
          {
-            log.trace("Flow record on " + clusterConnector + " Receiving message "  + message);
+            log.trace("Flow record on " + clusterConnector + " Receiving message " + message);
          }
          try
          {
@@ -1049,12 +1074,12 @@ public class ClusterConnectionImpl implements ClusterConnection
 
             return;
          }
-         
+
          if (isTrace)
          {
             log.trace("Adding binding " + clusterName + " into " + ClusterConnectionImpl.this);
          }
-         
+
          bindings.put(clusterName, binding);
 
          try
@@ -1083,7 +1108,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          }
 
          SimpleString clusterName = message.getSimpleStringProperty(ManagementHelper.HDR_CLUSTER_NAME);
-         
+
          System.out.println("Removing clusterName=" + clusterName + " on " + ClusterConnectionImpl.this);
 
          removeBinding(clusterName);
@@ -1126,10 +1151,12 @@ public class ClusterConnectionImpl implements ClusterConnection
          SimpleString filterString = message.getSimpleStringProperty(ManagementHelper.HDR_FILTERSTRING);
 
          RemoteQueueBinding binding = bindings.get(clusterName);
-         
+
          if (binding == null)
          {
-            throw new IllegalStateException("Cannot find binding for " + clusterName + " on " + ClusterConnectionImpl.this);
+            throw new IllegalStateException("Cannot find binding for " + clusterName +
+                                            " on " +
+                                            ClusterConnectionImpl.this);
          }
 
          binding.addConsumer(filterString);
@@ -1223,7 +1250,7 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       return records;
    }
-   
+
    /* (non-Javadoc)
     * @see java.lang.Object#toString()
     */
@@ -1245,18 +1272,16 @@ public class ClusterConnectionImpl implements ClusterConnection
       StringWriter str = new StringWriter();
       PrintWriter out = new PrintWriter(str);
 
-
       out.println(this);
       out.println("***************************************");
       out.println(name + " connected to");
       for (Entry<String, MessageFlowRecord> messageFlow : records.entrySet())
       {
-         out.println("\t Bridge = "  + messageFlow.getValue().getBridge());
+         out.println("\t Bridge = " + messageFlow.getValue().getBridge());
          out.println("\t Flow Record = " + messageFlow.getValue());
       }
       out.println("***************************************");
-      
-      
+
       return str.toString();
    }
 
@@ -1276,13 +1301,13 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       public ServerLocatorInternal createServerLocator()
       {
-         if(tcConfigs != null && tcConfigs.length > 0)
+         if (tcConfigs != null && tcConfigs.length > 0)
          {
             if (log.isDebugEnabled())
             {
                log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
             }
-            return new ServerLocatorImpl(clusterManagerTopology, true, tcConfigs);
+            return new ServerLocatorImpl(clusterManagerTopology, true, server.getThreadPool(), server.getScheduledPool(), tcConfigs);
          }
          else
          {
@@ -1298,8 +1323,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return "StaticClusterConnector [tcConfigs=" + Arrays.toString(tcConfigs) + "]";
       }
-      
-      
+
    }
 
    private class DiscoveryClusterConnector implements ClusterConnector
@@ -1313,7 +1337,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       public ServerLocatorInternal createServerLocator()
       {
-         return new ServerLocatorImpl(clusterManagerTopology, true, dg);
+         return new ServerLocatorImpl(clusterManagerTopology, true, server.getThreadPool(), server.getScheduledPool(), dg);
       }
    }
 }

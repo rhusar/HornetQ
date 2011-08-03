@@ -21,8 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -117,7 +117,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final ExecutorFactory orderedExecutorFactory;
 
-   private final ExecutorService threadPool;
+   private final Executor threadPool;
 
    private final ScheduledExecutorService scheduledThreadPool;
 
@@ -168,7 +168,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                    final double retryIntervalMultiplier,
                                    final long maxRetryInterval,
                                    final int reconnectAttempts,
-                                   final ExecutorService threadPool,
+                                   final Executor threadPool,
                                    final ScheduledExecutorService scheduledThreadPool,
                                    final List<Interceptor> interceptors)
    {
@@ -1402,7 +1402,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             
             if (log.isTraceEnabled())
             {
-               log.trace("XXX Disconnect being called on client:" + msg, new Exception ("trace"));
+               log.trace("ZZZ Disconnect being called on client:" + msg + " server locator = " + serverLocator, new Exception ("trace"));
             }
 
             closeExecutor.execute(new Runnable()
@@ -1414,7 +1414,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                   SimpleString nodeID = msg.getNodeID();
                   if (log.isTraceEnabled())
                   {
-                     log.trace("XXX YYY notifyDown nodeID=" + msg.getNodeID() + " on serverLocator=" + serverLocator);
+                     log.trace("ZZZ notifyDown nodeID=" + msg.getNodeID() + " on serverLocator=" + serverLocator + " csf created at ", ClientSessionFactoryImpl.this.e);
                   }
                   if (nodeID != null)
                   {
@@ -1443,11 +1443,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             {
                if (isDebug)
                {
-                  log.debug("Node " + topMessage.getNodeID() +
+                  log.debug("ZZZ Node " + topMessage.getNodeID() +
                             " going up, connector = " +
                             topMessage.getPair() +
                             ", isLast=" +
-                            topMessage.isLast());
+                            topMessage.isLast() + " csf created at\nserverLocator=" + serverLocator, ClientSessionFactoryImpl.this.e);
                }
                serverLocator.notifyNodeUp(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
             }
