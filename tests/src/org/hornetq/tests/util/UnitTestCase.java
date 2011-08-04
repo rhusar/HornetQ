@@ -927,7 +927,6 @@ public class UnitTestCase extends TestCase
                                              this.getName() +
                                              " on this following dump"));
                fail("test left broadcastgroupimpl running, this could effect other tests");
-               // System.exit(0);
             }
          }
       }
