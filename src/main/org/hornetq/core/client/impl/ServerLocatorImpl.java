@@ -1404,20 +1404,6 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       }
    }
 
-   public static void shutdown()
-   {
-      if (globalScheduledThreadPool != null)
-      {
-         globalScheduledThreadPool.shutdown();
-         globalScheduledThreadPool = null;
-      }
-      if (globalThreadPool != null)
-      {
-         globalThreadPool.shutdown();
-         globalThreadPool = null;
-      }
-   }
-
    class StaticConnector implements Serializable
    {
       private static final long serialVersionUID = 6772279632415242634l;

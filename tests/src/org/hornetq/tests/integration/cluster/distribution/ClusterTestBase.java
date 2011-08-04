@@ -111,6 +111,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
 
       locators = new ServerLocator[ClusterTestBase.MAX_SERVERS];
+      
+      // To make sure the test will start with a clean VM
+      forceGC();
 
    }
 
@@ -148,8 +151,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       nodeManagers = null;
 
       super.tearDown();
-
-    //  ServerLocatorImpl.shutdown();
    }
 
    // Private -------------------------------------------------------------------------------------------------------
