@@ -2050,8 +2050,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             try
             {
-               // We need to wait a 
-               Thread.sleep(500);
                ClusterTestBase.log.info("stopping server " + node);
                servers[node].stop();
                ClusterTestBase.log.info("server " + node + " stopped");
