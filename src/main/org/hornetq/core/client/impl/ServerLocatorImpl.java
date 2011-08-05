@@ -1510,6 +1510,16 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
 
       private synchronized void createConnectors()
       {
+         if (connectors != null)
+         {
+            for (Connector conn : connectors)
+            {
+               if (conn != null)
+               {
+                  conn.disconnect();
+               }
+            }
+         }
          connectors = new ArrayList<Connector>();
          for (TransportConfiguration initialConnector : initialConnectors)
          {
@@ -1605,7 +1615,7 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
             if (factory != null)
             {
                factory.causeExit();
-               factory.close();
+               factory.cleanup();
                factory = null;
             }
          }
