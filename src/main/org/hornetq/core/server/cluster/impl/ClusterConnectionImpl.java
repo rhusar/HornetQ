@@ -105,6 +105,8 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final boolean useDuplicateDetection;
 
    private final boolean routeWhenNoConsumers;
+   
+   private final int confirmationWindowSize;
 
    private final Map<String, MessageFlowRecord> records = new ConcurrentHashMap<String, MessageFlowRecord>();
 
@@ -190,6 +192,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.useDuplicateDetection = useDuplicateDetection;
 
       this.routeWhenNoConsumers = routeWhenNoConsumers;
+      
+      this.confirmationWindowSize = confirmationWindowSize;
 
       this.executorFactory = executorFactory;
 
@@ -287,6 +291,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.useDuplicateDetection = useDuplicateDetection;
 
       this.routeWhenNoConsumers = routeWhenNoConsumers;
+
+      this.confirmationWindowSize = confirmationWindowSize;
 
       this.executorFactory = executorFactory;
 
@@ -463,11 +469,15 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
          serverLocator.setConnectionTTL(connectionTTL);
 
-         if (serverLocator.getConfirmationWindowSize() < 0)
+         if (confirmationWindowSize < 0)
          {
             // We can't have confirmationSize = -1 on the cluster Bridge
             // Otherwise we won't have confirmation working
             serverLocator.setConfirmationWindowSize(0);
+         }
+         else
+         {
+            serverLocator.setConfirmationWindowSize(confirmationWindowSize);
          }
 
          if (!useDuplicateDetection)
