@@ -1476,22 +1476,24 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             if (sharedStorage)
             {
-               server = createInVMFailoverServer(true, configuration, nodeManagers[node]);
+               server = createInVMFailoverServer(true, configuration, nodeManagers[node], node);
             }
             else
             {
                server = HornetQServers.newHornetQServer(configuration);
+               server.setIdentity("Server " + node);
             }
          }
          else
          {
             if (sharedStorage)
             {
-               server = createInVMFailoverServer(false, configuration,  nodeManagers[node]);
+               server = createInVMFailoverServer(false, configuration,  nodeManagers[node], node);
             }
             else
             {
                server = HornetQServers.newHornetQServer(configuration, false);
+               server.setIdentity("Server " + node);
             }
          }
          
@@ -1553,22 +1555,24 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          if (sharedStorage)
          {
-            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
          }
          else
          {
             server = HornetQServers.newHornetQServer(configuration);
+            server.setIdentity("Server " + liveNode);
          }
       }
       else
       {
          if (sharedStorage)
          {
-            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
          }
          else
          {
             server = HornetQServers.newHornetQServer(configuration, false);
+            server.setIdentity("Server " + liveNode);
          }
       }
       server.setIdentity(this.getClass().getSimpleName() + "/Backup(" + node + " of live " + liveNode + ")");
@@ -1632,22 +1636,24 @@ public abstract class ClusterTestBase extends ServiceTestBase
         {
            if (sharedStorage)
            {
-              server = createInVMFailoverServer(true, configuration, nodeManagers[node]);
+              server = createInVMFailoverServer(true, configuration, nodeManagers[node], node);
            }
            else
            {
               server = HornetQServers.newHornetQServer(configuration);
+              server.setIdentity("Server " + node);
            }
         }
         else
         {
            if (sharedStorage)
            {
-              server = createInVMFailoverServer(false, configuration, nodeManagers[node]);
+              server = createInVMFailoverServer(false, configuration, nodeManagers[node], node);
            }
            else
            {
               server = HornetQServers.newHornetQServer(configuration, false);
+              server.setIdentity("Server " + node);
            }
         }
         servers[node] = server;
@@ -1719,18 +1725,19 @@ public abstract class ClusterTestBase extends ServiceTestBase
         {
            if (sharedStorage)
            {
-              server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode]);
+              server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
            }
            else
            {
               server = HornetQServers.newHornetQServer(configuration);
+              server.setIdentity("Server " + liveNode);
            }
         }
         else
         {
            if (sharedStorage)
            {
-              server = createInVMFailoverServer(false, configuration, nodeManagers[liveNode]);
+              server = createInVMFailoverServer(false, configuration, nodeManagers[liveNode], liveNode);
            }
            else
            {

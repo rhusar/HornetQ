@@ -849,6 +849,7 @@ public class HornetQServerImpl implements HornetQServer
       
       return str.toString();
    }
+   
    public void setIdentity(String identity)
    {
       this.identity = identity;

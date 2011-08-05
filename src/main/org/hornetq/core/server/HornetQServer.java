@@ -57,6 +57,9 @@ import org.hornetq.utils.ExecutorFactory;
 public interface HornetQServer extends HornetQComponent
 {
    
+   /** This method was created mainly for testing but it may be used in scenarios where 
+    *  you need to have more than one Server inside the same VM.
+    *  This identity will be exposed on logs what may help you to debug issues on the log traces and debugs.*/
    void setIdentity(String identity);
    
    String getIdentity();

@@ -958,6 +958,17 @@ public class ClusterManagerImpl implements ClusterManager
    // for testing
    public void clear()
    {
+      for (Bridge bridge : bridges.values())
+      {
+         try
+         {
+            bridge.stop();
+         }
+         catch (Exception e)
+         {
+            log.warn(e.getMessage(), e);
+         }
+      }
       bridges.clear();
       for (ClusterConnection clusterConnection : clusterConnections.values())
       {

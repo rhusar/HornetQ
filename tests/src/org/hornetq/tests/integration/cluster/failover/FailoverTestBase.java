@@ -113,12 +113,12 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
    protected TestableServer createLiveServer()
    {
-      return new SameProcessHornetQServer(createInVMFailoverServer(true, liveConfig, nodeManager));
+      return new SameProcessHornetQServer(createInVMFailoverServer(true, liveConfig, nodeManager, 1));
    }
 
    protected TestableServer createBackupServer()
    {
-      return new SameProcessHornetQServer(createInVMFailoverServer(true, backupConfig, nodeManager));
+      return new SameProcessHornetQServer(createInVMFailoverServer(true, backupConfig, nodeManager, 2));
    }
 
    /**
