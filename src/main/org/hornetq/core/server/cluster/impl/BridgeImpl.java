@@ -792,18 +792,10 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
          {
             log.debug("stopping bridge " + BridgeImpl.this);
 
-///////////////             
-//            if (session != null)
-//            {
-//               log.debug("Cleaning up session " + session);
-//               session.close();
-//                           
-//            }
-            
-            session.cleanUp(false);
-
             if (session != null)
             {
+               log.debug("Cleaning up session " + session);
+               session.close();
                session.removeFailureListener(BridgeImpl.this);
             }
 
