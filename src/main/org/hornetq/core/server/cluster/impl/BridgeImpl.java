@@ -799,6 +799,8 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 //               session.close();
 //                           
 //            }
+            
+            session.cleanUp(false);
 
             if (session != null)
             {
