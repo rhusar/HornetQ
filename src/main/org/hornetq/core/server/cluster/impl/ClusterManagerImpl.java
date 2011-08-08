@@ -808,6 +808,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                        config.getRetryIntervalMultiplier(),
                                                        config.getMaxRetryInterval(),
                                                        config.getReconnectAttempts(),
+                                                       config.getCallTimeout(),
                                                        config.isDuplicateDetection(),
                                                        config.isForwardWhenNoConsumers(),
                                                        config.getConfirmationWindowSize(),
@@ -830,7 +831,7 @@ public class ClusterManagerImpl implements ClusterManager
          
          if (log.isDebugEnabled())
          {
-            log.debug("XXX " + this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
+            log.debug(this + " defining cluster connection towards " + Arrays.toString(tcConfigs));
          }
 
          clusterConnection = new ClusterConnectionImpl(this,
@@ -845,6 +846,7 @@ public class ClusterManagerImpl implements ClusterManager
                                                        config.getRetryIntervalMultiplier(),
                                                        config.getMaxRetryInterval(),
                                                        config.getReconnectAttempts(),
+                                                       config.getCallTimeout(),
                                                        config.isDuplicateDetection(),
                                                        config.isForwardWhenNoConsumers(),
                                                        config.getConfirmationWindowSize(),

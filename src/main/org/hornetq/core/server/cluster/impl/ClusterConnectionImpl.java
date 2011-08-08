@@ -95,6 +95,8 @@ public class ClusterConnectionImpl implements ClusterConnection
    private final long connectionTTL;
 
    private final long retryInterval;
+   
+   private final long callTimeout;
 
    private final double retryIntervalMultiplier;
 
@@ -148,6 +150,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                 final double retryIntervalMultiplier,
                                 final long maxRetryInterval,
                                 final int reconnectAttempts,
+                                final long callTimeout,
                                 final boolean useDuplicateDetection,
                                 final boolean routeWhenNoConsumers,
                                 final int confirmationWindowSize,
@@ -218,6 +221,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
 
       this.manager = manager;
+      
+      this.callTimeout = callTimeout;
 
       this.clusterManagerTopology = clusterManagerTopology;
 
@@ -247,6 +252,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                 final double retryIntervalMultiplier,
                                 final long maxRetryInterval,
                                 final int reconnectAttempts,
+                                final long callTimeout,
                                 final boolean useDuplicateDetection,
                                 final boolean routeWhenNoConsumers,
                                 final int confirmationWindowSize,
@@ -287,6 +293,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       this.maxRetryInterval = maxRetryInterval;
 
       this.reconnectAttempts = reconnectAttempts;
+      
+      this.callTimeout = callTimeout;
 
       this.useDuplicateDetection = useDuplicateDetection;
 
@@ -456,37 +464,26 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       if (serverLocator != null)
       {
-         serverLocator.setNodeID(nodeUUID.toString());
-         serverLocator.setIdentity("(main-ClusterConnection::" + server.toString() + ")");
-
-         serverLocator.setReconnectAttempts(0);
-
-         serverLocator.setClusterConnection(true);
-         serverLocator.setClusterTransportConfiguration(connector);
-         serverLocator.setBackup(server.getConfiguration().isBackup());
-         serverLocator.setInitialConnectAttempts(-1);
-
-         serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
-         serverLocator.setConnectionTTL(connectionTTL);
-
-         if (confirmationWindowSize < 0)
-         {
-            // We can't have confirmationSize = -1 on the cluster Bridge
-            // Otherwise we won't have confirmation working
-            serverLocator.setConfirmationWindowSize(0);
-         }
-         else
-         {
-            serverLocator.setConfirmationWindowSize(confirmationWindowSize);
-         }
 
          if (!useDuplicateDetection)
          {
             log.debug("DuplicateDetection is disabled, sending clustered messages blocked");
          }
+
+         serverLocator.setNodeID(nodeUUID.toString());
+         serverLocator.setIdentity("(main-ClusterConnection::" + server.toString() + ")");
+         serverLocator.setReconnectAttempts(0);
+         serverLocator.setClusterConnection(true);
+         serverLocator.setClusterTransportConfiguration(connector);
+         serverLocator.setBackup(server.getConfiguration().isBackup());
+         serverLocator.setInitialConnectAttempts(-1);
+         serverLocator.setClientFailureCheckPeriod(clientFailureCheckPeriod);
+         serverLocator.setConnectionTTL(connectionTTL);
+         serverLocator.setConfirmationWindowSize(confirmationWindowSize);
          // if not using duplicate detection, we will send blocked
          serverLocator.setBlockOnDurableSend(!useDuplicateDetection);
          serverLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
+         serverLocator.setCallTimeout(callTimeout);
 
          if (retryInterval > 0)
          {
@@ -702,7 +699,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setConnectionTTL(connectionTTL);
       targetLocator.setInitialConnectAttempts(0);
 
-      targetLocator.setConfirmationWindowSize(serverLocator.getConfirmationWindowSize());
+      targetLocator.setConfirmationWindowSize(confirmationWindowSize);
       targetLocator.setBlockOnDurableSend(!useDuplicateDetection);
       targetLocator.setBlockOnNonDurableSend(!useDuplicateDetection);
       targetLocator.setClusterConnection(true);

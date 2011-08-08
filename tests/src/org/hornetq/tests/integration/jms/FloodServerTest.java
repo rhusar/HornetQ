@@ -14,6 +14,7 @@ package org.hornetq.tests.integration.jms;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
@@ -29,7 +30,6 @@ import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
@@ -58,6 +58,8 @@ public class FloodServerTest extends UnitTestCase
    private JMSServerManagerImpl serverManager;
 
    private InVMContext initialContext;
+   
+   private AtomicInteger countErrors = new AtomicInteger();
 
    private final String topicName = "my-topic";
 
@@ -162,11 +164,20 @@ public class FloodServerTest extends UnitTestCase
                                             "/cf");
    }
 
-   public void testFoo()
+   public void testFlood() throws Throwable
    {
+      try
+      {
+         internalTestFlood();
+      }
+      catch (Throwable e)
+      {
+         log.error(e.getMessage(), e);
+         throw e;
+      }
    }
-
-   public void _testFlood() throws Exception
+   
+   public void internalTestFlood() throws Exception
    {
       ConnectionFactory cf = (ConnectionFactory)initialContext.lookup("/cf");
 
@@ -174,26 +185,30 @@ public class FloodServerTest extends UnitTestCase
 
       final int numConsumers = 20;
 
-      final int numMessages = 10000;
+      final int numMessages = 1000;
 
       ProducerThread[] producers = new ProducerThread[numProducers];
+      
+      Connection conn = cf.createConnection();
 
       for (int i = 0; i < numProducers; i++)
       {
-         producers[i] = new ProducerThread(cf, numMessages);
+         producers[i] = new ProducerThread(conn, numMessages);
       }
 
       ConsumerThread[] consumers = new ConsumerThread[numConsumers];
 
       for (int i = 0; i < numConsumers; i++)
       {
-         consumers[i] = new ConsumerThread(cf, numMessages);
+         consumers[i] = new ConsumerThread(conn, numMessages);
       }
 
       for (int i = 0; i < numConsumers; i++)
       {
          consumers[i].start();
       }
+      
+      conn.start();
 
       for (int i = 0; i < numProducers; i++)
       {
@@ -209,6 +224,10 @@ public class FloodServerTest extends UnitTestCase
       {
          producers[i].join();
       }
+      
+      conn.close();
+      
+      assertEquals(0, countErrors.get());
 
    }
 
@@ -216,23 +235,16 @@ public class FloodServerTest extends UnitTestCase
    {
       private final Connection connection;
 
-      private final Session session;
+      private Session session;
 
-      private final MessageProducer producer;
+      private MessageProducer producer;
 
       private final int numMessages;
 
-      ProducerThread(final ConnectionFactory cf, final int numMessages) throws Exception
+      ProducerThread(final Connection connection, final int numMessages) throws Exception
       {
-         connection = cf.createConnection();
-
-         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-         producer = session.createProducer(HornetQJMSClient.createTopic("my-topic"));
-
-         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-
          this.numMessages = numMessages;
+         this.connection = connection;
       }
 
       @Override
@@ -240,6 +252,12 @@ public class FloodServerTest extends UnitTestCase
       {
          try
          {
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            producer = session.createProducer(HornetQJMSClient.createTopic("my-topic"));
+
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
             byte[] bytes = new byte[1000];
 
             BytesMessage message = session.createBytesMessage();
@@ -255,12 +273,13 @@ public class FloodServerTest extends UnitTestCase
                // log.info("Producer " + this + " sent " + i);
                // }
             }
-
-            connection.close();
+            
+            session.close();
          }
-         catch (Exception e)
+         catch (Throwable e)
          {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
+            countErrors.incrementAndGet();
          }
       }
    }
@@ -269,21 +288,15 @@ public class FloodServerTest extends UnitTestCase
    {
       private final Connection connection;
 
-      private final Session session;
+      private Session session;
 
-      private final MessageConsumer consumer;
+      private MessageConsumer consumer;
 
       private final int numMessages;
 
-      ConsumerThread(final ConnectionFactory cf, final int numMessages) throws Exception
+      ConsumerThread(final Connection conn, final int numMessages) throws Exception
       {
-         connection = cf.createConnection();
-
-         connection.start();
-
-         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-         consumer = session.createConsumer(HornetQJMSClient.createTopic("my-topic"));
+         this.connection = conn;
 
          this.numMessages = numMessages;
       }
@@ -293,13 +306,18 @@ public class FloodServerTest extends UnitTestCase
       {
          try
          {
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            consumer = session.createConsumer(HornetQJMSClient.createTopic("my-topic"));
+
             for (int i = 0; i < numMessages; i++)
             {
-               Message msg = consumer.receive();
+               Message msg = consumer.receive(5000);
 
                if (msg == null)
                {
                   FloodServerTest.log.error("message is null");
+                  countErrors.incrementAndGet();
                   break;
                }
 
@@ -309,11 +327,12 @@ public class FloodServerTest extends UnitTestCase
                // }
             }
 
-            connection.close();
+            session.close();
          }
-         catch (Exception e)
+         catch (Throwable e)
          {
-            e.printStackTrace();
+            e.printStackTrace(System.out);
+            countErrors.incrementAndGet();
          }
       }
    }
