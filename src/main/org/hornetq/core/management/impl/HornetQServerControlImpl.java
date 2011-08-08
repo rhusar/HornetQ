@@ -1523,7 +1523,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       checkStarted();
 
       // JBPAPP-6334 requested this to be pageSizeBytes > maxSizeBytes
-      if (pageSizeBytes > maxSizeBytes)
+      if (pageSizeBytes > maxSizeBytes && maxSizeBytes > 0)
       {
          throw new IllegalStateException("pageSize has to be lower than maxSizeBytes. Invalid argument (" + pageSizeBytes + " < " + maxSizeBytes + ")");
       }
