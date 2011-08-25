@@ -18,6 +18,8 @@ import java.util.Map;
 
 import javax.management.MBeanOperationInfo;
 
+import org.hornetq.api.core.DiscoveryGroupConstants;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.ClusterConnectionControl;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.persistence.StorageManager;
@@ -74,7 +76,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         return configuration.getDiscoveryGroupName();
+         return configuration.getDiscoveryGroupConfiguration().getName();
       }
       finally
       {
@@ -143,14 +145,19 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         if (configuration.getStaticConnectors() == null)
+         Map<String,Object> params = configuration.getDiscoveryGroupConfiguration().getParams();
+         List<TransportConfiguration> staticConnectors = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         if(staticConnectors == null)
          {
             return null;
          }
-         else
+        	 
+         String[] staticConnectorNames = new String[staticConnectors.size()];
+         for(int i=0; i<staticConnectors.size(); i++)
          {
-         return configuration.getStaticConnectors().toArray(new String[0]);                 
+        	 staticConnectorNames[i] = staticConnectors.get(i).getName();
          }
+        return staticConnectorNames;
       }
       finally
       {
@@ -163,7 +170,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         List<String> connectors = configuration.getStaticConnectors();
+    	  String[] connectors = getStaticConnectors();
 
          if (connectors == null)
          {

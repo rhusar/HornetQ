@@ -156,7 +156,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testDiscoveryConstructor() throws Exception
    {
-      DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(groupAddress, groupPort);
+      DiscoveryGroupConfiguration groupConfiguration = createSimpleUDPDiscoveryGroupConfiguration(groupAddress, groupPort);
       HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(groupConfiguration, JMSFactoryType.CF);
       assertFactoryParams(cf,
                           null,
@@ -715,8 +715,8 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       liveConf.setSharedStore(true);
       liveConf.setClustered(true);
 
-      List<String> connectorNames = new ArrayList<String>();
-      connectorNames.add(liveTC.getName());
+      List<TransportConfiguration> connectorNames = new ArrayList<TransportConfiguration>();
+      connectorNames.add(liveTC);
 
       final long broadcastPeriod = 250;
 
@@ -724,13 +724,13 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
       final int localBindPort = 5432;
 
-      BroadcastGroupConfiguration bcConfig1 = new BroadcastGroupConfiguration(bcGroupName,
-                                                                              null,
-                                                                              localBindPort,
-                                                                              groupAddress,
-                                                                              groupPort,
-                                                                              broadcastPeriod,
-                                                                              connectorNames);
+      BroadcastGroupConfiguration bcConfig1 = createBroadcastGroupConfiguration(bcGroupName,
+                                                                                null,
+                                                                                localBindPort,
+                                                                                groupAddress,
+                                                                                groupPort,
+                                                                                broadcastPeriod,
+                                                                                connectorNames);
 
       List<BroadcastGroupConfiguration> bcConfigs1 = new ArrayList<BroadcastGroupConfiguration>();
       bcConfigs1.add(bcConfig1);

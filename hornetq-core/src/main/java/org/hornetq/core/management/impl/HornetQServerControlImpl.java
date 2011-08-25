@@ -35,6 +35,8 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.transaction.xa.Xid;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -44,6 +46,8 @@ import org.hornetq.api.core.management.DivertControl;
 import org.hornetq.api.core.management.HornetQServerControl;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.QueueControl;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -1681,8 +1685,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                             final boolean useDuplicateDetection,
                             final int confirmationWindowSize,
                             final long clientFailureCheckPeriod,
-                            final String connectorNames,
-                            boolean useDiscoveryGroup,
+                            final String discoveryGroupName, 
                             final boolean ha,
                             final String user,
                             final String password) throws Exception
@@ -1695,43 +1698,22 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       try
       {
          BridgeConfiguration config = null;
-         if (useDiscoveryGroup)
-         {
-            config = new BridgeConfiguration(name,
-                                            queueName,
-                                            forwardingAddress,
-                                            filterString,
-                                            transformerClassName,
-                                            retryInterval,
-                                            retryIntervalMultiplier,
-                                            reconnectAttempts,
-                                            useDuplicateDetection,
-                                            confirmationWindowSize,
-                                            clientFailureCheckPeriod,
-                                            connectorNames,
-                                            ha,
-                                            user,
-                                            password);
-         }
-         else
-         {
-            List<String> connectors = toList(connectorNames);
-            config = new BridgeConfiguration(name,
-                                            queueName,
-                                            forwardingAddress,
-                                            filterString,
-                                            transformerClassName,
-                                            retryInterval,
-                                            retryIntervalMultiplier,
-                                            reconnectAttempts,
-                                            useDuplicateDetection,
-                                            confirmationWindowSize,
-                                            clientFailureCheckPeriod,
-                                            connectors,
-                                            ha,
-                                            user,
-                                            password);
-         }
+         config = new BridgeConfiguration(name,
+                                          queueName,
+                                          forwardingAddress,
+                                          filterString,
+                                          transformerClassName,
+                                          retryInterval,
+                                          retryIntervalMultiplier,
+                                          reconnectAttempts,
+                                          useDuplicateDetection,
+                                          confirmationWindowSize,
+                                          clientFailureCheckPeriod,
+                                          configuration.getDiscoveryGroupConfigurations().get(discoveryGroupName),
+                                          ha,
+                                          user,
+                                          password);
+ 
          server.deployBridge(config);
       }
       finally
@@ -1964,4 +1946,35 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
       return list;
    }
 
+   public void createStaticDiscoveryGroup(String name, String connectors) throws Exception
+   {
+      List<TransportConfiguration> connectorConfigs = new ArrayList<TransportConfiguration>();
+      for(String connector : toList(connectors))
+      {
+         connectorConfigs.add(configuration.getConnectorConfigurations().get(connector));
+      }
+         
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_NAMES_NAME, connectors);
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectorConfigs);
+      DiscoveryGroupConfiguration groupConf = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, name);
+      configuration.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+   }
+   
+   public void createSimpleUDPDiscoveryGroup(String name,
+                                             String localBindAddress,
+                                             String groupAddress,
+                                             int groupPort,
+                                             long refreshTimeout,
+                                             long initialWaitTimeout) throws Exception
+   {
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.LOCAL_BIND_ADDRESS_NAME, localBindAddress);
+      params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, groupPort);
+      params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout);
+      params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialWaitTimeout);
+      DiscoveryGroupConfiguration groupConf = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, name);
+      configuration.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+   }	
 }

@@ -12,10 +12,18 @@
  */
 package org.hornetq.api.core.client;
 
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
+import org.hornetq.core.logging.Logger;
+import org.hornetq.utils.UUIDGenerator;
 
 /**
  * Utility class for creating HornetQ {@link ClientSessionFactory} objects.
@@ -28,6 +36,8 @@ import org.hornetq.core.client.impl.ServerLocatorImpl;
  */
 public class HornetQClient
 {
+   private static final Logger log = Logger.getLogger(HornetQClient.class);
+	
    public static final String DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME = RoundRobinConnectionLoadBalancingPolicy.class.getCanonicalName();
 
    public static final long DEFAULT_CLIENT_FAILURE_CHECK_PERIOD = 30000;
@@ -109,21 +119,36 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithoutHA(TransportConfiguration... transportConfigurations)
    {
-      return new ServerLocatorImpl(false, transportConfigurations);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(transportConfigurations));
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
+      return createServerLocatorWithoutHA(config);
    }
    
    /**
     * Create a ServerLocator which creates session factories from a set of live servers, no HA backup information is propagated to the client
-    * 
-    * The UDP address and port are used to listen for live servers in the cluster
-    * 
-    * @param discoveryAddress The UDP group address to listen for updates
-    * @param discoveryPort the UDP port to listen for updates
+    *
+    * @param groupConfiguration The configuration for server discovery
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(false, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.FALSE, groupConfiguration);
+      }
+      catch(Exception e)
+      {
+         log.fatal("Could not instantiate ServerLocator implementation class: ", e);
+         return null;
+      }
+	         
+      return serverLocator;
    }
    
    /**
@@ -137,7 +162,10 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(TransportConfiguration... initialServers)
    {
-      return new ServerLocatorImpl(true, initialServers);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, Arrays.asList(initialServers));
+      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
+      return createServerLocatorWithHA(config);
    }
    
    /**
@@ -152,7 +180,23 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(true, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+	   
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.TRUE, groupConfiguration);
+	         }
+      catch(Exception e)
+      {
+         log.fatal("Could not instantiate ServerLocator implementation class", e);
+         return null;
+      }
+	         
+      return serverLocator;
    }
    
 

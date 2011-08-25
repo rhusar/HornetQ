@@ -16,6 +16,7 @@ package org.hornetq.tests.integration.cluster.failover;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -55,6 +56,8 @@ public class RemoteFailoverTest extends FailoverTest
          config.setClustered(true);
          config.getConnectorConfigurations().put("self",
                                                  createTransportConfiguration(true, false, generateParams(0, true)));
+         DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[0]);
+         config.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
          config.getClusterConfigurations().add(new ClusterConnectionConfiguration("cluster",
                                                                                   "foo",
                                                                                   "self",
@@ -63,7 +66,7 @@ public class RemoteFailoverTest extends FailoverTest
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  new ArrayList<String>(), false));
+                                                                                  groupConf, false));
          return config;
       }
 

@@ -81,7 +81,11 @@ public class SymmetricClusterExample extends HornetQExample
          // connection factory directly we avoid having to worry about a JNDI look-up.
          // In an app server environment you could use HA-JNDI to lookup from the clustered JNDI servers without
          // having to know about a specific one.
-         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration("231.7.7.7", 9876);
+         Map<String,Object> params = new HashMap<String,Object>();
+         params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, "231.7.7.7");
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, 9876);
+    	            
+         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, UUIDGenerator.getInstance().generateStringUUID());
          
          ConnectionFactory cf = (ConnectionFactory)HornetQJMSClient.createConnectionFactoryWithHA(groupConfiguration, JMSFactoryType.CF);
 

@@ -56,4 +56,6 @@ public interface ServerLocatorInternal extends ServerLocator
    void setBackup(boolean backup);
 
    Topology getTopology();
+   
+   boolean isStaticDirectConnection(TransportConfiguration con);
 }

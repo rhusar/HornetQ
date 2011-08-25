@@ -71,6 +71,8 @@
    <property name="spring.integration.sources.jar.name" value="hornetq-spring-integration-sources.jar"/>
    <property name="twitter.integration.jar.name" value="hornetq-twitter-integration.jar"/>
    <property name="twitter.integration.sources.jar.name" value="hornetq-twitter-integration-sources.jar"/>
+   <property name="jgroups.discovery.jar.name" value="hornetq-jgroups-discovery.jar"/>
+   <property name="jgroups.discovery.sources.jar.name" value="hornetq-jgroups-discovery.jar"/>
    <property name="bootstrap.jar.name" value="hornetq-bootstrap.jar"/>
    <property name="bootstrap.sources.jar.name" value="hornetq-bootstrap-sources.jar"/>
    <property name="logging.jar.name" value="hornetq-logging.jar"/>
@@ -89,6 +91,7 @@
    <property name="resources.jar.name" value="hornetq-resources.jar"/>
    <property name="resources.sources.jar.name" value="hornetq-resources-sources.jar"/>
    <property name="twitter4j.jar.name" value="twitter4j-core.jar"/>
+   <property name="jgroups.jar.name" value="jgroups.jar"/>
    <property name="eap.examples.zip.name" value="hornetq-eap-examples.zip"/>
 
    <!--source and build dirs-->
@@ -102,6 +105,7 @@
    <property name="hornetq.integration.as.module.jar" value="hornetq-jboss-as-integration"/>
    <property name="hornetq.bootstrap.module.jar" value="hornetq-bootstrap"/>
    <property name="hornetq.twitter.module.jar" value="hornetq-twitter-integration"/>
+	<property name="hornetq.jgroups.module.jar" value="hornetq-jgroups-discovery"/>
    <property name="hornetq.service.module.jar" value="hornetq-service-sar"/>
    <property name="hornetq.ra.rar.module.jar" value="hornetq-ra/hornetq-ra-rar"/>
    <property name="target.core.jar.dir" value="${hornetq.core.module.jar}/target"/>
@@ -112,6 +116,7 @@
    <property name="target.integration.as.jar.dir" value="${hornetq.integration.as.module.jar}/target"/>
    <property name="target.bootstrap.jar.dir" value="${hornetq.bootstrap.module.jar}/target"/>
    <property name="target.twitter.jar.dir" value="${hornetq.twitter.module.jar}/target"/>
+   <property name="target.jgroups.jar.dir" value="${hornetq.jgroups.module.jar}/target"/>
    <property name="target.service.jar.dir" value="${hornetq.service.module.jar}/target"/>
    <property name="target.ra.rar.jar.dir" value="${hornetq.ra.rar.module.jar}/target"/>
    <property name="build.core.client.java5.classes.dir" value="${build.dir}/classes/core-client-java5"/>
@@ -120,6 +125,7 @@
    <property name="build.jboss.integration.classes.dir" value="${build.dir}/classes/jboss-integration"/>
    <property name="build.spring.integration.classes.dir" value="${build.dir}/classes/spring-integration"/>
    <property name="build.twitter.integration.classes.dir" value="${build.dir}/classes/twitter-integration"/>
+   <property name="build.jgroups.discovery.classes.dir" value="${build.dir}/classes/jgroups-discovery"/>
    <property name="build.service.classes.dir" value="${build.dir}/classes/service"/>
    <property name="build.bootstrap.classes.dir" value="${build.dir}/classes/bootstrap"/>
    <property name="build.ra.classes.dir" value="${build.dir}/classes/ra"/>
@@ -277,6 +283,11 @@
       <path refid="org.twitter4j.classpath"/>
    </path>
 
+   <path id="jgroups.discovery.compilation.classpath">
+	   <path location="${build.core.classes.dir}"/>
+      <path refid="jgroups.jgroups.classpath"/>
+      </path>
+	
    <path id="spring.integration.compilation.classpath">
       <path refid="core.target.jar"/>
       <path location="${build.jms.classes.dir}"/>
@@ -317,6 +328,7 @@
       <path refid="junit.junit.classpath"/>
       <path refid="org.twitter4j.classpath"/>
       <path refid="org.springframework.classpath"/>
+      <path refid="jgroups.jgroups.classpath"/>
       <path location="${build.jars.dir}/${ra.jar.name}"/>
       <path location="${build.jars.dir}/${jms.jar.name}"/>
       <path location="${build.jars.dir}/${jboss.integration.jar.name}"/>
@@ -324,7 +336,8 @@
       <path location="${build.jars.dir}/${logging.jar.name}"/>
       <path location="${build.jars.dir}/${spring.integration.jar.name}"/>
       <path location="${build.jars.dir}/${twitter.integration.jar.name}"/>
-   </path>
+      <path location="${build.jars.dir}/${jgroups.discovery.jar.name}"/>
+      path>
 
    <path id="jms.test.compilation.classpath">
       <path refid="jboss.integration.compilation.classpath"/>
@@ -463,6 +476,7 @@
       <mkdir dir="${build.jboss.integration.classes.dir}"/>
       <mkdir dir="${build.spring.integration.classes.dir}"/>
       <mkdir dir="${build.twitter.integration.classes.dir}"/>
+      <mkdir dir="${build.jgroups.discovery.classes.dir}"/>
       <mkdir dir="${build.service.classes.dir}"/>
       <mkdir dir="${build.bootstrap.classes.dir}"/>
       <mkdir dir="${build.ra.classes.dir}"/>
@@ -908,11 +922,13 @@
       <copy file="${target.integration.as.jar.dir}/hornetq-jboss-as-integration-2.2.3-SNAPSHOT.jar" tofile="${build.distro.lib.dir}/hornetq-jboss-as-integration.jar"/>
       <copy file="${target.bootstrap.jar.dir}/hornetq-bootstrap-2.2.3-SNAPSHOT.jar" tofile="${build.distro.lib.dir}/hornetq-bootstrap.jar"/>
       <copy file="${target.twitter.jar.dir}/hornetq-twitter-integration-2.2.3-SNAPSHOT.jar" tofile="${build.distro.lib.dir}/hornetq-twitter-integration.jar"/>
+      <copy file="${target.jgroups.jar.dir}/hornetq-jgroups-discovery-2.2.3-SNAPSHOT.jar" tofile="${build.distro.lib.dir}/hornetq-jgroups-discovery.jar"/>
       <copy file="${target.service.jar.dir}/hornetq-service-sar-2.2.3-SNAPSHOT.jar" tofile="${build.distro.lib.dir}/hornetq-service.jar"/>
       <copy file="${target.ra.rar.jar.dir}/hornetq-rar-2.2.3-SNAPSHOT.rar" tofile="${build.distro.lib.dir}/hornetq-rar.rar"/>
 
       <copy file="${org.jboss.netty.lib}/${netty.jar.name}" tofile="${build.distro.lib.dir}/netty.jar"/>
       <copy file="${org.twitter4j.lib}/${twitter4j.jar.name}" tofile="${build.distro.lib.dir}/${twitter4j.jar.name}"/>
+      <copy file="${org.jgroups.lib}/${jgroups.jar.name}" tofile="${build.distro.lib.dir}/${jgroups.jar.name}"/>
       <copy todir="${build.distro.config.dir}">
          <fileset dir="distribution/src/main/resources/config">
             <include name="*.xml"/>

@@ -64,6 +64,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+          <groupId>org.hornetq</groupId>
+          <artifactId>hornetq-jgroups-discovery</artifactId>
+          <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.jboss.javaee</groupId>
          <artifactId>jboss-jca-api</artifactId>
       </dependency>

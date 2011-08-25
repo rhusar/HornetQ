@@ -22,6 +22,7 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.BroadcastGroupControl;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
@@ -52,15 +53,15 @@ public class BroadcastGroupControlTest extends ManagementTestBase
 
    // Static --------------------------------------------------------
 
-   public static BroadcastGroupConfiguration randomBroadcastGroupConfiguration(final List<String> connectorInfos)
+   public static BroadcastGroupConfiguration randomBroadcastGroupConfiguration(final List<TransportConfiguration> connectorList)
    {
-      return new BroadcastGroupConfiguration(RandomUtil.randomString(),
-                                             null,
-                                             1198,
-                                             "231.7.7.7",
-                                             1199,
-                                             RandomUtil.randomPositiveInt(),
-                                             connectorInfos);
+      return createBroadcastGroupConfiguration(RandomUtil.randomString(),
+                                               null,
+                                               1198,
+                                               "231.7.7.7",
+                                               1199,
+                                               RandomUtil.randomPositiveInt(),
+                                               connectorList);
    }
 
    public static Pair<String, String> randomPair()
@@ -75,9 +76,9 @@ public class BroadcastGroupControlTest extends ManagementTestBase
    public void testAttributes() throws Exception
    {
       TransportConfiguration connectorConfiguration = new TransportConfiguration(NettyConnectorFactory.class.getName());
-      List<String> connectorInfos = new ArrayList<String>();
-      connectorInfos.add(connectorConfiguration.getName());
-      BroadcastGroupConfiguration broadcastGroupConfig = BroadcastGroupControlTest.randomBroadcastGroupConfiguration(connectorInfos);
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
+      connectorList.add(connectorConfiguration);
+      BroadcastGroupConfiguration broadcastGroupConfig = BroadcastGroupControlTest.randomBroadcastGroupConfiguration(connectorList);
 
       Configuration conf = createBasicConfig();
       conf.setSecurityEnabled(false);
@@ -92,21 +93,22 @@ public class BroadcastGroupControlTest extends ManagementTestBase
       BroadcastGroupControl broadcastGroupControl = createManagementControl(broadcastGroupConfig.getName());
 
       Assert.assertEquals(broadcastGroupConfig.getName(), broadcastGroupControl.getName());
-      Assert.assertEquals(broadcastGroupConfig.getGroupAddress(), broadcastGroupControl.getGroupAddress());
-      Assert.assertEquals(broadcastGroupConfig.getGroupPort(), broadcastGroupControl.getGroupPort());
-      Assert.assertEquals(broadcastGroupConfig.getLocalBindPort(), broadcastGroupControl.getLocalBindPort());
-      Assert.assertEquals(broadcastGroupConfig.getBroadcastPeriod(), broadcastGroupControl.getBroadcastPeriod());
+      Assert.assertEquals(broadcastGroupConfig.getParams().get(BroadcastGroupConstants.GROUP_ADDRESS_NAME), broadcastGroupControl.getGroupAddress());
+      Assert.assertEquals(broadcastGroupConfig.getParams().get(BroadcastGroupConstants.GROUP_PORT_NAME), broadcastGroupControl.getGroupPort());
+      Assert.assertEquals(broadcastGroupConfig.getParams().get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME), broadcastGroupControl.getLocalBindPort());
+      Assert.assertEquals(broadcastGroupConfig.getParams().get(BroadcastGroupConstants.BROADCAST_PERIOD_NAME), broadcastGroupControl.getBroadcastPeriod());
 
       Object[] connectorPairs = broadcastGroupControl.getConnectorPairs();
       Assert.assertEquals(1, connectorPairs.length);
       System.out.println(connectorPairs);
       String connectorPairData = (String)connectorPairs[0];
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), connectorPairData);
+      List<TransportConfiguration> connectors = broadcastGroupConfig.getConnectorList();
+      Assert.assertEquals(connectors.get(0).getName(), connectorPairData);
       String jsonString = broadcastGroupControl.getConnectorPairsAsJSON();
       Assert.assertNotNull(jsonString);
       JSONArray array = new JSONArray(jsonString);
       Assert.assertEquals(1, array.length());
-      Assert.assertEquals(broadcastGroupConfig.getConnectorInfos().get(0), array.getString(0));
+      Assert.assertEquals(connectors.get(0).getName(), array.getString(0));
       
       Assert.assertTrue(broadcastGroupControl.isStarted());
    }
@@ -114,9 +116,9 @@ public class BroadcastGroupControlTest extends ManagementTestBase
    public void testStartStop() throws Exception
    {
       TransportConfiguration connectorConfiguration = new TransportConfiguration(NettyConnectorFactory.class.getName());
-      List<String> connectorInfos = new ArrayList<String>();
-      connectorInfos.add(connectorConfiguration.getName());
-      BroadcastGroupConfiguration broadcastGroupConfig = BroadcastGroupControlTest.randomBroadcastGroupConfiguration(connectorInfos);
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
+      connectorList.add(connectorConfiguration);
+      BroadcastGroupConfiguration broadcastGroupConfig = BroadcastGroupControlTest.randomBroadcastGroupConfiguration(connectorList);
 
       Configuration conf = createBasicConfig();
       conf.setSecurityEnabled(false);

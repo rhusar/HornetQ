@@ -1485,20 +1485,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
         TransportConfiguration connector = createTransportConfiguration(netty, false, params);
         configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
-        List<String> connectorPairs = new ArrayList<String>();
-        connectorPairs.add(connector.getName());
+        List<TransportConfiguration> connectorPairs = new ArrayList<TransportConfiguration>();
+        connectorPairs.add(connector);
 
-        BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
-                                                                               null,
-                                                                               -1,
-                                                                               groupAddress,
-                                                                               port,
-                                                                               1000,
-                                                                               connectorPairs);
+        BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
+                                                                                 null,
+                                                                                             -1,
+                                                                                 groupAddress,
+                                                                                 port,
+                                                                                             1000,
+                                                                                 connectorPairs);
 
         configuration.getBroadcastGroupConfigurations().add(bcConfig);
 
-        DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+        DiscoveryGroupConfiguration dcConfig = createSimpleUDPDiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
         configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
@@ -1572,20 +1572,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
         TransportConfiguration connector = createTransportConfiguration(netty, false, params);
         configuration.getConnectorConfigurations().put(connector.getName(), connector);
 
-        List<String> connectorPairs = new ArrayList<String>();
-        connectorPairs.add(connector.getName());
+        List<TransportConfiguration> connectorPairs = new ArrayList<TransportConfiguration>();
+        connectorPairs.add(connector);
 
-        BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
-                                                                               null,
-                                                                               -1,
-                                                                               groupAddress,
-                                                                               port,
-                                                                               1000,
-                                                                               connectorPairs);
+        BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
+                                                                                 null,
+                                                                                             -1,
+                                                                                 groupAddress,
+                                                                                 port,
+                                                                                             1000,
+        		                                                                   connectorPairs);
 
         configuration.getBroadcastGroupConfigurations().add(bcConfig);
 
-        DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+        DiscoveryGroupConfiguration dcConfig = createSimpleUDPDiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
         configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
@@ -1656,17 +1656,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
       TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
       serverFrom.getConfiguration().getConnectorConfigurations().put(name, connectorFrom);
 
-      List<String> pairs = null;
+      List<TransportConfiguration> pairs = null;
       
       if (nodeTo != -1)
       {
          TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(nodeTo, netty));
          serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
-         pairs = new ArrayList<String>();
-         pairs.add(serverTotc.getName());
+         pairs = new ArrayList<TransportConfiguration>();
+         pairs.add(serverTotc);
       }
 
-      ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs!=null ? pairs.toArray(new TransportConfiguration[0]) : null);
+      serverFrom.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+            
+    ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       name,
                                                                                       100,
@@ -1674,7 +1677,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
                                                                                       1024,
-                                                                                      pairs, allowDirectConnectionsOnly);
+                                                                                      groupConf, allowDirectConnectionsOnly);
       serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
    }
 
@@ -1697,15 +1700,18 @@ public abstract class ClusterTestBase extends ServiceTestBase
       TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
       serverFrom.getConfiguration().getConnectorConfigurations().put(connectorFrom.getName(), connectorFrom);
       
-      List<String> pairs = new ArrayList<String>();
+      List<TransportConfiguration> pairs = new ArrayList<TransportConfiguration>();
       for (int element : nodesTo)
       {
          TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(element, netty));
          serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
-         pairs.add(serverTotc.getName());
+         pairs.add(serverTotc);
       }
 
-      ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+      serverFrom.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+            
+    ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       connectorFrom.getName(),
                                                                                       250,
@@ -1713,7 +1719,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
                                                                                       1024,
-                                                                                      pairs, false);
+                                                                                      groupConf, false);
 
       serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
    }
@@ -1736,15 +1742,18 @@ public abstract class ClusterTestBase extends ServiceTestBase
       TransportConfiguration connectorFrom = createTransportConfiguration(netty, false, generateParams(nodeFrom, netty));
       serverFrom.getConfiguration().getConnectorConfigurations().put(name, connectorFrom);
 
-      List<String> pairs = new ArrayList<String>();
+      List<TransportConfiguration> pairs = new ArrayList<TransportConfiguration>();
       for (int element : nodesTo)
       {
          TransportConfiguration serverTotc = createTransportConfiguration(netty, false, generateParams(element, netty));
          serverFrom.getConfiguration().getConnectorConfigurations().put(serverTotc.getName(), serverTotc);
-         pairs.add(serverTotc.getName());
+         pairs.add(serverTotc);
       }
 
-      ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+      serverFrom.getConfiguration().getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+      
+    ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
                                                                                       name,
                                                                                       250,
@@ -1752,7 +1761,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
                                                                                       1024,
-                                                                                      pairs, false);
+                                                                                      groupConf, false);
 
       serverFrom.getConfiguration().getClusterConfigurations().add(clusterConf);
    }
@@ -1783,7 +1792,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
                                                                                       1024,
-                                                                                      discoveryGroupName);
+                                                                                      server.getConfiguration().getDiscoveryGroupConfigurations().get(discoveryGroupName),
+                                                                                      false);
+
       List<ClusterConnectionConfiguration> clusterConfs = server.getConfiguration().getClusterConfigurations();
 
       clusterConfs.add(clusterConf);

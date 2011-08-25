@@ -16,6 +16,8 @@ package org.hornetq.core.config;
 import java.io.Serializable;
 import java.util.List;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+
 /**
  * A ClusterConnectionConfiguration
  *
@@ -41,15 +43,13 @@ public class ClusterConnectionConfiguration implements Serializable
 
    private final boolean forwardWhenNoConsumers;
 
-   private final List<String> staticConnectors;
-
-   private final String discoveryGroupName;
+   private final DiscoveryGroupConfiguration discoveryGroupConfiguration;
 
    private final int maxHops;
 
    private final int confirmationWindowSize;
 
-   private final boolean allowDirectConnectionsOnly;
+   private final boolean allowableConnectionsOnly;
 
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
@@ -59,31 +59,8 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final List<String> staticConnectors,
-                                         final boolean allowDirectConnectionsOnly)
-   {
-      this.name = name;
-      this.address = address;
-      this.connectorName = connectorName;
-      this.retryInterval = retryInterval;
-      this.staticConnectors = staticConnectors;
-      this.duplicateDetection = duplicateDetection;
-      this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      discoveryGroupName = null;
-      this.maxHops = maxHops;
-      this.confirmationWindowSize = confirmationWindowSize;
-      this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-   }
-
-   public ClusterConnectionConfiguration(final String name,
-                                         final String address,
-                                         final String connectorName,
-                                         final long retryInterval,
-                                         final boolean duplicateDetection,
-                                         final boolean forwardWhenNoConsumers,
-                                         final int maxHops,
-                                         final int confirmationWindowSize,
-                                         final String discoveryGroupName)
+                                         final DiscoveryGroupConfiguration discoveryGroupConfiguration,
+                                         final boolean allowableConnectionsOnly)
    {
       this.name = name;
       this.address = address;
@@ -91,11 +68,10 @@ public class ClusterConnectionConfiguration implements Serializable
       this.retryInterval = retryInterval;
       this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      this.discoveryGroupName = discoveryGroupName;
-      this.staticConnectors = null;
+      this.discoveryGroupConfiguration = discoveryGroupConfiguration;
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
-      allowDirectConnectionsOnly = false;
+      this.allowableConnectionsOnly = allowableConnectionsOnly;
    }
 
    public String getName()
@@ -133,14 +109,9 @@ public class ClusterConnectionConfiguration implements Serializable
       return confirmationWindowSize;
    }
 
-   public List<String> getStaticConnectors()
+   public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()
    {
-      return staticConnectors;
-   }
-
-   public String getDiscoveryGroupName()
-   {
-      return discoveryGroupName;
+      return discoveryGroupConfiguration;
    }
 
    public long getRetryInterval()
@@ -148,8 +119,8 @@ public class ClusterConnectionConfiguration implements Serializable
       return retryInterval;
    }
 
-   public boolean isAllowDirectConnectionsOnly()
+   public boolean isAllowableConnectionsOnly()
    {
-      return allowDirectConnectionsOnly;
+      return allowableConnectionsOnly;
    }
 }

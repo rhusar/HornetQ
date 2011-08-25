@@ -21,6 +21,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -97,90 +98,16 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    private final String clusterPassword;
 
-   private final ClusterConnector clusterConnector;
+   private final DiscoveryGroupConfiguration discoveryGroupConfiguration;
 
    private ServerLocatorInternal serverLocator;
    
    private final TransportConfiguration connector;
 
-   private final boolean allowDirectConnectionsOnly;
+   private final boolean allowableConnectionsOnly;
 
    private final Set<TransportConfiguration> allowableConnections = new HashSet<TransportConfiguration>();
    
-   public ClusterConnectionImpl(final TransportConfiguration[] tcConfigs,
-                                final TransportConfiguration connector,
-                                final SimpleString name,
-                                final SimpleString address,
-                                final long retryInterval,
-                                final boolean useDuplicateDetection,
-                                final boolean routeWhenNoConsumers,
-                                final int confirmationWindowSize,
-                                final ExecutorFactory executorFactory,
-                                final HornetQServer server,
-                                final PostOffice postOffice,
-                                final ManagementService managementService,
-                                final ScheduledExecutorService scheduledExecutor,
-                                final int maxHops,
-                                final UUID nodeUUID,
-                                final boolean backup,
-                                final String clusterUser,
-                                final String clusterPassword,
-                                final boolean allowDirectConnectionsOnly) throws Exception
-   {
-
-      if (nodeUUID == null)
-      {
-         throw new IllegalArgumentException("node id is null");
-      }
-
-      this.nodeUUID = nodeUUID;
-
-      this.connector = connector;
-
-      this.name = name;
-
-      this.address = address;
-
-      this.retryInterval = retryInterval;
-
-      this.useDuplicateDetection = useDuplicateDetection;
-
-      this.routeWhenNoConsumers = routeWhenNoConsumers;
-
-      this.executorFactory = executorFactory;
-
-      this.server = server;
-
-      this.postOffice = postOffice;
-
-      this.managementService = managementService;
-
-      this.scheduledExecutor = scheduledExecutor;
-
-      this.maxHops = maxHops;
-
-      this.backup = backup;
-
-      this.clusterUser = clusterUser;
-
-      this.clusterPassword = clusterPassword;
-
-      this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-
-      clusterConnector = new StaticClusterConnector(tcConfigs);
-
-      if (tcConfigs != null && tcConfigs.length > 0)
-      {
-         // a cluster connection will connect to other nodes only if they are directly connected
-         // through a static list of connectors or broadcasting using UDP.
-         if(allowDirectConnectionsOnly)
-         {
-            allowableConnections.addAll(Arrays.asList(tcConfigs));
-         }
-      }
-
-   }
-
    public ClusterConnectionImpl(DiscoveryGroupConfiguration dg,
                                 final TransportConfiguration connector,
                                 final SimpleString name,
@@ -199,7 +126,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                 final boolean backup,
                                 final String clusterUser,
                                 final String clusterPassword,
-                                final boolean allowDirectConnectionsOnly) throws Exception
+                                final boolean allowableConnectionsOnly) throws Exception
    {
 
       if (nodeUUID == null)
@@ -239,9 +166,9 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       this.clusterPassword = clusterPassword;
 
-      this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
+      this.allowableConnectionsOnly = allowableConnectionsOnly;
 
-      clusterConnector = new DiscoveryClusterConnector(dg);
+      this.discoveryGroupConfiguration = dg;
    }
 
    public synchronized void start() throws Exception
@@ -343,7 +270,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       backup = false;
 
-      serverLocator = clusterConnector.createServerLocator();
+      serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(this.discoveryGroupConfiguration);
 
 
       if (serverLocator != null)
@@ -376,6 +303,13 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                       NotificationType.CLUSTER_CONNECTION_STARTED,
                                                       props);
          managementService.sendNotification(notification);
+      }
+            
+      if(this.allowableConnectionsOnly)
+      {
+    	  Map<String,Object> params = discoveryGroupConfiguration.getParams();
+    	  List<TransportConfiguration> sc = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+    	  this.allowableConnections.addAll(sc);
       }
    }
    
@@ -431,7 +365,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-      if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
+      if (allowableConnectionsOnly && !allowableConnections.contains(connectorPair.a))
       {
          return;
       }
@@ -502,7 +436,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
-      if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
+      if (allowableConnectionsOnly && !allowableConnections.contains(connectorPair.a))
       {
          return;
       }
@@ -1050,47 +984,5 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
       
       return out;
-   }
-
-   interface ClusterConnector
-   {
-      ServerLocatorInternal createServerLocator();
-   }
-
-   private class StaticClusterConnector implements ClusterConnector
-   {
-      private final TransportConfiguration[] tcConfigs;
-
-      public StaticClusterConnector(TransportConfiguration[] tcConfigs)
-      {
-         this.tcConfigs = tcConfigs;
-      }
-
-      public ServerLocatorInternal createServerLocator()
-      {
-         if(tcConfigs != null && tcConfigs.length > 0)
-         {
-            return (ServerLocatorInternal) HornetQClient.createServerLocatorWithHA(tcConfigs);
-         }
-         else
-         {
-            return null;
-         }
-      }
-   }
-
-   private class DiscoveryClusterConnector implements ClusterConnector
-   {
-      private final DiscoveryGroupConfiguration dg;
-
-      public DiscoveryClusterConnector(DiscoveryGroupConfiguration dg)
-      {
-         this.dg = dg;
-      }
-
-      public ServerLocatorInternal createServerLocator()
-      {
-         return (ServerLocatorInternal) HornetQClient.createServerLocatorWithHA(dg);
-      }
    }
 }

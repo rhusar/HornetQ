@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
@@ -112,8 +113,9 @@ public class SecurityFailoverTest extends FailoverTest
       TransportConfiguration backupConnector = getConnectorTransportConfiguration(false);
       backupConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       backupConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(liveConnector.getName());
+      DiscoveryGroupConfiguration groupConf = createStaticDiscoveryGroupConfiguration(liveConnector);
+      backupConfig.getDiscoveryGroupConfigurations().put(groupConf.getName(), groupConf);
+
       ClusterConnectionConfiguration cccLive = new ClusterConnectionConfiguration("cluster1",
                                                                                   "jms",
                                                                                   backupConnector.getName(),
@@ -122,7 +124,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  staticConnectors,
+                                                                                  groupConf,
                                                                                   false);
       backupConfig.getClusterConfigurations().add(cccLive);
       backupServer = createBackupServer();
@@ -137,7 +139,6 @@ public class SecurityFailoverTest extends FailoverTest
       liveConfig.setSecurityEnabled(true);
       liveConfig.setSharedStore(true);
       liveConfig.setClustered(true);
-      List<String> pairs = null;
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1",
                                                                                "jms",
                                                                                liveConnector.getName(),
@@ -146,7 +147,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                false,
                                                                                1,
                                                                                1,
-                                                                               pairs,
+                                                                               null,
                                                                                false);
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);

@@ -31,6 +31,7 @@ import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,12 +48,19 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.AbstractServerLocator;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
@@ -73,6 +81,7 @@ import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.cluster.impl.BroadcastGroupImpl;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.utils.UUIDGenerator;
@@ -248,6 +257,58 @@ public abstract class UnitTestCase extends TestCase
       }
    }
 
+   protected static DiscoveryGroupConfiguration createSimpleUDPDiscoveryGroupConfiguration(String name,
+                                                                                           String localBindAddr,
+                                                                                           String groupAddr,
+                                                                                           int groupPort,
+                                                                                           long refreshTimeout,
+                                                                                           long discoveryInitialTimeout)
+   {
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.LOCAL_BIND_ADDRESS_NAME, localBindAddr);
+      params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, groupAddr);
+      params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, groupPort);
+      params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout);
+      params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, discoveryInitialTimeout);
+      return new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, name);
+   }
+   
+   protected static DiscoveryGroupConfiguration createSimpleUDPDiscoveryGroupConfiguration(String groupAddr, int groupPort)
+   {
+      return createSimpleUDPDiscoveryGroupConfiguration(UUIDGenerator.getInstance().generateStringUUID(),
+                                                        null,
+                                                        groupAddr,
+                                                        groupPort,
+                                                        HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
+                                                        HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
+   }
+   
+   protected static DiscoveryGroupConfiguration createStaticDiscoveryGroupConfiguration(TransportConfiguration... connectors)
+   {
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME, connectors != null ? Arrays.asList(connectors) : null);
+      return new DiscoveryGroupConfiguration(StaticServerLocatorImpl.class.getName(),
+                                             params,
+                                             UUIDGenerator.getInstance().generateStringUUID());
+   }
+   
+   protected static BroadcastGroupConfiguration createBroadcastGroupConfiguration(String name,
+                                                                                  String localBindAddress,
+                                                                                  int localBindPort,
+                                                                                  String groupAddress,
+                                                                                  int groupPort,
+                                                                                  long broadcastPeriod,
+                                                                                  List<TransportConfiguration> connectorList)
+   {
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, localBindAddress);
+      params.put(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, Integer.toString(localBindPort));
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, Integer.toString(groupPort));
+      params.put(BroadcastGroupConstants.BROADCAST_PERIOD_NAME, Long.toString(broadcastPeriod));
+      return new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, name, connectorList);
+   }
+   
    /**
     * @param name
     */
@@ -973,7 +1034,7 @@ public abstract class UnitTestCase extends TestCase
       }
 
       // We shutdown the global pools to give a better isolation between tests
-      ServerLocatorImpl.clearThreadPools();
+      AbstractServerLocator.clearThreadPools();
    }
 
    protected byte[] autoEncode(final Object... args)

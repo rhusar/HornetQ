@@ -13,13 +13,17 @@
 
 package org.hornetq.tests.unit.core.config.impl;
 
+import java.util.List;
+
 import junit.framework.Assert;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.DivertConfiguration;
@@ -135,38 +139,49 @@ public class FileConfigurationTest extends ConfigurationImplTest
          if (bc.getName().equals("bg1"))
          {
             Assert.assertEquals("bg1", bc.getName());
-            Assert.assertEquals(10999, bc.getLocalBindPort());
-            Assert.assertEquals("192.168.0.120", bc.getGroupAddress());
-            Assert.assertEquals(11999, bc.getGroupPort());
-            Assert.assertEquals(12345, bc.getBroadcastPeriod());
-            Assert.assertEquals("connector1", bc.getConnectorInfos().get(0));
+            Assert.assertEquals(10999, new Integer((String)bc.getParams().get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME)).intValue());
+            Assert.assertEquals("192.168.0.120", bc.getParams().get(BroadcastGroupConstants.GROUP_ADDRESS_NAME));
+            Assert.assertEquals(11999, new Integer((String)bc.getParams().get(BroadcastGroupConstants.GROUP_PORT_NAME)).intValue());
+            Assert.assertEquals(12345, new Long((String)bc.getParams().get(BroadcastGroupConstants.BROADCAST_PERIOD_NAME)).longValue());
+            Assert.assertEquals("connector1", bc.getConnectorList().get(0).getName());
          }
          else
          {
-            Assert.assertEquals("bg2", bc.getName());
-            Assert.assertEquals(12999, bc.getLocalBindPort());
-            Assert.assertEquals("192.168.0.121", bc.getGroupAddress());
-            Assert.assertEquals(13999, bc.getGroupPort());
-            Assert.assertEquals(23456, bc.getBroadcastPeriod());
-            Assert.assertEquals("connector2", bc.getConnectorInfos().get(0));
+            Assert.assertEquals(12999, new Integer((String)bc.getParams().get(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME)).intValue());
+            Assert.assertEquals("192.168.0.121", bc.getParams().get(BroadcastGroupConstants.GROUP_ADDRESS_NAME));
+            Assert.assertEquals(13999, new Integer((String)bc.getParams().get(BroadcastGroupConstants.GROUP_PORT_NAME)).intValue());
+            Assert.assertEquals(23456, new Long((String)bc.getParams().get(BroadcastGroupConstants.BROADCAST_PERIOD_NAME)).longValue());
+            Assert.assertEquals("connector2", bc.getConnectorList().get(0).getName());
          }
       }
 
-      Assert.assertEquals(2, conf.getDiscoveryGroupConfigurations().size());
+      Assert.assertEquals(4, conf.getDiscoveryGroupConfigurations().size());
       DiscoveryGroupConfiguration dc = conf.getDiscoveryGroupConfigurations().get("dg1");
       Assert.assertEquals("dg1", dc.getName());
-      Assert.assertEquals("192.168.0.120", dc.getGroupAddress());
-      assertEquals("172.16.8.10", dc.getLocalBindAddress());
-      Assert.assertEquals(11999, dc.getGroupPort());
-      Assert.assertEquals(12345, dc.getRefreshTimeout());
+      Assert.assertEquals("192.168.0.120", dc.getParams().get(DiscoveryGroupConstants.GROUP_ADDRESS_NAME));
+      Assert.assertEquals("172.16.8.10", dc.getParams().get(DiscoveryGroupConstants.LOCAL_BIND_ADDRESS_NAME));
+      Assert.assertEquals(11999, new Integer((String)dc.getParams().get(DiscoveryGroupConstants.GROUP_PORT_NAME)).intValue());
+      Assert.assertEquals(12345, new Long((String)dc.getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME)).longValue());
+
 
       dc = conf.getDiscoveryGroupConfigurations().get("dg2");
       Assert.assertEquals("dg2", dc.getName());
-      Assert.assertEquals("192.168.0.121", dc.getGroupAddress());
-      assertEquals("172.16.8.11", dc.getLocalBindAddress());
-      Assert.assertEquals(12999, dc.getGroupPort());
-      Assert.assertEquals(23456, dc.getRefreshTimeout());
+      Assert.assertEquals("192.168.0.121", dc.getParams().get(DiscoveryGroupConstants.GROUP_ADDRESS_NAME));
+      Assert.assertEquals("172.16.8.11", dc.getParams().get(DiscoveryGroupConstants.LOCAL_BIND_ADDRESS_NAME));
+      Assert.assertEquals(12999, new Integer((String)dc.getParams().get(DiscoveryGroupConstants.GROUP_PORT_NAME)).intValue());
+      Assert.assertEquals(23456, new Long((String)dc.getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME)).longValue());
 
+      dc = conf.getDiscoveryGroupConfigurations().get("sdg1");
+      Assert.assertEquals("sdg1", dc.getName());
+      Assert.assertEquals("connector1", dc.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_NAMES_NAME));
+      Assert.assertEquals("connector1", ((List<TransportConfiguration>)dc.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(0).getName());
+      
+      dc = conf.getDiscoveryGroupConfigurations().get("sdg12");
+      Assert.assertEquals("sdg12", dc.getName());
+      Assert.assertEquals("connector1,connector2", dc.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_CONNECTOR_NAMES_NAME));
+      Assert.assertEquals("connector1", ((List<TransportConfiguration>)dc.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(0).getName());
+      Assert.assertEquals("connector2", ((List<TransportConfiguration>)dc.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(1).getName());
+      
       Assert.assertEquals(2, conf.getDivertConfigurations().size());
       for (DivertConfiguration dic : conf.getDivertConfigurations())
       {
@@ -206,8 +221,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(0.2, bc.getRetryIntervalMultiplier());
             Assert.assertEquals(2, bc.getReconnectAttempts());
             Assert.assertEquals(true, bc.isUseDuplicateDetection());
-            Assert.assertEquals("connector1", bc.getStaticConnectors().get(0));
-            Assert.assertEquals(null, bc.getDiscoveryGroupName());
+            Assert.assertEquals("connector1", ((List<TransportConfiguration>)bc.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(0).getName());
          }
          else
          {
@@ -216,8 +230,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals("bridge-forwarding-address2", bc.getForwardingAddress());
             Assert.assertEquals(null, bc.getFilterString());
             Assert.assertEquals(null, bc.getTransformerClassName());
-            Assert.assertEquals(null, bc.getStaticConnectors());
-            Assert.assertEquals("dg1", bc.getDiscoveryGroupName());
+            Assert.assertEquals("dg1", bc.getDiscoveryGroupConfiguration().getName());
          }
       }
 
@@ -232,9 +245,9 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(true, ccc.isDuplicateDetection());
             Assert.assertEquals(false, ccc.isForwardWhenNoConsumers());
             Assert.assertEquals(1, ccc.getMaxHops());
-            Assert.assertEquals("connector1", ccc.getStaticConnectors().get(0));
-            Assert.assertEquals("connector2", ccc.getStaticConnectors().get(1));
-            Assert.assertEquals(null, ccc.getDiscoveryGroupName());
+            Assert.assertEquals("connector1", ((List<TransportConfiguration>)ccc.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(0).getName());
+            Assert.assertEquals("connector2", ((List<TransportConfiguration>)ccc.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME)).get(1).getName());
+         
          }
          else
          {
@@ -244,8 +257,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(false, ccc.isDuplicateDetection());
             Assert.assertEquals(true, ccc.isForwardWhenNoConsumers());
             Assert.assertEquals(2, ccc.getMaxHops());
-            Assert.assertEquals(null, ccc.getStaticConnectors());
-            Assert.assertEquals("dg1", ccc.getDiscoveryGroupName());
+            Assert.assertEquals("dg1", ccc.getDiscoveryGroupConfiguration().getName());
          }
       }
       

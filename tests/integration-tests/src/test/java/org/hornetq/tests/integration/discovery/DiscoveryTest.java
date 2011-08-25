@@ -33,6 +33,8 @@ import org.hornetq.core.cluster.DiscoveryEntry;
 import org.hornetq.core.cluster.DiscoveryGroup;
 import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.cluster.impl.DiscoveryGroupImpl;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.cluster.impl.BroadcastGroupImpl;
@@ -72,19 +74,16 @@ public class DiscoveryTest extends UnitTestCase
 
       final String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -156,21 +155,20 @@ public class DiscoveryTest extends UnitTestCase
          return;
       }
       
-      log.info("Local address is " + localAddress);
+      log.info("Local address is " + localAddress.getHostAddress());
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 localAddress,
-                                                 6552,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, localAddress.getHostAddress());
+      params.put(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, 6552);
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -204,20 +202,16 @@ public class DiscoveryTest extends UnitTestCase
 
       final String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -267,20 +261,16 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(nodeID, RandomUtil.randomString(), null, groupAddress, groupPort, timeout);
 
@@ -352,19 +342,16 @@ public class DiscoveryTest extends UnitTestCase
       final int groupPort = getUDPDiscoveryPort();
       final int timeout = 500;
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(), broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       final int port2 = getUDPDiscoveryPort(1);
 
@@ -394,19 +381,16 @@ public class DiscoveryTest extends UnitTestCase
       final int groupPort = getUDPDiscoveryPort();
       final int timeout = 500;
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(), broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       final InetAddress groupAddress2 = InetAddress.getByName(DiscoveryTest.address2);
       final int port2 = getUDPDiscoveryPort(1);
@@ -453,42 +437,36 @@ public class DiscoveryTest extends UnitTestCase
 
       String node3 = "node-3::" + RandomUtil.randomString();
 
-      BroadcastGroup bg1 = new BroadcastGroupImpl(node1,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress1,
-                                                  groupPort1,
-                                                  true);
+      Map<String,Object> params1 = new HashMap<String,Object>();
+      params1.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress1);
+      params1.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort1);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors1 = new ArrayList<TransportConfiguration>();
+      connectors1.add(live1);
+      BroadcastGroupConfiguration broadcastConf1 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params1, RandomUtil.randomString(), connectors1);
+      BroadcastGroup bg1 = new BroadcastGroupImpl(node1, broadcastConf1.getName(), true, broadcastConf1);
 
-      BroadcastGroup bg2 = new BroadcastGroupImpl(node2,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress2,
-                                                  groupPort2,
-                                                  true);
+      Map<String,Object> params2 = new HashMap<String,Object>();
+      params2.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress2);
+      params2.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort2);
+      TransportConfiguration live2 = generateTC();
+      List<TransportConfiguration> connectors2 = new ArrayList<TransportConfiguration>();
+      connectors2.add(live2);
+      BroadcastGroupConfiguration broadcastConf2 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params2, RandomUtil.randomString(), connectors2);
+      BroadcastGroup bg2 = new BroadcastGroupImpl(node2, broadcastConf2.getName(), true, broadcastConf2);
 
-      BroadcastGroup bg3 = new BroadcastGroupImpl(node3,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress3,
-                                                  groupPort3,
-                                                  true);
+      Map<String,Object> params3 = new HashMap<String,Object>();
+      params3.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress3);
+      params3.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort3);
+      TransportConfiguration live3 = generateTC();
+      List<TransportConfiguration> connectors3 = new ArrayList<TransportConfiguration>();
+      connectors3.add(live3);
+      BroadcastGroupConfiguration broadcastConf3 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params3, RandomUtil.randomString(), connectors3);
+      BroadcastGroup bg3 = new BroadcastGroupImpl(node3, broadcastConf3.getName(), true, broadcastConf3);
+
       bg2.start();
       bg1.start();
       bg3.start();
-
-      TransportConfiguration live1 = generateTC("live1");
-
-      TransportConfiguration live2 = generateTC("live2");
-
-      TransportConfiguration live3 = generateTC("live3");
-
-      bg1.addConnector(live1);
-      bg2.addConnector(live2);
-      bg3.addConnector(live3);
 
       DiscoveryGroup dg1 = new DiscoveryGroupImpl("group-1::" + RandomUtil.randomString(),
                                                   "group-1::" + RandomUtil.randomString(),
@@ -596,19 +574,16 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -663,41 +638,30 @@ public class DiscoveryTest extends UnitTestCase
       String node2 = RandomUtil.randomString();
       String node3 = RandomUtil.randomString();
 
-      BroadcastGroup bg1 = new BroadcastGroupImpl(node1,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
-      bg1.start();
-
-      BroadcastGroup bg2 = new BroadcastGroupImpl(node2,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
-      bg2.start();
-
-      BroadcastGroup bg3 = new BroadcastGroupImpl(node3,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
-      bg3.start();
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
 
       TransportConfiguration live1 = generateTC();
-      bg1.addConnector(live1);
+      List<TransportConfiguration> connectors1 = new ArrayList<TransportConfiguration>();
+      connectors1.add(live1);
+      BroadcastGroupConfiguration broadcastConf1 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors1);
+      BroadcastGroup bg1 = new BroadcastGroupImpl(node1, broadcastConf1.getName(), true, broadcastConf1);
+      bg1.start();
 
       TransportConfiguration live2 = generateTC();
-      bg2.addConnector(live2);
-
+      List<TransportConfiguration> connectors2 = new ArrayList<TransportConfiguration>();
+      connectors2.add(live2);
+      BroadcastGroupConfiguration broadcastConf2 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors2);
+      BroadcastGroup bg2 = new BroadcastGroupImpl(node2, broadcastConf2.getName(), true, broadcastConf2);
+      bg2.start();
+     
       TransportConfiguration live3 = generateTC();
-      bg3.addConnector(live3);
+      List<TransportConfiguration> connectors3 = new ArrayList<TransportConfiguration>();
+      connectors3.add(live3);
+      BroadcastGroupConfiguration broadcastConf3 = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors3);
+      BroadcastGroup bg3 = new BroadcastGroupImpl(node3, broadcastConf3.getName(), true, broadcastConf3);
+      bg3.start();
 
       DiscoveryGroup dg = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                  RandomUtil.randomString(),
@@ -851,19 +815,16 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_PORT_NAME, groupPort);
+      TransportConfiguration live1 = generateTC();
+      List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+      connectors.add(live1);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), connectors);
+      BroadcastGroup bg = new BroadcastGroupImpl(nodeID, broadcastConf.getName(), true, broadcastConf);
 
       bg.start();
-
-      TransportConfiguration live1 = generateTC();
-
-      bg.addConnector(live1);
 
       DiscoveryGroup dg1 = new DiscoveryGroupImpl(RandomUtil.randomString(),
                                                   RandomUtil.randomString(),
@@ -962,13 +923,11 @@ public class DiscoveryTest extends UnitTestCase
       final InetAddress groupAddress = InetAddress.getByName(DiscoveryTest.address1);
       final int groupPort = getUDPDiscoveryPort();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      Map<String,Object> params = new HashMap<String,Object>();
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      params.put(BroadcastGroupConstants.GROUP_ADDRESS_NAME, groupAddress);
+      BroadcastGroupConfiguration broadcastConf = new BroadcastGroupConfiguration(BroadcastGroupImpl.class.getName(), params, RandomUtil.randomString(), new ArrayList<TransportConfiguration>());
+      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(), broadcastConf.getName(), true, broadcastConf);
       bg.setNotificationService(notifService);
 
       Assert.assertEquals(0, notifListener.getNotifications().size());

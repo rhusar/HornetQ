@@ -577,8 +577,7 @@ public interface HornetQServerControl
                      @Parameter(name="useDuplicateDetection", desc="Use duplicate detection") boolean useDuplicateDetection,
                      @Parameter(name="confirmationWindowSize", desc="Confirmation window size") int confirmationWindowSize,
                      @Parameter(name="clientFailureCheckPeriod", desc="Period to check client failure") long clientFailureCheckPeriod,
-                     @Parameter(name="staticConnectorNames", desc="comma separated list of connector names or name of discovery group if 'useDiscoveryGroup' is set to true") String connectorNames,
-                     @Parameter(name="useDiscoveryGroup", desc="use discovery  group")boolean useDiscoveryGroup,
+                     @Parameter(name="discoveryGroupName", desc="name of discovery group") String connectorNames,
                      @Parameter(name="ha", desc="Is it using HA") boolean ha,
                      @Parameter(name="user", desc="User name") String user,
                      @Parameter(name="password", desc="User password") String password) throws Exception;
@@ -589,4 +588,17 @@ public interface HornetQServerControl
 
    @Operation(desc = "force the server to stop and notify clients to failover", impact = MBeanOperationInfo.UNKNOWN)
    void forceFailover() throws Exception;
+   
+      
+   @Operation(desc = "create static discovery group", impact = MBeanOperationInfo.UNKNOWN)
+   void createStaticDiscoveryGroup(@Parameter(name="name", desc="Name of the discovery group") String name,
+                                   @Parameter(name="connectors", desc="List of the connector name with comma separated") String connectors) throws Exception;
+   
+   @Operation(desc = "create simple UDP discovery group", impact = MBeanOperationInfo.UNKNOWN)
+   void createSimpleUDPDiscoveryGroup(@Parameter(name="name", desc="Name of the discovery group") String name,
+                                      @Parameter(name="localBindAddress", desc="Local bind address") String localBindAddress,
+                                      @Parameter(name="groupAddress", desc="Discovery group address") String groupAddress,
+                                      @Parameter(name="groupPort", desc="Discovery group port") int groupPort,
+                                      @Parameter(name="refreshTimeout", desc="Refresh timeout") long refreshTimeout,
+                                      @Parameter(name="initialWaitTimeout", desc="initial wait timeout to discover") long initialWaitTimeout) throws Exception;
 }

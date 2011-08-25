@@ -13,9 +13,14 @@
 
 package org.hornetq.core.management.impl;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.management.MBeanOperationInfo;
 
 import org.hornetq.api.core.management.BridgeControl;
+import org.hornetq.api.core.DiscoveryGroupConstants;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.cluster.Bridge;
@@ -58,7 +63,19 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl
       clearIO();
       try
       {
-         return configuration.getStaticConnectors().toArray(new String[0]);                 
+         Map<String,Object> params = configuration.getDiscoveryGroupConfiguration().getParams();
+         List<TransportConfiguration> staticConnectors = (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTORS_LIST_NAME);
+         if(staticConnectors == null)
+         {
+            return null;
+         }
+    	           
+         String[] staticConnectorNames = new String[staticConnectors.size()];
+         for(int i=0; i<staticConnectors.size(); i++)
+         {
+            staticConnectorNames[i] = staticConnectors.get(i).getName();
+         }
+         return staticConnectorNames;
       }
       finally
       {
@@ -97,7 +114,7 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl
       clearIO();
       try
       {
-         return configuration.getDiscoveryGroupName();
+         return configuration.getDiscoveryGroupConfiguration().getName();
       }
       finally
       {
