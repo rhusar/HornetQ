@@ -202,14 +202,9 @@ public class ClusterManagerImpl implements ClusterManagerInternal
             if (connectorName == null)
             {
                connectorName = config.getConnectorName();
+               break;
             }
-            else if (!connectorName.equals(config.getConnectorName()))
-            {
-               throw new IllegalStateException("Using multiple connector names on cluster connections it's "
-                                               + "not supported at this time");
-            }
-
-         }
+          }
 
          if (connectorName != null)
          {

@@ -504,7 +504,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
          serverLocator.start(server.getExecutorFactory().getExecutor());
          
-         serverLocator.getExecutor().execute(new Runnable(){
+        /* serverLocator.getExecutor().execute(new Runnable(){
             public void run()
             {
                try
@@ -522,7 +522,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                   log.warn("Error on connectin Cluster connection to other nodes", e);
                }
             }
-         });
+         });*/
       }
 
       if (managementService != null)
