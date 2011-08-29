@@ -73,7 +73,7 @@ import org.hornetq.tests.util.UnitTestCase;
  */
 public abstract class ClusterTestBase extends ServiceTestBase
 {
-   private static final Logger log = Logger.getLogger(ClusterTestBase.class);
+   private final Logger log = Logger.getLogger(this.getClass());
 
    private static final int[] PORTS = { TransportConstants.DEFAULT_PORT,
                                        TransportConstants.DEFAULT_PORT + 1,
@@ -115,9 +115,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
 
       locators = new ServerLocator[ClusterTestBase.MAX_SERVERS];
-
-      // To make sure the test will start with a clean VM
-      forceGC();
 
    }
 
@@ -247,7 +244,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
       String msg = "Timed out waiting for server starting = " + node;
 
-      ClusterTestBase.log.error(msg);
+      log.error(msg);
 
       throw new IllegalStateException(msg);
    }
@@ -283,7 +280,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                    topology +
                    ")";
 
-      ClusterTestBase.log.error(msg);
+      log.error(msg);
 
       throw new Exception(msg);
    }
@@ -359,7 +356,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
                    ")" +
                    ")";
 
-      ClusterTestBase.log.error(msg);
+      log.error(msg);
 
       Bindings bindings = po.getBindingsForAddress(new SimpleString(address));
 
@@ -772,7 +769,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (message == null)
             {
-               ClusterTestBase.log.info("*** dumping consumers:");
+               log.info("*** dumping consumers:");
 
                dumpConsumers();
 
@@ -873,7 +870,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (message == null)
             {
-               ClusterTestBase.log.info("*** dumping consumers:");
+               log.info("*** dumping consumers:");
 
                dumpConsumers();
 
@@ -920,7 +917,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          if (consumers[i] != null && !consumers[i].consumer.isClosed())
          {
-            ClusterTestBase.log.info("Dumping consumer " + i);
+            log.info("Dumping consumer " + i);
 
             checkReceive(i);
          }
@@ -984,13 +981,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (message != null)
             {
-               ClusterTestBase.log.info("check receive Consumer " + consumerID +
+               log.info("check receive Consumer " + consumerID +
                                         " received message " +
                                         message.getObjectProperty(ClusterTestBase.COUNT_PROP));
             }
             else
             {
-               ClusterTestBase.log.info("check receive Consumer " + consumerID + " null message");
+               log.info("check receive Consumer " + consumerID + " null message");
             }
          }
          while (message != null);
@@ -2030,7 +2027,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          timeStarts[node] = System.currentTimeMillis();
          
          servers[node].setIdentity("server " + node);
-         ClusterTestBase.log.info("starting server " + servers[node]);
+         log.info("starting server " + servers[node]);
          servers[node].start();
          
 //         for (int i = 0 ; i <= node; i++)
@@ -2038,9 +2035,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
 //            System.out.println(servers[node].getClusterManager().getTopology().describe());
 //         }
 
-         ClusterTestBase.log.info("started server " + servers[node]);
+         log.info("started server " + servers[node]);
 
-         ClusterTestBase.log.info("started server " + node);
+         log.info("started server " + node);
 
          waitForServer(servers[node]);
 
@@ -2082,13 +2079,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
                timeStarts[node] = System.currentTimeMillis();
                
-               ClusterTestBase.log.info("stopping server " + node);
+               log.info("stopping server " + node);
                servers[node].stop();
-               ClusterTestBase.log.info("server " + node + " stopped");
+               log.info("server " + node + " stopped");
             }
             catch (Exception e)
             {
-               ClusterTestBase.log.warn(e.getMessage(), e);
+               log.warn(e.getMessage(), e);
             }
          }
       }

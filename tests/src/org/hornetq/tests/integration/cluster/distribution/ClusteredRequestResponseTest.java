@@ -97,9 +97,7 @@ public class ClusteredRequestResponseTest extends ClusterTestBase
       setupCluster();
 
       startServers(0, 1, 2, 3, 4);
-      
-      Thread.sleep(1000);
-
+ 
       setupSessionFactory(0, isNetty());
       setupSessionFactory(1, isNetty());
       setupSessionFactory(2, isNetty());
