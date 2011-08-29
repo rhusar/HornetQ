@@ -528,6 +528,24 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       initialise();
 
       this.startExecutor = executor;
+
+      executor.execute(new Runnable()
+      {
+         public void run()
+         {
+            try
+            {
+               connect();
+            }
+            catch (Exception e)
+            {
+               if (!closing)
+               {
+                  log.warn("did not connect the cluster connection to other nodes", e);
+               }
+            }
+         }
+      });
    }
    
    public Executor getExecutor()
