@@ -25,7 +25,6 @@ import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.NodeManager;
 import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.tests.integration.cluster.util.SameProcessHornetQServer;
@@ -91,6 +90,7 @@ public class MultipleLivesMultipleBackupsFailoverTest extends MultipleBackupsFai
       ClientSession session = sendAndConsume(sf, true);
 
       System.out.println(((ServerLocatorInternal)locator).getTopology().describe());
+      Thread.sleep(500);
       servers.get(0).crash(session);
 
       int liveAfter0 = waitForNewLive(10000, true, servers, 1, 2);

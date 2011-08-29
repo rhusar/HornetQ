@@ -36,6 +36,7 @@ import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.client.impl.Topology;
@@ -470,6 +471,14 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.debug("DuplicateDetection is disabled, sending clustered messages blocked");
          }
+         
+         final TopologyMember currentMember = clusterManagerTopology.getMember(nodeUUID.toString());
+         
+         if (currentMember == null)
+         {
+            // sanity check only
+            throw new IllegalStateException ("InternalError! The ClusterConnection doesn't know about its own node = " + this);
+         }
 
          serverLocator.setNodeID(nodeUUID.toString());
          serverLocator.setIdentity("(main-ClusterConnection::" + server.toString() + ")");
@@ -494,6 +503,26 @@ public class ClusterConnectionImpl implements ClusterConnection
          serverLocator.addClusterTopologyListener(this);
 
          serverLocator.start(server.getExecutorFactory().getExecutor());
+         
+         serverLocator.getExecutor().execute(new Runnable(){
+            public void run()
+            {
+               try
+               {
+                  ClientSessionFactoryInternal csf = serverLocator.connect();
+                  
+                  log.info(this + "::YYY " + nodeUUID.toString() + " Cluster connection " + ClusterConnectionImpl.this + 
+                           " connected, sending announce node, connector=" + 
+                           manager.getLocalMember().getConnector().a + "/" + manager.getLocalMember().getConnector().b);
+                  
+                  csf.sendNodeAnnounce(currentMember.getUniqueEventID(), nodeUUID.toString(), false, manager.getLocalMember().getConnector().a, manager.getLocalMember().getConnector().b);
+               }
+               catch (Exception e)
+               {
+                  log.warn("Error on connectin Cluster connection to other nodes", e);
+               }
+            }
+         });
       }
 
       if (managementService != null)
@@ -515,7 +544,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
    // ClusterTopologyListener implementation ------------------------------------------------------------------
 
-   public void nodeDown(final String nodeID)
+   public void nodeDown(final long eventUID, final String nodeID)
    {
       if (log.isDebugEnabled())
       {
@@ -544,12 +573,11 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.error("Failed to close flow record", e);
          }
-
-         server.getClusterManager().notifyNodeDown(nodeID);
       }
    }
 
-   public void nodeUP(final String nodeID,
+   public void nodeUP(final long eventUID, 
+                      final String nodeID,
                       final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                       final boolean last)
    {
@@ -562,19 +590,13 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       if (nodeID.equals(nodeUUID.toString()))
       {
-         if (connectorPair.b != null)
-         {
         	if (log.isTraceEnabled())
         	{
         	   log.trace(this + "::informing about backup to itself, nodeUUID=" + nodeUUID + ", connectorPair=" + connectorPair + " this = " + this);
         	}
-            server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
-         }
          return;
       }
 
-      // we propagate the node notifications to all cluster topology listeners
-      server.getClusterManager().notifyNodeUp(nodeID, connectorPair, last, false);
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
       if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
@@ -615,6 +637,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                {
                   log.debug(this + "::Creating record for nodeID=" + nodeID + ", connectorPair=" + connectorPair);
                }
+               log.info(this + "::Creating record for nodeID=" + nodeID + ", connectorPair=" + connectorPair);
 
                // New node - create a new flow record
 
@@ -635,7 +658,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                   queue = server.createQueue(queueName, queueName, null, true, false);
                }
 
-               createNewRecord(nodeID, connectorPair.a, queueName, queue, true);
+               createNewRecord(eventUID, nodeID, connectorPair.a, queueName, queue, true);
             }
             else
             {
@@ -656,7 +679,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
    }
 
-   private void createNewRecord(final String targetNodeID,
+   private void createNewRecord(final long eventUID,
+                                final String targetNodeID,
                                 final TransportConfiguration connector,
                                 final SimpleString queueName,
                                 final Queue queue,
@@ -690,7 +714,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       targetLocator.disableFinalizeCheck();
       
-      MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetLocator, targetNodeID, connector, queueName, queue);
+      MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetLocator, eventUID, targetNodeID, connector, queueName, queue);
 
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
                                                                    manager,
@@ -701,6 +725,7 @@ public class ClusterConnectionImpl implements ClusterConnection
                                                                    retryIntervalMultiplier,
                                                                    maxRetryInterval,
                                                                    nodeUUID,
+                                                                   record.getEventUID(),
                                                                    record.getTargetNodeID(),
                                                                    record.getQueueName(),
                                                                    record.getQueue(),
@@ -742,6 +767,8 @@ public class ClusterConnectionImpl implements ClusterConnection
    {
       private BridgeImpl bridge;
 
+      private final long eventUID;
+      
       private final String targetNodeID;
 
       private final TransportConfiguration connector;
@@ -761,6 +788,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       private volatile boolean firstReset = false;
 
       public MessageFlowRecordImpl(final ServerLocatorInternal targetLocator,
+                                   final long eventUID,
                                    final String targetNodeID,
                                    final TransportConfiguration connector,
                                    final SimpleString queueName,
@@ -771,6 +799,7 @@ public class ClusterConnectionImpl implements ClusterConnection
          this.targetNodeID = targetNodeID;
          this.connector = connector;
          this.queueName = queueName;
+         this.eventUID = eventUID;
       }
 
       /* (non-Javadoc)
@@ -801,6 +830,14 @@ public class ClusterConnectionImpl implements ClusterConnection
       public String getAddress()
       {
          return address.toString();
+      }
+      
+      /**
+       * @return the eventUID
+       */
+      public long getEventUID()
+      {
+         return eventUID;
       }
 
       /**
@@ -1034,6 +1071,7 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       private synchronized void doBindingAdded(final ClientMessage message) throws Exception
       {
+         log.info(ClusterConnectionImpl.this + " Adding binding " + message);
          if (log.isTraceEnabled())
          {
             log.trace(ClusterConnectionImpl.this + " Adding binding " + message);
@@ -1091,7 +1129,7 @@ public class ClusterConnectionImpl implements ClusterConnection
             // hops is too high
             // or there are multiple cluster connections for the same address
 
-            ClusterConnectionImpl.log.warn("Remote queue binding " + clusterName +
+            ClusterConnectionImpl.log.warn(this + "::Remote queue binding " + clusterName +
                                            " has already been bound in the post office. Most likely cause for this is you have a loop " +
                                            "in your cluster due to cluster max-hops being too large or you have multiple cluster connections to the same nodes using overlapping addresses");
 

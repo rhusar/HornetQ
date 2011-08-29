@@ -88,7 +88,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    private static final long WAIT_TIMEOUT = 10000;
    
-   private static final long TIMEOUT_START_SERVER = 500;
+   private static final long TIMEOUT_START_SERVER = 10;
 
    @Override
    protected void setUp() throws Exception
@@ -385,8 +385,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             if (hornetQServer != null)
             {
-               out.println(clusterDescription(hornetQServer));
-               out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration()
+               System.out.println(clusterDescription(hornetQServer));
+               System.out.println(debugBindings(hornetQServer, hornetQServer.getConfiguration()
                                                                      .getManagementNotificationAddress()
                                                                      .toString()));
             }
@@ -2023,16 +2023,20 @@ public abstract class ClusterTestBase extends ServiceTestBase
       for (int node : nodes)
       {
          log.info("#test start node " + node);
-//         if (System.currentTimeMillis() - timeStarts[node] < TIMEOUT_START_SERVER)
-//         {
-//            Thread.sleep(TIMEOUT_START_SERVER);
-//         }
-         Thread.sleep(TIMEOUT_START_SERVER);
+         if (System.currentTimeMillis() - timeStarts[node] < TIMEOUT_START_SERVER)
+         {
+            Thread.sleep(TIMEOUT_START_SERVER);
+         }
          timeStarts[node] = System.currentTimeMillis();
          
          servers[node].setIdentity("server " + node);
          ClusterTestBase.log.info("starting server " + servers[node]);
          servers[node].start();
+         
+//         for (int i = 0 ; i <= node; i++)
+//         {
+//            System.out.println(servers[node].getClusterManager().getTopology().describe());
+//         }
 
          ClusterTestBase.log.info("started server " + servers[node]);
 
@@ -2068,13 +2072,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             try
             {
-//               if (System.currentTimeMillis() - timeStarts[node] < TIMEOUT_START_SERVER)
-//               {
-//                  // We can't stop and start a node too fast (faster than what the Topology could realize about this
-//                  Thread.sleep(TIMEOUT_START_SERVER);
-//               }
+               if (System.currentTimeMillis() - timeStarts[node] < TIMEOUT_START_SERVER)
+               {
+                  // We can't stop and start a node too fast (faster than what the Topology could realize about this
+                 Thread.sleep(TIMEOUT_START_SERVER);
+               }
                
-               Thread.sleep(TIMEOUT_START_SERVER);
+               //Thread.sleep(TIMEOUT_START_SERVER);
 
                timeStarts[node] = System.currentTimeMillis();
                

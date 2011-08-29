@@ -27,9 +27,13 @@ public class TopologyMember implements Serializable
 
    private final Pair<TransportConfiguration, TransportConfiguration> connector;
 
+   /** transient to avoid serialization changes */
+   private transient long uniqueEventID = System.currentTimeMillis();
+
    public TopologyMember(Pair<TransportConfiguration, TransportConfiguration> connector)
    {
       this.connector = connector;
+      this.uniqueEventID = System.currentTimeMillis();
    }
 
    public TopologyMember(TransportConfiguration a, TransportConfiguration b)
@@ -37,11 +41,28 @@ public class TopologyMember implements Serializable
       this(new Pair<TransportConfiguration, TransportConfiguration>(a, b));
    }
 
+
+   /**
+    * @return the uniqueEventID
+    */
+   public long getUniqueEventID()
+   {
+      return uniqueEventID;
+   }
+   
+   /**
+    * @param uniqueEventID the uniqueEventID to set
+    */
+   public void setUniqueEventID(long uniqueEventID)
+   {
+      this.uniqueEventID = uniqueEventID;
+   }
+
    public Pair<TransportConfiguration, TransportConfiguration> getConnector()
    {
       return connector;
    }
-   
+
    @Override
    public String toString()
    {

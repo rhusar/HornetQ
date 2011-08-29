@@ -29,6 +29,7 @@ import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.api.core.management.ResourceNames;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.client.impl.TopologyMember;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.persistence.StorageManager;
@@ -71,6 +72,8 @@ public class ClusterConnectionBridge extends BridgeImpl
    private final SimpleString idsHeaderName;
 
    private final String targetNodeID;
+   
+   private final long targetNodeEventUID;
 
    private final TransportConfiguration connector;
 
@@ -85,6 +88,7 @@ public class ClusterConnectionBridge extends BridgeImpl
                                   final double retryMultiplier,
                                   final long maxRetryInterval,
                                   final UUID nodeUUID,
+                                  final long targetNodeEventUID,
                                   final String targetNodeID,
                                   final SimpleString name,
                                   final Queue queue,
@@ -122,6 +126,7 @@ public class ClusterConnectionBridge extends BridgeImpl
             activated,
             storageManager);
 
+
       this.discoveryLocator = discoveryLocator;
 
       idsHeaderName = MessageImpl.HDR_ROUTE_TO_IDS.concat(name);
@@ -130,6 +135,7 @@ public class ClusterConnectionBridge extends BridgeImpl
 
       this.clusterManager = clusterManager;
 
+      this.targetNodeEventUID = targetNodeEventUID;
       this.targetNodeID = targetNodeID;
       this.managementAddress = managementAddress;
       this.managementNotificationAddress = managementNotificationAddress;
@@ -149,6 +155,17 @@ public class ClusterConnectionBridge extends BridgeImpl
    protected ClientSessionFactoryInternal createSessionFactory() throws Exception
    {
       ClientSessionFactoryInternal factory = super.createSessionFactory();
+      
+      try
+      {
+         TopologyMember member = clusterManager.getLocalMember();
+         factory.sendNodeAnnounce(member.getUniqueEventID(), clusterManager.getNodeId(), false, member.getConnector().a, member.getConnector().b);
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+
       factory.getConnection().addFailureListener(new FailureListener()
       {
 
@@ -161,6 +178,7 @@ public class ClusterConnectionBridge extends BridgeImpl
             }
          }
       });
+
       return factory;
    }
 
@@ -294,6 +312,7 @@ public class ClusterConnectionBridge extends BridgeImpl
    protected void afterConnect() throws Exception
    {
       super.afterConnect();
+      ClientSessionFactoryInternal csf = getCurrentFactory();
       setupNotificationConsumer();
    }
 
@@ -319,7 +338,7 @@ public class ClusterConnectionBridge extends BridgeImpl
       if (permanently)
       {
          log.debug("cluster node for bridge " + this.getName() + " is permanently down");
-         discoveryLocator.notifyNodeDown(targetNodeID);
+         discoveryLocator.notifyNodeDown(targetNodeEventUID+1, targetNodeID);
       }
 
    }

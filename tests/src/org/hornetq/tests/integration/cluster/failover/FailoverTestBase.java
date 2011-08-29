@@ -433,8 +433,9 @@ public abstract class FailoverTestBase extends ServiceTestBase
          this.latch = latch;
       }
 
-      public void nodeUP(String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last)
+      public void nodeUP(final long uniqueEventID, String nodeID, Pair<TransportConfiguration, TransportConfiguration> connectorPair, boolean last)
       {
+         System.out.println("Received " + connectorPair + " uniqueEvent=" + uniqueEventID);
          if (connectorPair.a != null && !liveNode.contains(connectorPair.a.getName()))
          {
             liveNode.add(connectorPair.a.getName());
@@ -447,7 +448,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
          }
       }
 
-      public void nodeDown(String nodeID)
+      public void nodeDown(final long uniqueEventID, String nodeID)
       {
          //To change body of implemented methods use File | Settings | File Templates.
       }

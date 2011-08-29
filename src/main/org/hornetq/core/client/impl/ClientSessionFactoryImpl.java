@@ -43,12 +43,13 @@ import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.impl.PacketImpl;
 import org.hornetq.core.protocol.core.impl.RemotingConnectionImpl;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage_V2;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.CreateSessionResponseMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.DisconnectMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.NodeAnnounceMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.Ping;
-import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessageV2;
 import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.version.Version;
 import org.hornetq.spi.core.protocol.ProtocolType;
@@ -1291,9 +1292,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                ClientSessionFactoryImpl.log.trace(this + "::Subscribing Topology");
             }
 
-            channel0.send(new SubscribeClusterTopologyUpdatesMessage(serverLocator.isClusterConnection()));
+            channel0.send(new SubscribeClusterTopologyUpdatesMessageV2(serverLocator.isClusterConnection(), VersionLoader.getVersion().getIncrementingVersion()));
+            
+            
             if (serverLocator.isClusterConnection())
             {
+               
+               new Exception("Announcing node::").printStackTrace();
                TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
                if (ClientSessionFactoryImpl.isDebug)
                {
@@ -1301,7 +1306,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                                      ", isBackup=" +
                                                      serverLocator.isBackup());
                }
-               channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
+               sendNodeAnnounce(System.currentTimeMillis(), serverLocator.getNodeID(), serverLocator.isBackup(), config, null);
+               //channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
             }
          }
       }
@@ -1312,6 +1318,23 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       return connection;
+   }
+
+   /**
+    * @param channel0
+    */
+   public void sendNodeAnnounce(final long currentEventID, String nodeID, boolean isBackup, TransportConfiguration config, TransportConfiguration backupConfig)
+   {
+      Channel channel0 = connection.getChannel(0, -1);
+      if (ClientSessionFactoryImpl.isDebug)
+      {
+         ClientSessionFactoryImpl.log.debug("Announcing node " + serverLocator.getNodeID() +
+                                            ", isBackup=" + isBackup);
+      }
+      ClientSessionFactoryImpl.log.info("YYY Announcing node " + serverLocator.getNodeID() + ", config=" + config +
+                                        ", backup=" + backupConfig +
+                                         ", isBackup=" + isBackup);
+      channel0.send(new NodeAnnounceMessage(currentEventID, nodeID, isBackup, config, backupConfig));
    }
 
    @Override
@@ -1439,7 +1462,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             if (nodeID != null)
             {
-               serverLocator.notifyNodeDown(msg.getNodeID().toString());
+               serverLocator.notifyNodeDown(System.currentTimeMillis(), msg.getNodeID().toString());
             }
 
             closeExecutor.execute(new Runnable()
@@ -1456,6 +1479,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
          else if (type == PacketImpl.CLUSTER_TOPOLOGY)
          {
+            log.warn("Server is sending packets from an older version. " +
+                     "You must update all the servers to the same version on a cluster!");
             ClusterTopologyChangeMessage topMessage = (ClusterTopologyChangeMessage)packet;
 
             if (topMessage.isExit())
@@ -1464,7 +1489,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                {
                   ClientSessionFactoryImpl.log.debug("Notifying " + topMessage.getNodeID() + " going down");
                }
-               serverLocator.notifyNodeDown(topMessage.getNodeID());
+               serverLocator.notifyNodeDown(System.currentTimeMillis(), topMessage.getNodeID());
             }
             else
             {
@@ -1478,7 +1503,34 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                                                      " csf created at\nserverLocator=" +
                                                      serverLocator, e);
                }
-               serverLocator.notifyNodeUp(topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
+               serverLocator.notifyNodeUp(System.currentTimeMillis(), topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
+            }
+         }
+         else if (type == PacketImpl.CLUSTER_TOPOLOGY_V2)
+         {
+            ClusterTopologyChangeMessage_V2 topMessage = (ClusterTopologyChangeMessage_V2)packet;
+
+            if (topMessage.isExit())
+            {
+               if (ClientSessionFactoryImpl.isDebug)
+               {
+                  ClientSessionFactoryImpl.log.debug("Notifying " + topMessage.getNodeID() + " going down");
+               }
+               serverLocator.notifyNodeDown(topMessage.getUniqueEventID(), topMessage.getNodeID());
+            }
+            else
+            {
+               if (ClientSessionFactoryImpl.isDebug)
+               {
+                  ClientSessionFactoryImpl.log.debug("Node " + topMessage.getNodeID() +
+                                                     " going up, connector = " +
+                                                     topMessage.getPair() +
+                                                     ", isLast=" +
+                                                     topMessage.isLast() +
+                                                     " csf created at\nserverLocator=" +
+                                                     serverLocator, e);
+               }
+               serverLocator.notifyNodeUp(topMessage.getUniqueEventID(), topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
             }
          }
       }

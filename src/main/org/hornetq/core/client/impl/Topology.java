@@ -64,6 +64,8 @@ public class Topology implements Serializable
     * values are a pair of live/backup transport configurations
     */
    private final Map<String, TopologyMember> mapTopology = new ConcurrentHashMap<String, TopologyMember>();
+   
+   private final Map<String, Long> mapDelete = new ConcurrentHashMap<String, Long>();
 
    public Topology(final Object owner)
    {
@@ -104,22 +106,83 @@ public class Topology implements Serializable
       }
    }
 
-   public boolean addMember(final String nodeId, final TopologyMember memberInput, final boolean last)
+   /** This is called by the server when the node is activated from backup state. It will always succeed */
+   public void updateAsLive(final String nodeId, final TopologyMember memberInput)
    {
+      synchronized (this)
+      {
+         if (log.isDebugEnabled())
+         {
+            log.info(this + "::Live node " + nodeId + "=" + memberInput);
+         }
+         memberInput.setUniqueEventID(System.currentTimeMillis());
+         mapTopology.remove(nodeId);
+         mapTopology.put(nodeId, memberInput);
+         sendMemberUp(memberInput.getUniqueEventID(), nodeId, memberInput);
+      }
+   }
+
+   /** This is called by the server when the node is activated from backup state. It will always succeed */
+   public TopologyMember updateBackup(final String nodeId, final TopologyMember memberInput)
+   {
+      if (log.isTraceEnabled())
+      {
+         log.trace(this + "::updateBackup::" + nodeId + ", memberInput=" + memberInput);
+      }
+
+      synchronized (this)
+      {
+         // TODO treat versioning here. it should remove any previous version
+         // However, if the previous version has a higher time (say if the node time where the system died), we should
+         // use that number ++
+
+         TopologyMember currentMember = getMember(nodeId);
+         if (currentMember == null)
+         {
+            log.warn("There's no live to be updated on backup update", new Exception("trace"));
+         }
+
+         TopologyMember newMember = new TopologyMember(currentMember.getConnector().a, memberInput.getConnector().b);
+         newMember.setUniqueEventID(System.currentTimeMillis());
+         mapTopology.remove(nodeId);
+         mapTopology.put(nodeId, newMember);
+         sendMemberUp(newMember.getUniqueEventID(), nodeId, newMember);
+
+         return newMember;
+      }
+   }
+
+   /**
+    * 
+    * @param <p>uniqueIdentifier an unique identifier for when the change was made
+    *           We will use current time millis for starts, and a ++ of that number for shutdown. </p> 
+    * @param nodeId
+    * @param memberInput
+    * @return
+    */
+   public boolean updateMember(final long uniqueEventID, final String nodeId, final TopologyMember memberInput)
+   {
+      Long deleteTme = mapDelete.get(nodeId);
+      if (deleteTme != null && uniqueEventID < deleteTme)
+      {
+         return false;
+      }
+      
+      if (log.isTraceEnabled())
+      {
+      //   log.trace(this + "::UpdateMember::" + uniqueEventID + ", nodeID=" + nodeId + ", memberInput=" + memberInput);
+      }
+
       synchronized (this)
       {
          TopologyMember currentMember = mapTopology.get(nodeId);
 
          if (currentMember == null)
          {
-            if (!testBackof(nodeId))
-            {
-               return false;
-            }
-
             if (Topology.log.isDebugEnabled())
             {
-               Topology.log.debug(this + "::NewMemeberAdd " + this +
+               Topology.log.debug(this + "::NewMemeberAdd " +
+                                  this +
                                   " MEMBER WAS NULL, Add member nodeId=" +
                                   nodeId +
                                   " member = " +
@@ -127,70 +190,42 @@ public class Topology implements Serializable
                                   " size = " +
                                   mapTopology.size(), new Exception("trace"));
             }
+            memberInput.setUniqueEventID(uniqueEventID);
             mapTopology.put(nodeId, memberInput);
-            sendMemberUp(nodeId, memberInput);
+            sendMemberUp(uniqueEventID, nodeId, memberInput);
             return true;
          }
          else
          {
-            if (log.isTraceEnabled())
+            if (uniqueEventID > currentMember.getUniqueEventID())
             {
-               log.trace(this + ":: validating update for currentMember=" + currentMember + " of memberInput=" + memberInput);
-            }
+               log.info(this + "::updated currentMember=nodeID=" + nodeId  +
+                         currentMember +
+                         " of memberInput=" +
+                         memberInput, new Exception ("trace"));
 
-            boolean replaced = false;
-            TopologyMember memberToSend = currentMember;
-
-            if (hasChanged("a", memberToSend.getConnector().a, memberInput.getConnector().a))
-            {
-               if (!replaced && !testBackof(nodeId))
-               {
-                  return false;
-               }
-               memberToSend = new TopologyMember(memberInput.getConnector().a, memberToSend.getConnector().b);
-               replaced = true;
-            }
-
-            if (hasChanged("b", memberToSend.getConnector().b, memberInput.getConnector().b))
-            {
-               if (!replaced && !testBackof(nodeId))
-               {
-                  return false;
-               }
-               memberToSend = new TopologyMember(memberToSend.getConnector().a, memberInput.getConnector().b);
-               replaced = true;
-            }
-
-            if (replaced)
-            {
+               TopologyMember newMember = new TopologyMember(memberInput.getConnector().a, memberInput.getConnector().b);
+               newMember.setUniqueEventID(uniqueEventID);
                mapTopology.remove(nodeId);
-               mapTopology.put(nodeId, memberToSend);
+               mapTopology.put(nodeId, newMember);
+               sendMemberUp(uniqueEventID, nodeId, newMember);
 
-               sendMemberUp(nodeId, memberToSend);
                return true;
             }
-
+            else
+            {
+               return false;
+            }
          }
 
       }
-
-      if (Topology.log.isDebugEnabled())
-      {
-         Topology.log.debug(Topology.this + " Add member nodeId=" +
-                            nodeId +
-                            " member = " +
-                            memberInput +
-                            " has been ignored since there was no change", new Exception("trace"));
-      }
-
-      return false;
    }
 
    /**
     * @param nodeId
     * @param memberToSend
     */
-   private void sendMemberUp(final String nodeId, final TopologyMember memberToSend)
+   private void sendMemberUp(final long uniqueEventID, final String nodeId, final TopologyMember memberToSend)
    {
       final ArrayList<ClusterTopologyListener> copy = copyListeners();
 
@@ -207,12 +242,17 @@ public class Topology implements Serializable
             {
                if (Topology.log.isTraceEnabled())
                {
-                  Topology.log.trace(Topology.this + " informing " + listener + " about node up = " + nodeId);
+                  Topology.log.trace(Topology.this + " informing " +
+                                     listener +
+                                     " about node up = " +
+                                     nodeId +
+                                     " connector = " +
+                                     memberToSend.getConnector());
                }
 
                try
                {
-                  listener.nodeUP(nodeId, memberToSend.getConnector(), false);
+                  listener.nodeUP(uniqueEventID, nodeId, memberToSend.getConnector(), false);
                }
                catch (Throwable e)
                {
@@ -276,28 +316,26 @@ public class Topology implements Serializable
       return listenersCopy;
    }
 
-   public boolean removeMember(final String nodeId)
+   public boolean removeMember(final long uniqueEventID, final String nodeId)
    {
       TopologyMember member;
 
       synchronized (this)
       {
-         Pair<Long, Integer> value = mapBackof.get(nodeId);
-
-         if (value == null)
+         member = mapTopology.get(nodeId);
+         if (member != null)
          {
-            value = new Pair<Long, Integer>(0l, 0);
-            mapBackof.put(nodeId, value);
+            if (member.getUniqueEventID() > uniqueEventID)
+            {
+               log.info("The removeMember was issued before the node " + nodeId + " was started, ignoring call");
+               member = null;
+            }
+            else
+            {
+               mapDelete.put(nodeId, uniqueEventID);
+               member = mapTopology.remove(nodeId);
+            }
          }
-
-         value.a = System.currentTimeMillis();
-
-         if (System.currentTimeMillis() - value.a > BACKOF_TIMEOUT)
-         {
-            value.b = 0;
-         }
-
-         member = mapTopology.remove(nodeId);
       }
 
       if (Topology.log.isDebugEnabled())
@@ -327,7 +365,7 @@ public class Topology implements Serializable
                   }
                   try
                   {
-                     listener.nodeDown(nodeId);
+                     listener.nodeDown(uniqueEventID, nodeId);
                   }
                   catch (Exception e)
                   {
@@ -354,14 +392,13 @@ public class Topology implements Serializable
    }
 
    /**
-    * it will send all the member updates to listeners, independently of being changed or not
+    * it will send the member to its listeners
     * @param nodeID
     * @param member
     */
-   public void sendMemberToListeners(final String nodeID, final TopologyMember member)
+   public void sendMember(final String nodeID)
    {
-      // To make sure it was updated
-      addMember(nodeID, member, false);
+      final TopologyMember member = getMember(nodeID);
 
       final ArrayList<ClusterTopologyListener> copy = copyListeners();
 
@@ -380,7 +417,7 @@ public class Topology implements Serializable
                             " with connector=" +
                             member.getConnector());
                }
-               listener.nodeUP(nodeID, member.getConnector(), false);
+               listener.nodeUP(member.getUniqueEventID(), nodeID, member.getConnector(), false);
             }
          }
       });
@@ -417,18 +454,21 @@ public class Topology implements Serializable
                             " to " +
                             listener);
                }
-               listener.nodeUP(entry.getKey(), entry.getValue().getConnector(), ++count == copy.size());
+               listener.nodeUP(entry.getValue().getUniqueEventID(),
+                               entry.getKey(),
+                               entry.getValue().getConnector(),
+                               ++count == copy.size());
             }
          }
       });
    }
 
-   public TopologyMember getMember(final String nodeID)
+   public synchronized TopologyMember getMember(final String nodeID)
    {
       return mapTopology.get(nodeID);
    }
 
-   public boolean isEmpty()
+   public synchronized boolean isEmpty()
    {
       return mapTopology.isEmpty();
    }
@@ -506,8 +546,10 @@ public class Topology implements Serializable
       if (log.isTraceEnabled())
       {
 
-         log.trace(this + "::Validating current=" + a 
-                   + " != input=" + b +
+         log.trace(this + "::Validating current=" +
+                   a +
+                   " != input=" +
+                   b +
                    (changed ? " and it has changed" : " and it didn't change") +
                    ", for validation of " +
                    debugInfo);
