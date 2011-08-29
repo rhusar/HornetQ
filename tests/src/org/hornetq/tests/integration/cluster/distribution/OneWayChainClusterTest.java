@@ -316,6 +316,9 @@ public class OneWayChainClusterTest extends ClusterTestBase
 
       stopServers(2);
 
+      waitForTopology(servers[1], 4);
+
+      Thread.sleep(1000);
       log.info("============================================ after stop");
       log.info(clusterDescription(servers[0]));
       log.info(clusterDescription(servers[1]));
@@ -323,6 +326,11 @@ public class OneWayChainClusterTest extends ClusterTestBase
       log.info(clusterDescription(servers[4]));
 
       startServers(2);
+      
+
+      Thread.sleep(1000);
+
+      waitForTopology(servers[1], 5);
 
       log.info("============================================ after start");
       log.info(clusterDescription(servers[0]));
