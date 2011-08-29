@@ -199,10 +199,13 @@ public class Topology implements Serializable
          {
             if (uniqueEventID > currentMember.getUniqueEventID())
             {
-               log.info(this + "::updated currentMember=nodeID=" + nodeId  +
-                         currentMember +
-                         " of memberInput=" +
-                         memberInput, new Exception ("trace"));
+               if (log.isDebugEnabled())
+               {
+                  log.debug(this + "::updated currentMember=nodeID=" + nodeId  +
+                            currentMember +
+                            " of memberInput=" +
+                            memberInput);
+               }
 
                TopologyMember newMember = new TopologyMember(memberInput.getConnector().a, memberInput.getConnector().b);
                newMember.setUniqueEventID(uniqueEventID);
