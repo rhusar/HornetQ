@@ -165,6 +165,8 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
    private Executor startExecutor;
 
    private static ScheduledExecutorService globalScheduledThreadPool;
+   
+   private AfterConnectInternalListener afterConnectListener;
 
    private String groupID;
 
@@ -578,6 +580,19 @@ public class ServerLocatorImpl implements ServerLocatorInternal, DiscoveryListen
       return sf;
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.client.impl.ServerLocatorInternal#setAfterConnectionInternalListener(org.hornetq.core.client.impl.AfterConnectInternalListener)
+    */
+   public void setAfterConnectionInternalListener(AfterConnectInternalListener listener)
+   {
+      this.afterConnectListener = listener;
+   }
+
+   public AfterConnectInternalListener getAfterConnectInternalListener()
+   {
+      return afterConnectListener;
+   }
+   
    public boolean isClosed()
    {
       return closed || closing;

@@ -64,7 +64,7 @@ public class Topology implements Serializable
     * values are a pair of live/backup transport configurations
     */
    private final Map<String, TopologyMember> mapTopology = new ConcurrentHashMap<String, TopologyMember>();
-   
+
    private final Map<String, Long> mapDelete = new ConcurrentHashMap<String, Long>();
 
    public Topology(final Object owner)
@@ -132,14 +132,14 @@ public class Topology implements Serializable
 
       synchronized (this)
       {
-         // TODO treat versioning here. it should remove any previous version
-         // However, if the previous version has a higher time (say if the node time where the system died), we should
-         // use that number ++
-
          TopologyMember currentMember = getMember(nodeId);
          if (currentMember == null)
          {
-            log.warn("There's no live to be updated on backup update", new Exception("trace"));
+            log.warn("There's no live to be updated on backup update, node=" + nodeId + " memberInput=" + memberInput,
+                     new Exception("trace"));
+
+            currentMember = memberInput;
+            mapTopology.put(nodeId, currentMember);
          }
 
          TopologyMember newMember = new TopologyMember(currentMember.getConnector().a, memberInput.getConnector().b);
@@ -162,15 +162,23 @@ public class Topology implements Serializable
     */
    public boolean updateMember(final long uniqueEventID, final String nodeId, final TopologyMember memberInput)
    {
+      
+      if (memberInput.getConnector().a == null && memberInput.getConnector().b != null)
+      {
+         updateBackup(nodeId, memberInput);
+         return true;
+      }
+
       Long deleteTme = mapDelete.get(nodeId);
       if (deleteTme != null && uniqueEventID < deleteTme)
       {
+         log.debug("Update uniqueEvent=" + uniqueEventID +
+                   ", nodeId=" +
+                   nodeId +
+                   ", memberInput=" +
+                   memberInput +
+                   " being rejected as there was a delete done after that");
          return false;
-      }
-      
-      if (log.isTraceEnabled())
-      {
-      //   log.trace(this + "::UpdateMember::" + uniqueEventID + ", nodeID=" + nodeId + ", memberInput=" + memberInput);
       }
 
       synchronized (this)
@@ -201,7 +209,8 @@ public class Topology implements Serializable
             {
                if (log.isDebugEnabled())
                {
-                  log.debug(this + "::updated currentMember=nodeID=" + nodeId  +
+                  log.debug(this + "::updated currentMember=nodeID=" +
+                            nodeId +
                             currentMember +
                             " of memberInput=" +
                             memberInput);

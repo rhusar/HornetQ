@@ -1293,21 +1293,13 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             }
 
             channel0.send(new SubscribeClusterTopologyUpdatesMessageV2(serverLocator.isClusterConnection(), VersionLoader.getVersion().getIncrementingVersion()));
-            
-            
-            if (serverLocator.isClusterConnection())
-            {
-               TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
-               if (ClientSessionFactoryImpl.isDebug)
-               {
-                  ClientSessionFactoryImpl.log.debug("Announcing node " + serverLocator.getNodeID() +
-                                                     ", isBackup=" +
-                                                     serverLocator.isBackup());
-               }
-               sendNodeAnnounce(System.currentTimeMillis(), serverLocator.getNodeID(), serverLocator.isBackup(), config, null);
-               //channel0.send(new NodeAnnounceMessage(serverLocator.getNodeID(), serverLocator.isBackup(), config));
-            }
+
          }
+      }
+
+      if (serverLocator.getAfterConnectInternalListener() != null)
+      {
+         serverLocator.getAfterConnectInternalListener().onConnection(this);
       }
 
       if (ClientSessionFactoryImpl.log.isTraceEnabled())

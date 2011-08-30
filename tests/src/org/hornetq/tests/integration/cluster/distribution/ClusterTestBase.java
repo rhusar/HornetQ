@@ -2029,6 +2029,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          servers[node].setIdentity("server " + node);
          log.info("starting server " + servers[node]);
          servers[node].start();
+         Thread.sleep(100);
          
 //         for (int i = 0 ; i <= node; i++)
 //         {

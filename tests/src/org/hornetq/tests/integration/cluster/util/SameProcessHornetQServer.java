@@ -25,6 +25,7 @@ import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
+import org.hornetq.tests.util.ServiceTestBase;
 
 /**
  * A SameProcessHornetQServer

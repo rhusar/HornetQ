@@ -33,9 +33,9 @@ import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
-import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.client.impl.AfterConnectInternalListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
@@ -70,7 +70,7 @@ import org.hornetq.utils.UUID;
  *
  *
  */
-public class ClusterConnectionImpl implements ClusterConnection
+public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInternalListener
 {
    private static final Logger log = Logger.getLogger(ClusterConnectionImpl.class);
 
@@ -412,6 +412,25 @@ public class ClusterConnectionImpl implements ClusterConnection
       started = false;
    }
 
+   /* (non-Javadoc)
+    * @see org.hornetq.core.client.impl.AfterConnectInternalListener#onConnection(org.hornetq.core.client.impl.ClientSessionFactoryInternal)
+    */
+   public void onConnection(ClientSessionFactoryInternal sf)
+   {
+      TopologyMember localMember = manager.getLocalMember();
+      sf.sendNodeAnnounce(localMember.getUniqueEventID(),
+                          manager.getNodeId(),
+                          false,
+                          localMember.getConnector().a,
+                          localMember.getConnector().b);
+
+      // sf.sendNodeAnnounce(System.currentTimeMillis(),
+      // manager.getNodeId(),
+      // false,
+      // localMember.getConnector().a,
+      // localMember.getConnector().b);
+   }
+
    public boolean isStarted()
    {
       return started;
@@ -471,13 +490,13 @@ public class ClusterConnectionImpl implements ClusterConnection
          {
             log.debug("DuplicateDetection is disabled, sending clustered messages blocked");
          }
-         
+
          final TopologyMember currentMember = clusterManagerTopology.getMember(nodeUUID.toString());
-         
+
          if (currentMember == null)
          {
             // sanity check only
-            throw new IllegalStateException ("InternalError! The ClusterConnection doesn't know about its own node = " + this);
+            throw new IllegalStateException("InternalError! The ClusterConnection doesn't know about its own node = " + this);
          }
 
          serverLocator.setNodeID(nodeUUID.toString());
@@ -502,27 +521,9 @@ public class ClusterConnectionImpl implements ClusterConnection
 
          serverLocator.addClusterTopologyListener(this);
 
+         serverLocator.setAfterConnectionInternalListener(this);
+
          serverLocator.start(server.getExecutorFactory().getExecutor());
-         
-        /* serverLocator.getExecutor().execute(new Runnable(){
-            public void run()
-            {
-               try
-               {
-                  ClientSessionFactoryInternal csf = serverLocator.connect();
-                  
-                  log.info(this + "::YYY " + nodeUUID.toString() + " Cluster connection " + ClusterConnectionImpl.this + 
-                           " connected, sending announce node, connector=" + 
-                           manager.getLocalMember().getConnector().a + "/" + manager.getLocalMember().getConnector().b);
-                  
-                  csf.sendNodeAnnounce(currentMember.getUniqueEventID(), nodeUUID.toString(), false, manager.getLocalMember().getConnector().a, manager.getLocalMember().getConnector().b);
-               }
-               catch (Exception e)
-               {
-                  log.warn("Error on connectin Cluster connection to other nodes", e);
-               }
-            }
-         });*/
       }
 
       if (managementService != null)
@@ -576,7 +577,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
    }
 
-   public void nodeUP(final long eventUID, 
+   public void nodeUP(final long eventUID,
                       final String nodeID,
                       final Pair<TransportConfiguration, TransportConfiguration> connectorPair,
                       final boolean last)
@@ -590,13 +591,17 @@ public class ClusterConnectionImpl implements ClusterConnection
 
       if (nodeID.equals(nodeUUID.toString()))
       {
-        	if (log.isTraceEnabled())
-        	{
-        	   log.trace(this + "::informing about backup to itself, nodeUUID=" + nodeUUID + ", connectorPair=" + connectorPair + " this = " + this);
-        	}
+         if (log.isTraceEnabled())
+         {
+            log.trace(this + "::informing about backup to itself, nodeUUID=" +
+                      nodeUUID +
+                      ", connectorPair=" +
+                      connectorPair +
+                      " this = " +
+                      this);
+         }
          return;
       }
-
 
       // if the node is more than 1 hop away, we do not create a bridge for direct cluster connection
       if (allowDirectConnectionsOnly && !allowableConnections.contains(connectorPair.a))
@@ -703,6 +708,8 @@ public class ClusterConnectionImpl implements ClusterConnection
       targetLocator.setMaxRetryInterval(maxRetryInterval);
       targetLocator.setRetryIntervalMultiplier(retryIntervalMultiplier);
 
+      targetLocator.setAfterConnectionInternalListener(this);
+
       targetLocator.setNodeID(serverLocator.getNodeID());
 
       targetLocator.setClusterTransportConfiguration(serverLocator.getClusterTransportConfiguration());
@@ -713,8 +720,13 @@ public class ClusterConnectionImpl implements ClusterConnection
       }
 
       targetLocator.disableFinalizeCheck();
-      
-      MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetLocator, eventUID, targetNodeID, connector, queueName, queue);
+
+      MessageFlowRecordImpl record = new MessageFlowRecordImpl(targetLocator,
+                                                               eventUID,
+                                                               targetNodeID,
+                                                               connector,
+                                                               queueName,
+                                                               queue);
 
       ClusterConnectionBridge bridge = new ClusterConnectionBridge(this,
                                                                    manager,
@@ -768,7 +780,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       private BridgeImpl bridge;
 
       private final long eventUID;
-      
+
       private final String targetNodeID;
 
       private final TransportConfiguration connector;
@@ -831,7 +843,7 @@ public class ClusterConnectionImpl implements ClusterConnection
       {
          return address.toString();
       }
-      
+
       /**
        * @return the eventUID
        */
@@ -1129,7 +1141,8 @@ public class ClusterConnectionImpl implements ClusterConnection
             // hops is too high
             // or there are multiple cluster connections for the same address
 
-            ClusterConnectionImpl.log.warn(this + "::Remote queue binding " + clusterName +
+            ClusterConnectionImpl.log.warn(this + "::Remote queue binding " +
+                                           clusterName +
                                            " has already been bound in the post office. Most likely cause for this is you have a loop " +
                                            "in your cluster due to cluster max-hops being too large or you have multiple cluster connections to the same nodes using overlapping addresses");
 

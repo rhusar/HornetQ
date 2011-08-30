@@ -159,7 +159,6 @@ public class ClusterConnectionBridge extends BridgeImpl
       try
       {
          TopologyMember member = clusterManager.getLocalMember();
-         factory.sendNodeAnnounce(member.getUniqueEventID(), clusterManager.getNodeId(), false, member.getConnector().a, member.getConnector().b);
       }
       catch (Exception e)
       {

@@ -35,6 +35,10 @@ public interface ServerLocatorInternal extends ServerLocator
    
    void factoryClosed(final ClientSessionFactory factory);
    
+   AfterConnectInternalListener getAfterConnectInternalListener();
+   
+   void setAfterConnectionInternalListener(AfterConnectInternalListener listener);
+   
    /** Used to better identify Cluster Connection Locators on logs while debugging logs */
    void setIdentity(String identity);
 

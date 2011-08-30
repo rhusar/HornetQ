@@ -100,8 +100,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
    private final Map<String, ClusterConnection> clusterConnections = new HashMap<String, ClusterConnection>();
 
    private final Topology topology = new Topology(this);
-   
-   private TopologyMember localMember;
 
    private volatile ServerLocatorInternal backupServerLocator;
 
@@ -173,7 +171,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
    
    public TopologyMember getLocalMember()
    {
-      return localMember;
+      return topology.getMember(nodeUUID.toString());
    }
    
    public String getNodeId()
@@ -301,8 +299,9 @@ public class ClusterManagerImpl implements ClusterManagerInternal
    {
       if (log.isDebugEnabled())
       {
-         log.debug(this + "::NodeAnnounced, backup=" + backup + nodeID + connectorPair);
+         log.info(this + "::NodeAnnounced, backup=" + backup + nodeID + connectorPair);
       }
+      System.out.println(this + "::NodeAnnounced, backup=" + backup + nodeID + connectorPair);
 
       TopologyMember newMember = new TopologyMember(connectorPair.a, connectorPair.b);
       newMember.setUniqueEventID(uniqueEventID);
@@ -475,6 +474,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
    {
       String nodeID = server.getNodeID().toString();
       
+      TopologyMember localMember;
       if (backup)
       {
          localMember = new TopologyMember(null, nodeConnector);
