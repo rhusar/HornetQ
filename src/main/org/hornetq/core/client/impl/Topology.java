@@ -193,7 +193,7 @@ public class Topology implements Serializable
          {
             if (uniqueEventID > currentMember.getUniqueEventID())
             {
-               TopologyMember newMember =  new TopologyMember(currentMember.getA(), memberInput.getB());
+               TopologyMember newMember =  new TopologyMember(memberInput.getA(), memberInput.getB());
 
                if (newMember.getA() == null && currentMember.getA() != null)
                {
