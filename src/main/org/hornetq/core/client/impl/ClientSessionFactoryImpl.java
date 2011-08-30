@@ -1297,8 +1297,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             
             if (serverLocator.isClusterConnection())
             {
-               
-               new Exception("Announcing node::").printStackTrace();
                TransportConfiguration config = serverLocator.getClusterTransportConfiguration();
                if (ClientSessionFactoryImpl.isDebug)
                {
@@ -1331,9 +1329,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          ClientSessionFactoryImpl.log.debug("Announcing node " + serverLocator.getNodeID() +
                                             ", isBackup=" + isBackup);
       }
-      ClientSessionFactoryImpl.log.info("YYY Announcing node " + serverLocator.getNodeID() + ", config=" + config +
-                                        ", backup=" + backupConfig +
-                                         ", isBackup=" + isBackup);
       channel0.send(new NodeAnnounceMessage(currentEventID, nodeID, isBackup, config, backupConfig));
    }
 
@@ -1462,6 +1457,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             if (nodeID != null)
             {
+               // TODO: calculate the time of node down
                serverLocator.notifyNodeDown(System.currentTimeMillis(), msg.getNodeID().toString());
             }
 
@@ -1479,8 +1475,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
          }
          else if (type == PacketImpl.CLUSTER_TOPOLOGY)
          {
-            log.warn("Server is sending packets from an older version. " +
-                     "You must update all the servers to the same version on a cluster!");
             ClusterTopologyChangeMessage topMessage = (ClusterTopologyChangeMessage)packet;
 
             if (topMessage.isExit())

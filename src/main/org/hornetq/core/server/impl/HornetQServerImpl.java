@@ -357,7 +357,7 @@ public class HornetQServerImpl implements HornetQServer
                //looks like we've failed over at some point need to inform that we are the backup so when the current live
                // goes down they failover to us
                clusterManager.announceBackup();
-               //Thread.sleep(configuration.getFailbackDelay());
+               Thread.sleep(configuration.getFailbackDelay());
             }
 
             nodeManager.startLiveNode();
@@ -2003,7 +2003,14 @@ public class HornetQServerImpl implements HornetQServer
    
    public String toString()
    {
-      return "HornetQServerImpl::" + (identity == null ? "" : (identity + ", "))/* + (nodeManager != null ? ("serverUUID=" + nodeManager.getUUID()) : "")*/;
+      if (identity != null)
+      {
+      	return "HornetQServerImpl::" + identity;
+      }
+      else
+      {
+      	return "HornetQServerImpl::" + (nodeManager != null ? "serverUUID=" + nodeManager.getUUID() : "");
+      }
    }
 
    // Inner classes
