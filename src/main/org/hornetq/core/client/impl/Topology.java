@@ -163,11 +163,11 @@ public class Topology implements Serializable
    public boolean updateMember(final long uniqueEventID, final String nodeId, final TopologyMember memberInput)
    {
       
-      if (memberInput.getConnector().a == null && memberInput.getConnector().b != null)
-      {
-         updateBackup(nodeId, memberInput);
-         return true;
-      }
+//      if (memberInput.getConnector().a == null && memberInput.getConnector().b != null)
+//      {
+//         updateBackup(nodeId, memberInput);
+//         return true;
+//      }
 
       Long deleteTme = mapDelete.get(nodeId);
       if (deleteTme != null && uniqueEventID < deleteTme)
