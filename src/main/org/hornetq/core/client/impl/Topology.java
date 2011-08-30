@@ -179,14 +179,10 @@ public class Topology implements Serializable
          {
             if (Topology.log.isDebugEnabled())
             {
-               Topology.log.debug(this + "::NewMemeberAdd " +
-                                  this +
-                                  " MEMBER WAS NULL, Add member nodeId=" +
+               Topology.log.debug(this + "::NewMemeberAdd nodeId=" +
                                   nodeId +
                                   " member = " +
-                                  memberInput +
-                                  " size = " +
-                                  mapTopology.size(), new Exception("trace"));
+                                  memberInput, new Exception("trace"));
             }
             memberInput.setUniqueEventID(uniqueEventID);
             mapTopology.put(nodeId, memberInput);
@@ -197,30 +193,29 @@ public class Topology implements Serializable
          {
             if (uniqueEventID > currentMember.getUniqueEventID())
             {
+               TopologyMember newMember =  new TopologyMember(currentMember.getA(), memberInput.getB());
+
+               if (newMember.getA() == null && currentMember.getA() != null)
+               {
+                  newMember.setA(currentMember.getA());
+               }
+
+               if (newMember.getB() == null && currentMember.getB() != null)
+               {
+                  newMember.setB(currentMember.getB());
+               }
+
                if (log.isDebugEnabled())
                {
                   log.debug(this + "::updated currentMember=nodeID=" +
-                            nodeId +
+                            nodeId + 
+                            ", currentMember=" +
                             currentMember +
-                            " of memberInput=" +
-                            memberInput);
+                            ", memberInput=" +
+                            memberInput +
+                            "newMember=" + newMember);
                }
 
-               TopologyMember newMember =  new TopologyMember(currentMember.getA(), memberInput.getB());
-
-               if (memberInput.getA() == null && memberInput.getB() != null)
-               {
-                  // Updating what appears to be a backup update
-                  newMember.setA(currentMember.getA());
-               }
-               else
-               if (currentMember.getA() == null && currentMember.getB() != null && newMember.getA() != null && newMember.getB() == null)
-               {
-                  // This is a situation where we have:
-                  // CurrentMember (null, X) && Input(X, null)
-                  // This means the backup has arrived before, hence we need to merge the results
-                  newMember.setA(currentMember.getA());
-               }
 
                newMember.setUniqueEventID(uniqueEventID);
                mapTopology.remove(nodeId);
