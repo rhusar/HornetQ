@@ -394,8 +394,6 @@ public class ServerSessionImpl implements ServerSession, FailureListener
       }
 
       Queue queue = server.createQueue(address, name, filterString, durable, temporary);
-      
-      System.out.println("Created queue " + queue + " / address=" + address + " on " + server);
 
       if (temporary)
       {
