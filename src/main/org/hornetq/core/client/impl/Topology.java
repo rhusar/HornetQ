@@ -36,15 +36,11 @@ import org.hornetq.core.logging.Logger;
 public class Topology implements Serializable
 {
 
-   private static final int BACKOF_TIMEOUT = 500;
-
    private static final long serialVersionUID = -9037171688692471371L;
 
    private final Set<ClusterTopologyListener> topologyListeners = new HashSet<ClusterTopologyListener>();
 
    private static final Logger log = Logger.getLogger(Topology.class);
-
-   private transient HashMap<String, Pair<Long, Integer>> mapBackof = new HashMap<String, Pair<Long, Integer>>();
 
    private Executor executor = null;
 
@@ -142,7 +138,7 @@ public class Topology implements Serializable
             mapTopology.put(nodeId, currentMember);
          }
 
-         TopologyMember newMember = new TopologyMember(currentMember.getConnector().a, memberInput.getConnector().b);
+         TopologyMember newMember = new TopologyMember(currentMember.getA(), memberInput.getB());
          newMember.setUniqueEventID(System.currentTimeMillis());
          mapTopology.remove(nodeId);
          mapTopology.put(nodeId, newMember);
@@ -162,12 +158,6 @@ public class Topology implements Serializable
     */
    public boolean updateMember(final long uniqueEventID, final String nodeId, final TopologyMember memberInput)
    {
-      
-//      if (memberInput.getConnector().a == null && memberInput.getConnector().b != null)
-//      {
-//         updateBackup(nodeId, memberInput);
-//         return true;
-//      }
 
       Long deleteTme = mapDelete.get(nodeId);
       if (deleteTme != null && uniqueEventID < deleteTme)
@@ -216,7 +206,22 @@ public class Topology implements Serializable
                             memberInput);
                }
 
-               TopologyMember newMember = new TopologyMember(memberInput.getConnector().a, memberInput.getConnector().b);
+               TopologyMember newMember =  new TopologyMember(currentMember.getA(), memberInput.getB());
+
+               if (memberInput.getA() == null && memberInput.getB() != null)
+               {
+                  // Updating what appears to be a backup update
+                  newMember.setA(currentMember.getA());
+               }
+               else
+               if (currentMember.getA() == null && currentMember.getB() != null && newMember.getA() != null && newMember.getB() == null)
+               {
+                  // This is a situation where we have:
+                  // CurrentMember (null, X) && Input(X, null)
+                  // This means the backup has arrived before, hence we need to merge the results
+                  newMember.setA(currentMember.getA());
+               }
+
                newMember.setUniqueEventID(uniqueEventID);
                mapTopology.remove(nodeId);
                mapTopology.put(nodeId, newMember);
@@ -273,46 +278,6 @@ public class Topology implements Serializable
             }
          }
       });
-   }
-
-   /**
-    * @param nodeId
-    * @param backOfData
-    */
-   private boolean testBackof(final String nodeId)
-   {
-      Pair<Long, Integer> backOfData = mapBackof.get(nodeId);
-
-      if (backOfData != null)
-      {
-         backOfData.b += 1;
-
-         long timeDiff = System.currentTimeMillis() - backOfData.a;
-
-         // To prevent a loop where nodes are being considered down and up
-         if (backOfData.b > 5 && timeDiff < BACKOF_TIMEOUT)
-         {
-
-            // The cluster may get in loop without this..
-            // Case one node is stll sending nodeDown while another member is sending nodeUp
-            log.warn(backOfData.b + ", The topology controller identified a blast events and it's interrupting the flow of the loop, nodeID=" +
-                              nodeId +
-                              ", topologyInstance=" +
-                              this,
-                     new Exception("this exception is just to trace location"));
-            return false;
-         }
-         else if (timeDiff < BACKOF_TIMEOUT)
-         {
-            log.warn(this + "::Simple blast of " + nodeId, new Exception("this exception is just to trace location"));
-         }
-         else if (timeDiff >= BACKOF_TIMEOUT)
-         {
-            mapBackof.remove(nodeId);
-         }
-      }
-
-      return true;
    }
 
    /**
@@ -500,11 +465,11 @@ public class Topology implements Serializable
       int count = 0;
       for (TopologyMember member : mapTopology.values())
       {
-         if (member.getConnector().a != null)
+         if (member.getA() != null)
          {
             count++;
          }
-         if (member.getConnector().b != null)
+         if (member.getB() != null)
          {
             count++;
          }
@@ -551,32 +516,13 @@ public class Topology implements Serializable
       this.owner = owner;
    }
 
-   private boolean hasChanged(final String debugInfo, final TransportConfiguration a, final TransportConfiguration b)
-   {
-      boolean changed = a == null && b != null || a != null && b != null && !a.equals(b);
-
-      if (log.isTraceEnabled())
-      {
-
-         log.trace(this + "::Validating current=" +
-                   a +
-                   " != input=" +
-                   b +
-                   (changed ? " and it has changed" : " and it didn't change") +
-                   ", for validation of " +
-                   debugInfo);
-      }
-
-      return changed;
-   }
-
    public TransportConfiguration getBackupForConnector(final TransportConfiguration connectorConfiguration)
    {
       for (TopologyMember member : mapTopology.values())
       {
-         if (member.getConnector().a != null && member.getConnector().a.equals(connectorConfiguration))
+         if (member.getA() != null && member.getA().equals(connectorConfiguration))
          {
-            return member.getConnector().b;
+            return member.getB();
          }
       }
       return null;

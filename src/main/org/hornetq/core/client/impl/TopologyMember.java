@@ -41,6 +41,26 @@ public class TopologyMember implements Serializable
       this(new Pair<TransportConfiguration, TransportConfiguration>(a, b));
    }
 
+   
+   public TransportConfiguration getA()
+   {
+      return connector.a;
+   }
+
+   public TransportConfiguration getB()
+   {
+      return connector.b;
+   }
+
+   public void setB(TransportConfiguration param)
+   {
+      this.connector.b = param;
+   }
+
+   public void setA(TransportConfiguration param)
+   {
+      this.connector.a = param;
+   }
 
    /**
     * @return the uniqueEventID
