@@ -513,7 +513,7 @@ public class HornetQServerImpl implements HornetQServer
 
             if (System.currentTimeMillis() - start >= timeout)
             {
-               log.warn("Timed out waiting for backup activation to exit");
+               threadDump("Timed out waiting for backup activation to exit");
             }
 
             nodeManager.stopBackup();
@@ -861,6 +861,10 @@ public class HornetQServerImpl implements HornetQServer
          nodeManager.stop();
 
          nodeManager = null;
+         
+         addressSettingsRepository.clear();
+         
+         addressSettingsRepository.clearCache();
 
          HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" + tempNodeID + "] stopped");
 

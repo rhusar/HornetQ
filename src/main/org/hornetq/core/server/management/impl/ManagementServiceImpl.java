@@ -621,6 +621,28 @@ public class ManagementServiceImpl implements ManagementService
 
          messageCounterManager.clear();
       }
+      
+      listeners.clear();
+      
+      registry.clear();
+
+      messagingServer = null;
+
+      securityRepository = null;
+
+      addressSettingsRepository = null;
+
+      messagingServerControl = null;
+
+      messageCounterManager = null;
+
+      postOffice = null;
+      
+      pagingManager = null;
+      
+      storageManager = null;
+      
+      messagingServer = null;
 
       registeredNames.clear();
 
