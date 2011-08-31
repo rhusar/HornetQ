@@ -57,6 +57,7 @@ import org.hornetq.core.server.group.impl.Response;
 import org.hornetq.core.server.management.ManagementService;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.utils.ExecutorFactory;
+import org.hornetq.utils.Future;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUID;
 
@@ -333,18 +334,24 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       this.clusterManagerTopology = clusterManagerTopology;
    }
 
-   public synchronized void start() throws Exception
+   public void start() throws Exception
    {
-      if (started)
+      flushExecutor();
+      
+      synchronized (this)
       {
-         return;
-      }
-
-      started = true;
-
-      if (!backup)
-      {
-         activate();
+         if (started)
+         {
+            return;
+         }
+         
+   
+         started = true;
+   
+         if (!backup)
+         {
+            activate();
+         }
       }
 
    }
@@ -355,6 +362,8 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       {
          return;
       }
+      
+      flushExecutor();
 
       if (log.isDebugEnabled())
       {
@@ -1357,6 +1366,16 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       out.println("***************************************");
 
       return str.toString();
+   }
+   
+   private void flushExecutor()
+   {
+      Future future = new Future();
+      executor.execute(future);
+      if (!future.await(10000))
+      {
+         server.threadDump("Couldn't finish executor on " + this);
+      }
    }
 
    interface ClusterConnector
