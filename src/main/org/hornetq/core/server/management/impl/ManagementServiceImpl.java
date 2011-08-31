@@ -304,11 +304,14 @@ public class ManagementServiceImpl implements ManagementService
    public void unregisterAcceptors()
    {
       List<String> acceptors = new ArrayList<String>();
-      for (String resourceName : registry.keySet())
+      synchronized (this)
       {
-         if (resourceName.startsWith(ResourceNames.CORE_ACCEPTOR))
+         for (String resourceName : registry.keySet())
          {
-            acceptors.add(resourceName);
+            if (resourceName.startsWith(ResourceNames.CORE_ACCEPTOR))
+            {
+               acceptors.add(resourceName);
+            }
          }
       }
 
@@ -508,7 +511,7 @@ public class ManagementServiceImpl implements ManagementService
       registry.put(resourceName, managedResource);
    }
 
-   public void unregisterFromRegistry(final String resourceName)
+   public synchronized void unregisterFromRegistry(final String resourceName)
    {
       registry.remove(resourceName);
    }
