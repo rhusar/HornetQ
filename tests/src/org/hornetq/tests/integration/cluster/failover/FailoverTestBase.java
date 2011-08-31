@@ -103,11 +103,14 @@ public abstract class FailoverTestBase extends ServiceTestBase
       liveServer.setIdentity(this.getClass().getSimpleName() + "/liveServer");
 
       liveServer.start();
+      
+      waitForServer(liveServer.getServer());
 
       if (backupServer != null)
       {
          backupServer.setIdentity(this.getClass().getSimpleName() + "/backupServer");
          backupServer.start();
+         waitForServer(backupServer.getServer());
       }
    }
 
