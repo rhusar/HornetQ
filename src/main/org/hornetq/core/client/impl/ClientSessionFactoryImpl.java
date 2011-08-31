@@ -1449,7 +1449,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
             if (nodeID != null)
             {
-               // TODO: calculate the time of node down
                serverLocator.notifyNodeDown(System.currentTimeMillis(), msg.getNodeID().toString());
             }
 

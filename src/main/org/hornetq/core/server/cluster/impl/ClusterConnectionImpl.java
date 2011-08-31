@@ -336,8 +336,6 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
    public void start() throws Exception
    {
-      flushExecutor();
-      
       synchronized (this)
       {
          if (started)
@@ -355,6 +353,16 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       }
 
    }
+   
+   public void flushExecutor()
+   {
+      Future future = new Future();
+      executor.execute(future);
+      if (!future.await(10000))
+      {
+         server.threadDump("Couldn't finish executor on " + this);
+      }
+   }
 
    public void stop() throws Exception
    {
@@ -362,8 +370,6 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       {
          return;
       }
-      
-      flushExecutor();
 
       if (log.isDebugEnabled())
       {
@@ -1366,16 +1372,6 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       out.println("***************************************");
 
       return str.toString();
-   }
-   
-   private void flushExecutor()
-   {
-      Future future = new Future();
-      executor.execute(future);
-      if (!future.await(10000))
-      {
-         server.threadDump("Couldn't finish executor on " + this);
-      }
    }
 
    interface ClusterConnector
