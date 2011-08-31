@@ -484,7 +484,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
          localMember = new TopologyMember(nodeConnector, null);
       }
 
-      System.out.println("Adding local member " + localMember);
       topology.updateAsLive(nodeID, localMember);
    }
 
