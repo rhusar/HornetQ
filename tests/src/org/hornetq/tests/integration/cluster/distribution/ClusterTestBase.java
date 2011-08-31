@@ -94,6 +94,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
    protected void setUp() throws Exception
    {
       super.setUp();
+      
+      forceGC();
 
       UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
 
@@ -2040,7 +2042,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
          log.info("started server " + node);
 
          waitForServer(servers[node]);
-         Thread.sleep(100);
 
       }
 
@@ -2055,6 +2056,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             for (ClusterConnection cc : servers[node].getClusterManager().getClusterConnections())
             {
                cc.stop();
+               cc.flushExecutor();
             }
          }
       }
