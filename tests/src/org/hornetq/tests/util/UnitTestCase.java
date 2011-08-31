@@ -967,6 +967,8 @@ public class UnitTestCase extends TestCase
          logAndSystemOut("Thread leaked on test " + this.getClass().getName() + "::" + 
                          this.getName() + "\n" + buffer.toString());
          logAndSystemOut("Thread leakage");
+         
+         fail("Thread leaked");
       }
 
       super.tearDown();
