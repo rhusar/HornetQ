@@ -230,6 +230,8 @@ public class JMSClusteredTestBase extends ServiceTestBase
          log.warn("Can't stop server2", e);
       }
       
+      Thread.sleep(500);
+      
       ((HornetQConnectionFactory)cf1).close();
       
       ((HornetQConnectionFactory)cf2).close();
@@ -252,9 +254,9 @@ public class JMSClusteredTestBase extends ServiceTestBase
       }
       catch (Throwable e)
       {
-         log.warn("Can't stop server2", e);
+         log.warn("Can't stop server1", e);
       }
-
+ 
       server1 = null;
 
       jmsServer1 = null;
