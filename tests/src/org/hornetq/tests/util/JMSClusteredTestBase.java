@@ -113,9 +113,11 @@ public class JMSClusteredTestBase extends ServiceTestBase
 
       jmsServer1.start();
       jmsServer1.activated();
+      waitForServer(jmsServer1.getHornetQServer());
 
       jmsServer2.start();
       jmsServer2.activated();
+      waitForServer(jmsServer2.getHornetQServer());
 
       cf1 = (ConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(JMSFactoryType.CF, new TransportConfiguration(InVMConnectorFactory.class.getName(),
                                                                                 generateInVMParams(0)));
