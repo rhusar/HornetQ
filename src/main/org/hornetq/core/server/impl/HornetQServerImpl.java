@@ -862,7 +862,7 @@ public class HornetQServerImpl implements HornetQServer
 
          nodeManager = null;
          
-         addressSettingsRepository.clear();
+         addressSettingsRepository.clearListeners();
          
          addressSettingsRepository.clearCache();
 
