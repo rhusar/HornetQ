@@ -63,6 +63,7 @@ import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveContinuation
 import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveLargeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionReceiveMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionRequestProducerCreditsMessage;
+import org.hornetq.core.protocol.core.impl.wireformat.SessionSendContinuationMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionSendMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionXACommitMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.SessionXAEndMessage;
@@ -106,8 +107,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
    // Constants ----------------------------------------------------------------------------
 
    private static final Logger log = Logger.getLogger(ClientSessionImpl.class);
-
-   private final boolean trace = ClientSessionImpl.log.isTraceEnabled();
 
    // Attributes ----------------------------------------------------------------------------
 
@@ -1191,6 +1190,15 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
          SessionSendMessage ssm = (SessionSendMessage)packet;
 
          sendAckHandler.sendAcknowledged(ssm.getMessage());
+      }
+      else
+      if (packet.getType() == PacketImpl.SESS_SEND_CONTINUATION)
+      {
+        SessionSendContinuationMessage scm = (SessionSendContinuationMessage)packet;
+        if (!scm.isContinues())
+        {
+           sendAckHandler.sendAcknowledged(scm.getMessage());
+        }
       }
    }
 

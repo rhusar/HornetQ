@@ -84,6 +84,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
    private static final long WAIT_TIMEOUT = 5000;
 
+   protected int getLargeMessageSize()
+   {
+      return 1024;
+   }
+   
+   protected boolean isLargeMessage()
+   {
+      return false;
+   }
+   
    @Override
    protected void setUp() throws Exception
    {
@@ -522,6 +532,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
          for (int i = msgStart; i < msgEnd; i++)
          {
             ClientMessage message = session.createMessage(durable);
+            
+            if (isLargeMessage())
+            {
+               message.setBodyInputStream(createFakeLargeStream(getLargeMessageSize()));
+            }
 
             if (filterVal != null)
             {
@@ -530,6 +545,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             message.putIntProperty(ClusterTestBase.COUNT_PROP, i);
 
+ 
             producer.send(message);
             
             if (i % 100 == 0)
@@ -580,6 +596,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
          for (int i = msgStart; i < msgEnd; i++)
          {
             ClientMessage message = session.createMessage(durable);
+            
+            if (isLargeMessage())
+            {
+               message.setBodyInputStream(createFakeLargeStream(getLargeMessageSize()));
+            }
 
             message.putStringProperty(key, val);
             message.putIntProperty(ClusterTestBase.COUNT_PROP, i);
@@ -773,6 +794,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
                Assert.assertNotNull("consumer " + consumerID + " did not receive message " + j, message);
             }
 
+            if (isLargeMessage())
+            {
+               for (int posMsg = 0 ; posMsg < getLargeMessageSize(); posMsg++)
+               {
+                  assertEquals(getSamplebyte(posMsg), message.getBodyBuffer().readByte());
+               }
+            }
 
 
             if (ack)
