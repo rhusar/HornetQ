@@ -38,7 +38,6 @@ import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
-import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
@@ -70,6 +69,16 @@ import org.hornetq.tests.util.UnitTestCase;
 public abstract class ClusterTestBase extends ServiceTestBase
 {
    private static final Logger log = Logger.getLogger(ClusterTestBase.class);
+
+   public ClusterTestBase()
+   {
+      super();
+   }
+
+   public ClusterTestBase(String name)
+   {
+      super(name);
+   }
 
    private static final int[] PORTS = { TransportConstants.DEFAULT_PORT,
                                        TransportConstants.DEFAULT_PORT + 1,
@@ -690,6 +699,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
                Assert.assertNotNull("consumer " + consumerIDs[i] + " did not receive message " + j, message);
             }
 
+            if (isLargeMessage())
+            {
+               validateLargeMessage(message);
+            }
+
             if (ack)
             {
                message.acknowledge();
@@ -748,6 +762,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
                   Assert.fail("consumer " + i + " did not receive all messages");
                }
 
+               if (isLargeMessage())
+               {
+                  validateLargeMessage(message);
+               }
+
                if (ack)
                {
                   message.acknowledge();
@@ -792,10 +811,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (isLargeMessage())
             {
-               for (int posMsg = 0; posMsg < getLargeMessageSize(); posMsg++)
-               {
-                  assertEquals(getSamplebyte(posMsg), message.getBodyBuffer().readByte());
-               }
+               validateLargeMessage(message);
             }
 
             if (ack)
@@ -891,6 +907,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (message != null)
             {
+               if (isLargeMessage())
+               {
+                  validateLargeMessage(message);
+               }
+
                ClusterTestBase.log.info("check receive Consumer " + consumerID +
                                         " received message " +
                                         message.getObjectProperty(ClusterTestBase.COUNT_PROP));
@@ -925,6 +946,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
          Assert.assertEquals("consumer " + consumerIDs[count] + " message " + i,
                              i,
                              message.getObjectProperty(ClusterTestBase.COUNT_PROP));
+         if (isLargeMessage())
+         {
+            validateLargeMessage(message);
+         }
 
          count++;
 
@@ -981,6 +1006,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
          ClientMessage msg = holder.consumer.receive(10000);
 
          Assert.assertNotNull(msg);
+         if (isLargeMessage())
+         {
+            validateLargeMessage(msg);
+         }
 
          int count = msg.getIntProperty(ClusterTestBase.COUNT_PROP);
 
@@ -1024,6 +1053,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
             ClientMessage msg = holder.consumer.consumer.receive(10000);
 
             Assert.assertNotNull(msg);
+            if (isLargeMessage())
+            {
+               validateLargeMessage(msg);
+            }
 
             int p = msg.getIntProperty(ClusterTestBase.COUNT_PROP);
 
@@ -1077,6 +1110,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
             if (message != null)
             {
                int count = (Integer)message.getObjectProperty(ClusterTestBase.COUNT_PROP);
+
+               if (isLargeMessage())
+               {
+                  validateLargeMessage(message);
+               }
 
                // log.info("consumer " + consumerIDs[i] + " received message " + count);
 
@@ -1171,6 +1209,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
          message = consumer.consumer.receive(500);
          if (message != null)
          {
+
+            if (isLargeMessage())
+            {
+               validateLargeMessage(message);
+            }
+
             if (ack)
             {
                message.acknowledge();
@@ -1356,7 +1400,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.setJournalFileSize(100 * 1024);
       configuration.setJournalType(getDefaultJournalType());
       configuration.setSharedStore(sharedStorage);
-      configuration.setThreadPoolMaxSize(10);
       if (sharedStorage)
       {
          // Shared storage will share the node between the backup and live node
@@ -1901,6 +1944,17 @@ public abstract class ClusterTestBase extends ServiceTestBase
                ClusterTestBase.log.warn(e.getMessage(), e);
             }
          }
+      }
+   }
+
+   /**
+    * @param message
+    */
+   private void validateLargeMessage(ClientMessage message)
+   {
+      for (int posMsg = 0; posMsg < getLargeMessageSize(); posMsg++)
+      {
+         assertEquals(getSamplebyte(posMsg), message.getBodyBuffer().readByte());
       }
    }
 
