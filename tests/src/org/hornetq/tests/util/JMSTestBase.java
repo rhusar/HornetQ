@@ -182,9 +182,6 @@ public class JMSTestBase extends ServiceTestBase
       mbeanServer = null;
 
       super.tearDown();
-
-
-      super.tearDown();
    }
 
    // Private -------------------------------------------------------

@@ -571,7 +571,7 @@ public class UnitTestCase extends TestCase
          }
          catch (Exception e)
          {
-            throw new IllegalStateException("port " + port + " is already bound");
+            throw new IllegalStateException("port " + port + " is bound");
          }
          finally
          {
