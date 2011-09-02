@@ -287,8 +287,6 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    @Override
    public synchronized ServerMessage copy()
    {
-      incrementDelayDeletionCount();
-
       long idToUse = messageID;
 
       if (linkMessage != null)
