@@ -1414,8 +1414,6 @@ public class HornetQServerImpl implements HornetQServer
 
       managementService = new ManagementServiceImpl(mbeanServer, configuration);
 
-      remotingService = new RemotingServiceImpl(configuration, this, managementService, scheduledPool);
-
       if (configuration.getMemoryMeasureInterval() != -1)
       {
          memoryManager = new MemoryManagerImpl(configuration.getMemoryWarningThreshold(),
@@ -1469,6 +1467,20 @@ public class HornetQServerImpl implements HornetQServer
                                       configuration.getIDCacheSize(),
                                       configuration.isPersistIDCache(),
                                       addressSettingsRepository);
+
+      // This can't be created until node id is set
+      clusterManager = new ClusterManagerImpl(executorFactory,
+                                              this,
+                                              postOffice,
+                                              scheduledPool,
+                                              managementService,
+                                              configuration,
+                                              nodeManager.getUUID(),
+                                              configuration.isBackup(),
+                                              configuration.isClustered());
+
+
+      remotingService = new RemotingServiceImpl(clusterManager, configuration, this, managementService, scheduledPool);
 
       messagingServerControl = managementService.registerServer(postOffice,
                                                                 storageManager,
@@ -1527,18 +1539,6 @@ public class HornetQServerImpl implements HornetQServer
       deploySecurityFromConfiguration();
 
       deployGroupingHandlerConfiguration(configuration.getGroupingHandlerConfiguration());
-
-      // This can't be created until node id is set
-      clusterManager = new ClusterManagerImpl(executorFactory,
-                                              this,
-                                              postOffice,
-                                              scheduledPool,
-                                              managementService,
-                                              configuration,
-                                              nodeManager.getUUID(),
-                                              configuration.isBackup(),
-                                              configuration.isClustered());
-
    }
 
    /*
@@ -1604,9 +1604,9 @@ public class HornetQServerImpl implements HornetQServer
       // We do this at the end - we don't want things like MDBs or other connections connecting to a backup server until
       // it is activated
 
-      remotingService.start();
-
       clusterManager.start();
+
+      remotingService.start();
 
       initialised = true;
 

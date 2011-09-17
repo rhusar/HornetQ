@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.management.MBeanServer;
 
@@ -42,6 +43,7 @@ import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.server.NodeManager;
+import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
@@ -112,8 +114,15 @@ public abstract class ServiceTestBase extends UnitTestCase
       log.debug("waiting for " + nodes + " on the topology for server = " + server);
 
       long start = System.currentTimeMillis();
+      
+      Set<ClusterConnection> ccs = server.getClusterManager().getClusterConnections();
+      
+      if (ccs.size() != 1)
+      {
+         throw new IllegalStateException("You need a single cluster connection on this version of waitForTopology on ServiceTestBase");
+      }
 
-      Topology topology = server.getClusterManager().getTopology();
+      Topology topology = ccs.iterator().next().getTopology();
 
       do
       {
