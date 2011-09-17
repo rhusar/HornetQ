@@ -449,7 +449,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
    
    public void announceBackup()
    {
-      this.backupServerLocator = clusterConnector.createServerLocator();
+      this.backupServerLocator = clusterConnector.createServerLocator(false);
       
       backupServerLocator.setReconnectAttempts(-1);
       backupServerLocator.setInitialConnectAttempts(-1);
@@ -475,9 +475,9 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                                                                     true,
                                                                     connector,
                                                                     null));
+                  backupSessionFactory.close();
                   log.info("backup announced");
                }
-               //backupSessionFactory.close();
             }
             catch (Exception e)
             {
@@ -619,7 +619,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
 
 
-      serverLocator = clusterConnector.createServerLocator();
+      serverLocator = clusterConnector.createServerLocator(true);
 
       if (serverLocator != null)
       {
@@ -674,6 +674,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
          log.debug("sending notification: " + notification);
          managementService.sendNotification(notification);
       }
+
    }
 
    public TransportConfiguration getConnector()
@@ -780,7 +781,6 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                {
                   log.debug(this + "::Creating record for nodeID=" + nodeID + ", connectorPair=" + connectorPair);
                }
-               log.info(this + "::Creating record for nodeID=" + nodeID + ", connectorPair=" + connectorPair);
 
                // New node - create a new flow record
 
@@ -822,7 +822,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       }
    }
    
-   public synchronized void announceNode()
+   public synchronized void informTopology()
    {
       String nodeID = server.getNodeID().toString();
       
@@ -1504,7 +1504,8 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
    @Override
    public String toString()
    {
-      return "ClusterConnectionImpl [nodeUUID=" + nodeUUID +
+      return "ClusterConnectionImpl@" + System.identityHashCode(this)  + 
+             "[nodeUUID=" + nodeUUID +
              ", connector=" +
              connector +
              ", address=" +
@@ -1534,7 +1535,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
    interface ClusterConnector
    {
-      ServerLocatorInternal createServerLocator();
+      ServerLocatorInternal createServerLocator(boolean includeTopology);
    }
 
    private class StaticClusterConnector implements ClusterConnector
@@ -1546,7 +1547,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
          this.tcConfigs = tcConfigs;
       }
 
-      public ServerLocatorInternal createServerLocator()
+      public ServerLocatorInternal createServerLocator(boolean includeTopology)
       {
          if (tcConfigs != null && tcConfigs.length > 0)
          {
@@ -1554,7 +1555,9 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
             {
                log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
             }
-            return new ServerLocatorImpl(topology, true, tcConfigs);
+            ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology ? topology : null, true, tcConfigs);
+            locator.setClusterConnection(true);
+            return locator;
          }
          else
          {
@@ -1582,9 +1585,11 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
          this.dg = dg;
       }
 
-      public ServerLocatorInternal createServerLocator()
+      public ServerLocatorInternal createServerLocator(boolean includeTopology)
       {
-         return new ServerLocatorImpl(topology, true, dg);
+         ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology ? topology : null, true, dg);
+         return locator;
+
       }
    }
 }

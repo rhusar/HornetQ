@@ -178,16 +178,18 @@ public class CoreProtocolManager implements ProtocolManager
                };
                
                final boolean isCC = msg.isClusterConnection();
-               
-               acceptorUsed.getClusterConnection().addClusterTopologyListener(listener, isCC);
-               
-               rc.addCloseListener(new CloseListener()
+               if (acceptorUsed.getClusterConnection() != null)
                {
-                  public void connectionClosed()
+                  acceptorUsed.getClusterConnection().addClusterTopologyListener(listener, isCC);
+                  
+                  rc.addCloseListener(new CloseListener()
                   {
-                     acceptorUsed.getClusterConnection().removeClusterTopologyListener(listener, isCC);
-                  }
-               });
+                     public void connectionClosed()
+                     {
+                        acceptorUsed.getClusterConnection().removeClusterTopologyListener(listener, isCC);
+                     }
+                  });
+               }
             }
             else if (packet.getType() == PacketImpl.NODE_ANNOUNCE)
             {

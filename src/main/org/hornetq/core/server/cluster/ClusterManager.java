@@ -49,6 +49,8 @@ public interface ClusterManager extends HornetQComponent
    void flushExecutor();
 
    void announceBackup() throws Exception;
+   
+   void deploy() throws Exception;
 
    void deployBridge(BridgeConfiguration config) throws Exception;
 

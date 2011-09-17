@@ -168,13 +168,8 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       return nodeUUID.toString();
    }
 
-   public synchronized void start() throws Exception
+   public synchronized void deploy() throws Exception
    {
-      if (started)
-      {
-         return;
-      }
-
       if (clustered)
       {
          for (BroadcastGroupConfiguration config : configuration.getBroadcastGroupConfigurations())
@@ -186,21 +181,47 @@ public class ClusterManagerImpl implements ClusterManagerInternal
          {
             deployClusterConnection(config);
          }
-
-         for (ClusterConnection conn : clusterConnections.values())
-         {
-            conn.announceNode();
-            if (backup)
-            {
-               conn.announceBackup();
-            }
-         }
       }
 
       for (BridgeConfiguration config : configuration.getBridgeConfigurations())
       {
          deployBridge(config);
       }
+   }
+
+   public synchronized void start() throws Exception
+   {
+      if (started)
+      {
+         return;
+      }
+
+      for (BroadcastGroup group: broadcastGroups.values())
+      {
+         if (!backup)
+         {
+            group.start();
+         }
+      }
+      
+      for (ClusterConnection conn : clusterConnections.values())
+      {
+         conn.start();
+         if (backup)
+         {
+            conn.informTopology();
+            conn.announceBackup();
+         }
+      }
+
+      for (Bridge bridge : bridges.values())
+      {
+         if (!backup)
+         {
+            bridge.start();
+         }
+      }
+
 
       started = true;
    }
@@ -255,7 +276,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       clusterLocators.clear();
       started = false;
 
-      clusterConnections.clear();
+      clearClusterConnections();
    }
 
    public void flushExecutor()
@@ -487,10 +508,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
 
       managementService.registerBridge(bridge, config);
 
-      if (!backup)
-      {
-         bridge.start();
-      }
    }
 
    public void destroyBridge(final String name) throws Exception
@@ -536,10 +553,17 @@ public class ClusterManagerImpl implements ClusterManagerInternal
             e.printStackTrace();
          }
       }
-      clusterConnections.clear();
+      clearClusterConnections();
    }
 
    // Private methods ----------------------------------------------------------------------------------------------------
+   
+   
+   private void clearClusterConnections()
+   {
+      clusterConnections.clear();
+      this.defaultClusterConnection = null;
+   }
    
    private void deployClusterConnection(final ClusterConnectionConfiguration config) throws Exception
    {
@@ -673,7 +697,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       {
          log.debug("ClusterConnection.start at " + clusterConnection, new Exception("trace"));
       }
-      clusterConnection.start();
    }
    
    private Transformer instantiateTransformer(final String transformerClassName)
@@ -748,11 +771,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       broadcastGroups.put(config.getName(), group);
 
       managementService.registerBroadcastGroup(group, config);
-
-      if (!backup)
-      {
-         group.start();
-      }
    }
 
    private void logWarnNoConnector(final String connectorName, final String bgName)

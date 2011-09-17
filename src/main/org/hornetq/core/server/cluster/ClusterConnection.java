@@ -62,7 +62,7 @@ public interface ClusterConnection extends HornetQComponent, ClusterTopologyList
    // for debug
    String describe();
 
-   void announceNode();
+   void informTopology();
    
    void announceBackup();
 }
