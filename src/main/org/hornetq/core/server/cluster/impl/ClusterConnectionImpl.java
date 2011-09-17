@@ -475,7 +475,6 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                                                                     true,
                                                                     connector,
                                                                     null));
-                  backupSessionFactory.close();
                   log.info("backup announced");
                }
             }
@@ -1555,7 +1554,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
             {
                log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
             }
-            ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology ? topology : null, true, tcConfigs);
+            ServerLocatorImpl locator = new ServerLocatorImpl(topology, true, tcConfigs);
             locator.setClusterConnection(true);
             return locator;
          }
@@ -1587,7 +1586,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
       public ServerLocatorInternal createServerLocator(boolean includeTopology)
       {
-         ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology ? topology : null, true, dg);
+         ServerLocatorImpl locator = new ServerLocatorImpl(topology, true, dg);
          return locator;
 
       }
