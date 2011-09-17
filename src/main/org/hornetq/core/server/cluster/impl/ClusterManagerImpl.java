@@ -182,11 +182,6 @@ public class ClusterManagerImpl implements ClusterManagerInternal
             deployClusterConnection(config);
          }
       }
-
-      for (BridgeConfiguration config : configuration.getBridgeConfigurations())
-      {
-         deployBridge(config);
-      }
    }
 
    public synchronized void start() throws Exception
@@ -212,6 +207,11 @@ public class ClusterManagerImpl implements ClusterManagerInternal
             conn.informTopology();
             conn.announceBackup();
          }
+      }
+
+      for (BridgeConfiguration config : configuration.getBridgeConfigurations())
+      {
+         deployBridge(config);
       }
 
       for (Bridge bridge : bridges.values())
