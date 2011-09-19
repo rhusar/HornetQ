@@ -211,15 +211,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
 
       for (BridgeConfiguration config : configuration.getBridgeConfigurations())
       {
-         deployBridge(config);
-      }
-
-      for (Bridge bridge : bridges.values())
-      {
-         if (!backup)
-         {
-            bridge.start();
-         }
+         deployBridge(config, !backup);
       }
 
 
@@ -379,7 +371,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       this.clusterLocators.remove(serverLocator);
    }
    
-   public synchronized void deployBridge(final BridgeConfiguration config) throws Exception
+   public synchronized void deployBridge(final BridgeConfiguration config, final boolean start) throws Exception
    {
       if (config.getName() == null)
       {
@@ -507,6 +499,11 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       bridges.put(config.getName(), bridge);
 
       managementService.registerBridge(bridge, config);
+      
+      if (start)
+      {
+         bridge.start();
+      }
 
    }
 

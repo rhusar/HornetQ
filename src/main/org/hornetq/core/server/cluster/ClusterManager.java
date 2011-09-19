@@ -52,7 +52,7 @@ public interface ClusterManager extends HornetQComponent
    
    void deploy() throws Exception;
 
-   void deployBridge(BridgeConfiguration config) throws Exception;
+   void deployBridge(BridgeConfiguration config, boolean start) throws Exception;
 
    void destroyBridge(String name) throws Exception;
 
