@@ -66,13 +66,6 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
 
    // Static ---------------------------------------------------------------------------------------
 
-   private static final boolean trace = ServerConsumerImpl.log.isTraceEnabled();
-
-   private static void trace(final String message)
-   {
-      ServerConsumerImpl.log.trace(message);
-   }
-
    // Attributes -----------------------------------------------------------------------------------
 
    private final long id;
@@ -92,6 +85,11 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
    private boolean started;
 
    private volatile LargeMessageDeliverer largeMessageDeliverer = null;
+   
+   public String debug()
+   {
+      return toString() + "::Delivering " + this.deliveringRefs.size();
+   }
 
    private boolean largeMessageInDelivery;
 
@@ -214,6 +212,11 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
    {
       if (availableCredits != null && availableCredits.get() <= 0)
       {
+         if (log.isDebugEnabled() )
+         {
+            log.debug(this  + " is busy for the lack of credits!!!");
+         }
+         
          return HandleStatus.BUSY;
       }
       
@@ -519,9 +522,9 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
       {
          int previous = availableCredits.getAndAdd(credits);
 
-         if (ServerConsumerImpl.trace)
+         if (log.isDebugEnabled())
          {
-            ServerConsumerImpl.trace("Received " + credits +
+            log.debug(this + "::Received " + credits +
                                      " credits, previous value = " +
                                      previous +
                                      " currentValue = " +
@@ -530,6 +533,10 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
 
          if (previous <= 0 && previous + credits > 0)
          {
+            if (log.isTraceEnabled() )
+            {
+               log.trace(this + "::calling promptDelivery from receiving credits");
+            }
             promptDelivery();
          }
       }
@@ -813,9 +820,9 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
             {
                if (availableCredits != null && availableCredits.get() <= 0)
                {
-                  if (ServerConsumerImpl.trace)
+                  if (ServerConsumerImpl.isTrace)
                   {
-                     ServerConsumerImpl.trace("deliverLargeMessage: Leaving loop of send LargeMessage because of credits");
+                     log.trace("deliverLargeMessage: Leaving loop of send LargeMessage because of credits");
                   }
 
                   return false;
@@ -838,9 +845,9 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
 
                int chunkLen = body.length;
 
-               if (ServerConsumerImpl.trace)
+               if (ServerConsumerImpl.isTrace)
                {
-                  ServerConsumerImpl.trace("deliverLargeMessage: Sending " + packetSize +
+                  log.trace("deliverLargeMessage: Sending " + packetSize +
                                            " availableCredits now is " +
                                            availableCredits);
                }
@@ -860,9 +867,9 @@ public class ServerConsumerImpl implements ServerConsumer, ReadyListener
                }
             }
 
-            if (ServerConsumerImpl.trace)
+            if (ServerConsumerImpl.isTrace)
             {
-               ServerConsumerImpl.trace("Finished deliverLargeMessage");
+               log.trace("Finished deliverLargeMessage");
             }
 
             finish();

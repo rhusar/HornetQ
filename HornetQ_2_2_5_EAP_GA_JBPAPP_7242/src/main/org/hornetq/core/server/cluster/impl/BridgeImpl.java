@@ -210,6 +210,11 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
       }
 
    }
+   
+   public String debug()
+   {
+      return toString();
+   }
 
    public void stop() throws Exception
    {
