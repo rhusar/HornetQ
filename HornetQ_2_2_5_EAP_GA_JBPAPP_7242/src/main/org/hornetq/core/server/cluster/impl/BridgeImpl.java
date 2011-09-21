@@ -330,7 +330,7 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
    // Consumer implementation ---------------------------------------
 
    /* Hook for processing message before forwarding */
-   protected ServerMessage beforeForward(ServerMessage message)
+   protected ServerMessage beforeForward(final ServerMessage message)
    {
       if (useDuplicateDetection)
       {
@@ -342,10 +342,20 @@ public class BridgeImpl implements Bridge, SessionFailureListener, SendAcknowled
 
       if (transformer != null)
       {
-         message = transformer.transform(message);
+         final ServerMessage transformedMessage = transformer.transform(message);
+         if (transformedMessage != message)
+         {
+            if (log.isDebugEnabled())
+            {
+               log.debug("The transformer " + transformer + " made a copy of the message " + message + " as transformedMessage");
+            }
+         }
+         return transformedMessage;
       }
-
-      return message;
+      else
+      {
+         return message;
+      }
    }
 
    /**
