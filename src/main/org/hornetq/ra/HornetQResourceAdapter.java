@@ -32,6 +32,7 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -39,6 +40,7 @@ import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
+import org.hornetq.core.client.impl.SimpleUDPServerLocatorImpl;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.ra.inflow.HornetQActivation;
@@ -89,6 +91,11 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
     * The resource adapter connector classnames before parsing
     */
    private String unparsedConnectors;
+
+   /**
+    * The discovery plugin properties for resource adapter before parsing
+    */
+   private String unparsedDiscoveryPluginProperties;
 
    /**
     * Have the factory been configured
@@ -287,6 +294,20 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       this.raProperties.setHA(ha);
    }
 
+   public String getDiscoveryPluginParameters()
+   {
+      return unparsedDiscoveryPluginProperties;
+   }  
+      
+   public void setDiscoveryPluginProperties(final String config)
+   {
+      if(config != null)
+      {
+         this.unparsedDiscoveryPluginProperties = config;
+         raProperties.setParsedDiscoveryPluginParameters(Util.parseDiscoveryPluginConfig(config));
+      }
+   }
+      
    /**
     * Get the discovery group name
     *
@@ -1417,6 +1438,8 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
       else if (discoveryAddress != null)
       {
+         Map<String,Object> params = new HashMap<String,Object>();
+         
          Integer discoveryPort = overrideProperties.getDiscoveryPort() != null ? overrideProperties.getDiscoveryPort()
                                                                               : getDiscoveryPort();
 
@@ -1424,8 +1447,6 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
          {
             discoveryPort = HornetQClient.DEFAULT_DISCOVERY_PORT;
          }
-
-         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(discoveryAddress, discoveryPort);
 
          Long refreshTimeout = overrideProperties.getDiscoveryRefreshTimeout() != null ? overrideProperties.getDiscoveryRefreshTimeout()
                                                                     : raProperties.getDiscoveryRefreshTimeout();
@@ -1442,10 +1463,32 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
             initialTimeout = HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT;
          }
 
-         groupConfiguration.setDiscoveryInitialWaitTimeout(initialTimeout);
+         params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, discoveryAddress);
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, discoveryPort);
+         params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, initialTimeout);
+         params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialTimeout);
+         
+         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(SimpleUDPServerLocatorImpl.class.getName(), params, null);
 
-         groupConfiguration.setRefreshTimeout(refreshTimeout);
-
+         if (ha)
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithHA(groupConfiguration, JMSFactoryType.XA_CF);
+         }
+         else
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithoutHA(groupConfiguration, JMSFactoryType.XA_CF);
+         }
+      }
+      else if (this.unparsedDiscoveryPluginProperties != null)
+      {
+         // for another discovery strategy
+         Map<String, Object> discoveryPluginParams =
+                  overrideConnectionParameters(overrideProperties.getParsedDiscoveryPluginParameters(),raProperties.getParsedDiscoveryPluginParameters());
+                  
+         String serverLocatorClassName = (String)discoveryPluginParams.get("server-locator-class");
+                  
+         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(serverLocatorClassName, discoveryPluginParams, null);
+                  
          if (ha)
          {
             cf = HornetQJMSClient.createConnectionFactoryWithHA(groupConfiguration, JMSFactoryType.XA_CF);

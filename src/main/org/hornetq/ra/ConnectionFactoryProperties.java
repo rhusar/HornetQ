@@ -100,6 +100,8 @@ public class ConnectionFactoryProperties
 
    private Integer threadPoolMaxSize;
 
+   private Map<String, Object> discoveryPluginParameters;
+
    /**
     * @return the transportType
     */
@@ -119,6 +121,18 @@ public class ConnectionFactoryProperties
       hasBeenUpdated = true;
    }
 
+   public Map<String, Object> getParsedDiscoveryPluginParameters()
+   {
+      return discoveryPluginParameters;
+   }
+   
+   public void setParsedDiscoveryPluginParameters(final Map<String, Object> discoveryPluginParameters)
+   {
+      this.discoveryPluginParameters = discoveryPluginParameters;
+      hasBeenUpdated = true;
+   }
+   
+  
    public void setParsedConnectorClassNames(final List<String> value)
    {
       connectorClassName = value;
