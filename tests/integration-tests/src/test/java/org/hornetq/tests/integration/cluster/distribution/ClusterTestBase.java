@@ -28,6 +28,7 @@ import java.util.Set;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -72,7 +73,7 @@ import org.hornetq.tests.util.UnitTestCase;
  */
 public abstract class ClusterTestBase extends ServiceTestBase
 {
-   private final Logger log = Logger.getLogger(this.getClass());
+   private static final Logger log = Logger.getLogger(ClusterTestBase.class);
    public ClusterTestBase()
    {
       super();
@@ -99,20 +100,38 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       return 500;
    }
-   
+
    protected boolean isLargeMessage()
    {
       return false;
    }
-   
+
 
    private static final long TIMEOUT_START_SERVER = 400;
+
+   private static final SimpleString COUNT_PROP = new SimpleString("count_prop");
+
+   protected static final SimpleString FILTER_PROP = new SimpleString("animal");
+
+   private static final int MAX_SERVERS = 10;
+
+   protected ConsumerHolder[] consumers;
+
+   protected HornetQServer[] servers;
+
+   protected NodeManager[] nodeManagers;
+
+   protected ClientSessionFactory[] sfs;
+
+   protected long[] timeStarts;
+
+   protected ServerLocator[] locators;
 
    @Override
    protected void setUp() throws Exception
    {
       super.setUp();
-      
+
       forceGC();
 
       UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
@@ -122,7 +141,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       consumers = new ConsumerHolder[ClusterTestBase.MAX_CONSUMERS];
 
       servers = new HornetQServer[ClusterTestBase.MAX_SERVERS];
-      
+
       timeStarts = new long[ClusterTestBase.MAX_SERVERS];
 
       sfs = new ClientSessionFactory[ClusterTestBase.MAX_SERVERS];
@@ -142,21 +161,25 @@ public abstract class ClusterTestBase extends ServiceTestBase
    protected void tearDown() throws Exception
    {
       log.info("#test tearDown");
-      for (ServerLocator locator : locators)
+      closeAllConsumers();
+      closeAllSessionFactories();
+      closeAllServerLocatorsFactories();
+      for (int i = 0; i < MAX_SERVERS; i++)
       {
-         try
+         if (servers[i] == null)
+            continue;
+
+         for (ClusterConnection cc : servers[i].getClusterManager().getClusterConnections())
          {
-            locator.close();
+            cc.stop();
          }
-         catch (Exception e)
+         stopComponent(servers[i]);
+
+         }
+      for (int i = 0; i < MAX_SERVERS; i++)
          {
-            //
-         }
+         stopComponent(nodeManagers[i]);
       }
-
-      locators = null;
-
-      locators = new ServerLocator[ClusterTestBase.MAX_SERVERS];
       UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
 
       servers = null;
@@ -189,28 +212,34 @@ public abstract class ClusterTestBase extends ServiceTestBase
          this.id = id;
 
          this.consumer = consumer;
-
          this.session = session;
       }
+
+      void close()
+      {
+         if (consumer != null)
+         {
+            try
+            {
+               consumer.close();
+            }
+            catch (HornetQException e)
+            {
+               // ignore
+            }
+         }
+         if (session != null) {
+            try
+            {
+               session.close();
+            }
+            catch (HornetQException e)
+            {
+               // ignore
+            }
+      }
+      }
    }
-
-   private static final SimpleString COUNT_PROP = new SimpleString("count_prop");
-
-   protected static final SimpleString FILTER_PROP = new SimpleString("animal");
-
-   private static final int MAX_SERVERS = 10;
-
-   protected ConsumerHolder[] consumers;
-
-   protected HornetQServer[] servers;
-   
-   protected long[] timeStarts;
-
-   protected NodeManager[] nodeManagers;
-
-   protected ServerLocator[] locators;
-
-   protected ClientSessionFactory[] sfs;
 
    protected ClientConsumer getConsumer(final int node)
    {
@@ -243,7 +272,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          Thread.sleep(10);
       }
-      while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
+      while (System.currentTimeMillis() - start < ServiceTestBase.WAIT_TIMEOUT);
 
       throw new IllegalStateException("Timed out waiting for messages (messageCount = " + messageCount +
                                       ", expecting = " +
@@ -261,7 +290,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          }
          Thread.sleep(10);
       }
-      while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
+      while (System.currentTimeMillis() - start < ServiceTestBase.WAIT_TIMEOUT);
       String msg = "Timed out waiting for server starting = " + node;
 
       log.error(msg);
@@ -310,7 +339,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          for (Binding binding : bindings.getBindings())
          {
-            if (binding instanceof LocalQueueBinding && local || binding instanceof RemoteQueueBinding && !local)
+            if ((binding instanceof LocalQueueBinding && local) || (binding instanceof RemoteQueueBinding && !local))
             {
                QueueBinding qBinding = (QueueBinding)binding;
 
@@ -327,7 +356,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          Thread.sleep(10);
       }
-      while (System.currentTimeMillis() - start < ClusterTestBase.WAIT_TIMEOUT);
+      while (System.currentTimeMillis() - start < ServiceTestBase.WAIT_TIMEOUT);
 
       String msg = "Timed out waiting for bindings (bindingCount = " + bindingCount +
                    " (expecting " +
@@ -504,7 +533,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       catch (Exception e)
       {
-         // Proxy the faliure and print a dump into System.out, so it is captured by Hudson reports
+         // Proxy the failure and print a dump into System.out, so it is captured by Hudson reports
          e.printStackTrace();
          System.out.println(UnitTestCase.threadDump(" - fired by ClusterTestBase::addConsumer"));
 
@@ -617,7 +646,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             }
 
             message.putIntProperty(ClusterTestBase.COUNT_PROP, i);
-            
+
             if (isLargeMessage())
             {
                message.setBodyInputStream(createFakeLargeStream(getLargeMessageSize()));
@@ -673,7 +702,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          for (int i = msgStart; i < msgEnd; i++)
          {
             ClientMessage message = session.createMessage(durable);
-            
+
             if (isLargeMessage())
             {
                message.setBodyInputStream(createFakeLargeStream(getLargeMessageSize()));
@@ -681,7 +710,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             message.putStringProperty(key, val);
             message.putIntProperty(ClusterTestBase.COUNT_PROP, i);
-            
+
             producer.send(message);
          }
       }
@@ -874,7 +903,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             log.info("msg on ClusterTestBase = " + message);
 
-            
+
             if (isLargeMessage())
             {
                checkMessageBody(message);
@@ -1082,7 +1111,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          ClientMessage msg = holder.consumer.receive(10000);
 
-         Assert.assertNotNull(msg);
+         Assert.assertNotNull("msg must exist", msg);
 
          int count = msg.getIntProperty(ClusterTestBase.COUNT_PROP);
 
@@ -1125,7 +1154,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          {
             ClientMessage msg = holder.consumer.consumer.receive(10000);
 
-            Assert.assertNotNull(msg);
+            Assert.assertNotNull("msg must exist", msg);
 
             int p = msg.getIntProperty(ClusterTestBase.COUNT_PROP);
 
@@ -1179,7 +1208,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             if (message != null)
             {
                int count = (Integer)message.getObjectProperty(ClusterTestBase.COUNT_PROP);
-               
+
                checkMessageBody(message);
 
 
@@ -1290,12 +1319,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
          message = consumer.consumer.receive(500);
          if (message != null)
          {
-            
+
             if (isLargeMessage())
             {
                checkMessageBody(message);
             }
-            
+
             if (ack)
             {
                message.acknowledge();
@@ -1359,11 +1388,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       if (netty)
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY, params);
       }
       else
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY, params);
       }
 
       if (ha)
@@ -1397,11 +1426,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       if (netty)
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY, params);
       }
       else
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY, params);
       }
 
       locators[node] = HornetQClient.createServerLocatorWithoutHA(serverTotc);
@@ -1427,11 +1456,11 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       if (netty)
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.NETTY_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.NETTY_CONNECTOR_FACTORY, params);
       }
       else
       {
-         serverTotc = new TransportConfiguration(ServiceTestBase.INVM_CONNECTOR_FACTORY, params);
+         serverTotc = new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY, params);
       }
 
       locators[node] = HornetQClient.createServerLocatorWithHA(serverTotc);
@@ -1537,6 +1566,32 @@ public abstract class ClusterTestBase extends ServiceTestBase
       servers[node] = server;
    }
 
+   protected void setupLiveServer(final int node,
+                                  final boolean fileStorage,
+                                  final boolean sharedStorage,
+                                  final boolean netty,
+                                  NodeManager nodeManager)
+      {
+         if (servers[node] != null)
+         {
+            throw new IllegalArgumentException("Already a server at node " + node);
+         }
+
+         Configuration configuration = createBasicConfig();
+
+         configureSomeCommonValues(node, node, sharedStorage, configuration);
+         configuration.setJournalCompactMinFiles(0);
+
+         configuration.getAcceptorConfigurations().clear();
+         configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node, netty)));
+
+         HornetQServer server;
+
+         server = createInVMFailoverServer(fileStorage, configuration, nodeManager,node);
+
+         servers[node] = server;
+      }
+
    protected void setupBackupServer(final int node,
                                     final int liveNode,
                                     final boolean fileStorage,
@@ -1612,6 +1667,79 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
       server.setIdentity(this.getClass().getSimpleName() + "/Backup(" + node + " of live " + liveNode + ")");
       servers[node] = server;
+   }
+
+   private void configureSomeCommonValues(final int node,
+                                          final int liveNode,
+                                          final boolean sharedStorage,
+                                          Configuration configuration)
+   {
+      configuration.setSecurityEnabled(false);
+      configuration.setJournalMinFiles(2);
+      configuration.setJournalMaxIO_AIO(1000);
+      configuration.setJournalFileSize(100 * 1024);
+      configuration.setJournalType(getDefaultJournalType());
+
+      configureCommonValues(node, liveNode, sharedStorage, configuration);
+   }
+
+   private void configureCommonValues(final int node,
+                                      final int liveNode,
+                                      final boolean sharedStorage,
+                                      Configuration configuration)
+   {
+      configuration.setSharedStore(sharedStorage);
+      configuration.setClustered(true);
+      if (sharedStorage)
+      {
+         // Shared storage will share the node between the backup and live node
+         configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
+         configuration.setJournalDirectory(getJournalDir(liveNode, false));
+         configuration.setPagingDirectory(getPageDir(liveNode, false));
+         configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
+      }
+      else
+      {
+         configuration.setBindingsDirectory(getBindingsDir(node, true));
+         configuration.setJournalDirectory(getJournalDir(node, true));
+         configuration.setPagingDirectory(getPageDir(node, true));
+         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
+      }
+   }
+
+   protected void setupBackupServer(final int node,
+                                     final int liveNode,
+                                     final boolean fileStorage,
+                                     final boolean sharedStorage,
+                                     final boolean netty,
+                                     NodeManager nodeManager)
+   {
+      if (servers[node] != null)
+      {
+         throw new IllegalArgumentException("Already a server at node " + node);
+      }
+
+      Configuration configuration = createBasicConfig();
+
+      configureSomeCommonValues(node, liveNode, sharedStorage, configuration);
+      configuration.setJournalCompactMinFiles(0);
+      configuration.setBackup(true);
+
+      // add acceptor
+      configuration.getAcceptorConfigurations().clear();
+      TransportConfiguration acceptorConfig = createTransportConfiguration(netty, true, generateParams(node, netty));
+      configuration.getAcceptorConfigurations().add(acceptorConfig);
+
+
+      // add backup connector
+      TransportConfiguration liveConfig = createTransportConfiguration(netty, false, generateParams(liveNode, netty));
+      configuration.getConnectorConfigurations().put(liveConfig.getName(), liveConfig);
+      TransportConfiguration backupConfig = createTransportConfiguration(netty, false, generateParams(node, netty));
+      configuration.getConnectorConfigurations().put(backupConfig.getName(), backupConfig);
+
+      configuration.setLiveConnectorName(liveConfig.getName());
+
+      servers[node] = createInVMFailoverServer(fileStorage, configuration, nodeManager, node);
    }
 
    protected void setupLiveServerWithDiscovery(final int node,
@@ -2049,7 +2177,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             Thread.sleep(TIMEOUT_START_SERVER);
          }
          timeStarts[node] = System.currentTimeMillis();
-         
+
          servers[node].setIdentity("server " + node);
          log.info("starting server " + servers[node]);
          servers[node].start();
@@ -2094,10 +2222,10 @@ public abstract class ClusterTestBase extends ServiceTestBase
                   // We can't stop and start a node too fast (faster than what the Topology could realize about this
                  Thread.sleep(TIMEOUT_START_SERVER);
                }
-               
+
 
                timeStarts[node] = System.currentTimeMillis();
-               
+
                log.info("stopping server " + node);
                servers[node].stop();
                log.info("server " + node + " stopped");

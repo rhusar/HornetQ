@@ -57,6 +57,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
+import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -68,8 +69,8 @@ import org.hornetq.core.journal.impl.JournalImpl;
 import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager;
-import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.persistence.impl.journal.JournalStorageManager.ReferenceDescribe;
+import org.hornetq.core.persistence.impl.journal.OperationContextImpl;
 import org.hornetq.core.postoffice.Binding;
 import org.hornetq.core.postoffice.Bindings;
 import org.hornetq.core.postoffice.PostOffice;
@@ -115,9 +116,9 @@ public class UnitTestCase extends TestCase
 
    // There is a verification about thread leakages. We only fail a single thread when this happens
    private static Set<Thread> alreadyFailedThread = new HashSet<Thread>();
-   
+
    private boolean checkThread = true;
-   
+
    protected void disableCheckThread()
    {
       checkThread = false;
@@ -603,7 +604,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the testDir
     */
-   protected String getTestDir()
+   protected static String getTestDir()
    {
       return testDir;
    }
@@ -678,7 +679,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the pageDir
     */
-   protected String getPageDir()
+   protected static String getPageDir()
    {
       return getPageDir(getTestDir());
    }
@@ -686,7 +687,7 @@ public class UnitTestCase extends TestCase
    /**
     * @return the pageDir
     */
-   protected String getPageDir(final String testDir)
+   protected static String getPageDir(final String testDir)
    {
       return testDir + "/page";
    }
@@ -913,8 +914,25 @@ public class UnitTestCase extends TestCase
    @Override
    protected void tearDown() throws Exception
    {
+      List<ClientSessionFactoryImpl.CloseRunnable> closeRunnables = new ArrayList<ClientSessionFactoryImpl.CloseRunnable>(ClientSessionFactoryImpl.CLOSE_RUNNABLES);
+      ArrayList<Exception> exceptions = new ArrayList<Exception>();
+      if(!closeRunnables.isEmpty())
+      {
+         for (ClientSessionFactoryImpl.CloseRunnable closeRunnable : closeRunnables)
+         {
+            exceptions.add(closeRunnable.stop().e);
+         }
+      }
       cleanupPools();
-
+      //clean up pools before failing
+      if(!exceptions.isEmpty())
+      {
+         for (Exception exception : exceptions)
+         {
+            exception.printStackTrace();
+         }
+         fail("Client Session Factories still tryint to reconnect, see above to see where created");
+      }
       Map<Thread, StackTraceElement[]> threadMap = Thread.getAllStackTraces();
       for (Thread thread : threadMap.keySet())
       {
@@ -925,13 +943,13 @@ public class UnitTestCase extends TestCase
             {
                alreadyFailedThread.add(thread);
                System.out.println(threadDump(this.getName() + " has left threads running. Look at thread " +
-                                             thread.getName() +
-                                             " id = " +
-                                             thread.getId() +
-                                             " has running locators on test " +
-                                             this.getName() +
-                                             " on this following dump"));
-               fail("test left serverlocator running, this could effect other tests");
+                     thread.getName() +
+                     " id = " +
+                     thread.getId() +
+                     " has running locators on test " +
+                     this.getName() +
+                     " on this following dump"));
+               fail("test '" + getName() + "' left serverlocator running, this could effect other tests");
             }
             else if (stackTraceElement.getMethodName().contains("BroadcastGroupImpl.run") && !alreadyFailedThread.contains(thread))
             {
@@ -953,15 +971,15 @@ public class UnitTestCase extends TestCase
           StringBuffer buffer = null;
 
           boolean failed = true;
-          
+
 
          long timeout = System.currentTimeMillis() + 60000;
          while (failed && timeout > System.currentTimeMillis())
          {
             buffer = new StringBuffer();
-   
+
             failed = checkThread(buffer);
-   
+
             if (failed)
             {
                forceGC();
@@ -987,7 +1005,7 @@ public class UnitTestCase extends TestCase
       {
          checkThread = true;
       }
-      
+
 
       super.tearDown();
    }
@@ -1031,7 +1049,7 @@ public class UnitTestCase extends TestCase
    }
 
    /**
-    * 
+    *
     */
    protected void cleanupPools()
    {

@@ -156,13 +156,15 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
 
    private final Object waitLock = new Object();
 
+   public final static List<CloseRunnable> CLOSE_RUNNABLES = new ArrayList<CloseRunnable>();
+
    // Static
    // ---------------------------------------------------------------------------------------
 
    // Constructors
    // ---------------------------------------------------------------------------------
 
-   public ClientSessionFactoryImpl(final ServerLocatorInternal serverLocator,
+   ClientSessionFactoryImpl(final ServerLocatorInternal serverLocator,
                                    final TransportConfiguration connectorConfig,
                                    final long callTimeout,
                                    final long clientFailureCheckPeriod,
@@ -1453,17 +1455,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                serverLocator.notifyNodeDown(System.currentTimeMillis(), msg.getNodeID().toString());
             }
 
-            closeExecutor.execute(new Runnable()
-            {
-               // Must be executed on new thread since cannot block the netty thread for a long time and fail can
-               // cause reconnect loop
-               public void run()
-               {
-                  conn.fail(new HornetQException(HornetQException.DISCONNECTED,
-                                                 "The connection was disconnected because of server shutdown"));
-
-               }
-            });
+            closeExecutor.execute(new CloseRunnable(conn));
          }
          else if (type == PacketImpl.CLUSTER_TOPOLOGY)
          {
@@ -1520,8 +1512,43 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
             }
          }
       }
+
+
    }
 
+   public class CloseRunnable implements Runnable
+   {
+      private final CoreRemotingConnection conn;
+
+      public CloseRunnable(CoreRemotingConnection conn)
+      {
+         this.conn = conn;
+      }
+
+      // Must be executed on new thread since cannot block the netty thread for a long time and fail can
+      // cause reconnect loop
+      public void run()
+      {
+         try
+         {
+            CLOSE_RUNNABLES.add(this);
+            conn.fail(new HornetQException(HornetQException.DISCONNECTED,
+                  "The connection was disconnected because of server shutdown"));
+         } finally
+         {
+            CLOSE_RUNNABLES.remove(this);
+         }
+
+      }
+
+      public ClientSessionFactoryImpl stop()
+      {
+         CLOSE_RUNNABLES.remove(this);
+         causeExit();
+         return ClientSessionFactoryImpl.this;
+      }
+
+   }
    private class DelegatingBufferHandler implements BufferHandler
    {
       public void bufferReceived(final Object connectionID, final HornetQBuffer buffer)
@@ -1620,7 +1647,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       /**
-       * 
+       *
        */
       public void send()
       {
