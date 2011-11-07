@@ -40,8 +40,12 @@ import javax.management.MBeanServer;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
+import org.hornetq.api.core.TransportConfiguration;
+import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.CoreQueueConfiguration;
@@ -83,6 +87,7 @@ import org.hornetq.core.postoffice.impl.LocalQueueBinding;
 import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
+import org.hornetq.core.protocol.core.impl.ChannelImpl.CHANNEL_ID;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.replication.ReplicationEndpoint;
@@ -104,6 +109,7 @@ import org.hornetq.core.server.NodeManager;
 import org.hornetq.core.server.Queue;
 import org.hornetq.core.server.QueueFactory;
 import org.hornetq.core.server.ServerSession;
+import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.cluster.ClusterManager;
 import org.hornetq.core.server.cluster.Transformer;
 import org.hornetq.core.server.cluster.impl.ClusterManagerImpl;
@@ -362,25 +368,18 @@ public class HornetQServerImpl implements HornetQServer
             if (configuration.isSharedStore() && configuration.isPersistenceEnabled())
             {
                activation = new SharedStoreLiveActivation();
-
-               // This should block until the lock is got
-
-               activation.run();
             }
             else
             {
                activation = new NoSharedStoreLiveActivation();
-
-               activation.run();
             }
+
+            activation.run();
+
             started = true;
 
-            HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() +
-                                       " [" +
-                                       nodeManager.getNodeId() +
-                                       "]" +
-                                       (this.identity != null ? " (" + identity : ")") +
-                                       " started");
+            HornetQServerImpl.log.info("HornetQ Server version " + getVersion().getFullVersion() + " [" +
+                     nodeManager.getNodeId() + "]" + (this.identity != null ? " (" + identity + ")" : "") + " started");
          }
 
          // The activation on fail-back may change the value of isBackup, for that reason we are not using else here
@@ -471,7 +470,7 @@ public class HornetQServerImpl implements HornetQServer
       stop(failoverOnServerShutdown, false);
    }
 
-   protected void stop(boolean failoverOnServerShutdown, boolean criticalIOError) throws Exception
+   private void stop(boolean failoverOnServerShutdown, boolean criticalIOError) throws Exception
    {
       synchronized (this)
       {
@@ -582,7 +581,7 @@ public class HornetQServerImpl implements HornetQServer
 
          for (Runnable task : tasks)
          {
-            HornetQServerImpl.log.debug(this + "::Waiting for " + task);
+               HornetQServerImpl.log.info(this + "::Waiting for " + task);
          }
 
          if (memoryManager != null)
@@ -590,9 +589,9 @@ public class HornetQServerImpl implements HornetQServer
             memoryManager.stop();
          }
 
-         threadPool.shutdown();
+            threadPool.shutdown();
 
-         scheduledPool.shutdown();
+            scheduledPool.shutdown();
 
          try
          {
@@ -701,19 +700,9 @@ public class HornetQServerImpl implements HornetQServer
       return scheduledPool;
    }
 
-   public ExecutorService getThreadPool()
-   {
-      return threadPool;
-   }
-
    public Configuration getConfiguration()
    {
       return configuration;
-   }
-
-   public MBeanServer getMBeanServer()
-   {
-      return mbeanServer;
    }
 
    public PagingManager getPagingManager()
@@ -1054,36 +1043,6 @@ public class HornetQServerImpl implements HornetQServer
       return connectorsService;
    }
 
-   public synchronized boolean checkActivate() throws Exception
-   {
-      if (configuration.isBackup())
-      {
-         // Handle backup server activation
-
-         if (!configuration.isSharedStore())
-         {
-            if (replicationEndpoint == null)
-            {
-               HornetQServerImpl.log.warn("There is no replication endpoint, can't activate this backup server");
-
-               throw new HornetQException(HornetQException.INTERNAL_ERROR, "Can't activate the server");
-            }
-
-            replicationEndpoint.stop();
-         }
-
-         // Complete the startup procedure
-
-         HornetQServerImpl.log.info("Activating backup server");
-
-         configuration.setBackup(false);
-
-         initialisePart2();
-      }
-
-      return true;
-   }
-
    public void deployDivert(DivertConfiguration config) throws Exception
    {
       if (config.getName() == null)
@@ -1220,7 +1179,7 @@ public class HornetQServerImpl implements HornetQServer
    // null);
    // }
 
-   protected PagingManager createPagingManager()
+   private PagingManager createPagingManager()
    {
 
       return new PagingManagerImpl(new PagingStoreFactoryNIO(configuration.getPagingDirectory(),
@@ -1236,7 +1195,7 @@ public class HornetQServerImpl implements HornetQServer
    /**
     * This method is protected as it may be used as a hook for creating a custom storage manager (on tests for instance)
     */
-   protected StorageManager createStorageManager()
+   private StorageManager createStorageManager()
    {
       if (configuration.isPersistenceEnabled())
       {
@@ -1819,9 +1778,9 @@ public class HornetQServerImpl implements HornetQServer
    // Inner classes
    // --------------------------------------------------------------------------------
 
-   class FailbackChecker implements Runnable
+   private class FailbackChecker implements Runnable
    {
-      boolean restarting = false;
+      private boolean restarting = false;
 
       public void run()
       {
@@ -1862,7 +1821,7 @@ public class HornetQServerImpl implements HornetQServer
       }
    }
 
-   private class SharedStoreLiveActivation implements Activation
+   private final class SharedStoreLiveActivation implements Activation
    {
       public void run()
       {
@@ -1923,7 +1882,7 @@ public class HornetQServerImpl implements HornetQServer
       }
    }
 
-   private class SharedStoreBackupActivation implements Activation
+   private final class SharedStoreBackupActivation implements Activation
    {
       public void run()
       {
@@ -1984,9 +1943,6 @@ public class HornetQServerImpl implements HornetQServer
          }
       }
 
-      /**
-       *
-       */
       public void close(boolean permanently) throws Exception
       {
          if (configuration.isBackup())
@@ -1998,11 +1954,8 @@ public class HornetQServerImpl implements HornetQServer
             while (backupActivationThread.isAlive() && System.currentTimeMillis() - start < timeout)
             {
                nodeManager.interrupt();
-
                backupActivationThread.interrupt();
-
                backupActivationThread.join(1000);
-
             }
 
             if (System.currentTimeMillis() - start >= timeout)
@@ -2029,7 +1982,7 @@ public class HornetQServerImpl implements HornetQServer
       }
    }
 
-   private class ShutdownOnCriticalErrorListener implements IOCriticalErrorListener
+   private final class ShutdownOnCriticalErrorListener implements IOCriticalErrorListener
    {
       boolean failedAlready = false;
 
@@ -2065,30 +2018,167 @@ public class HornetQServerImpl implements HornetQServer
       void close(boolean permanently) throws Exception;
    }
 
-   private class SharedNothingBackupActivation implements Activation
+   private final class SharedNothingBackupActivation implements Activation
    {
+      private ServerLocatorInternal serverLocator;
+      private volatile boolean failedConnection;
+
       public void run()
       {
          try
          {
-            // TODO
+            nodeManager.startBackup();
 
-            // Try-Connect to live server using live-connector-ref
+            initialisePart1();
 
-            // sit in loop and try and connect, if server is not live then it will return NOT_LIVE
+            final String liveConnectorName = configuration.getLiveConnectorName();
+            if (liveConnectorName == null)
+            {
+               throw new IllegalArgumentException(
+                                                  "Cannot have a replicated backup without configuring its live-server!");
+            }
+            clusterManager.start();
+
+            final TransportConfiguration config = configuration.getConnectorConfigurations().get(liveConnectorName);
+            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(config);
+            final QuorumManager quorumManager = new QuorumManager(serverLocator);
+            replicationEndpoint.setQuorumManager(quorumManager);
+
+            serverLocator.setReconnectAttempts(-1);
+
+            threadPool.execute(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  try
+                  {
+                     final ClientSessionFactory liveServerSessionFactory = serverLocator.connect();
+                     if (liveServerSessionFactory == null)
+                     {
+                        // XXX HORNETQ-768
+                        throw new RuntimeException("Need to retry?");
+                     }
+                     CoreRemotingConnection liveConnection = liveServerSessionFactory.getConnection();
+                     Channel pingChannel = liveConnection.getChannel(CHANNEL_ID.PING.id, -1);
+                     Channel replicationChannel = liveConnection.getChannel(CHANNEL_ID.REPLICATION.id, -1);
+
+                     connectToReplicationEndpoint(replicationChannel);
+                     replicationEndpoint.start();
+                     clusterManager.announceReplicatingBackup(pingChannel);
+                  }
+                  catch (Exception e)
+                  {
+                     log.warn("Unable to announce backup for replication. Trying to stop the server.", e);
+                     failedConnection = true;
+                     try
+                     {
+                        synchronized (quorumManager)
+                        {
+                           quorumManager.notify();
+                        }
+                        HornetQServerImpl.this.stop();
+                        return;
+                     }
+                     catch (Exception e1)
+                     {
+                        throw new RuntimeException(e1);
+                     }
+                  }
+               }
+            });
+
+            log.info("HornetQ Backup Server version " + getVersion().getFullVersion() + " [" + nodeManager.getNodeId() +
+                     "] started, waiting live to fail before it gets active");
+            started = true;
+
+            // Server node (i.e. Life node) is not running, now the backup takes over.
+            // we must remember to close stuff we don't need any more
+            synchronized (quorumManager)
+            {
+               if (failedConnection)
+                  return;
+               while (true)
+               {
+                  quorumManager.wait();
+                  break;
+//               if (!started || quorumManager.isNodeDown())
+//               {
+//                  break;
+//               }
+               }
+            }
+
+            serverLocator.close();
+            replicationEndpoint.stop();
+
+            if (failedConnection)
+               return;
+            if (!isRemoteBackupUpToDate())
+            {
+               /*
+                * XXX HORNETQ-768 Live is down, and this server was not in sync. Perhaps we should
+                * first try to wait a little longer to see if the 'live' comes back?
+                */
+               throw new HornetQException(HornetQException.ILLEGAL_STATE, "Backup Server was not yet in sync with live");
+            }
+
+            configuration.setBackup(false);
+            synchronized (startUpLock)
+            {
+               if (!started)
+                  return;
+               storageManager.start();
+               initialisePart2();
+               clusterManager.activate();
+            }
+
          }
          catch (Exception e)
          {
+            if ((e instanceof InterruptedException || e instanceof IllegalStateException) && !started)
+               // do not log these errors if the server is being stopped.
+               return;
             log.error("Failure in initialisation", e);
+            e.printStackTrace();
          }
       }
 
-      public void close(boolean permanently) throws Exception
+      public void close(final boolean permanently) throws Exception
       {
+         if (serverLocator != null)
+         {
+            serverLocator.close();
+            serverLocator = null;
+         }
+
+         if (configuration.isBackup())
+         {
+
+            long timeout = 30000;
+
+            long start = System.currentTimeMillis();
+
+            while (backupActivationThread.isAlive() && System.currentTimeMillis() - start < timeout)
+            {
+               nodeManager.interrupt();
+
+               backupActivationThread.interrupt();
+
+               Thread.sleep(1000);
+            }
+
+            if (System.currentTimeMillis() - start >= timeout)
+            {
+               log.warn("Timed out waiting for backup activation to exit");
+            }
+
+            nodeManager.stopBackup();
+         }
       }
    }
 
-   private class NoSharedStoreLiveActivation implements Activation
+   private final class NoSharedStoreLiveActivation implements Activation
    {
       public void run()
       {
@@ -2115,7 +2205,14 @@ public class HornetQServerImpl implements HornetQServer
 
       public void close(boolean permanently) throws Exception
       {
-
+         if (permanently)
+         {
+            nodeManager.crashLiveServer();
+         }
+         else
+         {
+            nodeManager.pauseLiveServer();
+         }
       }
    }
 
@@ -2159,13 +2256,20 @@ public class HornetQServerImpl implements HornetQServer
 
 
    @Override
-   public boolean startReplication(CoreRemotingConnection rc)
+   public boolean startReplication(CoreRemotingConnection rc, ClusterConnection clusterConnection,
+      Pair<TransportConfiguration, TransportConfiguration> pair)
    {
+      if (replicationManager != null)
+      {
+         return false;
+      }
+
       replicationManager = new ReplicationManagerImpl(rc, executorFactory);
       try
       {
          replicationManager.start();
-         storageManager.startReplication(replicationManager, pagingManager);
+         storageManager.startReplication(replicationManager, pagingManager, getNodeID().toString(), clusterConnection,
+                                         pair);
          return true;
       }
       catch (Exception e)
@@ -2194,8 +2298,9 @@ public class HornetQServerImpl implements HornetQServer
       return backupUpToDate;
    }
 
-   public void setRemoteBackupUpToDate()
+   public void setRemoteBackupUpToDate(String nodeID)
    {
+      nodeManager.setNodeID(nodeID);
       backupUpToDate = true;
    }
 }

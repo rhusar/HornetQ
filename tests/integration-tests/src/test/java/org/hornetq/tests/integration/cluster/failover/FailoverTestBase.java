@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -34,14 +33,11 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
-import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.invm.InVMConnector;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
-import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
-import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.server.NodeManager;
 import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.server.impl.InVMNodeManager;
@@ -113,8 +109,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
       super.setUp();
       clearData();
       createConfigs();
-
-
 
       liveServer.setIdentity(this.getClass().getSimpleName() + "/liveServer");
 
@@ -195,7 +189,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
       ReplicatedBackupUtils.createClusterConnectionConf(backupConfig, backupConnector.getName(),
                                                         liveConnector.getName());
       backupServer = createBackupServer();
-      backupServer.getServer().setIdentity("bkpIdentityServer");
 
       liveConfig = super.createDefaultConfig();
       liveConfig.getAcceptorConfigurations().clear();
@@ -228,14 +221,11 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupConfig.setSecurityEnabled(false);
 
       backupServer = createBackupServer();
-      backupServer.getServer().setIdentity("idBackup");
-
       liveConfig.getAcceptorConfigurations().clear();
       liveConfig.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
 
 
       liveServer = createLiveServer();
-      liveServer.getServer().setIdentity("idLive");
    }
 
    @Override
@@ -322,51 +312,45 @@ public abstract class FailoverTestBase extends ServiceTestBase
          {
             fail("backup server never started (" + backupServer.isStarted() + "), or never finished synchronizing (" +
                      actualServer.isRemoteBackupUpToDate() + ")");
-   }
+         }
          try
          {
             Thread.sleep(100);
          }
          catch (InterruptedException e)
          {
-            //ignore
+            fail(e.getMessage());
          }
-         }
+      }
    }
 
    protected TransportConfiguration getNettyAcceptorTransportConfiguration(final boolean live)
    {
       if (live)
       {
-         return new TransportConfiguration(NettyAcceptorFactory.class.getCanonicalName());
+         return new TransportConfiguration(NETTY_ACCEPTOR_FACTORY);
       }
-      else
-      {
-         Map<String, Object> server1Params = new HashMap<String, Object>();
 
-         server1Params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
-               org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + 1);
+      Map<String, Object> server1Params = new HashMap<String, Object>();
 
-         return new TransportConfiguration(NettyAcceptorFactory.class.getCanonicalName(),
-               server1Params);
-      }
+      server1Params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
+                        org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + 1);
+
+      return new TransportConfiguration(NETTY_ACCEPTOR_FACTORY, server1Params);
    }
 
    protected TransportConfiguration getNettyConnectorTransportConfiguration(final boolean live)
    {
       if (live)
       {
-         return new TransportConfiguration(NettyConnectorFactory.class.getCanonicalName());
+         return new TransportConfiguration(NETTY_CONNECTOR_FACTORY);
       }
-      else
-      {
-         Map<String, Object> server1Params = new HashMap<String, Object>();
 
-         server1Params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
-               org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + 1);
+      Map<String, Object> server1Params = new HashMap<String, Object>();
 
-         return new TransportConfiguration(NettyConnectorFactory.class.getCanonicalName(), server1Params);
-      }
+      server1Params.put(org.hornetq.core.remoting.impl.netty.TransportConstants.PORT_PROP_NAME,
+                        org.hornetq.core.remoting.impl.netty.TransportConstants.DEFAULT_PORT + 1);
+      return new TransportConfiguration(NETTY_CONNECTOR_FACTORY, server1Params);
    }
 
    protected abstract TransportConfiguration getAcceptorTransportConfiguration(boolean live);
@@ -392,13 +376,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
-
-   abstract class BaseListener implements SessionFailureListener
-   {
-      public void beforeReconnect(final HornetQException me)
-      {
-      }
-   }
 
    class LatchClusterTopologyListener implements ClusterTopologyListener
    {

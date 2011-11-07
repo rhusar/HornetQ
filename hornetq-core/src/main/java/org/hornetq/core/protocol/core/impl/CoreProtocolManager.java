@@ -51,10 +51,8 @@ import org.hornetq.spi.core.remoting.Connection;
  * A CoreProtocolManager
  *
  * @author Tim Fox
- *
- *
  */
-public class CoreProtocolManager implements ProtocolManager
+class CoreProtocolManager implements ProtocolManager
 {
    private static final Logger log = Logger.getLogger(CoreProtocolManager.class);
 
@@ -64,7 +62,7 @@ public class CoreProtocolManager implements ProtocolManager
 
    private final List<Interceptor> interceptors;
 
-   public CoreProtocolManager(final HornetQServer server, final List<Interceptor> interceptors)
+   CoreProtocolManager(final HornetQServer server, final List<Interceptor> interceptors)
    {
       this.server = server;
 
@@ -210,14 +208,9 @@ public class CoreProtocolManager implements ProtocolManager
             } else if (packet.getType() == PacketImpl.BACKUP_REGISTRATION)
             {
                BackupRegistrationMessage msg = (BackupRegistrationMessage)packet;
-               if (server.startReplication(rc))
+               if (server.startReplication(rc, acceptorUsed.getClusterConnection(), getPair(msg.getConnector(), true)))
                {
-                  /*
-                   * HORNETQ-720 Instantiate a new server locator to call notifyNodeUp(...)? Or send
-                   * a CLUSTER_TOPOLOGY(_2?) message?
-                   */
-//                  server.getClusterManager().notifyNodeUp(msg.getNodeID(), getPair(msg.getConnector(), true), true,
-//                                                          true);
+                  // XXX if it fails, the backup should get to know it
                }
             }
          }

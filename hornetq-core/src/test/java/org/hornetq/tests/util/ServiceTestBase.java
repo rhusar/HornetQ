@@ -52,7 +52,6 @@ import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.core.server.impl.HornetQServerImpl;
 import org.hornetq.core.settings.impl.AddressFullMessagePolicy;
 import org.hornetq.core.settings.impl.AddressSettings;
-import org.hornetq.jms.client.HornetQBytesMessage;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
 import org.hornetq.spi.core.security.HornetQSecurityManagerImpl;
 import org.hornetq.utils.UUIDGenerator;
@@ -263,22 +262,22 @@ public abstract class ServiceTestBase extends UnitTestCase
       {
          if (acceptor)
          {
-            className = NettyAcceptorFactory.class.getName();
+            className = NETTY_ACCEPTOR_FACTORY;
          }
          else
          {
-            className = NettyConnectorFactory.class.getName();
+            className = NETTY_CONNECTOR_FACTORY;
          }
       }
       else
       {
          if (acceptor)
          {
-            className = InVMAcceptorFactory.class.getName();
+            className = INVM_ACCEPTOR_FACTORY;
          }
          else
          {
-            className = InVMConnectorFactory.class.getName();
+            className = INVM_CONNECTOR_FACTORY;
          }
       }
       return new TransportConfiguration(className, params);
@@ -307,16 +306,18 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    protected void waitForServer(HornetQServer server) throws InterruptedException
    {
+      if (server == null)
+         return;
       long timetowait = System.currentTimeMillis() + 5000;
       while (!server.isStarted() && System.currentTimeMillis() < timetowait)
       {
-         Thread.sleep(100);
+         Thread.sleep(50);
       }
 
       if (!server.isStarted())
       {
          log.info(threadDump("Server didn't start"));
-         fail("server didnt start");
+         fail("server didnt start: " + server);
       }
 
       if (!server.getConfiguration().isBackup())
@@ -324,12 +325,12 @@ public abstract class ServiceTestBase extends UnitTestCase
          timetowait = System.currentTimeMillis() + 5000;
          while (!server.isInitialised() && System.currentTimeMillis() < timetowait)
          {
-            Thread.sleep(100);
+            Thread.sleep(50);
          }
 
          if (!server.isInitialised())
          {
-            fail("Server didn't initialize");
+            fail("Server didn't initialize: " + server);
          }
       }
    }
@@ -660,13 +661,12 @@ public abstract class ServiceTestBase extends UnitTestCase
       return m.getBodyBuffer().readString();
    }
 
-   protected ClientMessage createBytesMessage(final ClientSession session, final byte[] b, final boolean durable)
+   protected ClientMessage createBytesMessage(final ClientSession session,
+                                              final byte type,
+                                              final byte[] b,
+                                              final boolean durable)
    {
-      ClientMessage message = session.createMessage(HornetQBytesMessage.TYPE,
-                                                    durable,
-                                                    0,
-                                                    System.currentTimeMillis(),
-                                                    (byte)1);
+      ClientMessage message = session.createMessage(type, durable, 0, System.currentTimeMillis(), (byte)1);
       message.getBodyBuffer().writeBytes(b);
       return message;
    }
@@ -761,7 +761,7 @@ public abstract class ServiceTestBase extends UnitTestCase
    // Private -------------------------------------------------------
 
    // Inner classes -------------------------------------------------
-   class InVMNodeManagerServer extends HornetQServerImpl
+   public final class InVMNodeManagerServer extends HornetQServerImpl
    {
       final NodeManager nodeManager;
 

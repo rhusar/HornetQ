@@ -538,11 +538,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       stopPingingAfterOne = true;
    }
 
-   public void resumePinging()
-   {
-      stopPingingAfterOne = false;
-   }
-
    // Protected
    // ------------------------------------------------------------------------------------
 
@@ -965,11 +960,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    {
       if (ClientSessionFactoryImpl.log.isTraceEnabled())
       {
-         ClientSessionFactoryImpl.log.trace("getConnectionWithRetry::" + reconnectAttempts +
-                                            " with retryInterval = " +
-                                            retryInterval +
-                                            " multiplier = " +
-                                            retryIntervalMultiplier, new Exception("trace"));
+         ClientSessionFactoryImpl.log.trace("getConnectionWithRetry::" + reconnectAttempts + " with retryInterval = " +
+                  retryInterval + " multiplier = " + retryIntervalMultiplier, new Exception("trace"));
       }
 
       long interval = retryInterval;
@@ -1056,11 +1048,8 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       if (pingerFuture != null)
       {
          pingRunnable.cancel();
-
          pingerFuture.cancel(false);
-
          pingRunnable = null;
-
          pingerFuture = null;
       }
    }
@@ -1520,7 +1509,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    {
       private final CoreRemotingConnection conn;
 
-      public CloseRunnable(CoreRemotingConnection conn)
+      private CloseRunnable(CoreRemotingConnection conn)
       {
          this.conn = conn;
       }

@@ -68,6 +68,7 @@ import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.server.LargeServerMessage;
 import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.impl.HornetQServerImpl;
+import org.hornetq.core.server.impl.QuorumManager;
 
 /**
  *
@@ -87,11 +88,6 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private static final boolean trace = log.isTraceEnabled();
 
    private final IOCriticalErrorListener criticalErrorListener;
-
-   private static void trace(final String msg)
-   {
-      ReplicationEndpointImpl.log.trace(msg);
-   }
 
    private final HornetQServerImpl server;
 
@@ -124,6 +120,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
    private boolean deletePages = true;
    private boolean started;
 
+   private QuorumManager quorumManager;
+
    // Constructors --------------------------------------------------
    public ReplicationEndpointImpl(final HornetQServerImpl server, IOCriticalErrorListener criticalErrorListener)
    {
@@ -152,10 +150,6 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       journals[id] = journal;
    }
 
-   /*
-    * (non-Javadoc)
-    * @see org.hornetq.core.remoting.ChannelHandler#handlePacket(org.hornetq.core.remoting.Packet)
-    */
    public void handlePacket(final Packet packet)
    {
       PacketImpl response = new ReplicationResponseMessage();
@@ -212,7 +206,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
             handleCompareDataMessage((ReplicationCompareDataMessage)packet);
             response = new NullResponseMessage();
          }
-         else if (type == PacketImpl.REPLICATION_START_STOP_SYNC)
+         else if (type == PacketImpl.REPLICATION_START_FINISH_SYNC)
          {
             handleStartReplicationSynchronization((ReplicationStartSyncMessage)packet);
          }
@@ -330,11 +324,15 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       }
 
       filesReservedForSync.clear();
-      for (Journal j : journals)
+      if (journals != null)
       {
-         if (j instanceof FileWrapperJournal)
-            j.stop();
+         for (Journal j : journals)
+         {
+            if (j instanceof FileWrapperJournal)
+               j.stop();
+         }
       }
+
       pageManager.stop();
 
       // Storage needs to be the last to stop
@@ -421,7 +419,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
    // Private -------------------------------------------------------
 
-   private void finishSynchronization() throws Exception
+   private void finishSynchronization(String liveID) throws Exception
    {
       for (JournalContent jc : EnumSet.allOf(JournalContent.class))
       {
@@ -482,7 +480,8 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
          }
       }
       journalsHolder = null;
-      server.setRemoteBackupUpToDate();
+      quorumManager.setLiveID(liveID);
+      server.setRemoteBackupUpToDate(liveID);
       log.info("Backup server " + server + " is synchronized with live-server.");
       return;
    }
@@ -561,7 +560,7 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       if (packet.isSynchronizationFinished())
       {
-         finishSynchronization();
+         finishSynchronization(packet.getNodeID());
          return;
       }
 
@@ -683,11 +682,11 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
 
       if (packet.isRollback())
       {
-         journalToUse.appendRollbackRecord(packet.getTxId(), false);
+         journalToUse.appendRollbackRecord(packet.getTxId(), packet.getSync());
       }
       else
       {
-         journalToUse.appendCommitRecord(packet.getTxId(), false);
+         journalToUse.appendCommitRecord(packet.getTxId(), packet.getSync());
       }
    }
 
@@ -907,5 +906,11 @@ public class ReplicationEndpointImpl implements ReplicationEndpoint
       {
          return "JournalSyncFile(file=" + file.getAbsolutePath() + ")";
       }
+   }
+
+   @Override
+   public void setQuorumManager(QuorumManager quorumManager)
+   {
+      this.quorumManager = quorumManager;
    }
 }

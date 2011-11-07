@@ -169,9 +169,13 @@ public abstract class ClusterTestBase extends ServiceTestBase
          if (servers[i] == null)
             continue;
 
-         for (ClusterConnection cc : servers[i].getClusterManager().getClusterConnections())
+         final ClusterManager clusterManager = servers[i].getClusterManager();
+         if (clusterManager != null)
          {
-            cc.stop();
+            for (ClusterConnection cc : clusterManager.getClusterConnections())
+            {
+               cc.stop();
+            }
          }
          stopComponent(servers[i]);
 
@@ -564,7 +568,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          if (holder != null)
          {
-            holder.consumer.close();
+            holder.close();
             // holder.session.close();
 
             consumers[i] = null;
@@ -811,7 +815,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
             }
 
             SimpleString id = (SimpleString)message.getObjectProperty(Message.HDR_GROUP_ID);
-            System.out.println("received " + id + " on consumer " + consumerIDs[i]);
+
             if (groupIdsReceived.get(id) == null)
             {
                groupIdsReceived.put(id, i);
@@ -928,9 +932,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
                                            message.getObjectProperty(ClusterTestBase.COUNT_PROP);
                }
                outOfOrder = true;
-               System.out.println("Message j=" + j +
-                                  " was received out of order = " +
-                                  message.getObjectProperty(ClusterTestBase.COUNT_PROP));
+               System.out.println("Message j=" + j + " was received out of order = " +
+                        message.getObjectProperty(ClusterTestBase.COUNT_PROP));
                log.info("Message j=" + j +
                         " was received out of order = " +
                         message.getObjectProperty(ClusterTestBase.COUNT_PROP));
@@ -1504,36 +1507,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalArgumentException("Already a server at node " + node);
       }
 
-      Configuration configuration = createBasicConfig();
+      Configuration configuration = createBasicConfig(node);
 
-      configuration.setSecurityEnabled(false);
-      configuration.setJournalMinFiles(2);
       configuration.setJournalMaxIO_AIO(1000);
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
       configuration.setSharedStore(sharedStorage);
       configuration.setThreadPoolMaxSize(10);
-      if (sharedStorage)
-      {
-         // Shared storage will share the node between the backup and live node
-         configuration.setBindingsDirectory(getBindingsDir(node, false));
-         configuration.setJournalDirectory(getJournalDir(node, false));
-         configuration.setPagingDirectory(getPageDir(node, false));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, false));
-      }
-      else
-      {
-         configuration.setBindingsDirectory(getBindingsDir(node, true));
-         configuration.setJournalDirectory(getJournalDir(node, true));
-         configuration.setPagingDirectory(getPageDir(node, true));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
-      }
       configuration.setClustered(true);
-      configuration.setJournalCompactMinFiles(0);
 
       configuration.getAcceptorConfigurations().clear();
-      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node,
-                                                                                                             netty)));
+      configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true,
+                                                                                 generateParams(node, netty)));
 
       HornetQServer server;
 
@@ -1546,7 +1529,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
          else
          {
             server = HornetQServers.newHornetQServer(configuration);
-            server.setIdentity("Server " + node);
          }
       }
       else
@@ -1558,39 +1540,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
          else
          {
             server = HornetQServers.newHornetQServer(configuration, false);
-            server.setIdentity("Server " + node);
          }
       }
 
       server.setIdentity(this.getClass().getSimpleName() + "/Live(" + node + ")");
       servers[node] = server;
    }
-
-   protected void setupLiveServer(final int node,
-                                  final boolean fileStorage,
-                                  final boolean sharedStorage,
-                                  final boolean netty,
-                                  NodeManager nodeManager)
-      {
-         if (servers[node] != null)
-         {
-            throw new IllegalArgumentException("Already a server at node " + node);
-         }
-
-         Configuration configuration = createBasicConfig();
-
-         configureSomeCommonValues(node, node, sharedStorage, configuration);
-         configuration.setJournalCompactMinFiles(0);
-
-         configuration.getAcceptorConfigurations().clear();
-         configuration.getAcceptorConfigurations().add(createTransportConfiguration(netty, true, generateParams(node, netty)));
-
-         HornetQServer server;
-
-         server = createInVMFailoverServer(fileStorage, configuration, nodeManager,node);
-
-         servers[node] = server;
-      }
 
    protected void setupBackupServer(final int node,
                                     final int liveNode,
@@ -1603,133 +1558,16 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalArgumentException("Already a server at node " + node);
       }
 
-      Configuration configuration = createBasicConfig();
+      Configuration configuration = createBasicConfig(sharedStorage ? liveNode : node);
 
-      configuration.setSecurityEnabled(false);
-      configuration.setJournalMinFiles(2);
-      configuration.setJournalMaxIO_AIO(1000);
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
       configuration.setSharedStore(sharedStorage);
-      if (sharedStorage)
-      {
-         // Shared storage will share the node between the backup and live node
-         configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
-         configuration.setJournalDirectory(getJournalDir(liveNode, false));
-         configuration.setPagingDirectory(getPageDir(liveNode, false));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
-      }
-      else
-      {
-         configuration.setBindingsDirectory(getBindingsDir(node, true));
-         configuration.setJournalDirectory(getJournalDir(node, true));
-         configuration.setPagingDirectory(getPageDir(node, true));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
-      }
       configuration.setClustered(true);
-      configuration.setJournalCompactMinFiles(0);
       configuration.setBackup(true);
 
       configuration.getAcceptorConfigurations().clear();
+
       TransportConfiguration acceptorConfig = createTransportConfiguration(netty, true, generateParams(node, netty));
       configuration.getAcceptorConfigurations().add(acceptorConfig);
-      // add backup connector
-      TransportConfiguration liveConfig = createTransportConfiguration(netty, false, generateParams(liveNode, netty));
-      configuration.getConnectorConfigurations().put(liveConfig.getName(), liveConfig);
-      TransportConfiguration backupConfig = createTransportConfiguration(netty, false, generateParams(node, netty));
-      configuration.getConnectorConfigurations().put(backupConfig.getName(), backupConfig);
-
-      HornetQServer server;
-
-      if (fileStorage)
-      {
-         if (sharedStorage)
-         {
-            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
-         }
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration);
-            server.setIdentity("Server " + liveNode);
-         }
-      }
-      else
-      {
-         if (sharedStorage)
-         {
-            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
-         }
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration, false);
-            server.setIdentity("Server " + liveNode);
-         }
-      }
-      server.setIdentity(this.getClass().getSimpleName() + "/Backup(" + node + " of live " + liveNode + ")");
-      servers[node] = server;
-   }
-
-   private void configureSomeCommonValues(final int node,
-                                          final int liveNode,
-                                          final boolean sharedStorage,
-                                          Configuration configuration)
-   {
-      configuration.setSecurityEnabled(false);
-      configuration.setJournalMinFiles(2);
-      configuration.setJournalMaxIO_AIO(1000);
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
-
-      configureCommonValues(node, liveNode, sharedStorage, configuration);
-   }
-
-   private void configureCommonValues(final int node,
-                                      final int liveNode,
-                                      final boolean sharedStorage,
-                                      Configuration configuration)
-   {
-      configuration.setSharedStore(sharedStorage);
-      configuration.setClustered(true);
-      if (sharedStorage)
-      {
-         // Shared storage will share the node between the backup and live node
-         configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
-         configuration.setJournalDirectory(getJournalDir(liveNode, false));
-         configuration.setPagingDirectory(getPageDir(liveNode, false));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
-      }
-      else
-      {
-         configuration.setBindingsDirectory(getBindingsDir(node, true));
-         configuration.setJournalDirectory(getJournalDir(node, true));
-         configuration.setPagingDirectory(getPageDir(node, true));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
-      }
-   }
-
-   protected void setupBackupServer(final int node,
-                                     final int liveNode,
-                                     final boolean fileStorage,
-                                     final boolean sharedStorage,
-                                     final boolean netty,
-                                     NodeManager nodeManager)
-   {
-      if (servers[node] != null)
-      {
-         throw new IllegalArgumentException("Already a server at node " + node);
-      }
-
-      Configuration configuration = createBasicConfig();
-
-      configureSomeCommonValues(node, liveNode, sharedStorage, configuration);
-      configuration.setJournalCompactMinFiles(0);
-      configuration.setBackup(true);
-
-      // add acceptor
-      configuration.getAcceptorConfigurations().clear();
-      TransportConfiguration acceptorConfig = createTransportConfiguration(netty, true, generateParams(node, netty));
-      configuration.getAcceptorConfigurations().add(acceptorConfig);
-
 
       // add backup connector
       TransportConfiguration liveConfig = createTransportConfiguration(netty, false, generateParams(liveNode, netty));
@@ -1739,7 +1577,19 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       configuration.setLiveConnectorName(liveConfig.getName());
 
-      servers[node] = createInVMFailoverServer(fileStorage, configuration, nodeManager, node);
+      HornetQServer server;
+
+      if (sharedStorage)
+      {
+         server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
+      }
+      else
+      {
+         boolean enablePersistency = fileStorage ? true : configuration.isPersistenceEnabled();
+         server = HornetQServers.newHornetQServer(configuration, enablePersistency);
+      }
+      server.setIdentity(this.getClass().getSimpleName() + "/Backup(" + node + " of live " + liveNode + ")");
+      servers[node] = server;
    }
 
    protected void setupLiveServerWithDiscovery(final int node,
@@ -1754,17 +1604,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalArgumentException("Already a server at node " + node);
       }
 
-      Configuration configuration = createBasicConfig();
+      Configuration configuration = createBasicConfig(node);
 
-      configuration.setSecurityEnabled(false);
-      configuration.setBindingsDirectory(getBindingsDir(node, false));
-      configuration.setJournalMinFiles(2);
-      configuration.setJournalDirectory(getJournalDir(node, false));
-      configuration.setJournalFileSize(100 * 1024);
-      configuration.setJournalType(getDefaultJournalType());
       configuration.setJournalMaxIO_AIO(1000);
-      configuration.setPagingDirectory(getPageDir(node, false));
-      configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, false));
       configuration.setClustered(true);
       configuration.setBackup(false);
 
@@ -1840,25 +1682,9 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalArgumentException("Already a server at node " + node);
       }
 
-      Configuration configuration = createBasicConfig();
+      Configuration configuration = createBasicConfig(sharedStorage ? liveNode : node);
 
-      configuration.setSecurityEnabled(false);
       configuration.setSharedStore(sharedStorage);
-      if (sharedStorage)
-      {
-         // Shared storage will share the node between the backup and live node
-         configuration.setBindingsDirectory(getBindingsDir(liveNode, false));
-         configuration.setJournalDirectory(getJournalDir(liveNode, false));
-         configuration.setPagingDirectory(getPageDir(liveNode, false));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(liveNode, false));
-      }
-      else
-      {
-         configuration.setBindingsDirectory(getBindingsDir(node, true));
-         configuration.setJournalDirectory(getJournalDir(node, true));
-         configuration.setPagingDirectory(getPageDir(node, true));
-         configuration.setLargeMessagesDirectory(getLargeMessagesDir(node, true));
-      }
       configuration.setClustered(true);
       configuration.setBackup(true);
 
@@ -1894,28 +1720,14 @@ public abstract class ClusterTestBase extends ServiceTestBase
       configuration.getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
       HornetQServer server;
-      if (fileStorage)
+      if (sharedStorage)
       {
-         if (sharedStorage)
-         {
-            server = createInVMFailoverServer(true, configuration, nodeManagers[liveNode], liveNode);
-         }
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration);
-            server.setIdentity("Server " + liveNode);
-         }
+         server = createInVMFailoverServer(fileStorage, configuration, nodeManagers[liveNode], liveNode);
       }
       else
       {
-         if (sharedStorage)
-         {
-            server = createInVMFailoverServer(false, configuration, nodeManagers[liveNode], liveNode);
-         }
-         else
-         {
-            server = HornetQServers.newHornetQServer(configuration, false);
-         }
+         boolean enablePersistency = fileStorage ? configuration.isPersistenceEnabled() : false;
+         server = HornetQServers.newHornetQServer(configuration, enablePersistency);
       }
       servers[node] = server;
    }
@@ -2178,16 +1990,15 @@ public abstract class ClusterTestBase extends ServiceTestBase
          }
          timeStarts[node] = System.currentTimeMillis();
 
-         servers[node].setIdentity("server " + node);
          log.info("starting server " + servers[node]);
          servers[node].start();
 
          log.info("started server " + servers[node]);
+      }
 
-         log.info("started server " + node);
-
+      for (int node : nodes)
+      {
          waitForServer(servers[node]);
-
       }
 
    }

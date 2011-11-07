@@ -72,8 +72,6 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private final ResponseHandler responseHandler = new ResponseHandler();
 
-   private CoreRemotingConnection replicatingConnection;
-
    private final Channel replicatingChannel;
 
    private boolean started;
@@ -167,11 +165,12 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendCommitRecord(byte, long, boolean)
     */
-   public void appendCommitRecord(final byte journalID, final long txID, final boolean lineUp) throws Exception
+   public void appendCommitRecord(final byte journalID, final long txID, boolean sync, final boolean lineUp)
+      throws Exception
    {
       if (enabled)
       {
-         sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID), lineUp);
+         sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID, sync), lineUp);
       }
    }
 
@@ -203,7 +202,8 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendPrepareRecord(byte, long, org.hornetq.core.journal.EncodingSupport, boolean)
     */
-   public void appendPrepareRecord(final byte journalID, final long txID, final EncodingSupport transactionData) throws Exception
+   public void appendPrepareRecord(final byte journalID, final long txID, final EncodingSupport transactionData)
+      throws Exception
    {
       if (enabled)
       {
@@ -214,11 +214,11 @@ public class ReplicationManagerImpl implements ReplicationManager
    /* (non-Javadoc)
     * @see org.hornetq.core.replication.ReplicationManager#appendRollbackRecord(byte, long, boolean)
     */
-   public void appendRollbackRecord(final byte journalID, final long txID) throws Exception
+   public void appendRollbackRecord(final byte journalID, final long txID, boolean sync) throws Exception
    {
       if (enabled)
       {
-         sendReplicatePacket(new ReplicationCommitMessage(journalID, false, txID));
+         sendReplicatePacket(new ReplicationCommitMessage(journalID, true, txID, sync));
       }
    }
 
@@ -319,6 +319,8 @@ public class ReplicationManagerImpl implements ReplicationManager
          return;
       }
 
+      synchronized (replicationLock)
+      {
       enabled = false;
 
       // Complete any pending operations...
@@ -335,7 +337,7 @@ public class ReplicationManagerImpl implements ReplicationManager
             ReplicationManagerImpl.log.warn("Error completing callback on replication manager", e);
          }
       }
-
+      }
       if (replicatingChannel != null)
       {
          replicatingChannel.close();
@@ -478,7 +480,6 @@ public class ReplicationManagerImpl implements ReplicationManager
 
    private static class NullEncoding implements EncodingSupport
    {
-
       static NullEncoding instance = new NullEncoding();
 
       public void decode(final HornetQBuffer buffer)
@@ -493,7 +494,6 @@ public class ReplicationManagerImpl implements ReplicationManager
       {
          return 0;
       }
-
    }
 
    @Override
@@ -526,8 +526,8 @@ public class ReplicationManagerImpl implements ReplicationManager
    @Override
    public void syncPages(SequentialFile file, long id, SimpleString queueName) throws Exception
    {
-   if (enabled)
-      sendLargeFile(null, queueName, id, file, Long.MAX_VALUE);
+      if (enabled)
+         sendLargeFile(null, queueName, id, file, Long.MAX_VALUE);
    }
 
    /**
@@ -539,10 +539,7 @@ public class ReplicationManagerImpl implements ReplicationManager
     * @param maxBytesToSend maximum number of bytes to read and send from the file
     * @throws Exception
     */
-   private void sendLargeFile(JournalContent content,
-      SimpleString pageStore,
-      final long id,
-      SequentialFile file,
+   private void sendLargeFile(JournalContent content, SimpleString pageStore, final long id, SequentialFile file,
       long maxBytesToSend) throws Exception
    {
       if (!enabled)
@@ -562,23 +559,23 @@ public class ReplicationManagerImpl implements ReplicationManager
             int toSend = bytesRead;
             if (bytesRead > 0)
             {
-            if (bytesRead >= maxBytesToSend)
-            {
-               toSend = (int)maxBytesToSend;
-               maxBytesToSend = 0;
+               if (bytesRead >= maxBytesToSend)
+               {
+                  toSend = (int)maxBytesToSend;
+                  maxBytesToSend = 0;
+               }
+               else
+               {
+                  maxBytesToSend = maxBytesToSend - bytesRead;
+               }
+               buffer.limit(toSend);
             }
-            else
-            {
-               maxBytesToSend = maxBytesToSend - bytesRead;
-            }
-            buffer.limit(toSend);
-         }
-         buffer.rewind();
+            buffer.rewind();
 
-         // sending -1 or 0 bytes will close the file at the backup
-         sendReplicatePacket(new ReplicationSyncFileMessage(content, pageStore, id, bytesRead, buffer));
-         if (bytesRead == -1 || bytesRead == 0 || maxBytesToSend == 0)
-            break;
+            // sending -1 or 0 bytes will close the file at the backup
+            sendReplicatePacket(new ReplicationSyncFileMessage(content, pageStore, id, bytesRead, buffer));
+            if (bytesRead == -1 || bytesRead == 0 || maxBytesToSend == 0)
+               break;
          }
       }
       finally
@@ -595,9 +592,9 @@ public class ReplicationManagerImpl implements ReplicationManager
    }
 
    @Override
-   public void sendSynchronizationDone()
+   public void sendSynchronizationDone(String nodeID)
    {
       if (enabled)
-         sendReplicatePacket(new ReplicationStartSyncMessage(null, null));
+         sendReplicatePacket(new ReplicationStartSyncMessage(nodeID));
    }
 }

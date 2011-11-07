@@ -45,6 +45,7 @@ import org.hornetq.core.logging.Logger;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
+import org.hornetq.tests.util.CountDownSessionFailureListener;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.TransportConfigurationUtils;
 
@@ -299,7 +300,7 @@ public class FailoverTest extends FailoverTestBase
       {
          ClientMessage message = consumer.receive(1000);
 
-         assertNotNull(message);
+         assertNotNull("Expecting message #" + i, message);
 
          message.acknowledge();
       }
@@ -1579,27 +1580,16 @@ public class FailoverTest extends FailoverTestBase
 
    public void testBackupServerNotRemoved() throws Exception
    {
+      // HORNETQ-720 Disabling test for replicating backups.
+      if (!backupServer.getServer().getConfiguration().isSharedStore())
+         return;
       locator.setFailoverOnInitialConnection(true);
       createSessionFactory();
 
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener implements SessionFailureListener
-      {
-         public void connectionFailed(final HornetQException me, boolean failedOver)
-         {
-            latch.countDown();
-         }
-
-         public void beforeReconnect(HornetQException exception)
-         {
-            System.out.println("MyListener.beforeReconnect");
-         }
-      }
-
+      CountDownSessionFailureListener listener = new CountDownSessionFailureListener();
       ClientSession session = sendAndConsume(sf, true);
 
-      session.addFailureListener(new MyListener());
+      session.addFailureListener(listener);
 
       backupServer.stop();
 
@@ -1610,7 +1600,7 @@ public class FailoverTest extends FailoverTestBase
 
       backupServer.start();
 
-      assertTrue("session failure listener", latch.await(5, TimeUnit.SECONDS));
+      assertTrue("session failure listener", listener.getLatch().await(5, TimeUnit.SECONDS));
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 
@@ -1744,24 +1734,11 @@ public class FailoverTest extends FailoverTestBase
       locator.setFailoverOnInitialConnection(true);
       locator.setReconnectAttempts(-1);
       sf = createSessionFactoryAndWaitForTopology(locator, 2);
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      class MyListener implements SessionFailureListener
-      {
-         public void connectionFailed(final HornetQException me, boolean failedOver)
-         {
-            latch.countDown();
-         }
-
-         public void beforeReconnect(HornetQException exception)
-         {
-            System.out.println("MyListener.beforeReconnect");
-         }
-      }
+      CountDownSessionFailureListener listener = new CountDownSessionFailureListener();
 
       ClientSession session = sendAndConsume(sf, true);
 
-      session.addFailureListener(new MyListener());
+      session.addFailureListener(listener);
 
       backupServer.stop();
 
@@ -1772,7 +1749,7 @@ public class FailoverTest extends FailoverTestBase
 
       backupServer.start();
 
-      assertTrue("session failure listener", latch.await(5, TimeUnit.SECONDS));
+      assertTrue("session failure listener", listener.getLatch().await(5, TimeUnit.SECONDS));
 
       ClientProducer producer = session.createProducer(FailoverTestBase.ADDRESS);
 

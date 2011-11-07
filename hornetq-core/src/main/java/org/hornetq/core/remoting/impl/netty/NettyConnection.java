@@ -14,7 +14,7 @@
 package org.hornetq.core.remoting.impl.netty;
 
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Semaphore;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
@@ -35,7 +35,7 @@ import org.jboss.netty.handler.ssl.SslHandler;
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
  * @author <a href="mailto:ataylor@redhat.com">Andy Taylor</a>
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  * @version <tt>$Revision$</tt>
  */
 public class NettyConnection implements Connection
@@ -60,22 +60,14 @@ public class NettyConnection implements Connection
 
    private volatile HornetQBuffer batchBuffer;
 
-   private final AtomicBoolean writeLock = new AtomicBoolean(false);
-   
-   private Set<ReadyListener> readyListeners = new ConcurrentHashSet<ReadyListener>();
+   private final Semaphore writeLock = new Semaphore(1);
+
+   private final Set<ReadyListener> readyListeners = new ConcurrentHashSet<ReadyListener>();
 
    // Static --------------------------------------------------------
 
    // Constructors --------------------------------------------------
 
-   public NettyConnection(final Channel channel,
-                          final ConnectionLifeCycleListener listener,
-                          boolean batchingEnabled,
-                          boolean directDeliver)
-   {
-      this(null, channel, listener, batchingEnabled, directDeliver);
-   }
-   
    public NettyConnection(final Acceptor acceptor,
                           final Channel channel,
                           final ConnectionLifeCycleListener listener,
@@ -152,7 +144,7 @@ public class NettyConnection implements Connection
          return;
       }
 
-      if (writeLock.compareAndSet(false, true))
+      if (writeLock.tryAcquire())
       {
          try
          {
@@ -165,7 +157,7 @@ public class NettyConnection implements Connection
          }
          finally
          {
-            writeLock.set(false);
+            writeLock.release();
          }
       }
    }
@@ -177,11 +169,9 @@ public class NettyConnection implements Connection
 
    public void write(HornetQBuffer buffer, final boolean flush, final boolean batched)
    {
-      while (!writeLock.compareAndSet(false, true))
+      try
       {
-         Thread.yield();
-      }
-
+      writeLock.acquire();
       try
       {
          if (batchBuffer == null && batchingEnabled && batched && !flush)
@@ -243,7 +233,12 @@ public class NettyConnection implements Connection
       }
       finally
       {
-         writeLock.set(false);
+         writeLock.release();
+         }
+      }
+      catch (InterruptedException e)
+      {
+         Thread.currentThread().interrupt();
       }
    }
 
@@ -256,18 +251,18 @@ public class NettyConnection implements Connection
    {
       return directDeliver;
    }
-   
+
    public void addReadyListener(final ReadyListener listener)
    {
       readyListeners.add(listener);
    }
-   
+
    public void removeReadyListener(final ReadyListener listener)
    {
       readyListeners.remove(listener);
    }
-   
-   public void fireReady(final boolean ready)
+
+   void fireReady(final boolean ready)
    {
       for (ReadyListener listener: readyListeners)
       {
