@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.TransportConfiguration;
-import org.hornetq.api.core.client.*;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.utils.TokenBucketLimiter;
