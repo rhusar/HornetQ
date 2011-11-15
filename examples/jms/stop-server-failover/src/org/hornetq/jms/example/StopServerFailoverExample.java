@@ -14,6 +14,7 @@ package org.hornetq.jms.example;
 
 import org.hornetq.common.example.HornetQExample;
 
+import javax.jms.*;
 import javax.naming.InitialContext;
 
 /**

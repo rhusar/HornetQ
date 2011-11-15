@@ -53,13 +53,14 @@
                             <entry>false</entry>
                         </row>
                         <row>
-                            <entry>backup</entry>
+                            <entry><link linkend="ha/mode.shared.configuration">backup</link></entry>
                             <entry>Boolean</entry>
                             <entry>Is this server a backup server</entry>
                             <entry>false</entry>
                         </row>
                         <row>
-                            <entry><link linkend="configuring.bindings.journal">bindings-directory</link></entry>
+                            <entry><link linkend="configuring.bindings.journal"
+                                    >bindings-directory</link></entry>
                             <entry>String</entry>
                             <entry>the directory to store the persisted bindings to</entry>
                             <entry>data/bindings</entry>
@@ -252,7 +253,7 @@
                             <entry>jms.queue.hornetq.management</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.clusteruser"
                                     >cluster-user</link></entry>
                             <entry>String</entry>
                             <entry>the user used by cluster connections to communicate between the
@@ -260,7 +261,7 @@
                             <entry>HORNETQ.CLUSTER.ADMIN.USER</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.clusteruser"
                                     >cluster-password</link></entry>
                             <entry>String</entry>
                             <entry>the password used by cluster connections to communicate between the
@@ -513,7 +514,7 @@
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.broadcast-groups"
                                 >broadcast-groups</link></entry>
                             <entry>BroadcastGroup</entry>
                             <entry>a list of broadcast groups to create</entry>
@@ -521,7 +522,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.name (attribute)</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.name (attribute)</link>
                             </entry>
                             <entry>String</entry>
                             <entry>a unique name for the broadcast group - mandatory</entry>
@@ -529,7 +530,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.local-bind-address</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.local-bind-address</link>
                             </entry>
                             <entry>String</entry>
                             <entry>local bind address that the datagram socket is bound to</entry>
@@ -537,7 +538,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.local-bind-port</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.local-bind-port</link>
                             </entry>
                             <entry>Integer</entry>
                             <entry>local port to which the datagram socket is bound to</entry>
@@ -545,7 +546,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.group-address</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.group-address</link>
                             </entry>
                             <entry>String</entry>
                             <entry>multicast address to which the data will be broadcast - mandatory</entry>
@@ -553,7 +554,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.group-port</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.group-port</link>
                             </entry>
                             <entry>Integer</entry>
                             <entry>UDP port number used for broadcasting - mandatory</entry>
@@ -561,7 +562,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.broadcast-period</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.broadcast-period</link>
                             </entry>
                             <entry>Long</entry>
                             <entry>period in milliseconds between consecutive broadcasts</entry>
@@ -569,7 +570,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.connector-ref</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.connector-ref</link>
                             </entry>
                             <entry>A pair of connector</entry>
                             <entry>A pair  connector and
@@ -578,7 +579,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.connector-ref.connector-name (attribute)</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.connector-ref.connector-name (attribute)</link>
                             </entry>
                             <entry>String</entry>
                             <entry>Name of the live connector - mandatory</entry>
@@ -586,21 +587,21 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">broadcast-group.connector-ref.backup-connector-name (attribute)</link>
+                               <link linkend="clusters.broadcast-groups">broadcast-group.connector-ref.backup-connector-name (attribute)</link>
                             </entry>
                             <entry>String</entry>
                             <entry>Name of the backup connector - optional</entry>
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.discovery-groups"
                                 >discovery-groups</link></entry>
                             <entry>DiscoveryGroup</entry>
                             <entry>a list of discovery groups to create</entry>
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.discovery-groups"
                                 >discovery-group.name (attribute)</link></entry>
                             <entry>String</entry>
                             <entry>a unique name for the discovery group - mandatory</entry>
@@ -608,7 +609,7 @@
                         </row>
                         <row>
                             <entry>
-                               <link linkend="clusters">discovery-group.local-bind-address</link>
+                               <link linkend="clusters.discovery-groups">discovery-group.local-bind-address</link>
                             </entry>
                             <entry>String</entry>
                             <entry>the discovery group will be bound only to this local address</entry>
@@ -616,7 +617,7 @@
                         </row>
                         <row>
                             <entry id="configuration.discovery-group.group-address">
-                               <link linkend="clusters">discovery-group.group-address</link>
+                               <link linkend="clusters.discovery-groups">discovery-group.group-address</link>
                             </entry>
                             <entry>String</entry>
                             <entry>Multicast IP address of the group to listen on - mandatory</entry>
@@ -624,7 +625,7 @@
                         </row>
                         <row>
                             <entry id="configuration.discovery-group.group-port">
-                               <link linkend="clusters">discovery-group.group-port</link>
+                               <link linkend="clusters.discovery-groups">discovery-group.group-port</link>
                             </entry>
                             <entry>Integer</entry>
                             <entry>UDP port of the multicast group - mandatory</entry>
@@ -632,7 +633,7 @@
                         </row>
                         <row>
                             <entry id="configuration.discovery-group.refresh-timeout">
-                               <link linkend="clusters">discovery-group.refresh-timeout</link>
+                               <link linkend="clusters.discovery-groups">discovery-group.refresh-timeout</link>
                             </entry>
                             <entry>Integer</entry>
                             <entry>Period the discovery group
@@ -820,28 +821,28 @@
                             <entry>null</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections</link></entry>
                             <entry>ClusterConnection</entry>
                             <entry>a list of cluster connections</entry>
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.name (attribute)</link></entry>
                             <entry>String</entry>
                             <entry>unique name for this cluster connection</entry>
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.address</link></entry>
                             <entry>String</entry>
                             <entry>name of address this cluster connection applies to</entry>
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.forward-when-no-consumers</link></entry>
                             <entry>Boolean</entry>
                             <entry>should messages be load balanced if there are no matching
@@ -849,21 +850,21 @@
                             <entry>false</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.max-hops</link></entry>
                             <entry>Integer</entry>
                             <entry>maximum number of hops cluster topology is propagated</entry>
                             <entry>1</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.retry-interval</link></entry>
                             <entry>Long</entry>
                             <entry>period (in ms) between successive retries</entry>
                             <entry>2000</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.use-duplicate-detection</link></entry>
                             <entry>Boolean</entry>
                             <entry>should duplicate detection headers be inserted in forwarded
@@ -871,14 +872,14 @@
                             <entry>true</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.discovery-group-ref</link></entry>
                             <entry>String</entry>
                             <entry>name of discovery group used by this bridge</entry>
                             <entry>null</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.connector-ref.connector-name
                                     (attribute)</link></entry>
                             <entry>String</entry>
@@ -886,7 +887,7 @@
                             <entry/>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.cluster-connections"
                                     >cluster-connections.connector-ref.backup-connector-name
                                     (attribute)</link></entry>
                             <entry>String</entry>
@@ -990,7 +991,7 @@
                             <entry>-1</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.message-redistribution"
                                     >address-settings.redistribution-delay</link></entry>
                             <entry>Long</entry>
                             <entry>how long (in ms) to wait after the last consumer is closed on a
@@ -1067,14 +1068,14 @@
                             <entry>false</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters">connection-factory.connectors</link>
+                            <entry><link linkend="clusters.static.servers">connection-factory.connectors</link>
                             </entry>
                             <entry>String</entry>
                             <entry>A list of connectors used by the connection factory</entry>
                             <entry />
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.static.servers"
                                     >connection-factory.connectors.connector-ref.connector-name (attribute)</link>
                             </entry>
                             <entry>String</entry>
@@ -1082,7 +1083,7 @@
                             <entry />
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters.static.servers"
                                     >connection-factory.connectors.connector-ref.backup-connector-name (attribute)</link>
                             </entry>
                             <entry>String</entry>
@@ -1090,7 +1091,7 @@
                             <entry />
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="clusters-discovery.groups.clientside"
                                     >connection-factory.discovery-group-ref.discovery-group-name (attribute)</link>
                             </entry>
                             <entry>String</entry>
@@ -1099,7 +1100,7 @@
                         </row>
                         <row>
                             <entry id="configuration.connection-factory.discovery-initial-wait-timeout">
-                               <link linkend="clusters"
+                               <link linkend="clusters-discovery.groups.clientside"
                                     >connection-factory.discovery-initial-wait-timeout</link>
                             </entry>
                             <entry>Long</entry>
@@ -1157,7 +1158,7 @@
                         </row>
                         <row>
                             <entry id="configuration.connection-factory.connection-load-balancing-policy-class-name">
-                               <link linkend="clusters">
+                               <link linkend="clusters.client.loadbalancing">
                                   connection-factory.connection-load-balancing-policy-class-name</link>
                             </entry>
                             <entry>String</entry>
@@ -1217,7 +1218,7 @@
                             <entry>100 * 1024</entry>
                         </row>
                         <row>
-                            <entry><link linkend="clusters"
+                            <entry><link linkend="large-messages.cache.client"
                                     >connection-factory.cache-large-message-client</link></entry>
                             <entry>Boolean</entry>
                             <entry>If true clients using this connection factory will hold the large

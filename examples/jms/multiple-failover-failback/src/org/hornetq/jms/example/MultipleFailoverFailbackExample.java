@@ -18,6 +18,7 @@ import org.hornetq.common.example.HornetQExample;
 import org.hornetq.core.client.impl.DelegatingSession;
 import org.hornetq.jms.client.HornetQConnection;
 
+import javax.jms.*;
 import javax.naming.InitialContext;
 
 /**

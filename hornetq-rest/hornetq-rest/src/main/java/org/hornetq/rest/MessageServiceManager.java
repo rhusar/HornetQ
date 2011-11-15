@@ -2,9 +2,9 @@ package org.hornetq.rest;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
-import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
+import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.registry.JndiBindingRegistry;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
@@ -33,7 +33,7 @@ public class MessageServiceManager
 {
    protected ExecutorService threadPool;
    protected QueueServiceManager queueManager = new QueueServiceManager();
-   protected TopicServiceManager topicManager = new TopicServiceManager();
+   protected TopicServiceManager topicManager = new TopicServiceManager();  
    protected TimeoutTask timeoutTask;
    protected int timeoutTaskInterval = 1;
    protected MessageServiceConfiguration configuration = new MessageServiceConfiguration();
@@ -143,7 +143,8 @@ public class MessageServiceManager
       HashMap<String, Object> transportConfig = new HashMap<String, Object>();
       transportConfig.put(TransportConstants.SERVER_ID_PROP_NAME, configuration.getInVmId());
       
-      ServerLocator consumerLocator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration[]{new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig)});
+      
+      ServerLocator consumerLocator = new ServerLocatorImpl(false, new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
       
       if (configuration.getConsumerWindowSize() != -1)
       {
@@ -152,7 +153,7 @@ public class MessageServiceManager
 
       ClientSessionFactory consumerSessionFactory = consumerLocator.createSessionFactory();
       
-      ServerLocator defaultLocator =  HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
+      ServerLocator defaultLocator =  new ServerLocatorImpl(false, new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
 
       ClientSessionFactory sessionFactory = defaultLocator.createSessionFactory();
 
@@ -174,11 +175,10 @@ public class MessageServiceManager
       queueManager.setDefaultSettings(defaultSettings);
       queueManager.setPushStoreFile(configuration.getQueuePushStoreDirectory());
       queueManager.setProducerPoolSize(configuration.getProducerSessionPoolSize());
-      queueManager.setProducerTimeToLive(configuration.getProducerTimeToLive());
       queueManager.setLinkStrategy(linkStrategy);
       queueManager.setRegistry(registry);
 
-      queueManager.setServerLocator(defaultLocator);
+      topicManager.setServerLocator(defaultLocator);
       topicManager.setSessionFactory(sessionFactory);
       topicManager.setTimeoutTask(timeoutTask);
       topicManager.setConsumerServerLocator(consumerLocator);
@@ -186,7 +186,6 @@ public class MessageServiceManager
       topicManager.setDefaultSettings(defaultSettings);
       topicManager.setPushStoreFile(configuration.getTopicPushStoreDirectory());
       topicManager.setProducerPoolSize(configuration.getProducerSessionPoolSize());
-      queueManager.setProducerTimeToLive(configuration.getProducerTimeToLive());
       topicManager.setLinkStrategy(linkStrategy);
       topicManager.setRegistry(registry);
 
