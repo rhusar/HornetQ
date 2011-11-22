@@ -16,19 +16,24 @@ package org.hornetq.core.server.cluster.impl;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.HornetQBuffers;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.NotificationType;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.cluster.BroadcastGroup;
 import org.hornetq.core.server.management.Notification;
 import org.hornetq.core.server.management.NotificationService;
+import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUIDGenerator;
 
@@ -36,7 +41,7 @@ import org.hornetq.utils.UUIDGenerator;
  * A BroadcastGroupImpl
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  * Created 15 Nov 2008 09:45:32
  *
  */
@@ -48,17 +53,11 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
 
    private final String name;
 
-   private final InetAddress localAddress;
-
-   private final int localPort;
-
-   private final InetAddress groupAddress;
-
-   private final int groupPort;
+   private final BroadcastGroupConfiguration broadcastGroupConfiguration;
 
    private DatagramSocket socket;
 
-   private final List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+   private final List<TransportConfiguration> connectors;
 
    private boolean started;
 
@@ -77,25 +76,18 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
     */
    public BroadcastGroupImpl(final String nodeID,
                              final String name,
-                             final InetAddress localAddress,
-                             final int localPort,
-                             final InetAddress groupAddress,
-                             final int groupPort,
-                             final boolean active) throws Exception
+ final boolean active,
+                             final BroadcastGroupConfiguration config) throws Exception
    {
       this.nodeID = nodeID;
 
       this.name = name;
 
-      this.localAddress = localAddress;
-
-      this.localPort = localPort;
-
-      this.groupAddress = groupAddress;
-
-      this.groupPort = groupPort;
-
       this.active = active;
+
+      this.broadcastGroupConfiguration = config;
+
+      this.connectors = config.getConnectorList();
 
       uniqueID = UUIDGenerator.getInstance().generateStringUUID();
    }
@@ -112,6 +104,17 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
          return;
       }
 
+      Map<String, Object> params = this.broadcastGroupConfiguration.getParams();
+      int localPort = ConfigurationHelper.getIntProperty(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME, -1, params);
+      String localAddr =
+               ConfigurationHelper.getStringProperty(BroadcastGroupConstants.LOCAL_BIND_ADDRESS_NAME, null, params);
+
+      InetAddress localAddress = null;
+      if (localAddr != null)
+      {
+         localAddress = InetAddress.getByName(localAddr);
+      }
+
       if (localPort != -1)
       {
          socket = new DatagramSocket(localPort, localAddress);
@@ -120,7 +123,7 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       {
          if (localAddress != null)
          {
-            log.warn("local-bind-address specified for broadcast group but no local-bind-port specified so socket will NOT be bound " + 
+            log.warn("local-bind-address specified for broadcast group but no local-bind-port specified so socket will NOT be bound " +
                      "to a local address/port");
          }
          socket = new DatagramSocket();
@@ -222,7 +225,11 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
 
       byte[] data = buff.toByteBuffer().array();
 
-      DatagramPacket packet = new DatagramPacket(data, data.length, groupAddress, groupPort);
+      Map<String, Object> params = broadcastGroupConfiguration.getParams();
+      Integer groupPort = (Integer)params.get(BroadcastGroupConstants.GROUP_PORT_NAME);
+      InetAddress groupAddr = (InetAddress)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME);
+
+      DatagramPacket packet = new DatagramPacket(data, data.length, groupAddr, groupPort);
 
       socket.send(packet);
    }
@@ -244,9 +251,13 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       }
    }
 
-   public synchronized void setScheduledFuture(final ScheduledFuture<?> future)
+   public void schedule(ScheduledExecutorService scheduler)
    {
-      this.future = future;
-   }
+      Map<String,Object> params = broadcastGroupConfiguration.getParams();
 
+      this.future = scheduler.scheduleWithFixedDelay(this,
+                                                     0L,
+                                                     Long.parseLong((String)params.get(BroadcastGroupConstants.BROADCAST_PERIOD_NAME)),
+                                                     TimeUnit.MILLISECONDS);
+   }
 }

@@ -10,13 +10,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 
 /**
  * Manages a quorum of servers used to determine whether a given server is running or not.
@@ -93,7 +94,8 @@ public final class QuorumManager implements ClusterTopologyListener
             if (targetServerID.equals(pair.getKey()))
                continue;
             TransportConfiguration serverTC = pair.getValue().getA();
-            ServerLocatorImpl locator = (ServerLocatorImpl)HornetQClient.createServerLocatorWithoutHA(serverTC);
+            StaticServerLocatorImpl locator =
+                     (StaticServerLocatorImpl)HornetQClient.createServerLocatorWithoutHA(serverTC);
             locatorsList.add(locator);
             pool.submit(new ServerConnect(latch, pingCount, locator));
          }
@@ -130,11 +132,11 @@ public final class QuorumManager implements ClusterTopologyListener
 
    private static class ServerConnect implements Runnable
    {
-      private final ServerLocatorImpl locator;
+      private final StaticServerLocatorImpl locator;
       private final CountDownLatch latch;
       private final AtomicInteger count;
 
-      public ServerConnect(CountDownLatch latch, AtomicInteger count, ServerLocatorImpl serverLocator)
+      public ServerConnect(CountDownLatch latch, AtomicInteger count, StaticServerLocatorImpl serverLocator)
       {
          locator = serverLocator;
          this.latch = latch;
@@ -145,7 +147,9 @@ public final class QuorumManager implements ClusterTopologyListener
       public void run()
       {
          locator.setReconnectAttempts(-1);
-         locator.getDiscoveryGroupConfiguration().setDiscoveryInitialWaitTimeout(DISCOVERY_TIMEOUT);
+         locator.getDiscoveryGroupConfiguration()
+                .getParams()
+                .put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, DISCOVERY_TIMEOUT);
 
          final ClientSessionFactory liveServerSessionFactory;
          try

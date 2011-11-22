@@ -218,18 +218,12 @@
 	<xsd:element name="broadcast-group">
 		<xsd:complexType>
 			<xsd:sequence>
-                <xsd:element maxOccurs="1" minOccurs="0" ref="local-bind-address">
-                </xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="0" ref="local-bind-port">
+				<xsd:element maxOccurs="1" minOccurs="1" name="broadcast-type" type="broadcastType">
 				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="1" ref="group-address">
+   				<xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string">
 				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="1" ref="group-port">
-				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="0" ref="broadcast-period">
-				</xsd:element>
-				<xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string">
-				</xsd:element>
+				<xsd:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType">
+				</xsd:element>			
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:ID" use="required"/>
 		</xsd:complexType>
@@ -242,16 +236,10 @@
 	<xsd:element name="discovery-group">
 		<xsd:complexType>
 			<xsd:sequence>
-			    <xsd:element maxOccurs="1" minOccurs="0" ref="local-bind-address">
-                </xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="1" ref="group-address">
+				<xsd:element maxOccurs="1" minOccurs="1" name="discovery-type" type="discoveryType">
 				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="1" ref="group-port">
-				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="0" ref="refresh-timeout">
-				</xsd:element>
-				<xsd:element maxOccurs="1" minOccurs="0" ref="initial-wait-timeout">
-				</xsd:element>
+				<xsd:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType">
+				</xsd:element>			
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:ID" use="required"/>
 		</xsd:complexType>
@@ -329,21 +317,12 @@
 			</xsd:element>
 			<xsd:element maxOccurs="1" minOccurs="0" name="password" type="xsd:string">
 			</xsd:element>
-			<xsd:choice>				
-				<xsd:element maxOccurs="1" minOccurs="1" name="static-connectors">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element maxOccurs="unbounded" minOccurs="1" name="connector-ref" type="xsd:string"/>
-                        </xsd:sequence>
-                    </xsd:complexType>
-                </xsd:element>				
-				<xsd:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
-					<xsd:complexType>
-						<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
-						</xsd:attribute>
-					</xsd:complexType>
-				</xsd:element>
-			</xsd:choice>
+			<xsd:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
+				<xsd:complexType>
+					<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
+					</xsd:attribute>
+				</xsd:complexType>
+			</xsd:element>
 		</xsd:sequence>	
 		<xsd:attribute name="name" type="xsd:string" use="required"/>	
 	</xsd:complexType>
@@ -365,22 +344,14 @@
 			<xsd:element maxOccurs="1" minOccurs="0" name="confirmation-window-size" type="xsd:int">
 			</xsd:element>
 			<xsd:element maxOccurs="1" minOccurs="0" name="call-timeout" type="xsd:long"/>
-			<xsd:choice>
-				<xsd:element maxOccurs="1" minOccurs="0" name="static-connectors">
-                    <xsd:complexType>
-                        <xsd:sequence>
-                            <xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string"/>
-                        </xsd:sequence>
-                        <xsd:attribute name="allow-direct-connections-only" type="xsd:boolean" use="optional"/>
-                    </xsd:complexType>
-                </xsd:element>	
-				<xsd:element maxOccurs="1" minOccurs="0" name="discovery-group-ref">
-					<xsd:complexType>
-						<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
-						</xsd:attribute>
-					</xsd:complexType>
-				</xsd:element>
-			</xsd:choice>
+			<xsd:element maxOccurs="1" minOccurs="1" name="discovery-group-ref">
+				<xsd:complexType>
+					<xsd:attribute name="discovery-group-name" type="xsd:IDREF" use="required">
+					</xsd:attribute>
+					<xsd:attribute name="allow-direct-connections-only" type="xsd:boolean" use="optional">
+					</xsd:attribute>
+				</xsd:complexType>
+			</xsd:element>
 		</xsd:sequence>
 		<xsd:attribute name="name" type="xsd:string" use="required"/>
 	</xsd:complexType>
@@ -542,4 +513,18 @@
 		<xsd:attribute name="name" type="xsd:string" use="optional"/>
 	</xsd:complexType>
 
+    <xsd:simpleType name="discoveryType">
+    	<xsd:restriction base="xsd:string">
+    		<xsd:enumeration value="STATIC"/>
+    		<xsd:enumeration value="UDP"/>
+    		<xsd:enumeration value="JGROUPS"/>
+    	</xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="broadcastType">
+    	<xsd:restriction base="xsd:string">
+    		<xsd:enumeration value="UDP"/>
+    		<xsd:enumeration value="JGROUPS"/>
+    	</xsd:restriction>
+    </xsd:simpleType>
 </xsd:schema>

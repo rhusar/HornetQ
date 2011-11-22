@@ -18,12 +18,12 @@ import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
+import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,8 +39,8 @@ import org.hornetq.api.core.management.ManagementHelper;
 import org.hornetq.api.core.management.NotificationType;
 import org.hornetq.core.client.impl.AfterConnectInternalListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
+import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.client.impl.TopologyMember;
 import org.hornetq.core.logging.Logger;
@@ -77,7 +77,7 @@ import org.hornetq.utils.UUID;
  */
 public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInternalListener
 {
-   private static final Logger log = Logger.getLogger(ClusterConnectionImpl.class);
+   static final Logger log = Logger.getLogger(ClusterConnectionImpl.class);
 
    private static final boolean isTrace = log.isTraceEnabled();
 
@@ -139,7 +139,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
    private final boolean allowDirectConnectionsOnly;
 
-   private final Set<TransportConfiguration> allowableConnections = new HashSet<TransportConfiguration>();
+   private final List<TransportConfiguration> allowableConnections;
 
    private final ClusterManagerInternal manager;
 
@@ -147,119 +147,10 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
    // Stuff that used to be on the ClusterManager
 
 
-   private final Topology topology = new Topology(this);
+   final Topology topology = new Topology(this);
 
    private volatile ServerLocatorInternal backupServerLocator;
 
-
-   public ClusterConnectionImpl(final ClusterManagerInternal manager,
-                                final TransportConfiguration[] tcConfigs,
-                                final TransportConfiguration connector,
-                                final SimpleString name,
-                                final SimpleString address,
-                                final long clientFailureCheckPeriod,
-                                final long connectionTTL,
-                                final long retryInterval,
-                                final double retryIntervalMultiplier,
-                                final long maxRetryInterval,
-                                final int reconnectAttempts,
-                                final long callTimeout,
-                                final boolean useDuplicateDetection,
-                                final boolean routeWhenNoConsumers,
-                                final int confirmationWindowSize,
-                                final ExecutorFactory executorFactory,
-                                final HornetQServer server,
-                                final PostOffice postOffice,
-                                final ManagementService managementService,
-                                final ScheduledExecutorService scheduledExecutor,
-                                final int maxHops,
-                                final UUID nodeUUID,
-                                final boolean backup,
-                                final String clusterUser,
-                                final String clusterPassword,
-                                final boolean allowDirectConnectionsOnly) throws Exception
-   {
-
-      if (nodeUUID == null)
-      {
-         throw new IllegalArgumentException("node id is null");
-      }
-
-      this.nodeUUID = nodeUUID;
-
-      this.connector = connector;
-
-      this.name = name;
-
-      this.address = address;
-
-      this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-
-      this.connectionTTL = connectionTTL;
-
-      this.retryInterval = retryInterval;
-
-      this.retryIntervalMultiplier = retryIntervalMultiplier;
-
-      this.maxRetryInterval = maxRetryInterval;
-
-      this.reconnectAttempts = reconnectAttempts;
-
-      this.useDuplicateDetection = useDuplicateDetection;
-
-      this.routeWhenNoConsumers = routeWhenNoConsumers;
-
-      this.confirmationWindowSize = confirmationWindowSize;
-
-      this.executorFactory = executorFactory;
-
-      this.executor = executorFactory.getExecutor();
-
-      this.topology.setExecutor(executor);
-
-      this.server = server;
-
-      this.postOffice = postOffice;
-
-      this.managementService = managementService;
-
-      this.scheduledExecutor = scheduledExecutor;
-
-      this.maxHops = maxHops;
-
-      this.backup = backup;
-
-      this.clusterUser = clusterUser;
-
-      this.clusterPassword = clusterPassword;
-
-      this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-
-      this.manager = manager;
-
-      this.callTimeout = callTimeout;
-
-      clusterConnector = new StaticClusterConnector(tcConfigs);
-
-      backupServerLocator = clusterConnector.createServerLocator(false);
-
-      if (backupServerLocator != null)
-      {
-         backupServerLocator.setReconnectAttempts(-1);
-         backupServerLocator.setInitialConnectAttempts(-1);
-      }
-
-      if (tcConfigs != null && tcConfigs.length > 0)
-      {
-         // a cluster connection will connect to other nodes only if they are directly connected
-         // through a static list of connectors or broadcasting using UDP.
-         if (allowDirectConnectionsOnly)
-         {
-            allowableConnections.addAll(Arrays.asList(tcConfigs));
-         }
-      }
-
-   }
 
    public ClusterConnectionImpl(final ClusterManagerImpl manager,
                                 DiscoveryGroupConfiguration dg,
@@ -286,7 +177,8 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                                 final boolean backup,
                                 final String clusterUser,
                                 final String clusterPassword,
-                                final boolean allowDirectConnectionsOnly) throws Exception
+                                final boolean allowDirectConnectionsOnly,
+                                final List<TransportConfiguration> allowableConnections) throws Exception
    {
 
       if (nodeUUID == null)
@@ -346,7 +238,13 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
 
-      clusterConnector = new DiscoveryClusterConnector(dg);
+      this.allowableConnections = allowableConnections;
+
+      String className = dg.getClusterConnectorClassName();
+      ClassLoader loader = Thread.currentThread().getContextClassLoader();
+      Class<?> clazz = loader.loadClass(className);
+      Constructor<?> constructor = clazz.getConstructor(DiscoveryGroupConfiguration.class);
+      clusterConnector = (ClusterConnector)constructor.newInstance(dg);
 
       backupServerLocator = clusterConnector.createServerLocator(false);
 
@@ -846,7 +744,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                                 final Queue queue,
                                 final boolean start) throws Exception
    {
-      final ServerLocatorInternal targetLocator = new ServerLocatorImpl(topology, false, connector);
+      final ServerLocatorInternal targetLocator = new StaticServerLocatorImpl(topology, false, connector);
 
       String nodeId;
 
@@ -1502,7 +1400,7 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
    @Override
    public String toString()
    {
-      return "ClusterConnectionImpl@" + System.identityHashCode(this)  + 
+      return "ClusterConnectionImpl@" + System.identityHashCode(this)  +
              "[nodeUUID=" + nodeUUID +
              ", connector=" +
              connector +
@@ -1529,65 +1427,5 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       out.println("***************************************");
 
       return str.toString();
-   }
-
-   interface ClusterConnector
-   {
-      ServerLocatorInternal createServerLocator(boolean includeTopology);
-   }
-
-   private class StaticClusterConnector implements ClusterConnector
-   {
-      private final TransportConfiguration[] tcConfigs;
-
-      public StaticClusterConnector(TransportConfiguration[] tcConfigs)
-      {
-         this.tcConfigs = tcConfigs;
-      }
-
-      public ServerLocatorInternal createServerLocator(boolean includeTopology)
-      {
-         if (tcConfigs != null && tcConfigs.length > 0)
-         {
-            if (log.isDebugEnabled())
-            {
-               log.debug(ClusterConnectionImpl.this + "Creating a serverLocator for " + Arrays.toString(tcConfigs));
-            }
-            ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology?topology:null, true, tcConfigs);
-            locator.setClusterConnection(true);
-            return locator;
-         }
-         else
-         {
-            return null;
-         }
-      }
-
-      /* (non-Javadoc)
-       * @see java.lang.Object#toString()
-       */
-      @Override
-      public String toString()
-      {
-         return "StaticClusterConnector [tcConfigs=" + Arrays.toString(tcConfigs) + "]";
-      }
-
-   }
-
-   private class DiscoveryClusterConnector implements ClusterConnector
-   {
-      private final DiscoveryGroupConfiguration dg;
-
-      public DiscoveryClusterConnector(DiscoveryGroupConfiguration dg)
-      {
-         this.dg = dg;
-      }
-
-      public ServerLocatorInternal createServerLocator(boolean includeTopology)
-      {
-         ServerLocatorImpl locator = new ServerLocatorImpl(includeTopology?topology:null, true, dg);
-         return locator;
-
-      }
    }
 }

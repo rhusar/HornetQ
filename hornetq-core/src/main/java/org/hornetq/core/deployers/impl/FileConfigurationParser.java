@@ -22,13 +22,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.core.config.*;
+import org.hornetq.core.config.BridgeConfiguration;
+import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.ClusterConnectionConfiguration;
+import org.hornetq.core.config.Configuration;
+import org.hornetq.core.config.ConnectorServiceConfiguration;
+import org.hornetq.core.config.CoreQueueConfiguration;
+import org.hornetq.core.config.DivertConfiguration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.config.impl.FileConfiguration;
 import org.hornetq.core.config.impl.Validators;
@@ -128,6 +136,15 @@ public class FileConfigurationParser
    // Constructors --------------------------------------------------
 
    // Public --------------------------------------------------------
+   public static enum DiscoveryType
+   {
+      STATIC, UDP, JGROUPS
+   };
+
+   public static enum BroadcastType
+   {
+      UDP, JGROUPS
+   };
 
    /**
     * @return the validateAIO
@@ -901,22 +918,32 @@ public class FileConfigurationParser
    {
       String name = e.getAttribute("name");
 
-      String localAddress = XMLConfigurationUtil.getString(e, "local-bind-address", null, Validators.NO_CHECK);
-
-      int localBindPort = XMLConfigurationUtil.getInteger(e, "local-bind-port", -1, Validators.MINUS_ONE_OR_GT_ZERO);
-
-      String groupAddress = XMLConfigurationUtil.getString(e, "group-address", null, Validators.NOT_NULL_OR_EMPTY);
-
-      int groupPort = XMLConfigurationUtil.getInteger(e, "group-port", -1, Validators.GT_ZERO);
-
-      long broadcastPeriod = XMLConfigurationUtil.getLong(e,
-                                                          "broadcast-period",
-                                                          ConfigurationImpl.DEFAULT_BROADCAST_PERIOD,
-                                                          Validators.GT_ZERO);
+      String type = XMLConfigurationUtil.getString(e, "broadcast-type", null, Validators.NOT_NULL_OR_EMPTY);
+      String clazz = null;
+      try
+      {
+         switch (BroadcastType.valueOf(type))
+         {
+            case UDP:
+               clazz = "org.hornetq.core.server.cluster.impl.BroadcastGroupImpl";
+               break;
+            case JGROUPS:
+               clazz = "org.hornetq.integration.discovery.jgroups.JGroupsBroadcastGroupImpl";
+               break;
+            default:
+               throw new RuntimeException("BUG: broadcast-type=" + type +
+                        " must be processed in FileConfigurationParser#parseBroadcastGroupConfiguration().");
+         }
+      }
+      catch (IllegalArgumentException ex)
+      {
+         log.warn("broadcast-type=" + type + " is unsupported. It must be one of " + BroadcastType.values());
+         return;
+      }
 
       NodeList children = e.getChildNodes();
 
-      List<String> connectorNames = new ArrayList<String>();
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
 
       for (int j = 0; j < children.getLength(); j++)
       {
@@ -929,17 +956,29 @@ public class FileConfigurationParser
                                                                   null,
                                                                   Validators.NOT_NULL_OR_EMPTY);
 
-            connectorNames.add(connectorName);
+            connectorList.add(mainConfig.getConnectorConfigurations().get(connectorName));
          }
       }
+      Map<String, Object> params = new HashMap<String, Object>();
 
-      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(name,
-                                                                           localAddress,
-                                                                           localBindPort,
-                                                                           groupAddress,
-                                                                           groupPort,
-                                                                           broadcastPeriod,
-                                                                           connectorNames);
+      NodeList paramsNodes = e.getElementsByTagName("param");
+
+      for (int i = 0; i < paramsNodes.getLength(); i++)
+      {
+         Node paramNode = paramsNodes.item(i);
+
+         NamedNodeMap attributes = paramNode.getAttributes();
+
+         Node nkey = attributes.getNamedItem("key");
+
+         String key = nkey.getTextContent();
+
+         Node nValue = attributes.getNamedItem("value");
+
+         params.put(key, nValue.getTextContent());
+      }
+
+      BroadcastGroupConfiguration config = new BroadcastGroupConfiguration(name, clazz, params, connectorList);
 
       mainConfig.getBroadcastGroupConfigurations().add(config);
    }
@@ -948,33 +987,73 @@ public class FileConfigurationParser
    {
       String name = e.getAttribute("name");
 
-      String localBindAddress = XMLConfigurationUtil.getString(e, "local-bind-address", null, Validators.NO_CHECK);
+      String type = XMLConfigurationUtil.getString(e, "discovery-type", null, Validators.NOT_NULL_OR_EMPTY);
+      String serverLocatorClassName, clusterConnectorClassName = null;
+      try
+      {
+         switch (DiscoveryType.valueOf(type))
+         {
+            case STATIC:
+               serverLocatorClassName = "org.hornetq.core.client.impl.StaticServerLocatorImpl";
+               clusterConnectorClassName = "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl";
+               break;
+            case UDP:
+               serverLocatorClassName = "org.hornetq.core.client.impl.UDPServerLocatorImpl";
+               clusterConnectorClassName = "org.hornetq.core.server.cluster.impl.UDPDiscoveryClusterConnectorImpl";
+               break;
+            case JGROUPS:
+               serverLocatorClassName = "org.hornetq.integration.discovery.jgroups.JGroupsServerLocatorImpl";
+               clusterConnectorClassName = "org.hornetq.core.server.cluster.impl.JGroupsDiscoveryClusterConnectorImpl";
+               break;
+            default:
+               throw new RuntimeException("BUG: discovery-type=" + type +
+                        " must be processed in FileConfigurationParser#parseDiscoveryGroupConfiguration().");
+         }
+      }
+      catch (IllegalArgumentException ex)
+      {
+         log.warn("discovery-type=" + type + " is unsupported. It must be one of " + DiscoveryType.values());
+         return;
+      }
 
-      String groupAddress = XMLConfigurationUtil.getString(e, "group-address", null, Validators.NOT_NULL_OR_EMPTY);
+      Map<String, Object> params = new HashMap<String, Object>();
 
-      int groupPort = XMLConfigurationUtil.getInteger(e, "group-port", -1, Validators.MINUS_ONE_OR_GT_ZERO);
+      NodeList paramsNodes = e.getElementsByTagName("param");
 
-      long discoveryInitialWaitTimeout = XMLConfigurationUtil.getLong(e,
-                                                                      "initial-wait-timeout",
-                                                                      HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT,
-                                                                      Validators.GT_ZERO);
+      for (int i = 0; i < paramsNodes.getLength(); i++)
+      {
+         Node paramNode = paramsNodes.item(i);
 
-      long refreshTimeout = XMLConfigurationUtil.getLong(e,
-                                                         "refresh-timeout",
-                                                         ConfigurationImpl.DEFAULT_BROADCAST_REFRESH_TIMEOUT,
-                                                         Validators.GT_ZERO);
+         NamedNodeMap attributes = paramNode.getAttributes();
 
-      DiscoveryGroupConfiguration config = new DiscoveryGroupConfiguration(name,
-                                                                           localBindAddress,
-                                                                           groupAddress,
-                                                                           groupPort,
-                                                                           refreshTimeout,
-                                                                           discoveryInitialWaitTimeout);
+         Node nkey = attributes.getNamedItem("key");
+
+         String key = nkey.getTextContent();
+
+         Node nValue = attributes.getNamedItem("value");
+
+         params.put(key, nValue.getTextContent());
+      }
+
+      String connectorList = (String)params.get(DiscoveryGroupConstants.STATIC_CONNECTOR_NAMES_NAME);
+      if (connectorList != null)
+      {
+         List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+         StringTokenizer token = new StringTokenizer(connectorList, ",", false);
+         while (token.hasMoreElements())
+         {
+            connectors.add(mainConfig.getConnectorConfigurations().get(token.nextElement()));
+         }
+         params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, connectors);
+      }
+
+      DiscoveryGroupConfiguration config =
+               new DiscoveryGroupConfiguration(serverLocatorClassName, clusterConnectorClassName, params, name);
 
       if (mainConfig.getDiscoveryGroupConfigurations().containsKey(name))
       {
          FileConfigurationParser.log.warn("There is already a discovery group with name " + name +
-                                          " deployed. This one will not be deployed.");
+                  " deployed. This one will not be deployed.");
 
          return;
       }
@@ -1004,7 +1083,7 @@ public class FileConfigurationParser
                                                     "max-hops",
                                                     ConfigurationImpl.DEFAULT_CLUSTER_MAX_HOPS,
                                                     Validators.GE_ZERO);
-      
+
       long clientFailureCheckPeriod = XMLConfigurationUtil.getLong(e, "check-period",
                                                                    ConfigurationImpl.DEFAULT_CLUSTER_FAILURE_CHECK_PERIOD, Validators.GT_ZERO) ;
 
@@ -1016,14 +1095,14 @@ public class FileConfigurationParser
                                                         "retry-interval",
                                                         ConfigurationImpl.DEFAULT_CLUSTER_RETRY_INTERVAL,
                                                         Validators.GT_ZERO);
-      
+
       long callTimeout = XMLConfigurationUtil.getLong(e, "call-timeout", HornetQClient.DEFAULT_CALL_TIMEOUT, Validators.GT_ZERO);
-                                                        
-      double retryIntervalMultiplier = XMLConfigurationUtil.getDouble(e, "retry-interval-multiplier", 
+
+      double retryIntervalMultiplier = XMLConfigurationUtil.getDouble(e, "retry-interval-multiplier",
                                                                       ConfigurationImpl.DEFAULT_CLUSTER_RETRY_INTERVAL_MULTIPLIER, Validators.GT_ZERO);
-      
+
       long maxRetryInterval = XMLConfigurationUtil.getLong(e, "max-retry-interval", ConfigurationImpl.DEFAULT_CLUSTER_MAX_RETRY_INTERVAL, Validators.GT_ZERO);
-      
+
       int reconnectAttempts = XMLConfigurationUtil.getInteger(e, "reconnect-attempts", ConfigurationImpl.DEFAULT_CLUSTER_RECONNECT_ATTEMPTS, Validators.MINUS_ONE_OR_GE_ZERO);
 
 
@@ -1034,7 +1113,7 @@ public class FileConfigurationParser
 
       String discoveryGroupName = null;
 
-      List<String> staticConnectorNames = new ArrayList<String>();
+      List<TransportConfiguration> directConnections = null;
 
       boolean allowDirectConnectionsOnly = false;
 
@@ -1047,57 +1126,39 @@ public class FileConfigurationParser
          if (child.getNodeName().equals("discovery-group-ref"))
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
-         }
-         else if (child.getNodeName().equals("static-connectors"))
-         {
+
             Node attr = child.getAttributes().getNamedItem("allow-direct-connections-only");
             if (attr != null)
             {
                allowDirectConnectionsOnly = "true".equalsIgnoreCase(attr.getNodeValue()) || allowDirectConnectionsOnly;
+               directConnections =
+                        (List<TransportConfiguration>)mainConfig.getDiscoveryGroupConfigurations()
+                                                                .get(discoveryGroupName)
+                                                                .getParams()
+                                                                .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
             }
-            getStaticConnectors(staticConnectorNames, child);
          }
       }
 
       ClusterConnectionConfiguration config;
 
-      if (discoveryGroupName == null)
-      {
-         config = new ClusterConnectionConfiguration(name,
-                                                     address,
-                                                     connectorName,
-                                                     clientFailureCheckPeriod,
-                                                     connectionTTL,
-                                                     retryInterval,
-                                                     retryIntervalMultiplier,
-                                                     maxRetryInterval,
-                                                     reconnectAttempts,
-                                                     callTimeout,
-                                                     duplicateDetection,
-                                                     forwardWhenNoConsumers,
-                                                     maxHops,
-                                                     confirmationWindowSize,
-                                                     staticConnectorNames,
-                                                     allowDirectConnectionsOnly);
-      }
-      else
-      {
-         config = new ClusterConnectionConfiguration(name,
-                                                     address,
-                                                     connectorName,
-                                                     clientFailureCheckPeriod,
-                                                     connectionTTL,
-                                                     retryInterval,
-                                                     retryIntervalMultiplier,
-                                                     maxRetryInterval,
-                                                     reconnectAttempts,
-                                                     callTimeout,
-                                                     duplicateDetection,
-                                                     forwardWhenNoConsumers,
-                                                     maxHops,
-                                                     confirmationWindowSize,
-                                                     discoveryGroupName);
-      }
+      config = new ClusterConnectionConfiguration(name,
+                                                  address,
+                                                  connectorName,
+                                                  clientFailureCheckPeriod,
+                                                  connectionTTL,
+                                                  retryInterval,
+                                                  retryIntervalMultiplier,
+                                                  maxRetryInterval,
+                                                  reconnectAttempts,
+                                                  callTimeout,
+                                                  duplicateDetection,
+                                                  forwardWhenNoConsumers,
+                                                  maxHops,
+                                                  confirmationWindowSize,
+                                                  mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName),
+                                                  allowDirectConnectionsOnly,
+                                                  directConnections);
 
       mainConfig.getClusterConfigurations().add(config);
    }
@@ -1147,9 +1208,9 @@ public class FileConfigurationParser
 
       long connectionTTL = XMLConfigurationUtil.getLong(brNode, "connection-ttl",
                                                         HornetQClient.DEFAULT_CONNECTION_TTL, Validators.GT_ZERO) ;
-      
+
       long maxRetryInterval = XMLConfigurationUtil.getLong(brNode, "max-retry-interval", HornetQClient.DEFAULT_MAX_RETRY_INTERVAL, Validators.GT_ZERO);
-      
+
 
       double retryIntervalMultiplier = XMLConfigurationUtil.getDouble(brNode,
                                                                       "retry-interval-multiplier",

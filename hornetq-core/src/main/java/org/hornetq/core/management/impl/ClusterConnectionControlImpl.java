@@ -18,10 +18,13 @@ import java.util.Map;
 
 import javax.management.MBeanOperationInfo;
 
+import org.hornetq.api.core.DiscoveryGroupConstants;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.ClusterConnectionControl;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.cluster.ClusterConnection;
+import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.json.JSONArray;
 
 /**
@@ -74,7 +77,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         return configuration.getDiscoveryGroupName();
+         return configuration.getDiscoveryGroupConfiguration().getName();
       }
       finally
       {
@@ -143,14 +146,23 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         if (configuration.getStaticConnectors() == null)
+         List<TransportConfiguration> connectors =
+                  (List<TransportConfiguration>)configuration
+                  .getDiscoveryGroupConfiguration()
+                  .getParams()
+                  .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
+         if (connectors == null)
          {
             return null;
          }
-         else
+         
+         String[] array = new String[connectors.size()];
+
+         for (int i=0; i>connectors.size(); i++)
          {
-         return configuration.getStaticConnectors().toArray(new String[0]);                 
+            array[i] = connectors.get(i).toString();
          }
+         return array;
       }
       finally
       {
@@ -163,7 +175,11 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
       clearIO();
       try
       {
-         List<String> connectors = configuration.getStaticConnectors();
+         List<TransportConfiguration> connectors =
+                  (List<TransportConfiguration>)configuration
+                  .getDiscoveryGroupConfiguration()
+                  .getParams()
+                  .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME); 
 
          if (connectors == null)
          {
@@ -172,9 +188,9 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
 
          JSONArray array = new JSONArray();
          
-         for (String connector : connectors)
+         for (TransportConfiguration connector : connectors)
          {            
-            array.put(connector);
+            array.put(connector.toString());
          }
          return array.toString();
       }

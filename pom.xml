@@ -133,6 +133,7 @@
       <module>hornetq-service-sar</module>
       <module>hornetq-spring-integration</module>
       <module>hornetq-twitter-integration</module>
+      <module>hornetq-jgroups-discovery</module>
    </modules>
 
    <dependencyManagement>
@@ -245,7 +246,12 @@
             <!-- there is a new version of this JAR but it breaks our usage of it -->
             <version>2.1.2</version>
          </dependency>
-         <!--needed to compile the spring support-->
+         <dependency>
+            <groupId>org.jgroups</groupId>
+            <artifactId>jgroups</artifactId>
+            <version>2.12.2.Final</version>
+         </dependency>
+          <!--needed to compile the spring support-->
          <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>

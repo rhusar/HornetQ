@@ -15,17 +15,20 @@ package org.hornetq.core.management.impl;
 
 import javax.management.MBeanOperationInfo;
 
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.BroadcastGroupControl;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.cluster.BroadcastGroup;
+import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.json.JSONArray;
 
 /**
  * A BroadcastGroupControl
  *
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
- * 
+ *
  * Created 11 dec. 2008 17:09:04
  */
 public class BroadcastGroupControlImpl extends AbstractControl implements BroadcastGroupControl
@@ -72,7 +75,9 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         return configuration.getBroadcastPeriod();
+         return ConfigurationHelper.getLongProperty(BroadcastGroupConstants.BROADCAST_PERIOD_NAME,
+                                                             -1,
+                                                    configuration.getParams());
       }
       finally
       {
@@ -85,10 +90,10 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         Object[] ret = new Object[configuration.getConnectorInfos().size()];
+         Object[] ret = new Object[configuration.getConnectorList().size()];
 
          int i = 0;
-         for (String connector : configuration.getConnectorInfos())
+         for (TransportConfiguration connector : configuration.getConnectorList())
          {
             ret[i++] = connector;
          }
@@ -108,7 +113,7 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       {
          JSONArray array = new JSONArray();
 
-         for (String connector : configuration.getConnectorInfos())
+         for (TransportConfiguration connector : configuration.getConnectorList())
          {
             array.put(connector);
          }
@@ -125,7 +130,9 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         return configuration.getGroupAddress();
+         return ConfigurationHelper.getStringProperty(BroadcastGroupConstants.GROUP_ADDRESS_NAME,
+                                                      null,
+                                                      configuration.getParams());
       }
       finally
       {
@@ -138,7 +145,9 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         return configuration.getGroupPort();
+         return ConfigurationHelper.getIntProperty(BroadcastGroupConstants.GROUP_PORT_NAME,
+                                                            -1,
+                                                   configuration.getParams());
       }
       finally
       {
@@ -151,7 +160,9 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
       clearIO();
       try
       {
-         return configuration.getLocalBindPort();
+         return ConfigurationHelper.getIntProperty(BroadcastGroupConstants.LOCAL_BIND_PORT_NAME,
+                                                            -1,
+                                                   configuration.getParams());
       }
       finally
       {

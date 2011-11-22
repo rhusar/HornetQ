@@ -13,6 +13,8 @@
 
 package org.hornetq.core.server.cluster;
 
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.management.NotificationService;
@@ -22,7 +24,7 @@ import org.hornetq.core.server.management.NotificationService;
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:jmesnil@redhat.com">Jeff Mesnil</a>
- * 
+ *
  * Created 18 Nov 2008 09:29:45
  *
  *
@@ -42,4 +44,6 @@ public interface BroadcastGroup extends HornetQComponent
    void broadcastConnectors() throws Exception;
 
    void activate();
+
+   void schedule(ScheduledExecutorService executor);
 }

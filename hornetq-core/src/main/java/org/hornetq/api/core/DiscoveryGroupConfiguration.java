@@ -14,15 +14,13 @@
 package org.hornetq.api.core;
 
 import java.io.Serializable;
-
-import org.hornetq.api.core.client.HornetQClient;
-import org.hornetq.utils.UUIDGenerator;
+import java.util.Map;
 
 /**
  * A DiscoveryGroupConfiguration
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  * Created 18 Nov 2008 08:47:30
  *
  *
@@ -30,119 +28,59 @@ import org.hornetq.utils.UUIDGenerator;
 public class DiscoveryGroupConfiguration implements Serializable
 {
    private static final long serialVersionUID = 8657206421727863400L;
-   
+
+   private String serverLocatorClassName;
+
+   private String clusterConnectorClassName;
+
    private String name;
-   
-   private String localBindAddress;
 
-   private String groupAddress;
+   private final Map<String, Object> params;
 
-   private int groupPort;
-
-   private long refreshTimeout;
-   
-   private long discoveryInitialWaitTimeout;
-
-   public DiscoveryGroupConfiguration(final String name,
-                                      final String localBindAddress,
-                                      final String groupAddress,
-                                      final int groupPort,
-                                      final long refreshTimeout,
-                                      final long discoveryInitialWaitTimeout)
+   public DiscoveryGroupConfiguration(final String serverLocatorClassName,
+                                      final String clusterConnectorClassName,
+                                      final Map<String, Object> params,
+                                      final String name)
    {
+      this.serverLocatorClassName = serverLocatorClassName;
+      this.clusterConnectorClassName = clusterConnectorClassName;
       this.name = name;
-      this.groupAddress = groupAddress;
-      this.localBindAddress = localBindAddress;
-      this.groupPort = groupPort;
-      this.refreshTimeout = refreshTimeout;
-      this.discoveryInitialWaitTimeout = discoveryInitialWaitTimeout;
-   }
-
-   public DiscoveryGroupConfiguration(final String groupAddress,
-                                      final int groupPort)
-   {
-      this(UUIDGenerator.getInstance().generateStringUUID(), null, groupAddress, groupPort, HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT, HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT);
+      this.params = params;
    }
 
    public String getName()
    {
       return name;
    }
-   
-   public String getLocalBindAddress()
+
+   public String getServerLocatorClassName()
    {
-      return localBindAddress;
+      return serverLocatorClassName;
    }
 
-   public String getGroupAddress()
+   public String getClusterConnectorClassName()
    {
-      return groupAddress;
+      return clusterConnectorClassName;
    }
 
-   public int getGroupPort()
+   public Map<String, Object> getParams()
    {
-      return groupPort;
+      return params;
    }
 
-   public long getRefreshTimeout()
-   {
-      return refreshTimeout;
-   }
-
-   /**
-    * @param name the name to set
-    */
    public void setName(final String name)
    {
       this.name = name;
    }
-   
-   /**
-    * @param localBindAddress the localBindAddress to set
-    */
-   public void setLocalBindAdress(final String localBindAddress)
+
+   public void setServerLocatorClassName(String name)
    {
-      this.localBindAddress = localBindAddress;
+      this.serverLocatorClassName = name;
    }
 
-   /**
-    * @param groupAddress the groupAddress to set
-    */
-   public void setGroupAddress(final String groupAddress)
+   public void setClusterConnectorClassName(String name)
    {
-      this.groupAddress = groupAddress;
-   }
-
-   /**
-    * @param groupPort the groupPort to set
-    */
-   public void setGroupPort(final int groupPort)
-   {
-      this.groupPort = groupPort;
-   }
-
-   /**
-    * @param refreshTimeout the refreshTimeout to set
-    */
-   public void setRefreshTimeout(final long refreshTimeout)
-   {
-      this.refreshTimeout = refreshTimeout;
-   }
-
-   /**
-    * @return the discoveryInitialWaitTimeout
-    */
-   public long getDiscoveryInitialWaitTimeout()
-   {
-      return discoveryInitialWaitTimeout;
-   }
-
-   /**
-    * @param discoveryInitialWaitTimeout the discoveryInitialWaitTimeout to set
-    */
-   public void setDiscoveryInitialWaitTimeout(long discoveryInitialWaitTimeout)
-   {
-      this.discoveryInitialWaitTimeout = discoveryInitialWaitTimeout;
+      this.clusterConnectorClassName = name;
    }
 
    @Override
@@ -153,13 +91,20 @@ public class DiscoveryGroupConfiguration implements Serializable
 
       DiscoveryGroupConfiguration that = (DiscoveryGroupConfiguration) o;
 
-      if (discoveryInitialWaitTimeout != that.discoveryInitialWaitTimeout) return false;
-      if (groupPort != that.groupPort) return false;
-      if (refreshTimeout != that.refreshTimeout) return false;
-      if (groupAddress != null ? !groupAddress.equals(that.groupAddress) : that.groupAddress != null) return false;
-      if (localBindAddress != null ? !localBindAddress.equals(that.localBindAddress) : that.localBindAddress != null)
-         return false;
       if (name != null ? !name.equals(that.name) : that.name != null) return false;
+      if (serverLocatorClassName != null ? !serverLocatorClassName.equals(that.serverLocatorClassName)
+                                        : that.serverLocatorClassName != null)
+         return false;
+      if (params == null && that.params != null)
+         return false;
+
+      if (params.keySet().size() != that.params.keySet().size())
+         return false;
+      for (String key : params.keySet())
+      {
+         if (!params.get(key).equals(that.params.get(key)))
+            return false;
+      }
 
       return true;
    }
@@ -168,11 +113,10 @@ public class DiscoveryGroupConfiguration implements Serializable
    public int hashCode()
    {
       int result = name != null ? name.hashCode() : 0;
-      result = 31 * result + (localBindAddress != null ? localBindAddress.hashCode() : 0);
-      result = 31 * result + (groupAddress != null ? groupAddress.hashCode() : 0);
-      result = 31 * result + groupPort;
-      result = 31 * result + (int) (refreshTimeout ^ (refreshTimeout >>> 32));
-      result = 31 * result + (int) (discoveryInitialWaitTimeout ^ (discoveryInitialWaitTimeout >>> 32));
+      for (String key : params.keySet())
+      {
+         result = 31 * result + (params.get(key) != null ? params.get(key).hashCode() : 0);
+      }
       return result;
    }
 
@@ -182,19 +126,17 @@ public class DiscoveryGroupConfiguration implements Serializable
    @Override
    public String toString()
    {
-      return "DiscoveryGroupConfiguration [discoveryInitialWaitTimeout=" + discoveryInitialWaitTimeout +
-             ", groupAddress=" +
-             groupAddress +
-             ", groupPort=" +
-             groupPort +
-             ", localBindAddress=" +
-             localBindAddress +
-             ", name=" +
-             name +
-             ", refreshTimeout=" +
-             refreshTimeout +
-             "]";
+      StringBuilder str =
+               new StringBuilder().append("DiscoveryGroupConfiguration [serverLocatorClassName=")
+                                  .append(serverLocatorClassName)
+                                  .append(", name=")
+                                  .append(name);
+      for (String key : params.keySet())
+      {
+         str.append(", ").append(key).append("=").append(params.get(key));
+      }
+      return str.append("]").toString();
    }
-   
-   
+
+
 }

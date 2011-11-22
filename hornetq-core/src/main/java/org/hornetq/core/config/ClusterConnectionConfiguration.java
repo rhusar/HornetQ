@@ -16,6 +16,8 @@ package org.hornetq.core.config;
 import java.io.Serializable;
 import java.util.List;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 
@@ -23,7 +25,7 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
  * A ClusterConnectionConfiguration
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  * Created 13 Jan 2009 09:42:17
  *
  *
@@ -35,37 +37,37 @@ public class ClusterConnectionConfiguration implements Serializable
    private final String name;
 
    private final String address;
-   
+
    private final String connectorName;
 
    private final long clientFailureCheckPeriod;
-   
+
    private final long connectionTTL;
-   
+
    private final long retryInterval;
-   
+
    private final double retryIntervalMultiplier;
-   
+
    private final long maxRetryInterval;
-   
+
    private final int reconnectAttempts;
-   
+
    private final long callTimeout;
 
    private final boolean duplicateDetection;
 
    private final boolean forwardWhenNoConsumers;
 
-   private final List<String> staticConnectors;
-
-   private final String discoveryGroupName;
+   private final DiscoveryGroupConfiguration discoveryGroupConfiguration;
 
    private final int maxHops;
 
    private final int confirmationWindowSize;
 
    private final boolean allowDirectConnectionsOnly;
-   
+
+   private final List<TransportConfiguration> directConnectors;
+
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
                                          final String connectorName,
@@ -74,8 +76,7 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final List<String> staticConnectors,
-                                         final boolean allowDirectConnectionsOnly)
+                                         final DiscoveryGroupConfiguration discoveryGroupConfig)
    {
       this(name,
            address,
@@ -91,8 +92,8 @@ public class ClusterConnectionConfiguration implements Serializable
            forwardWhenNoConsumers,
            maxHops,
            confirmationWindowSize,
-           staticConnectors,
-           allowDirectConnectionsOnly);
+           discoveryGroupConfig,
+ false, null);
    }
 
 
@@ -110,8 +111,9 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final List<String> staticConnectors,
-                                         final boolean allowDirectConnectionsOnly)
+                                         final DiscoveryGroupConfiguration discoveryGroupConfig,
+                                         boolean allowDirectConnectionsOnly,
+                                         final List<TransportConfiguration> directConnectors)
    {
       this.name = name;
       this.address = address;
@@ -122,78 +124,14 @@ public class ClusterConnectionConfiguration implements Serializable
       this.retryIntervalMultiplier = retryIntervalMultiplier;
       this.maxRetryInterval = maxRetryInterval;
       this.reconnectAttempts = reconnectAttempts;
-      this.staticConnectors = staticConnectors;
-      this.duplicateDetection = duplicateDetection;
       this.callTimeout = callTimeout;
+      this.duplicateDetection = duplicateDetection;
       this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      discoveryGroupName = null;
+      this.discoveryGroupConfiguration = discoveryGroupConfig;
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-   }
-
-   
-   public ClusterConnectionConfiguration(final String name,
-                                         final String address,
-                                         final String connectorName,
-                                         final long retryInterval,
-                                         final boolean duplicateDetection,
-                                         final boolean forwardWhenNoConsumers,
-                                         final int maxHops,
-                                         final int confirmationWindowSize,
-                                         final String discoveryGroupName)
-   {
-      this(name,
-           address,
-           connectorName,
-           ConfigurationImpl.DEFAULT_CLUSTER_FAILURE_CHECK_PERIOD,
-           ConfigurationImpl.DEFAULT_CLUSTER_CONNECTION_TTL,
-           retryInterval,
-           ConfigurationImpl.DEFAULT_CLUSTER_RETRY_INTERVAL_MULTIPLIER,
-           ConfigurationImpl.DEFAULT_CLUSTER_MAX_RETRY_INTERVAL,
-           ConfigurationImpl.DEFAULT_CLUSTER_RECONNECT_ATTEMPTS,
-           HornetQClient.DEFAULT_CALL_TIMEOUT,
-           duplicateDetection,
-           forwardWhenNoConsumers,
-           maxHops,
-           confirmationWindowSize,
-           discoveryGroupName);
-   }
-
-
-   public ClusterConnectionConfiguration(final String name,
-                                         final String address,
-                                         final String connectorName,
-                                         final long clientFailureCheckPeriod,
-                                         final long connectionTTL,
-                                         final long retryInterval,
-                                         final double retryIntervalMultiplier,
-                                         final long maxRetryInterval,
-                                         final int reconnectAttempts,
-                                         final long callTimeout,
-                                         final boolean duplicateDetection,
-                                         final boolean forwardWhenNoConsumers,
-                                         final int maxHops,
-                                         final int confirmationWindowSize,
-                                         final String discoveryGroupName)
-   {
-      this.name = name;
-      this.address = address;
-      this.connectorName = connectorName;
-      this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      this.connectionTTL = connectionTTL;
-      this.retryInterval = retryInterval;
-      this.retryIntervalMultiplier = retryIntervalMultiplier;
-      this.maxRetryInterval = maxRetryInterval;
-      this.reconnectAttempts = reconnectAttempts;
-      this.callTimeout = callTimeout;
-      this.duplicateDetection = duplicateDetection;
-      this.forwardWhenNoConsumers = forwardWhenNoConsumers;
-      this.discoveryGroupName = discoveryGroupName;
-      this.staticConnectors = null;
-      this.maxHops = maxHops;
-      this.confirmationWindowSize = confirmationWindowSize;
-      allowDirectConnectionsOnly = false;
+      this.directConnectors = directConnectors;
    }
 
    public String getName()
@@ -205,7 +143,7 @@ public class ClusterConnectionConfiguration implements Serializable
    {
       return address;
    }
-   
+
    /**
     * @return the clientFailureCheckPeriod
     */
@@ -245,12 +183,12 @@ public class ClusterConnectionConfiguration implements Serializable
    {
       return reconnectAttempts;
    }
-   
+
    public long getCallTimeout()
    {
       return callTimeout;
    }
-   
+
    public String getConnectorName()
    {
       return connectorName;
@@ -276,14 +214,14 @@ public class ClusterConnectionConfiguration implements Serializable
       return confirmationWindowSize;
    }
 
-   public List<String> getStaticConnectors()
+   public List<TransportConfiguration> getAllowedConnectors()
    {
-      return staticConnectors;
+      return directConnectors;
    }
 
-   public String getDiscoveryGroupName()
+   public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()
    {
-      return discoveryGroupName;
+      return discoveryGroupConfiguration;
    }
 
    public long getRetryInterval()

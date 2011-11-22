@@ -12,22 +12,31 @@
  */
 package org.hornetq.api.core.client;
 
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.logging.Logger;
+import org.hornetq.utils.UUIDGenerator;
 
 /**
  * Utility class for creating HornetQ {@link ClientSessionFactory} objects.
- * 
+ *
  * Once a {@link ClientSessionFactory} has been created, it can be further configured
  * using its setter methods before creating the sessions. Once a session is created,
  * the factory can no longer be modified (its setter methods will throw a {@link IllegalStateException}.
- * 
+ *
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  */
 public class HornetQClient
 {
+   private static final Logger log = Logger.getLogger(HornetQClient.class);
+
    public static final String DEFAULT_CONNECTION_LOAD_BALANCING_POLICY_CLASS_NAME = RoundRobinConnectionLoadBalancingPolicy.class.getCanonicalName();
 
    public static final long DEFAULT_CLIENT_FAILURE_CHECK_PERIOD = 30000;
@@ -37,9 +46,9 @@ public class HornetQClient
    public static final long DEFAULT_CONNECTION_TTL = 1 * 60 * 1000;
 
    // Any message beyond this size is considered a large message (to be sent in chunks)
-   
+
    public static final int DEFAULT_MIN_LARGE_MESSAGE_SIZE = 100 * 1024;
-   
+
    public static final boolean DEFAULT_COMPRESS_LARGE_MESSAGES = false;
 
    public static final int DEFAULT_CONSUMER_WINDOW_SIZE = 1024 * 1024;
@@ -81,7 +90,7 @@ public class HornetQClient
    public static final int DEFAULT_RECONNECT_ATTEMPTS = 0;
 
    public static final int INITIAL_CONNECT_ATTEMPTS = 1;
-   
+
    public static final boolean DEFAULT_FAILOVER_ON_INITIAL_CONNECTION = false;
 
    public static final boolean DEFAULT_IS_HA = false;
@@ -97,35 +106,57 @@ public class HornetQClient
    public static final int DEFAULT_INITIAL_MESSAGE_PACKET_SIZE = 1500;
 
    public static final boolean DEFAULT_XA = false;
-   
+
    public static final boolean DEFAULT_HA = false;
-   
+
    /**
     * Create a ServerLocator which creates session factories using a static list of transportConfigurations, the ServerLocator is not updated automatically
     * as the cluster topology changes, and no HA backup information is propagated to the client
-    * 
+    *
     * @param transportConfigurations
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(TransportConfiguration... transportConfigurations)
    {
-      return new ServerLocatorImpl(false, transportConfigurations);
+      Map<String, Object> params = new HashMap<String, Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, Arrays.asList(transportConfigurations));
+      DiscoveryGroupConfiguration config =
+               new DiscoveryGroupConfiguration("org.hornetq.core.client.impl.StaticServerLocatorImpl",
+                                               "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl",
+                                               params,
+                                               UUIDGenerator.getInstance().generateStringUUID());
+      return createServerLocatorWithoutHA(config);
    }
-   
+
    /**
     * Create a ServerLocator which creates session factories from a set of live servers, no HA backup information is propagated to the client
-    * 
+    *
     * The UDP address and port are used to listen for live servers in the cluster
-    * 
+    *
     * @param discoveryAddress The UDP group address to listen for updates
     * @param discoveryPort the UDP port to listen for updates
     * @return the ServerLocator
     */
    public static ServerLocator createServerLocatorWithoutHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(false, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.FALSE, groupConfiguration);
+      }
+      catch (Exception e)
+      {
+         log.fatal("Could not instantiate ServerLocator implementation class: ", e);
+         return null;
+      }
+
+      return serverLocator;
    }
-   
+
    /**
     * Create a ServerLocator which will receive cluster topology updates from the cluster as servers leave or join and new backups are appointed or removed.
     * The initial list of servers supplied in this method is simply to make an initial connection to the cluster, once that connection is made, up to date
@@ -137,9 +168,16 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(TransportConfiguration... initialServers)
    {
-      return new ServerLocatorImpl(true, initialServers);
+      Map<String, Object> params = new HashMap<String, Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, Arrays.asList(initialServers));
+      DiscoveryGroupConfiguration config =
+               new DiscoveryGroupConfiguration("org.hornetq.core.client.impl.StaticServerLocatorImpl",
+                                               "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl",
+                                               params,
+                                               UUIDGenerator.getInstance().generateStringUUID());
+      return createServerLocatorWithHA(config);
    }
-   
+
    /**
     * Create a ServerLocator which will receive cluster topology updates from the cluster as servers leave or join and new backups are appointed or removed.
     * The discoveryAddress and discoveryPort parameters in this method are used to listen for UDP broadcasts which contain connection information for members of the cluster.
@@ -152,9 +190,25 @@ public class HornetQClient
     */
    public static ServerLocator createServerLocatorWithHA(final DiscoveryGroupConfiguration groupConfiguration)
    {
-      return new ServerLocatorImpl(true, groupConfiguration);
+      ServerLocator serverLocator = null;
+      String className = groupConfiguration.getServerLocatorClassName();
+
+      try
+      {
+         ClassLoader loader = Thread.currentThread().getContextClassLoader();
+         Class<?> clazz = loader.loadClass(className);
+         Constructor<?> constructor = clazz.getConstructor(boolean.class, DiscoveryGroupConfiguration.class);
+         serverLocator = (ServerLocator)constructor.newInstance(Boolean.TRUE, groupConfiguration);
+      }
+      catch (Exception e)
+      {
+         log.fatal("Could not instantiate ServerLocator implementation class", e);
+         return null;
+      }
+
+      return serverLocator;
    }
-   
+
 
    private HornetQClient()
    {
