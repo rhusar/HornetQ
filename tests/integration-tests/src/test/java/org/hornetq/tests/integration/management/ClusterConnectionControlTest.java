@@ -81,7 +81,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
 
       Assert.assertEquals(clusterConnectionConfig1.getName(), clusterConnectionControl.getName());
       Assert.assertEquals(clusterConnectionConfig1.getAddress(), clusterConnectionControl.getAddress());
-      Assert.assertEquals(clusterConnectionConfig1.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig1.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
       Assert.assertEquals(clusterConnectionConfig1.getRetryInterval(), clusterConnectionControl.getRetryInterval());
       Assert.assertEquals(clusterConnectionConfig1.isDuplicateDetection(),
@@ -114,7 +114,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
 
       Assert.assertEquals(clusterConnectionConfig2.getName(), clusterConnectionControl.getName());
       Assert.assertEquals(clusterConnectionConfig2.getAddress(), clusterConnectionControl.getAddress());
-      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
       Assert.assertEquals(clusterConnectionConfig2.getRetryInterval(), clusterConnectionControl.getRetryInterval());
       Assert.assertEquals(clusterConnectionConfig2.isDuplicateDetection(),
@@ -129,7 +129,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       String jsonPairs = clusterConnectionControl.getStaticConnectorsAsJSON();
       Assert.assertNull(jsonPairs);
 
-      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupName(),
+      Assert.assertEquals(clusterConnectionConfig2.getDiscoveryGroupConfiguration().getName(),
                           clusterConnectionControl.getDiscoveryGroupName());
    }
 
@@ -200,8 +200,8 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                               RandomUtil.randomString(),
                                                               null,
                                                               false);
-      List<String> connectors = new ArrayList<String>();
-      connectors.add(connectorConfig.getName());
+
+      DiscoveryGroupConfiguration dg1 = createStaticDiscoveryGroupConfiguration(connectorConfig);
       
       clusterConnectionConfig1 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
@@ -211,10 +211,10 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomPositiveInt(),
                                                                     RandomUtil.randomPositiveInt(),
-                                                                    connectors, false);
+                                                                    dg1, false);
 
       String discoveryGroupName = RandomUtil.randomString();
-      DiscoveryGroupConfiguration discoveryGroupConfig = new DiscoveryGroupConfiguration(discoveryGroupName, null, "230.1.2.3", 6745, 500, 0);
+      DiscoveryGroupConfiguration discoveryGroupConfig = createUDPDiscoveryGroupConfiguration(discoveryGroupName, null, "230.1.2.3", 6745, 500, 0);
 
       clusterConnectionConfig2 = new ClusterConnectionConfiguration(RandomUtil.randomString(),
                                                                     queueConfig.getAddress(),
@@ -224,7 +224,7 @@ public class ClusterConnectionControlTest extends ManagementTestBase
                                                                     RandomUtil.randomBoolean(),
                                                                     RandomUtil.randomPositiveInt(),
                                                                     RandomUtil.randomPositiveInt(),
-                                                                    discoveryGroupName);
+                                                                    discoveryGroupConfig, false);
       
       Configuration conf_1 = createBasicConfig();
       conf_1.setSecurityEnabled(false);
@@ -239,6 +239,8 @@ public class ClusterConnectionControlTest extends ManagementTestBase
       conf_0.setClustered(true);
       conf_0.getAcceptorConfigurations().add(new TransportConfiguration(InVMAcceptorFactory.class.getName()));
       conf_0.getConnectorConfigurations().put(connectorConfig.getName(), connectorConfig);
+      conf_0.getDiscoveryGroupConfigurations().put(dg1.getName(), dg1);
+      conf_0.getDiscoveryGroupConfigurations().put(discoveryGroupConfig.getName(), discoveryGroupConfig);
       conf_0.getClusterConfigurations().add(clusterConnectionConfig1);
       conf_0.getClusterConfigurations().add(clusterConnectionConfig2);
       conf_0.getDiscoveryGroupConfigurations().put(discoveryGroupName, discoveryGroupConfig);

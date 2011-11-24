@@ -24,7 +24,6 @@ import org.hornetq.api.core.management.ClusterConnectionControl;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.persistence.StorageManager;
 import org.hornetq.core.server.cluster.ClusterConnection;
-import org.hornetq.utils.ConfigurationHelper;
 import org.hornetq.utils.json.JSONArray;
 
 /**
@@ -155,12 +154,12 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
          {
             return null;
          }
-         
+
          String[] array = new String[connectors.size()];
 
          for (int i=0; i>connectors.size(); i++)
          {
-            array[i] = connectors.get(i).toString();
+            array[i] = connectors.get(i).getName();
          }
          return array;
       }
@@ -179,7 +178,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
                   (List<TransportConfiguration>)configuration
                   .getDiscoveryGroupConfiguration()
                   .getParams()
-                  .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME); 
+                  .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
 
          if (connectors == null)
          {
@@ -187,10 +186,10 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
          }
 
          JSONArray array = new JSONArray();
-         
+
          for (TransportConfiguration connector : connectors)
-         {            
-            array.put(connector.toString());
+         {
+            array.put(connector.getName());
          }
          return array.toString();
       }

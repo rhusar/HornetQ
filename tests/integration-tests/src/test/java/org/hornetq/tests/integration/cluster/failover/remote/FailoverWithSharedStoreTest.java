@@ -16,6 +16,7 @@ package org.hornetq.tests.integration.cluster.failover.remote;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientConsumer;
@@ -68,6 +69,8 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
          config.getAcceptorConfigurations().add(createTransportConfiguration(true, true, generateParams(0, true)));
          config.getConnectorConfigurations().put("self",
                                                  createTransportConfiguration(true, false, generateParams(0, true)));
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(new TransportConfiguration[0]);
+         config.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          config.getClusterConfigurations().add(new ClusterConnectionConfiguration("cluster",
                                                                                   "foo",
                                                                                   "self",
@@ -76,7 +79,7 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  new ArrayList<String>(), false));
+                                                                                  dg, false));
          return config;
       }
 
@@ -96,12 +99,14 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
          config.setClustered(true);
          config.getAcceptorConfigurations().add(createTransportConfiguration(true, true, generateParams(1, true)));
          config.setLiveConnectorName("live");
-         config.getConnectorConfigurations().put("live",
-                                                 createTransportConfiguration(true, false, generateParams(0, true)));
+         TransportConfiguration livetc = createTransportConfiguration(true, false, generateParams(0, true));
+         config.getConnectorConfigurations().put("live", livetc);
          config.getConnectorConfigurations().put("self",
                                                  createTransportConfiguration(true, false, generateParams(1, true)));
-         List<String> connectors = new ArrayList<String>();
-         connectors.add("live");
+         List<TransportConfiguration> connectors = new ArrayList<TransportConfiguration>();
+         connectors.add(livetc);
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(connectors.toArray(new TransportConfiguration[0]));
+         config.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          config.getClusterConfigurations().add(new ClusterConnectionConfiguration("cluster",
                                                                                   "foo",
                                                                                   "self",
@@ -110,7 +115,7 @@ public class FailoverWithSharedStoreTest extends ClusterTestBase
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  connectors, false));
+                                                                                  dg, false));
          return config;
       }
 

@@ -13,7 +13,11 @@
 package org.hornetq.ra;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.transaction.TransactionManager;
@@ -30,7 +34,7 @@ import org.hornetq.jms.server.recovery.RecoveryRegistry;
  */
 public class Util
 {
-   
+
    private static final Logger log = Logger.getLogger(Util.class);
 
 
@@ -45,7 +49,7 @@ public class Util
     * Compare two strings.
     * @param me First value
     * @param you Second value
-    * @return True if object equals else false. 
+    * @return True if object equals else false.
     */
    public static boolean compare(final String me, final String you)
    {
@@ -69,7 +73,7 @@ public class Util
     * Compare two integers.
     * @param me First value
     * @param you Second value
-    * @return True if object equals else false. 
+    * @return True if object equals else false.
     */
    public static boolean compare(final Integer me, final Integer you)
    {
@@ -93,7 +97,7 @@ public class Util
     * Compare two longs.
     * @param me First value
     * @param you Second value
-    * @return True if object equals else false. 
+    * @return True if object equals else false.
     */
    public static boolean compare(final Long me, final Long you)
    {
@@ -117,7 +121,7 @@ public class Util
     * Compare two doubles.
     * @param me First value
     * @param you Second value
-    * @return True if object equals else false. 
+    * @return True if object equals else false.
     */
    public static boolean compare(final Double me, final Double you)
    {
@@ -141,7 +145,7 @@ public class Util
     * Compare two booleans.
     * @param me First value
     * @param you Second value
-    * @return True if object equals else false. 
+    * @return True if object equals else false.
     */
    public static boolean compare(final Boolean me, final Boolean you)
    {
@@ -174,7 +178,7 @@ public class Util
       return context.lookup(name);
    }
 
-   /** 
+   /**
     * Used on parsing JNDI Configuration
     * @param config
     * @return
@@ -198,6 +202,27 @@ public class Util
       }
 
       return hashtable;
+   }
+
+   public static Map<String, Object> parseDiscoveryPluginConfig(final String config)
+   {
+      HashMap<String, Object> result = new HashMap<String, Object>();
+
+      String elements[] = config.split(";");
+
+      for (String element : elements)
+      {
+         String expression[] = element.split("=");
+
+         if (expression.length != 2)
+         {
+            throw new IllegalArgumentException("Invalid expression " + element + " at " + config);
+         }
+
+         result.put(expression[0].trim(), expression[1].trim());
+      }
+
+      return result;
    }
 
    public static List<Map<String, Object>> parseConfig(final String config)
@@ -243,13 +268,13 @@ public class Util
 
       return res;
    }
-   
+
 
    /** The Resource adapter can't depend on any provider's specific library. Because of that we use reflection to locate the
-    *  transaction manager during startup. 
-    *  
-    *  
-    *  TODO: https://jira.jboss.org/browse/HORNETQ-417 
+    *  transaction manager during startup.
+    *
+    *
+    *  TODO: https://jira.jboss.org/browse/HORNETQ-417
     *        We should use a proper SPI instead of reflection
     *        We would need to define a proper SPI package for this.
     *  */

@@ -43,7 +43,7 @@ public class ConnectionFactoryProperties
     * The transport config, changing the default configured from the RA
     */
    private List<Map<String, Object>> connectionParameters;
-   
+
    private Boolean ha;
 
    private String connectionLoadBalancingPolicyClassName;
@@ -100,6 +100,8 @@ public class ConnectionFactoryProperties
 
    private Integer threadPoolMaxSize;
 
+   private Map<String, Object> discoveryPluginParameters;
+
    /**
     * @return the transportType
     */
@@ -125,17 +127,28 @@ public class ConnectionFactoryProperties
       hasBeenUpdated = true;
    }
 
+   public Map<String, Object> getParsedDiscoveryPluginParameters()
+   {
+      return discoveryPluginParameters;
+   }
+
+   public void setParsedDiscoveryPluginParameters(final Map<String, Object> discoveryPluginParameters)
+   {
+      this.discoveryPluginParameters = discoveryPluginParameters;
+      hasBeenUpdated = true;
+   }
+
    public Boolean isHA()
    {
       return ha;
    }
-   
+
    public void setHA(final Boolean ha)
    {
       hasBeenUpdated = true;
       this.ha = ha;
    }
-   
+
    public String getConnectionLoadBalancingPolicyClassName()
    {
       if (ConnectionFactoryProperties.trace)

@@ -20,7 +20,7 @@ import org.hornetq.core.client.impl.UDPServerLocatorImpl;
 /**
  * A UDPDiscoveryClusterConnectorImpl
  */
-class UDPDiscoveryClusterConnectorImpl implements ClusterConnector
+public class UDPDiscoveryClusterConnectorImpl implements ClusterConnector
 {
    private final ClusterConnectionImpl clusterConnectionImpl;
    private final DiscoveryGroupConfiguration dg;

@@ -71,13 +71,13 @@ public class DiscoveryTest extends UnitTestCase
 
       final String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+                                                   RandomUtil.randomString(),
+                                                   null,
+                                                   -1,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
 
       bg.start();
 
@@ -158,13 +158,13 @@ public class DiscoveryTest extends UnitTestCase
 
       log.info("Local address is " + localAddress);
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 localAddress,
-                                                 6552,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+                                                   RandomUtil.randomString(),
+                                                   localAddress,
+                                                   6552,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
 
       bg.start();
 
@@ -204,13 +204,13 @@ public class DiscoveryTest extends UnitTestCase
 
       final String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+                                                   RandomUtil.randomString(),
+                                                   null,
+                                                   -1,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
 
       bg.start();
 
@@ -266,13 +266,13 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+                                                   RandomUtil.randomString(),
+                                                   null,
+                                                   -1,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
 
       bg.start();
 
@@ -355,13 +355,13 @@ public class DiscoveryTest extends UnitTestCase
       final int groupPort = getUDPDiscoveryPort();
       final int timeout = 500;
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(RandomUtil.randomString(),
+    		                                        RandomUtil.randomString(),
+    		                                        null,
+    		                                        -1,
+    		                                        groupAddress,
+    		                                        groupPort,
+    		                                        true);
 
       bg.start();
 
@@ -397,13 +397,13 @@ public class DiscoveryTest extends UnitTestCase
       final int groupPort = getUDPDiscoveryPort();
       final int timeout = 500;
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(RandomUtil.randomString(),
+                                                   RandomUtil.randomString(),
+                                                   null,
+                                                   -1,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
 
       bg.start();
 
@@ -456,29 +456,29 @@ public class DiscoveryTest extends UnitTestCase
 
       String node3 = "node-3::" + RandomUtil.randomString();
 
-      BroadcastGroup bg1 = new BroadcastGroupImpl(node1,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress1,
-                                                  groupPort1,
-                                                  true);
+      BroadcastGroup bg1 = createBroadcastGroupImpl(node1,
+                                                    RandomUtil.randomString(),
+                                                    null,
+                                                    -1,
+                                                    groupAddress1,
+                                                    groupPort1,
+                                                    true);
 
-      BroadcastGroup bg2 = new BroadcastGroupImpl(node2,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress2,
-                                                  groupPort2,
-                                                  true);
+      BroadcastGroup bg2 = createBroadcastGroupImpl(node2,
+                                                    RandomUtil.randomString(),
+                                                    null,
+                                                    -1,
+                                                    groupAddress2,
+                                                    groupPort2,
+                                                    true);
 
-      BroadcastGroup bg3 = new BroadcastGroupImpl(node3,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress3,
-                                                  groupPort3,
-                                                  true);
+      BroadcastGroup bg3 = createBroadcastGroupImpl(node3,
+                                                    RandomUtil.randomString(),
+                                                    null,
+                                                    -1,
+                                                    groupAddress3,
+                                                    groupPort3,
+                                                    true);
       bg2.start();
       bg1.start();
       bg3.start();
@@ -599,13 +599,13 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+    		                                         RandomUtil.randomString(),
+    		                                         null,
+    		                                         -1,
+    		                                         groupAddress,
+    		                                         groupPort,
+    		                                         true);
 
       bg.start();
 
@@ -666,31 +666,31 @@ public class DiscoveryTest extends UnitTestCase
       String node2 = RandomUtil.randomString();
       String node3 = RandomUtil.randomString();
 
-      BroadcastGroup bg1 = new BroadcastGroupImpl(node1,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
+      BroadcastGroup bg1 = createBroadcastGroupImpl(node1,
+    		                                          RandomUtil.randomString(),
+    		                                          null,
+    		                                          -1,
+    		                                          groupAddress,
+    		                                          groupPort,
+    		                                          true);
       bg1.start();
 
-      BroadcastGroup bg2 = new BroadcastGroupImpl(node2,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
+      BroadcastGroup bg2 = createBroadcastGroupImpl(node2,
+                                                    RandomUtil.randomString(),
+                                                    null,
+                                                    -1,
+                                                    groupAddress,
+                                                    groupPort,
+                                                    true);
       bg2.start();
 
-      BroadcastGroup bg3 = new BroadcastGroupImpl(node3,
-                                                  RandomUtil.randomString(),
-                                                  null,
-                                                  -1,
-                                                  groupAddress,
-                                                  groupPort,
-                                                  true);
+      BroadcastGroup bg3 = createBroadcastGroupImpl(node3,
+                                                    RandomUtil.randomString(),
+                                                    null,
+                                                    -1,
+                                                    groupAddress,
+                                                    groupPort,
+                                                    true);
       bg3.start();
 
       TransportConfiguration live1 = generateTC();
@@ -854,13 +854,13 @@ public class DiscoveryTest extends UnitTestCase
 
       String nodeID = RandomUtil.randomString();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(nodeID,
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(nodeID,
+    		                                         RandomUtil.randomString(),
+    		                                         null,
+    		                                         -1,
+    		                                         groupAddress,
+    		                                         groupPort,
+    		                                         true);
 
       bg.start();
 
@@ -965,13 +965,13 @@ public class DiscoveryTest extends UnitTestCase
       final InetAddress groupAddress = InetAddress.getByName(address1);
       final int groupPort = getUDPDiscoveryPort();
 
-      BroadcastGroup bg = new BroadcastGroupImpl(RandomUtil.randomString(),
-                                                 RandomUtil.randomString(),
-                                                 null,
-                                                 -1,
-                                                 groupAddress,
-                                                 groupPort,
-                                                 true);
+      BroadcastGroup bg = createBroadcastGroupImpl(RandomUtil.randomString(),
+                                                   RandomUtil.randomString(),
+                                                   null,
+                                                   -1,
+                                                   groupAddress,
+                                                   groupPort,
+                                                   true);
       bg.setNotificationService(notifService);
 
       Assert.assertEquals(0, notifListener.getNotifications().size());
@@ -993,6 +993,23 @@ public class DiscoveryTest extends UnitTestCase
       Assert.assertEquals(bg.getName(), notif.getProperties()
                                              .getSimpleStringProperty(new SimpleString("name"))
                                              .toString());
+   }
+
+   protected static BroadcastGroupImpl createBroadcastGroupImpl(String nodeID,
+                                                                String name,
+                                                                InetAddress localAddress,
+                                                                int localPort,
+                                                                InetAddress groupAddress,
+                                                                int groupPort,
+                                                                boolean active) throws Exception
+   {
+      return new BroadcastGroupImpl(nodeID, name, active, createBroadcastGroupConfiguration(name,
+                                                                                            localAddress.getHostAddress(),
+                                                                                            localPort,
+                                                                                            groupAddress.getHostAddress(),
+                                                                                            groupPort,
+                                                                                            -1,
+                                                                                            new ArrayList<TransportConfiguration>()));
    }
 
    private TransportConfiguration generateTC(String debug)

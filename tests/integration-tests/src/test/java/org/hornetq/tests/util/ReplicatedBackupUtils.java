@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -27,13 +28,16 @@ public final class ReplicatedBackupUtils
     */
    public static void createClusterConnectionConf(Configuration configuration, String name, String... connectors)
    {
-      List<String> conn = new ArrayList<String>(connectors.length);
+      List<TransportConfiguration> conn = new ArrayList<TransportConfiguration>(connectors.length);
       for (String iConn : connectors)
       {
-         conn.add(iConn);
+         conn.add(configuration.getConnectorConfigurations().get(iConn));
       }
+      DiscoveryGroupConfiguration dg = UnitTestCase.createStaticDiscoveryGroupConfiguration(conn.toArray(new TransportConfiguration[0]));
+      configuration.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
+      
       ClusterConnectionConfiguration clusterConfig =
-               new ClusterConnectionConfiguration("cluster1", "jms", name, -1, false, false, 1, 1, conn, false);
+               new ClusterConnectionConfiguration("cluster1", "jms", name, -1, false, false, 1, 1, dg, false);
       configuration.getClusterConfigurations().add(clusterConfig);
    }
 

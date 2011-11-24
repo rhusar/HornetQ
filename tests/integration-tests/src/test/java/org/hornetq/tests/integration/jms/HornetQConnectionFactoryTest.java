@@ -156,7 +156,7 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
 
    public void testDiscoveryConstructor() throws Exception
    {
-      DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(groupAddress, groupPort);
+      DiscoveryGroupConfiguration groupConfiguration = createUDPDiscoveryGroupConfiguration(groupAddress, groupPort);
       HornetQConnectionFactory cf = (HornetQConnectionFactory) HornetQJMSClient.createConnectionFactoryWithoutHA(groupConfiguration, JMSFactoryType.CF);
       assertFactoryParams(cf,
                           null,
@@ -715,22 +715,22 @@ public class HornetQConnectionFactoryTest extends UnitTestCase
       liveConf.setSharedStore(true);
       liveConf.setClustered(true);
 
-      List<String> connectorNames = new ArrayList<String>();
-      connectorNames.add(liveTC.getName());
-
       final long broadcastPeriod = 250;
 
       final String bcGroupName = "bc1";
 
       final int localBindPort = 5432;
 
-      BroadcastGroupConfiguration bcConfig1 = new BroadcastGroupConfiguration(bcGroupName,
+      List<TransportConfiguration> connectorList = new ArrayList<TransportConfiguration>();
+      connectorList.add(liveTC);
+      
+      BroadcastGroupConfiguration bcConfig1 = createBroadcastGroupConfiguration(bcGroupName,
                                                                               null,
                                                                               localBindPort,
                                                                               groupAddress,
                                                                               groupPort,
                                                                               broadcastPeriod,
-                                                                              connectorNames);
+                                                                              connectorList);
 
       List<BroadcastGroupConfiguration> bcConfigs1 = new ArrayList<BroadcastGroupConfiguration>();
       bcConfigs1.add(bcConfig1);

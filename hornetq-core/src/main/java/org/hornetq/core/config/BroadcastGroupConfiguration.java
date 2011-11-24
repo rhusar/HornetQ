@@ -43,7 +43,8 @@ public class BroadcastGroupConfiguration implements Serializable
    private final List<TransportConfiguration> connectorList;
 
    public BroadcastGroupConfiguration(final String name,
- final String clazz, final Map<String, Object> params,
+                                      final String clazz,
+                                      final Map<String, Object> params,
                                       final List<TransportConfiguration> connectors)
    {
       super();

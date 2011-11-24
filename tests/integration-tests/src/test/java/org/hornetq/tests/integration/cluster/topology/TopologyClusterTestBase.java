@@ -26,7 +26,7 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
 import org.hornetq.api.core.client.ServerLocator;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.cluster.ClusterConnection;
@@ -196,7 +196,7 @@ public abstract class TopologyClusterTestBase extends ClusterTestBase
 
       ServerLocator locator = createHAServerLocator();
       
-      ((ServerLocatorImpl)locator).getTopology().setOwner("testReceive");
+      ((ServerLocatorInternal)locator).getTopology().setOwner("testReceive");
 
       final List<String> nodes = new ArrayList<String>();
       final CountDownLatch upLatch = new CountDownLatch(5);

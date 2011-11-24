@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ServerLocator;
@@ -177,16 +178,18 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
          config0.setSharedStore(true);
          config0.setJournalType(JournalType.NIO);
          config0.setClustered(true);
-         List<String> pairs = new ArrayList<String>();
+         List<TransportConfiguration> pairs = new ArrayList<TransportConfiguration>();
          for (int node : otherLiveNodes)
          {
             TransportConfiguration otherLiveConnector = createTransportConfiguration(true,
                                                                                      false,
                                                                                      generateParams(node, true));
             config0.getConnectorConfigurations().put(otherLiveConnector.getName(), otherLiveConnector);
-            pairs.add(otherLiveConnector.getName());
+            pairs.add(otherLiveConnector);
 
          }
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+         config0.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1",
                                                                                   "jms",
                                                                                   liveConnector.getName(),
@@ -195,7 +198,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  pairs,
+                                                                                  dg,
                                                                                   false);
          config0.getClusterConfigurations().add(ccc0);
          config0.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
@@ -275,16 +278,18 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       config1.setBackup(true);
       config1.setJournalType(JournalType.NIO);
       config1.setClustered(true);
-      List<String> staticConnectors = new ArrayList<String>();
+      List<TransportConfiguration> staticConnectors = new ArrayList<TransportConfiguration>();
 
       for (int node : nodes)
       {
          TransportConfiguration liveConnector = createTransportConfiguration(true, false, generateParams(node, true));
          config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-         staticConnectors.add(liveConnector.getName());
+         staticConnectors.add(liveConnector);
       }
       TransportConfiguration backupConnector = createTransportConfiguration(true, false, generateParams(nodeid, true));
-      List<String> pairs = null;
+      
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(createClusterConnections ? staticConnectors.toArray(new TransportConfiguration[0]) : null);
+      config1.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       ClusterConnectionConfiguration ccc1 = new ClusterConnectionConfiguration("cluster1",
                                                                                "jms",
                                                                                backupConnector.getName(),
@@ -293,8 +298,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
                                                                                false,
                                                                                1,
                                                                                1,
-                                                                               createClusterConnections ? staticConnectors
-                                                                                                       : pairs,
+                                                                               dg,
                                                                                false);
       config1.getClusterConfigurations().add(ccc1);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);

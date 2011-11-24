@@ -20,6 +20,7 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.client.impl.TopologyMember;
@@ -160,8 +161,10 @@ public class IsolatedTopologyTest extends ServiceTestBase
       config1.getConnectorConfigurations().put("local-cc1", createInVMTransportConnectorConfig(1, "local-cc1"));
       config1.getConnectorConfigurations().put("local-cc2", createInVMTransportConnectorConfig(2, "local-cc2"));
 
-      config1.getConnectorConfigurations().put("other-cc1", createInVMTransportConnectorConfig(3, "other-cc1"));
-      config1.getConnectorConfigurations().put("other-cc2", createInVMTransportConnectorConfig(4, "other-cc2"));
+      TransportConfiguration othercc1 = createInVMTransportConnectorConfig(3, "other-cc1");
+      config1.getConnectorConfigurations().put("other-cc1", othercc1);
+      TransportConfiguration othercc2 = createInVMTransportConnectorConfig(4, "other-cc2");
+      config1.getConnectorConfigurations().put("other-cc2", othercc2);
 
       params = new HashMap<String, Object>();
       params.put(TransportConstants.CLUSTER_CONNECTION, "cc2");
@@ -172,9 +175,9 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                        "acceptor-cc2");
       config1.getAcceptorConfigurations().add(acceptor2VM1);
 
-      List<String> connectTo = new ArrayList<String>();
-      connectTo.add("other-cc1");
-
+      DiscoveryGroupConfiguration dg1 = createStaticDiscoveryGroupConfiguration(othercc1);
+      config1.getDiscoveryGroupConfigurations().put(dg1.getName(), dg1);
+      
       ClusterConnectionConfiguration server1CC1 = new ClusterConnectionConfiguration("cc1",
                                                                                      "jms",
                                                                                      "local-cc1",
@@ -183,13 +186,13 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                                      false,
                                                                                      1,
                                                                                      1024,
-                                                                                     connectTo,
+                                                                                     dg1,
                                                                                      false);
 
       config1.getClusterConfigurations().add(server1CC1);
 
-      connectTo = new ArrayList<String>();
-      connectTo.add("other-cc2");
+      DiscoveryGroupConfiguration dg2 = createStaticDiscoveryGroupConfiguration(othercc2);
+      config1.getDiscoveryGroupConfigurations().put(dg2.getName(), dg2);
 
       ClusterConnectionConfiguration server1CC2 = new ClusterConnectionConfiguration("cc2",
                                                                                      "jms",
@@ -199,7 +202,7 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                                      false,
                                                                                      1,
                                                                                      1024,
-                                                                                     connectTo,
+                                                                                     dg2,
                                                                                      false);
 
       config1.getClusterConfigurations().add(server1CC2);
@@ -228,8 +231,10 @@ public class IsolatedTopologyTest extends ServiceTestBase
       config1.getConnectorConfigurations().put("local-cc1", createInVMTransportConnectorConfig(3, "local-cc1"));
       config1.getConnectorConfigurations().put("local-cc2", createInVMTransportConnectorConfig(4, "local-cc2"));
 
-      config1.getConnectorConfigurations().put("other-cc1", createInVMTransportConnectorConfig(1, "other-cc1"));
-      config1.getConnectorConfigurations().put("other-cc2", createInVMTransportConnectorConfig(2, "other-cc2"));
+      TransportConfiguration othercc1 = createInVMTransportConnectorConfig(1, "other-cc1");
+      config1.getConnectorConfigurations().put("other-cc1", othercc1);
+      TransportConfiguration othercc2 = createInVMTransportConnectorConfig(2, "other-cc2");
+      config1.getConnectorConfigurations().put("other-cc2", othercc2);
 
       params = new HashMap<String, Object>();
       params.put(TransportConstants.CLUSTER_CONNECTION, "cc2");
@@ -240,8 +245,8 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                        "acceptor-cc2");
       config1.getAcceptorConfigurations().add(acceptor2VM1);
 
-      List<String> connectTo = new ArrayList<String>();
-      connectTo.add("other-cc1");
+      DiscoveryGroupConfiguration dg1 = createStaticDiscoveryGroupConfiguration(othercc1);
+      config1.getDiscoveryGroupConfigurations().put(dg1.getName(), dg1);
 
       ClusterConnectionConfiguration server1CC1 = new ClusterConnectionConfiguration("cc1",
                                                                                      "jms",
@@ -251,13 +256,13 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                                      false,
                                                                                      1,
                                                                                      1024,
-                                                                                     connectTo,
+                                                                                     dg1,
                                                                                      false);
 
       config1.getClusterConfigurations().add(server1CC1);
 
-      connectTo = new ArrayList<String>();
-      connectTo.add("other-cc2");
+      DiscoveryGroupConfiguration dg2 = createStaticDiscoveryGroupConfiguration(othercc2);
+      config1.getDiscoveryGroupConfigurations().put(dg2.getName(), dg2);
 
       ClusterConnectionConfiguration server1CC2 = new ClusterConnectionConfiguration("cc2",
                                                                                      "jms",
@@ -267,7 +272,7 @@ public class IsolatedTopologyTest extends ServiceTestBase
                                                                                      false,
                                                                                      1,
                                                                                      1024,
-                                                                                     connectTo,
+                                                                                     dg2,
                                                                                      false);
 
       config1.getClusterConfigurations().add(server1CC2);

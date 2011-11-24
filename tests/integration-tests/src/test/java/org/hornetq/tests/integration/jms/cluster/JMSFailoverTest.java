@@ -31,6 +31,7 @@ import javax.jms.TextMessage;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -358,8 +359,8 @@ public class JMSFailoverTest extends ServiceTestBase
       backupConf.getAcceptorConfigurations().add(backupAcceptortc);
       backupConf.getConnectorConfigurations().put(livetc.getName(), livetc);
       backupConf.getConnectorConfigurations().put(backuptc.getName(), backuptc);
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(livetc.getName());
+      DiscoveryGroupConfiguration dg1 = createStaticDiscoveryGroupConfiguration(livetc);
+      backupConf.getDiscoveryGroupConfigurations().put(dg1.getName(), dg1);
       ClusterConnectionConfiguration cccBackup = new ClusterConnectionConfiguration("cluster1",
                                                                                     "jms",
                                                                                     backuptc.getName(),
@@ -368,7 +369,7 @@ public class JMSFailoverTest extends ServiceTestBase
                                                                                     false,
                                                                                     1,
                                                                                     1,
-                                                                                    staticConnectors,
+                                                                                    dg1,
                                                                                     false);
 
       backupConf.getClusterConfigurations().add(cccBackup);
@@ -402,7 +403,8 @@ public class JMSFailoverTest extends ServiceTestBase
 
       liveConf.setSecurityEnabled(false);
       liveConf.getAcceptorConfigurations().add(liveAcceptortc);
-      List<String> pairs = null;
+      DiscoveryGroupConfiguration dg2 = createStaticDiscoveryGroupConfiguration((TransportConfiguration[])null);
+      liveConf.getDiscoveryGroupConfigurations().put(dg2.getName(), dg2);
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1",
                                                                                "jms",
                                                                                livetc.getName(),
@@ -411,7 +413,7 @@ public class JMSFailoverTest extends ServiceTestBase
                                                                                false,
                                                                                1,
                                                                                1,
-                                                                               pairs,
+                                                                               dg2,
                                                                                false);
       liveConf.getClusterConfigurations().add(ccc0);
       liveConf.setSharedStore(true);

@@ -630,7 +630,7 @@ public class ClusterManagerImpl implements ClusterManagerInternal
                                          server.getConfiguration().getClusterUser(),
                                          server.getConfiguration().getClusterPassword(),
                                          config.isAllowDirectConnectionsOnly(),
-                                         config.getAllowedConnectors());
+                                         config.getStaticConnectors());
 
       if (defaultClusterConnection == null)
       {

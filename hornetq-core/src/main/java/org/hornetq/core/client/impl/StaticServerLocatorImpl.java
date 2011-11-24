@@ -40,10 +40,6 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
 
    private final Exception e = new Exception();
 
-   // To be called when there are ServerLocator being finalized.
-   // To be used on test assertions
-   public static Runnable finalizeCallback = null;
-
    @Override
    protected void initialiseInternal()
    {
@@ -302,9 +298,9 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
 
             log.warn("The ServerLocator you didn't close was created here:", e);
 
-            if (StaticServerLocatorImpl.finalizeCallback != null)
+            if (AbstractServerLocator.finalizeCallback != null)
             {
-               StaticServerLocatorImpl.finalizeCallback.run();
+               AbstractServerLocator.finalizeCallback.run();
             }
 
             close();

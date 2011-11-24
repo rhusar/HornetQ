@@ -11,8 +11,8 @@ import javax.xml.bind.JAXBContext;
 
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.invm.TransportConstants;
 import org.hornetq.rest.queue.DestinationSettings;
@@ -142,8 +142,9 @@ public class MessageServiceManager
       HashMap<String, Object> transportConfig = new HashMap<String, Object>();
       transportConfig.put(TransportConstants.SERVER_ID_PROP_NAME, configuration.getInVmId());
 
-
-      ServerLocator consumerLocator = new ServerLocatorImpl(false, new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
+      ServerLocator consumerLocator =
+               HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName(),
+                                                                                     transportConfig));
 
       if (configuration.getConsumerWindowSize() != -1)
       {
@@ -152,7 +153,9 @@ public class MessageServiceManager
 
       ClientSessionFactory consumerSessionFactory = consumerLocator.createSessionFactory();
 
-      ServerLocator defaultLocator =  new ServerLocatorImpl(false, new TransportConfiguration(InVMConnectorFactory.class.getName(), transportConfig));
+      ServerLocator defaultLocator =
+               HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName(),
+                                                                                     transportConfig));
 
       ClientSessionFactory sessionFactory = defaultLocator.createSessionFactory();
 

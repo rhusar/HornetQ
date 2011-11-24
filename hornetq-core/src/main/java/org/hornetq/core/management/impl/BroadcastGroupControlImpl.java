@@ -95,7 +95,7 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
          int i = 0;
          for (TransportConfiguration connector : configuration.getConnectorList())
          {
-            ret[i++] = connector;
+            ret[i++] = connector.getName();
          }
 
          return ret;
@@ -115,7 +115,7 @@ public class BroadcastGroupControlImpl extends AbstractControl implements Broadc
 
          for (TransportConfiguration connector : configuration.getConnectorList())
          {
-            array.put(connector);
+            array.put(connector.getName());
          }
          return array.toString();
       }

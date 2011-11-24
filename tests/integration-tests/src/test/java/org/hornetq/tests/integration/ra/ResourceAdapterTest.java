@@ -12,6 +12,7 @@
  */
 package org.hornetq.tests.integration.ra;
 
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.ra.HornetQResourceAdapter;
 import org.hornetq.ra.inflow.HornetQActivation;
@@ -168,9 +169,9 @@ public class ResourceAdapterTest extends HornetQRATestBase
       HornetQResourceAdapter adapter = new HornetQResourceAdapter();
       adapter.setDiscoveryAddress("231.1.1.1");
       HornetQConnectionFactory factory = adapter.getDefaultHornetQConnectionFactory();
-      long initWait = factory.getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout();
-      long refresh = factory.getDiscoveryGroupConfiguration().getRefreshTimeout();
-      int port = factory.getDiscoveryGroupConfiguration().getGroupPort();
+      long initWait = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME));
+      long refresh = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME));
+      int port = Integer.parseInt((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.GROUP_PORT_NAME));
       
       //defaults
       assertEquals(10000l, refresh);
@@ -182,8 +183,8 @@ public class ResourceAdapterTest extends HornetQRATestBase
       adapter.setDiscoveryPort(9876);
       adapter.setDiscoveryRefreshTimeout(1234l);
       factory = adapter.getDefaultHornetQConnectionFactory();
-      initWait = factory.getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout();
-      refresh = factory.getDiscoveryGroupConfiguration().getRefreshTimeout();
+      initWait = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME));
+      refresh = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME));
 
       //override refresh timeout
       assertEquals(1234l, refresh);
@@ -194,8 +195,8 @@ public class ResourceAdapterTest extends HornetQRATestBase
       adapter.setDiscoveryPort(9876);
       adapter.setDiscoveryInitialWaitTimeout(9999l);
       factory = adapter.getDefaultHornetQConnectionFactory();
-      initWait = factory.getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout();
-      refresh = factory.getDiscoveryGroupConfiguration().getRefreshTimeout();
+      initWait = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME));
+      refresh = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME));
       
       //override initial wait
       assertEquals(10000l, refresh);
@@ -206,8 +207,8 @@ public class ResourceAdapterTest extends HornetQRATestBase
       adapter.setDiscoveryPort(9876);
       adapter.setDiscoveryInitialWaitTimeout(9999l);
       factory = adapter.getDefaultHornetQConnectionFactory();
-      initWait = factory.getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout();
-      refresh = factory.getDiscoveryGroupConfiguration().getRefreshTimeout();
+      initWait = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME));
+      refresh = Long.parseLong((String)factory.getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME));
       
       //override initial wait
       assertEquals(10000l, refresh);
@@ -282,10 +283,10 @@ public class ResourceAdapterTest extends HornetQRATestBase
       spec.setDestinationType("javax.jms.Queue");
       spec.setDestination(MDBQUEUE);
       HornetQConnectionFactory fac = qResourceAdapter.createHornetQConnectionFactory(spec);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getGroupAddress(), "231.6.6.6");
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getGroupPort(), 1234);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getRefreshTimeout(), 1l);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout(), 1l);
+      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.GROUP_ADDRESS_NAME), "231.6.6.6");
+      assertEquals(Integer.parseInt((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.GROUP_PORT_NAME)), 1234);
+      assertEquals(Long.parseLong((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME)), 1l);
+      assertEquals(Long.parseLong((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME)), 1l);
       qResourceAdapter.stop();
    }
 
@@ -311,10 +312,10 @@ public class ResourceAdapterTest extends HornetQRATestBase
       spec.setDiscoveryInitialWaitTimeout(1l);
       spec.setDiscoveryRefreshTimeout(1l);
       HornetQConnectionFactory fac = qResourceAdapter.createHornetQConnectionFactory(spec);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getGroupAddress(), "231.6.6.6");
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getGroupPort(), 1234);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getRefreshTimeout(), 1l);
-      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getDiscoveryInitialWaitTimeout(), 1l);
+      assertEquals(fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.GROUP_ADDRESS_NAME), "231.6.6.6");
+      assertEquals(Integer.parseInt((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.GROUP_PORT_NAME)), 1234);
+      assertEquals(Long.parseLong((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME)), 1l);
+      assertEquals(Long.parseLong((String)fac.getServerLocator().getDiscoveryGroupConfiguration().getParams().get(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME)), 1l);
       qResourceAdapter.stop();
    }
 

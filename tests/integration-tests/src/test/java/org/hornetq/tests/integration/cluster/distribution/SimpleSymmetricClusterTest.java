@@ -15,6 +15,7 @@ package org.hornetq.tests.integration.cluster.distribution;
 
 import java.util.List;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.logging.Logger;
@@ -60,7 +61,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
                                                                 final boolean forwardWhenNoConsumers,
                                                                 final int maxHops,
                                                                 TransportConfiguration connectorFrom,
-                                                                List<String> pairs)
+                                                                DiscoveryGroupConfiguration dg)
    {
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,
                                                                                       address,
@@ -70,7 +71,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
                                                                                       forwardWhenNoConsumers,
                                                                                       maxHops,
                                                                                       1024,
-                                                                                      pairs,
+                                                                                      dg,
                                                                                       false);
       return clusterConf;
    }

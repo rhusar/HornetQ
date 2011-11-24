@@ -32,6 +32,7 @@ import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
@@ -57,7 +58,7 @@ import org.hornetq.ra.recovery.RecoveryManager;
 public class HornetQResourceAdapter implements ResourceAdapter, Serializable
 {
    /**
-    * 
+    *
     */
    private static final long serialVersionUID = 4756893709825838770L;
 
@@ -80,7 +81,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
     * The resource adapter properties
     */
    private final HornetQRAProperties raProperties;
-   
+
    /**
     * The resource adapter properties before parsing
     */
@@ -93,6 +94,11 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
    private String unparsedConnectors;
 
    /**
+    * The discovery plugin properties for resource adapter before parsing
+    */
+   private String unparsedDiscoveryPluginProperties;
+
+   /**
     * Have the factory been configured
     */
    private final AtomicBoolean configured;
@@ -103,7 +109,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
    private final Map<ActivationSpec, HornetQActivation> activations;
 
    private HornetQConnectionFactory defaultHornetQConnectionFactory;
-   
+
    private TransactionManager tm;
 
    private String unparsedJndiParams;
@@ -211,7 +217,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       {
          HornetQResourceAdapter.log.trace("start(" + ctx + ")");
       }
-      
+
       locateTM();
 
       recoveryManager.start();
@@ -287,6 +293,19 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
    }
 
+   public String getDiscoveryPluginParameters()
+   {
+      return unparsedDiscoveryPluginProperties;
+   }
+
+   public void setDiscoveryPluginProperties(final String config)
+   {
+      if (config != null)
+      {
+         this.unparsedDiscoveryPluginProperties = config;
+         raProperties.setParsedDiscoveryPluginParameters(Util.parseDiscoveryPluginConfig(config));
+      }
+   }
 
    public Boolean getHA()
    {
@@ -1212,6 +1231,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
     * @param obj Object with which to compare
     * @return True if this object is the same as the obj argument; false otherwise.
     */
+   @Override
    public boolean equals(final Object obj)
    {
       if (HornetQResourceAdapter.trace)
@@ -1239,6 +1259,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
     *
     * @return The hash code
     */
+   @Override
    public int hashCode()
    {
       if (HornetQResourceAdapter.trace)
@@ -1423,7 +1444,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
 
       String discoveryAddress = overrideProperties.getDiscoveryAddress() != null ? overrideProperties.getDiscoveryAddress()
                                                                                 : getDiscoveryAddress();
-      
+
       Boolean ha = overrideProperties.isHA() != null ? overrideProperties.isHA() : getHA();
 
       if(ha == null)
@@ -1433,19 +1454,14 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
 
       if (discoveryAddress != null)
       {
+         Map<String, Object> params = new HashMap<String, Object>();
+
          Integer discoveryPort = overrideProperties.getDiscoveryPort() != null ? overrideProperties.getDiscoveryPort()
                                                                               : getDiscoveryPort();
-         
+
          if(discoveryPort == null)
          {
             discoveryPort = HornetQClient.DEFAULT_DISCOVERY_PORT;
-         }
-
-         DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(discoveryAddress, discoveryPort);
-
-         if (log.isDebugEnabled())
-         {
-            log.debug("Creating Connection Factory on the resource adapter for discovery=" + groupConfiguration + " with ha=" + ha);
          }
 
          Long refreshTimeout = overrideProperties.getDiscoveryRefreshTimeout() != null ? overrideProperties.getDiscoveryRefreshTimeout()
@@ -1463,9 +1479,49 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
             initialTimeout = HornetQClient.DEFAULT_DISCOVERY_INITIAL_WAIT_TIMEOUT;
          }
 
-         groupConfiguration.setDiscoveryInitialWaitTimeout(initialTimeout);
+         params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, discoveryAddress);
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, discoveryPort);
+         params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout);
+         params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialTimeout);
 
-         groupConfiguration.setRefreshTimeout(refreshTimeout);
+         DiscoveryGroupConfiguration groupConfiguration =
+                  new DiscoveryGroupConfiguration(
+                                                  "org.hornetq.core.client.impl.UDPServerLocatorImpl",
+                                                  "org.hornetq.core.server.cluster.impl.UDPDiscoveryClusterConnectorImpl",
+                                                  params, null);
+
+         if (log.isDebugEnabled())
+         {
+            log.debug("Creating Connection Factory on the resource adapter for discovery=" + groupConfiguration +
+                     " with ha=" + ha);
+         }
+
+
+         if (ha)
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithHA(groupConfiguration, JMSFactoryType.XA_CF);
+         }
+         else
+         {
+            cf = HornetQJMSClient.createConnectionFactoryWithoutHA(groupConfiguration, JMSFactoryType.XA_CF);
+         }
+      }
+      else if (this.unparsedDiscoveryPluginProperties != null)
+      {
+         // for another discovery strategy like hornetq-jgroups-discovery
+         Map<String, Object> discoveryPluginParams =
+                  overrideConnectionParameters(overrideProperties.getParsedDiscoveryPluginParameters(),
+                                               raProperties.getParsedDiscoveryPluginParameters());
+
+         String serverLocatorClassName = (String)discoveryPluginParams.get("server-locator-class");
+
+         String clusterConnectorClassName = (String)discoveryPluginParams.get("cluster-connector-class");
+
+         DiscoveryGroupConfiguration groupConfiguration =
+                  new DiscoveryGroupConfiguration(serverLocatorClassName,
+                                                  clusterConnectorClassName,
+                                                  discoveryPluginParams,
+                                                  null);
 
          if (ha)
          {
@@ -1506,13 +1562,13 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
 
             transportConfigurations[i] = tc;
          }
-         
+
 
          if (log.isDebugEnabled())
          {
             log.debug("Creating Connection Factory on the resource adapter for transport=" + transportConfigurations + " with ha=" + ha);
          }
-         
+
          if (ha)
          {
             cf = HornetQJMSClient.createConnectionFactoryWithHA(JMSFactoryType.XA_CF, transportConfigurations);
@@ -1547,12 +1603,12 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
       }
       return map;
    }
-   
+
    private void locateTM()
    {
       String locatorClasses[] = raProperties.getTransactionManagerLocatorClass().split(";");
       String locatorMethods[] = raProperties.getTransactionManagerLocatorMethod().split(";");
-      
+
       for (int i = 0 ; i < locatorClasses.length; i++)
       {
          tm = Util.locateTM(locatorClasses[i], locatorMethods[i]);
@@ -1561,7 +1617,7 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
             break;
          }
       }
-      
+
       if (tm == null)
       {
          log.warn("It wasn't possible to lookup for a Transaction Manager through the configured properties TransactionManagerLocatorClass and TransactionManagerLocatorMethod");

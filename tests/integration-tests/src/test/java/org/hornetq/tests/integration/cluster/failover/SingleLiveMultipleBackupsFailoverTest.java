@@ -19,10 +19,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
@@ -71,7 +73,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       servers.get(4).start();
       servers.get(5).start();
 
-      ServerLocatorImpl locator = (ServerLocatorImpl)getServerLocator(0);
+      ServerLocatorInternal locator = (ServerLocatorInternal)getServerLocator(0);
 
       Topology topology = locator.getTopology();
 
@@ -132,20 +134,21 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config1.setSharedStore(true);
       config1.setBackup(true);
       config1.setClustered(true);
-      List<String> staticConnectors = new ArrayList<String>();
+      List<TransportConfiguration> staticConnectors = new ArrayList<TransportConfiguration>();
 
       for (int node : nodes)
       {
          TransportConfiguration liveConnector =
                   createTransportConfiguration(isNetty(), false, generateParams(node, isNetty()));
          config1.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-         staticConnectors.add(liveConnector.getName());
+         staticConnectors.add(liveConnector);
       }
       TransportConfiguration backupConnector =
                createTransportConfiguration(isNetty(), false, generateParams(nodeid, isNetty()));
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(staticConnectors.toArray(new TransportConfiguration[0]));
+      config1.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       ClusterConnectionConfiguration ccc1 =
-               new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
-                                                  staticConnectors, false);
+               new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1, dg, false);
       config1.getClusterConfigurations().add(ccc1);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 

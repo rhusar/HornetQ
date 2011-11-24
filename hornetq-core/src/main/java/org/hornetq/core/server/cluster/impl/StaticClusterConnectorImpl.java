@@ -24,7 +24,7 @@ import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 /**
  * A StaticClusterConnectorImpl
  */
-class StaticClusterConnectorImpl implements ClusterConnector
+public class StaticClusterConnectorImpl implements ClusterConnector
 {
    private final ClusterConnectionImpl clusterConnectionImpl;
    private final List<TransportConfiguration> tcConfigs;

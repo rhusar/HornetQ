@@ -50,7 +50,7 @@ public class SessionFactoryTest extends ServiceTestBase
 {
    private static final Logger log = Logger.getLogger(SessionFactoryTest.class);
 
-   private DiscoveryGroupConfiguration groupConfiguration = new DiscoveryGroupConfiguration(getUDPDiscoveryAddress(), getUDPDiscoveryPort());
+   private DiscoveryGroupConfiguration groupConfiguration = createUDPDiscoveryGroupConfiguration(getUDPDiscoveryAddress(), getUDPDiscoveryPort());
 
    private HornetQServer liveService;
 
@@ -581,13 +581,13 @@ public class SessionFactoryTest extends ServiceTestBase
 
       final int localBindPort = 5432;
 
-      BroadcastGroupConfiguration bcConfig1 = new BroadcastGroupConfiguration(bcGroupName,
-                                                                              null,
-                                                                              localBindPort,
-                                                                              getUDPDiscoveryAddress(),
-                                                                              getUDPDiscoveryPort(),
-                                                                              broadcastPeriod,
-                                                                              Arrays.asList(liveTC.getName()));
+      BroadcastGroupConfiguration bcConfig1 = createBroadcastGroupConfiguration(bcGroupName,
+                                                                                null,
+                                                                                localBindPort,
+                                                                                getUDPDiscoveryAddress(),
+                                                                                getUDPDiscoveryPort(),
+                                                                                broadcastPeriod,
+                                                                                Arrays.asList(liveTC));
 
       List<BroadcastGroupConfiguration> bcConfigs1 = new ArrayList<BroadcastGroupConfiguration>();
       bcConfigs1.add(bcConfig1);

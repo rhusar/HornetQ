@@ -63,7 +63,8 @@ public class RemoteFailoverTest extends FailoverTest
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  new ArrayList<String>(), false));
+                                                                                  createStaticDiscoveryGroupConfiguration(new TransportConfiguration[0]),
+                                                                                  false));
          return config;
       }
 

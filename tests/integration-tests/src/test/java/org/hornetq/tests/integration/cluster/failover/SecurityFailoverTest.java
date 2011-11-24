@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
@@ -112,8 +113,10 @@ public class SecurityFailoverTest extends FailoverTest
       TransportConfiguration backupConnector = getConnectorTransportConfiguration(false);
       backupConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       backupConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(liveConnector.getName());
+      ArrayList<TransportConfiguration> staticConnectors = new ArrayList<TransportConfiguration>();
+      staticConnectors.add(liveConnector);
+      DiscoveryGroupConfiguration dgb = createStaticDiscoveryGroupConfiguration(staticConnectors.toArray(new TransportConfiguration[0]));
+      backupConfig.getDiscoveryGroupConfigurations().put(dgb.getName(), dgb);
       ClusterConnectionConfiguration cccLive = new ClusterConnectionConfiguration("cluster1",
                                                                                   "jms",
                                                                                   backupConnector.getName(),
@@ -122,7 +125,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                   false,
                                                                                   1,
                                                                                   1,
-                                                                                  staticConnectors,
+                                                                                  dgb,
                                                                                   false);
       backupConfig.getClusterConfigurations().add(cccLive);
       backupServer = createBackupServer();
@@ -137,7 +140,8 @@ public class SecurityFailoverTest extends FailoverTest
       liveConfig.setSecurityEnabled(true);
       liveConfig.setSharedStore(true);
       liveConfig.setClustered(true);
-      List<String> pairs = null;
+      DiscoveryGroupConfiguration dgl = createStaticDiscoveryGroupConfiguration((TransportConfiguration[])null);
+      liveConfig.getDiscoveryGroupConfigurations().put(dgl.getName(), dgl);
       ClusterConnectionConfiguration ccc0 = new ClusterConnectionConfiguration("cluster1",
                                                                                "jms",
                                                                                liveConnector.getName(),
@@ -146,7 +150,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                false,
                                                                                1,
                                                                                1,
-                                                                               pairs,
+                                                                               dgl,
                                                                                false);
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);

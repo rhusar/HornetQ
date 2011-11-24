@@ -52,6 +52,10 @@ import org.hornetq.utils.UUIDGenerator;
  */
 public abstract class AbstractServerLocator implements ServerLocatorInternal, DiscoveryListener, Serializable
 {
+   // To be called when there are ServerLocator being finalized.
+   // To be used on test assertions
+   public static Runnable finalizeCallback = null;
+
    private static final long serialVersionUID = -1615857864410205260L;
 
    protected enum STATE

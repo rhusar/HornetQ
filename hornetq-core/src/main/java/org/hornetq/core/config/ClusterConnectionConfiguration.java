@@ -17,6 +17,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.config.impl.ConfigurationImpl;
@@ -66,7 +67,7 @@ public class ClusterConnectionConfiguration implements Serializable
 
    private final boolean allowDirectConnectionsOnly;
 
-   private final List<TransportConfiguration> directConnectors;
+   private final List<TransportConfiguration> staticConnectors;
 
    public ClusterConnectionConfiguration(final String name,
                                          final String address,
@@ -76,7 +77,8 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final boolean forwardWhenNoConsumers,
                                          final int maxHops,
                                          final int confirmationWindowSize,
-                                         final DiscoveryGroupConfiguration discoveryGroupConfig)
+                                         final DiscoveryGroupConfiguration discoveryGroupConfig,
+                                         boolean allowDirectConnectionsOnly)
    {
       this(name,
            address,
@@ -93,7 +95,9 @@ public class ClusterConnectionConfiguration implements Serializable
            maxHops,
            confirmationWindowSize,
            discoveryGroupConfig,
- false, null);
+           allowDirectConnectionsOnly,
+           (List<TransportConfiguration>)discoveryGroupConfig.getParams()
+                                                             .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME));
    }
 
 
@@ -113,7 +117,7 @@ public class ClusterConnectionConfiguration implements Serializable
                                          final int confirmationWindowSize,
                                          final DiscoveryGroupConfiguration discoveryGroupConfig,
                                          boolean allowDirectConnectionsOnly,
-                                         final List<TransportConfiguration> directConnectors)
+                                         final List<TransportConfiguration> staticConnectors)
    {
       this.name = name;
       this.address = address;
@@ -131,7 +135,7 @@ public class ClusterConnectionConfiguration implements Serializable
       this.maxHops = maxHops;
       this.confirmationWindowSize = confirmationWindowSize;
       this.allowDirectConnectionsOnly = allowDirectConnectionsOnly;
-      this.directConnectors = directConnectors;
+      this.staticConnectors = staticConnectors;
    }
 
    public String getName()
@@ -214,9 +218,9 @@ public class ClusterConnectionConfiguration implements Serializable
       return confirmationWindowSize;
    }
 
-   public List<TransportConfiguration> getAllowedConnectors()
+   public List<TransportConfiguration> getStaticConnectors()
    {
-      return directConnectors;
+      return staticConnectors;
    }
 
    public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()

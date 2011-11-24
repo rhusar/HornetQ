@@ -29,9 +29,9 @@ import org.hornetq.api.core.client.ClientProducer;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.ClusterTopologyListener;
+import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.client.impl.ServerLocatorImpl;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
@@ -207,7 +207,7 @@ public abstract class MultipleBackupsFailoverTestBase extends ServiceTestBase
       {
          configs[i] = createTransportConfiguration(isNetty(), false, generateParams(nodes[i], isNetty()));
       }
-      return new ServerLocatorImpl(true, configs);
+      return HornetQClient.createServerLocatorWithHA(configs);
    }
 
    // Private -------------------------------------------------------

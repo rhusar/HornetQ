@@ -91,19 +91,19 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
          final int port = getUDPDiscoveryPort();
 
 
-         ArrayList<String> list = new ArrayList<String>();
-         list.add(server1tc.getName());
-         BroadcastGroupConfiguration bcConfig = new BroadcastGroupConfiguration("bg1",
-                                                                                null,
-                                                                                -1,
-                                                                                groupAddress,
-                                                                                port,
-                                                                                250,
-               list);
+         ArrayList<TransportConfiguration> list = new ArrayList<TransportConfiguration>();
+         list.add(server1tc);
+         BroadcastGroupConfiguration bcConfig = createBroadcastGroupConfiguration("bg1",
+                                                                                  null,
+                                                                                               -1,
+                                                                                  groupAddress,
+                                                                                  port,
+                                                                                                250,
+                                                                                  list);
 
          server0.getConfiguration().getBroadcastGroupConfigurations().add(bcConfig);
 
-         DiscoveryGroupConfiguration dcConfig = new DiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
+         DiscoveryGroupConfiguration dcConfig = createUDPDiscoveryGroupConfiguration("dg1", null, groupAddress, port, 5000, 5000);
 
          server0.getConfiguration().getDiscoveryGroupConfigurations().put(dcConfig.getName(), dcConfig);
 
