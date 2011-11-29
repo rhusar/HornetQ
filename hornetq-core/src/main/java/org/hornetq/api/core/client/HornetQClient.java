@@ -121,8 +121,8 @@ public class HornetQClient
       Map<String, Object> params = new HashMap<String, Object>();
       params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, Arrays.asList(transportConfigurations));
       DiscoveryGroupConfiguration config =
-               new DiscoveryGroupConfiguration("org.hornetq.core.client.impl.StaticServerLocatorImpl",
-                                               "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl",
+               new DiscoveryGroupConfiguration(DiscoveryGroupConstants.STATIC_SERVER_LOCATOR_CLASS,
+                                               DiscoveryGroupConstants.STATIC_CLUSTER_CONNECTOR_CLASS,
                                                params,
                                                UUIDGenerator.getInstance().generateStringUUID());
       return createServerLocatorWithoutHA(config);
@@ -171,8 +171,8 @@ public class HornetQClient
       Map<String, Object> params = new HashMap<String, Object>();
       params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, Arrays.asList(initialServers));
       DiscoveryGroupConfiguration config =
-               new DiscoveryGroupConfiguration("org.hornetq.core.client.impl.StaticServerLocatorImpl",
-                                               "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl",
+               new DiscoveryGroupConfiguration(DiscoveryGroupConstants.STATIC_SERVER_LOCATOR_CLASS,
+                                               DiscoveryGroupConstants.STATIC_CLUSTER_CONNECTOR_CLASS,
                                                params,
                                                UUIDGenerator.getInstance().generateStringUUID());
       return createServerLocatorWithHA(config);

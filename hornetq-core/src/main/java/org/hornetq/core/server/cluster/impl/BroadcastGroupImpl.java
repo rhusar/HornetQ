@@ -226,8 +226,8 @@ public class BroadcastGroupImpl implements BroadcastGroup, Runnable
       byte[] data = buff.toByteBuffer().array();
 
       Map<String, Object> params = broadcastGroupConfiguration.getParams();
-      Integer groupPort = (Integer)params.get(BroadcastGroupConstants.GROUP_PORT_NAME);
-      InetAddress groupAddr = (InetAddress)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME);
+      int groupPort = Integer.parseInt((String)params.get(BroadcastGroupConstants.GROUP_PORT_NAME));
+      InetAddress groupAddr = InetAddress.getByName((String)params.get(BroadcastGroupConstants.GROUP_ADDRESS_NAME));
 
       DatagramPacket packet = new DatagramPacket(data, data.length, groupAddr, groupPort);
 

@@ -13,11 +13,7 @@
 
 package org.hornetq.core.server.cluster.impl;
 
-import java.util.List;
-
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
-import org.hornetq.api.core.DiscoveryGroupConstants;
-import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 
@@ -27,26 +23,27 @@ import org.hornetq.core.client.impl.StaticServerLocatorImpl;
 public class StaticClusterConnectorImpl implements ClusterConnector
 {
    private final ClusterConnectionImpl clusterConnectionImpl;
-   private final List<TransportConfiguration> tcConfigs;
+   private final DiscoveryGroupConfiguration discoveryConfig;
 
    public StaticClusterConnectorImpl(ClusterConnectionImpl clusterConnectionImpl, DiscoveryGroupConfiguration dg)
    {
       this.clusterConnectionImpl = clusterConnectionImpl;
-      this.tcConfigs = (List<TransportConfiguration>)dg.getParams().get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
+      this.discoveryConfig = dg;
    }
 
    @Override
    public ServerLocatorInternal createServerLocator(boolean includeTopology)
    {
-      if (tcConfigs != null && tcConfigs.size() > 0)
+      if (discoveryConfig != null)
       {
          if (ClusterConnectionImpl.log.isDebugEnabled())
          {
-            ClusterConnectionImpl.log.debug(this.clusterConnectionImpl + "Creating a serverLocator for " + tcConfigs);
+            ClusterConnectionImpl.log.debug(this.clusterConnectionImpl + "Creating a serverLocator for " +
+                     discoveryConfig);
          }
          StaticServerLocatorImpl locator = new StaticServerLocatorImpl(includeTopology ? this.clusterConnectionImpl.topology : null,
                                                                                        true,
-                                                                                       tcConfigs.toArray(new TransportConfiguration[0]));
+                                                                                       discoveryConfig);
          locator.setClusterConnection(true);
          return locator;
       }
@@ -62,7 +59,7 @@ public class StaticClusterConnectorImpl implements ClusterConnector
    @Override
    public String toString()
    {
-      return "StaticClusterConnector [tcConfigs=" + tcConfigs + "]";
+      return "StaticClusterConnector [discoveryConfig=" + discoveryConfig + "]";
    }
 
 }

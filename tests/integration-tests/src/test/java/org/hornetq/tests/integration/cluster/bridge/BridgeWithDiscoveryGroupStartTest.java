@@ -109,8 +109,8 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
 
          final String bridgeName = "bridge1";
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                            queueName0,
                                                                            forwardAddress,
@@ -124,7 +124,7 @@ public class BridgeWithDiscoveryGroupStartTest extends ServiceTestBase
                                                                            0,
                                                                            true,
                                                                            1024,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);

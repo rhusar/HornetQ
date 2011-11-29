@@ -23,8 +23,12 @@ import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.core.cluster.DiscoveryEntry;
+import org.hornetq.core.cluster.DiscoveryGroup;
+import org.hornetq.core.cluster.DiscoveryListener;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.remoting.FailureListener;
+import org.hornetq.core.server.management.NotificationService;
 
 /**
  * A StaticServerLocatorImpl
@@ -56,7 +60,39 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
       Map<String, Object> params = discoveryGroupConfiguration.getParams();
       List<TransportConfiguration> initialConnectors =
                (List<TransportConfiguration>)params.get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
-      setStaticTransportConfigurations(initialConnectors.toArray(new TransportConfiguration[0]));
+      if (initialConnectors != null)
+      {
+         setStaticTransportConfigurations(initialConnectors.toArray(new TransportConfiguration[0]));
+      }
+
+      setDiscoveryGroup(new DiscoveryGroup()
+      {
+         @Override public void setNotificationService(NotificationService notificationService) {}
+         @Override public void start() throws Exception {}
+         @Override public void stop() throws Exception {}
+         @Override public void registerListener(DiscoveryListener listener) {}
+         @Override public void unregisterListener(DiscoveryListener listener) {}
+         @Override
+         public String getName()
+         {
+            return "StaticDiscoveryGroup";
+         }
+         @Override
+         public List<DiscoveryEntry> getDiscoveryEntries()
+         {
+            return null;
+         }
+         @Override
+         public boolean isStarted()
+         {
+            return true;
+         }
+         @Override
+         public boolean waitForBroadcast(long timeout)
+         {
+            return true;
+         }
+      });
 
       e.fillInStackTrace();
    }
@@ -79,22 +115,6 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
    }
 
    /**
-    * Create a ServerLocatorImpl using a static list of live servers
-    *
-    * @param transportConfigs
-    */
-   public StaticServerLocatorImpl(final boolean useHA, final TransportConfiguration... transportConfigs)
-   {
-      this(useHA ? new Topology(null) : null, useHA, null, transportConfigs);
-      if (useHA)
-      {
-         // We only set the owner at where the Topology was created.
-         // For that reason we can't set it at the main constructor
-         getTopology().setOwner(this);
-      }
-   }
-
-   /**
     * Create a ServerLocatorImpl using UDP discovery to lookup cluster
     *
     * @param discoveryAddress
@@ -106,18 +126,6 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
    {
       this(topology, useHA, groupConfiguration, null);
 
-   }
-
-   /**
-    * Create a ServerLocatorImpl using a static list of live servers
-    *
-    * @param transportConfigs
-    */
-   public StaticServerLocatorImpl(final Topology topology,
-                            final boolean useHA,
-                            final TransportConfiguration... transportConfigs)
-   {
-      this(topology, useHA, null, transportConfigs);
    }
 
    @Override

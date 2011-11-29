@@ -19,6 +19,7 @@ import static org.hornetq.api.core.management.NotificationType.CONSUMER_CREATED;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -63,6 +65,7 @@ import org.hornetq.utils.ExecutorFactory;
 import org.hornetq.utils.Future;
 import org.hornetq.utils.TypedProperties;
 import org.hornetq.utils.UUID;
+import org.hornetq.utils.UUIDGenerator;
 
 /**
  *
@@ -243,8 +246,8 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
       String className = dg.getClusterConnectorClassName();
       ClassLoader loader = Thread.currentThread().getContextClassLoader();
       Class<?> clazz = loader.loadClass(className);
-      Constructor<?> constructor = clazz.getConstructor(DiscoveryGroupConfiguration.class);
-      clusterConnector = (ClusterConnector)constructor.newInstance(dg);
+      Constructor<?> constructor = clazz.getConstructor(ClusterConnectionImpl.class, DiscoveryGroupConfiguration.class);
+      clusterConnector = (ClusterConnector)constructor.newInstance(this, dg);
 
       backupServerLocator = clusterConnector.createServerLocator(false);
 
@@ -744,7 +747,15 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
                                 final Queue queue,
                                 final boolean start) throws Exception
    {
-      final ServerLocatorInternal targetLocator = new StaticServerLocatorImpl(topology, false, connector);
+      Map<String, Object> params = new HashMap<String, Object>();
+      params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, Arrays.asList(connector));
+      DiscoveryGroupConfiguration dg =
+               new DiscoveryGroupConfiguration(DiscoveryGroupConstants.STATIC_SERVER_LOCATOR_CLASS,
+                                               DiscoveryGroupConstants.STATIC_CLUSTER_CONNECTOR_CLASS,
+                                               params,
+                                               UUIDGenerator.getInstance().generateStringUUID());
+      
+      final ServerLocatorInternal targetLocator = new StaticServerLocatorImpl(topology, false, dg);
 
       String nodeId;
 

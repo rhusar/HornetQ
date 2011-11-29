@@ -20,6 +20,7 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -116,8 +117,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       final int reconnectAttempts = 1;
       final int confirmationWindowSize = 1024;
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
@@ -132,7 +133,7 @@ public class BridgeReconnectTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         true,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -258,8 +259,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       final int reconnectAttempts = 3;
       final int confirmationWindowSize = 1024;
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
@@ -274,7 +275,7 @@ public class BridgeReconnectTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         true,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -386,8 +387,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       final int reconnectAttempts = 3;
       final int confirmationWindowSize = 1024;
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
@@ -402,7 +403,7 @@ public class BridgeReconnectTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         true,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -530,8 +531,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       final int confirmationWindowSize = 1024;
       final long clientFailureCheckPeriod = 1000;
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
@@ -546,7 +547,7 @@ public class BridgeReconnectTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         true,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -669,8 +670,8 @@ public class BridgeReconnectTest extends BridgeTestBase
       final int reconnectAttempts = 3;
       final int confirmationWindowSize = 1024;
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
@@ -685,7 +686,7 @@ public class BridgeReconnectTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         true,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);

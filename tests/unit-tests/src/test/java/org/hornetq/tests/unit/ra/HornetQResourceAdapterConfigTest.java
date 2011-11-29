@@ -290,6 +290,12 @@ public class HornetQResourceAdapterConfigTest extends UnitTestCase
          "         <config-property-name>SetupAttempts</config-property-name>\n" +
          "         <config-property-type>int</config-property-type>\n" +
          "         <config-property-value></config-property-value>\n" +
+         "      </config-property>\n" +
+         "      <config-property>\n" +
+         "         <description>Parameters for another discovery strategy plugin like hornetq-jgroups-discovery</description>\n" +
+         "         <config-property-name>DiscoveryPluginProperties</config-property-name>\n" +
+         "         <config-property-type>java.lang.String</config-property-type>\n" +
+         "         <config-property-value></config-property-value>\n" +
          "      </config-property>";
 
 

@@ -220,10 +220,10 @@
 			<xsd:sequence>
 				<xsd:element maxOccurs="1" minOccurs="1" name="broadcast-type" type="broadcastType">
 				</xsd:element>
-   				<xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string">
-				</xsd:element>
 				<xsd:element maxOccurs="unbounded" minOccurs="0" name="param" type="paramType">
 				</xsd:element>			
+                <xsd:element maxOccurs="unbounded" minOccurs="0" name="connector-ref" type="xsd:string">
+                </xsd:element>
 			</xsd:sequence>
 			<xsd:attribute name="name" type="xsd:ID" use="required"/>
 		</xsd:complexType>

@@ -154,7 +154,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
          }
       }
 
-      Assert.assertEquals(2, conf.getDiscoveryGroupConfigurations().size());
+      Assert.assertEquals(4, conf.getDiscoveryGroupConfigurations().size());
       DiscoveryGroupConfiguration dc = conf.getDiscoveryGroupConfigurations().get("dg1");
       Assert.assertEquals("dg1", dc.getName());
       Assert.assertEquals("192.168.0.120", ConfigurationHelper.getStringProperty(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, null, dc.getParams()));
@@ -208,8 +208,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(0.2, bc.getRetryIntervalMultiplier());
             Assert.assertEquals(2, bc.getReconnectAttempts());
             Assert.assertEquals(true, bc.isUseDuplicateDetection());
-            Assert.assertEquals("connector1", bc.getStaticConnectors().get(0));
-            Assert.assertEquals(null, bc.getDiscoveryGroupName());
+            Assert.assertEquals("connector1", bc.getStaticConnectors().get(0).getName());
          }
          else
          {
@@ -219,7 +218,7 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(null, bc.getFilterString());
             Assert.assertEquals(null, bc.getTransformerClassName());
             Assert.assertEquals(null, bc.getStaticConnectors());
-            Assert.assertEquals("dg1", bc.getDiscoveryGroupName());
+            Assert.assertEquals("dg1", bc.getDiscoveryGroupConfiguration().getName());
          }
       }
 
@@ -235,9 +234,9 @@ public class FileConfigurationTest extends ConfigurationImplTest
             Assert.assertEquals(false, ccc.isForwardWhenNoConsumers());
             Assert.assertEquals(1, ccc.getMaxHops());
             Assert.assertEquals(123, ccc.getCallTimeout());
-            Assert.assertEquals("connector1", ccc.getStaticConnectors().get(0));
-            Assert.assertEquals("connector2", ccc.getStaticConnectors().get(1));
-            Assert.assertEquals(null, ccc.getDiscoveryGroupConfiguration().getName());
+            Assert.assertEquals("connector1", ccc.getStaticConnectors().get(0).getName());
+            Assert.assertEquals("connector2", ccc.getStaticConnectors().get(1).getName());
+            Assert.assertEquals("static12", ccc.getDiscoveryGroupConfiguration().getName());
          }
          else
          {

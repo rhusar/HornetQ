@@ -16,11 +16,15 @@ package org.hornetq.core.config;
 import java.io.Serializable;
 import java.util.List;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
+import org.hornetq.api.core.TransportConfiguration;
+
 /**
  * A BridgeConfiguration
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
- * 
+ *
  * Created 13 Jan 2009 09:32:43
  *
  *
@@ -37,10 +41,10 @@ public class BridgeConfiguration implements Serializable
 
    private String filterString;
 
-   private List<String> staticConnectors;
+   private List<TransportConfiguration> staticConnectors;
 
-   private String discoveryGroupName;
-   
+   private DiscoveryGroupConfiguration discoveryGroupConfiguration;
+
    private boolean ha;
 
    private String transformerClassName;
@@ -56,13 +60,13 @@ public class BridgeConfiguration implements Serializable
    private int confirmationWindowSize;
 
    private final long clientFailureCheckPeriod;
-   
+
    private String user;
-   
+
    private String password;
 
    private final long connectionTTL;
-   
+
    private final long maxRetryInterval;
 
 
@@ -79,7 +83,7 @@ public class BridgeConfiguration implements Serializable
                               final int reconnectAttempts,
                               final boolean useDuplicateDetection,
                               final int confirmationWindowSize,
-                              final List<String> staticConnectors,
+                              final DiscoveryGroupConfiguration discoveryGroupConfig,
                               final boolean ha,
                               final String user,
                               final String password)
@@ -95,45 +99,10 @@ public class BridgeConfiguration implements Serializable
       this.useDuplicateDetection = useDuplicateDetection;
       this.confirmationWindowSize = confirmationWindowSize;
       this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      this.staticConnectors = staticConnectors;
-      this. user = user;
-      this.password = password;
-      this.connectionTTL = connectionTTL;
-      this.maxRetryInterval = maxRetryInterval;
-      discoveryGroupName = null;
-   }
-
-   public BridgeConfiguration(final String name,
-                              final String queueName,
-                              final String forwardingAddress,
-                              final String filterString,
-                              final String transformerClassName,
-                              final long clientFailureCheckPeriod,
-                              final long connectionTTL,
-                              final long retryInterval,
-                              final long maxRetryInterval,
-                              final double retryIntervalMultiplier,
-                              final int reconnectAttempts,
-                              final boolean useDuplicateDetection,
-                              final int confirmationWindowSize,
-                              final String discoveryGroupName,
-                              final boolean ha,
-                              final String user,
-                              final String password)
-   {
-      this.name = name;
-      this.queueName = queueName;
-      this.forwardingAddress = forwardingAddress;
-      this.filterString = filterString;
-      this.transformerClassName = transformerClassName;
-      this.retryInterval = retryInterval;
-      this.retryIntervalMultiplier = retryIntervalMultiplier;
-      this.reconnectAttempts = reconnectAttempts;
-      this.useDuplicateDetection = useDuplicateDetection;
-      this.confirmationWindowSize = confirmationWindowSize;
-      this.clientFailureCheckPeriod = clientFailureCheckPeriod;
-      this.staticConnectors = null;
-      this.discoveryGroupName = discoveryGroupName;
+      this.discoveryGroupConfiguration = discoveryGroupConfig;
+      this.staticConnectors =
+               (List<TransportConfiguration>)discoveryGroupConfig.getParams()
+                                                                 .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
       this.ha = ha;
       this.user = user;
       this.password = password;
@@ -182,16 +151,16 @@ public class BridgeConfiguration implements Serializable
       return transformerClassName;
    }
 
-   public List<String> getStaticConnectors()
+   public List<TransportConfiguration> getStaticConnectors()
    {
       return staticConnectors;
    }
 
-   public String getDiscoveryGroupName()
+   public DiscoveryGroupConfiguration getDiscoveryGroupConfiguration()
    {
-      return discoveryGroupName;
+      return discoveryGroupConfiguration;
    }
-   
+
    public boolean isHA()
    {
       return ha;
@@ -262,21 +231,21 @@ public class BridgeConfiguration implements Serializable
    /**
     * @param staticConnectors the staticConnectors to set
     */
-   public void setStaticConnectors(final List<String> staticConnectors)
+   public void setStaticConnectors(final List<TransportConfiguration> staticConnectors)
    {
       this.staticConnectors = staticConnectors;
    }
 
    /**
-    * @param discoveryGroupName the discoveryGroupName to set
+    * @param discoveryGroupConfig the discoveryGroupName to set
     */
-   public void setDiscoveryGroupName(final String discoveryGroupName)
+   public void setDiscoveryGroupName(final DiscoveryGroupConfiguration discoveryGroupConfig)
    {
-      this.discoveryGroupName = discoveryGroupName;
+      this.discoveryGroupConfiguration = discoveryGroupConfig;
    }
-   
+
    /**
-    * 
+    *
     * @param ha is the bridge supporting HA?
     */
    public void setHA(final boolean ha)

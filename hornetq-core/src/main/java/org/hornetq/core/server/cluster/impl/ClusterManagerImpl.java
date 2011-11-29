@@ -441,10 +441,10 @@ public class ClusterManagerImpl implements ClusterManagerInternal
       ServerLocatorInternal serverLocator;
 
       DiscoveryGroupConfiguration discoveryGroupConfiguration = configuration.getDiscoveryGroupConfigurations()
-                                                                                .get(config.getDiscoveryGroupName());
+                                                                                .get(config.getDiscoveryGroupConfiguration().getName());
       if (discoveryGroupConfiguration == null)
       {
-         ClusterManagerImpl.log.warn("No discovery group configured with name '" + config.getDiscoveryGroupName() +
+         ClusterManagerImpl.log.warn("No discovery group configured with name '" + config.getDiscoveryGroupConfiguration().getName() +
                                         "'. The bridge will not be deployed.");
 
          return;

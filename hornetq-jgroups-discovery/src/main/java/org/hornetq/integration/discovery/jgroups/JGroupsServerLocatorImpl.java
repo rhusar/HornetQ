@@ -96,6 +96,8 @@ public class JGroupsServerLocatorImpl extends AbstractServerLocator
       discoveryGroup.registerListener(this);
 
       discoveryGroup.start();
+      
+      setDiscoveryGroup(discoveryGroup);
    }
 
    private JGroupsServerLocatorImpl(final Topology topology,

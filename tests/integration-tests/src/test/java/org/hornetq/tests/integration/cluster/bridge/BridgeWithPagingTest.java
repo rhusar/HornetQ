@@ -20,6 +20,7 @@ import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
@@ -106,8 +107,8 @@ public class BridgeWithPagingTest extends BridgeTestBase
       final int confirmationWindowSize = 1024; // 1 kiB
 
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration(bridgeName,
                                                                         queueName0,
                                                                         forwardAddress,
@@ -121,7 +122,7 @@ public class BridgeWithPagingTest extends BridgeTestBase
                                                                         reconnectAttempts,
                                                                         false,
                                                                         confirmationWindowSize,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);

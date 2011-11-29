@@ -230,7 +230,14 @@ Copyright 2009 Red Hat, Inc.
         <config-property-name>ClientID</config-property-name>
         <config-property-type>java.lang.String</config-property-type>
         <config-property-value></config-property-value>
-      </config-property>-->
+      </config-property>
+      <config-property>
+        <description>Parameters for another discovery strategy plugin like hornetq-jgroups-discovery</description>
+        <config-property-name>DiscoveryPluginProperties</config-property-name>
+        <config-property-type>java.lang.String</config-property-type>
+        <config-property-value></config-property-value>
+      </config-property>
+      -->
 
       <outbound-resourceadapter>
          <connection-definition>

@@ -994,12 +994,12 @@ public class FileConfigurationParser
          switch (DiscoveryType.valueOf(type))
          {
             case STATIC:
-               serverLocatorClassName = "org.hornetq.core.client.impl.StaticServerLocatorImpl";
-               clusterConnectorClassName = "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl";
+               serverLocatorClassName = DiscoveryGroupConstants.STATIC_SERVER_LOCATOR_CLASS;
+               clusterConnectorClassName = DiscoveryGroupConstants.STATIC_CLUSTER_CONNECTOR_CLASS;
                break;
             case UDP:
-               serverLocatorClassName = "org.hornetq.core.client.impl.UDPServerLocatorImpl";
-               clusterConnectorClassName = "org.hornetq.core.server.cluster.impl.UDPDiscoveryClusterConnectorImpl";
+               serverLocatorClassName = DiscoveryGroupConstants.UDP_SERVER_LOCATOR_CLASS;
+               clusterConnectorClassName = DiscoveryGroupConstants.UDP_CLUSTER_CONNECTOR_CLASS;
                break;
             case JGROUPS:
                serverLocatorClassName = "org.hornetq.integration.discovery.jgroups.JGroupsServerLocatorImpl";
@@ -1127,15 +1127,16 @@ public class FileConfigurationParser
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
 
+            directConnections =
+                     (List<TransportConfiguration>)mainConfig.getDiscoveryGroupConfigurations()
+                                                             .get(discoveryGroupName)
+                                                             .getParams()
+                                                             .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
+
             Node attr = child.getAttributes().getNamedItem("allow-direct-connections-only");
             if (attr != null)
             {
                allowDirectConnectionsOnly = "true".equalsIgnoreCase(attr.getNodeValue()) || allowDirectConnectionsOnly;
-               directConnections =
-                        (List<TransportConfiguration>)mainConfig.getDiscoveryGroupConfigurations()
-                                                                .get(discoveryGroupName)
-                                                                .getParams()
-                                                                .get(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME);
             }
          }
       }
@@ -1258,54 +1259,27 @@ public class FileConfigurationParser
          {
             discoveryGroupName = child.getAttributes().getNamedItem("discovery-group-name").getNodeValue();
          }
-         else if (child.getNodeName().equals("static-connectors"))
-         {
-            getStaticConnectors(staticConnectorNames, child);
-         }
       }
 
       BridgeConfiguration config;
 
-      if (!staticConnectorNames.isEmpty())
-      {
-         config = new BridgeConfiguration(name,
-                                          queueName,
-                                          forwardingAddress,
-                                          filterString,
-                                          transformerClassName,
-                                          clientFailureCheckPeriod,
-                                          connectionTTL,
-                                          retryInterval,
-                                          maxRetryInterval,
-                                          retryIntervalMultiplier,
-                                          reconnectAttempts,
-                                          useDuplicateDetection,
-                                          confirmationWindowSize,
-                                          staticConnectorNames,
-                                          ha,
-                                          user,
-                                          password);
-      }
-      else
-      {
-         config = new BridgeConfiguration(name,
-                                          queueName,
-                                          forwardingAddress,
-                                          filterString,
-                                          transformerClassName,
-                                          clientFailureCheckPeriod,
-                                          connectionTTL,
-                                          retryInterval,
-                                          maxRetryInterval,
-                                          retryIntervalMultiplier,
-                                          reconnectAttempts,
-                                          useDuplicateDetection,
-                                          confirmationWindowSize,
-                                          discoveryGroupName,
-                                          ha,
-                                          user,
-                                          password);
-      }
+      config = new BridgeConfiguration(name,
+                                       queueName,
+                                       forwardingAddress,
+                                       filterString,
+                                       transformerClassName,
+                                       clientFailureCheckPeriod,
+                                       connectionTTL,
+                                       retryInterval,
+                                       maxRetryInterval,
+                                       retryIntervalMultiplier,
+                                       reconnectAttempts,
+                                       useDuplicateDetection,
+                                       confirmationWindowSize,
+                                       mainConfig.getDiscoveryGroupConfigurations().get(discoveryGroupName),
+                                       ha,
+                                       user,
+                                       password);
 
       mainConfig.getBridgeConfigurations().add(config);
    }

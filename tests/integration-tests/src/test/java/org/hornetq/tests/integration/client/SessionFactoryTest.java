@@ -160,7 +160,7 @@ public class SessionFactoryTest extends ServiceTestBase
 
       assertFactoryParams(locator,
                           tc,
-                          null,
+                          locator.getDiscoveryGroupConfiguration(),
                           HornetQClient.DEFAULT_CLIENT_FAILURE_CHECK_PERIOD,
                           HornetQClient.DEFAULT_CONNECTION_TTL,
                           HornetQClient.DEFAULT_CALL_TIMEOUT,

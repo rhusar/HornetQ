@@ -1506,4 +1506,14 @@ public abstract class AbstractServerLocator implements ServerLocatorInternal, Di
    {
       return topologyArray;
    }
+
+   protected synchronized DiscoveryGroup getDiscoveryGroup()
+   {
+      return discoveryGroup;
+   }
+
+   protected synchronized void setDiscoveryGroup(DiscoveryGroup dg)
+   {
+      this.discoveryGroup = dg;
+   }
 }

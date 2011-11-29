@@ -82,33 +82,45 @@
    	     </acceptor>
       </acceptors>
       <broadcast-groups>
-	     <broadcast-group name="bg1">
-	        <local-bind-port>10999</local-bind-port>
-	        <group-address>192.168.0.120</group-address>
-	        <group-port>11999</group-port>
-            <broadcast-period>12345</broadcast-period>
+         <broadcast-group name="bg1">
+            <broadcast-type>UDP</broadcast-type>
+            <param key="local-bind-port" value="10999"/>
+            <param key="group-address" value="192.168.0.120"/>
+            <param key="group-port" value="11999"/>
+            <param key="broadcast-period" value="12345"/>
             <connector-ref>connector1</connector-ref>
-	     </broadcast-group>
+         </broadcast-group>
          <broadcast-group name="bg2">
-            <local-bind-port>12999</local-bind-port>
-            <group-address>192.168.0.121</group-address>
-            <group-port>13999</group-port>
-            <broadcast-period>23456</broadcast-period>
+            <broadcast-type>UDP</broadcast-type>
+            <param key="local-bind-port" value="12999"/>
+            <param key="group-address" value="192.168.0.121"/>
+            <param key="group-port" value="13999"/>
+            <param key="broadcast-period" value="23456"/>
             <connector-ref>connector2</connector-ref>
          </broadcast-group>
       </broadcast-groups>
       <discovery-groups>
          <discovery-group name="dg1">
-            <local-bind-address>172.16.8.10</local-bind-address>
-            <group-address>192.168.0.120</group-address>
-            <group-port>11999</group-port>
-            <refresh-timeout>12345</refresh-timeout>
+            <discovery-type>UDP</discovery-type>
+            <param key="local-bind-address" value="172.16.8.10"/>
+            <param key="group-address" value="192.168.0.120"/>
+            <param key="group-port" value="11999"/>
+            <param key="refresh-timeout" value="12345"/>
          </discovery-group>
          <discovery-group name="dg2">
-            <local-bind-address>172.16.8.11</local-bind-address>
-            <group-address>192.168.0.121</group-address>
-            <group-port>12999</group-port>
-            <refresh-timeout>23456</refresh-timeout>
+            <discovery-type>UDP</discovery-type>
+            <param key="local-bind-address" value="172.16.8.11"/>
+            <param key="group-address" value="192.168.0.121"/>
+            <param key="group-port" value="12999"/>
+            <param key="refresh-timeout" value="23456"/>
+         </discovery-group>
+         <discovery-group name="static1">
+            <discovery-type>STATIC</discovery-type>
+            <param key="static-connector-names" value="connector1"/>
+         </discovery-group>
+         <discovery-group name="static12">
+            <discovery-type>STATIC</discovery-type>
+            <param key="static-connector-names" value="connector1,connector2"/>
          </discovery-group>
       </discovery-groups>
       <diverts>
@@ -152,9 +164,7 @@
              <reconnect-attempts>2</reconnect-attempts>
              <failover-on-server-shutdown>false</failover-on-server-shutdown>
              <use-duplicate-detection>true</use-duplicate-detection>
-             <static-connectors>
-               <connector-ref>connector1</connector-ref>
-             </static-connectors>
+             <discovery-group-ref discovery-group-name="static1"/>
          </bridge>
          <bridge name="bridge2">
              <queue-name>queue2</queue-name>
@@ -171,10 +181,7 @@
              <forward-when-no-consumers>false</forward-when-no-consumers>
              <max-hops>1</max-hops>
              <call-timeout>123</call-timeout>
-            <static-connectors>
-               <connector-ref>connector1</connector-ref>
-               <connector-ref>connector2</connector-ref>
-            </static-connectors>
+            <discovery-group-ref discovery-group-name="static12"/>
          </cluster-connection>
          <cluster-connection name="cluster-connection2">
              <address>queues2</address>

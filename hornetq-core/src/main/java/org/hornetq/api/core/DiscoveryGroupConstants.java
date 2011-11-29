@@ -24,6 +24,8 @@ public class DiscoveryGroupConstants
    // for static connector
    public static final String STATIC_CONNECTOR_NAMES_NAME = "static-connector-names";
    public static final String STATIC_CONNECTOR_CONFIG_LIST_NAME = "static-connector-list";
+   public static final String STATIC_SERVER_LOCATOR_CLASS = "org.hornetq.core.client.impl.StaticServerLocatorImpl";
+   public static final String STATIC_CLUSTER_CONNECTOR_CLASS = "org.hornetq.core.server.cluster.impl.StaticClusterConnectorImpl";
 
    // for UDP discovery
    public static final String LOCAL_BIND_ADDRESS_NAME = "local-bind-address";
@@ -31,4 +33,6 @@ public class DiscoveryGroupConstants
    public static final String GROUP_PORT_NAME = "group-port";
    public static final String INITIAL_WAIT_TIMEOUT_NAME = "initial-wait-timeout";
    public static final String REFRESH_TIMEOUT_NAME = "refresh-timeout";
+   public static final String UDP_SERVER_LOCATOR_CLASS = "org.hornetq.core.client.impl.UDPServerLocatorImpl";
+   public static final String UDP_CLUSTER_CONNECTOR_CLASS = "org.hornetq.core.server.cluster.impl.UDPDiscoveryClusterConnectorImpl";
 }

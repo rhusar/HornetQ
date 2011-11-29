@@ -86,6 +86,8 @@ public class UDPServerLocatorImpl extends AbstractServerLocator
       discoveryGroup.registerListener(this);
 
       discoveryGroup.start();
+
+      setDiscoveryGroup(discoveryGroup);
    }
 
    private UDPServerLocatorImpl(final Topology topology,

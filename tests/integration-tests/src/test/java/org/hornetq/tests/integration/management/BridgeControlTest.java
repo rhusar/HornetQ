@@ -23,6 +23,7 @@ import javax.management.MBeanServerFactory;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -74,7 +75,7 @@ public class BridgeControlTest extends ManagementTestBase
       BridgeControl bridgeControl = createBridgeControl(bridgeConfig.getName(), mbeanServer);
 
       Assert.assertEquals(bridgeConfig.getName(), bridgeControl.getName());
-      Assert.assertEquals(bridgeConfig.getDiscoveryGroupName(), bridgeControl.getDiscoveryGroupName());
+      Assert.assertEquals(bridgeConfig.getDiscoveryGroupConfiguration().getName(), bridgeControl.getDiscoveryGroupName());
       Assert.assertEquals(bridgeConfig.getQueueName(), bridgeControl.getQueueName());
       Assert.assertEquals(bridgeConfig.getForwardingAddress(), bridgeControl.getForwardingAddress());
       Assert.assertEquals(bridgeConfig.getFilterString(), bridgeControl.getFilterString());
@@ -159,6 +160,7 @@ public class BridgeControlTest extends ManagementTestBase
                                                                     RandomUtil.randomString(),
                                                                     null,
                                                                     false);
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(connectorConfig);
       List<String> connectors = new ArrayList<String>();
       connectors.add(connectorConfig.getName());
       bridgeConfig = new BridgeConfiguration(RandomUtil.randomString(),
@@ -174,7 +176,7 @@ public class BridgeControlTest extends ManagementTestBase
                                              RandomUtil.randomPositiveInt(),
                                              RandomUtil.randomBoolean(),
                                              RandomUtil.randomPositiveInt(),
-                                             connectors,
+                                             dg,
                                              false,
                                              ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                              ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -193,6 +195,7 @@ public class BridgeControlTest extends ManagementTestBase
       conf_0.getAcceptorConfigurations().add(new TransportConfiguration(InVMAcceptorFactory.class.getName()));
       conf_0.getConnectorConfigurations().put(connectorConfig.getName(), connectorConfig);
       conf_0.getQueueConfigurations().add(sourceQueueConfig);
+      conf_0.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       conf_0.getBridgeConfigurations().add(bridgeConfig);
 
       server_1 = HornetQServers.newHornetQServer(conf_1, MBeanServerFactory.createMBeanServer(), false);

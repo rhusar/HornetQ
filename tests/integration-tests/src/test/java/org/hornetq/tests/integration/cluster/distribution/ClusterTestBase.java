@@ -1782,7 +1782,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          pairs.add(serverTotc);
       }
 
-      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(pairs.toArray(new TransportConfiguration[0]));
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(pairs != null ? pairs.toArray(new TransportConfiguration[0]) : null);
       serverFrom.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       
       ClusterConnectionConfiguration clusterConf = new ClusterConnectionConfiguration(name,

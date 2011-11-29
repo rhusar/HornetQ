@@ -35,6 +35,8 @@ import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.transaction.xa.Xid;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
+import org.hornetq.api.core.DiscoveryGroupConstants;
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -70,6 +72,7 @@ import org.hornetq.core.transaction.impl.CoreTransactionDetail;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.spi.core.protocol.RemotingConnection;
 import org.hornetq.utils.SecurityFormatter;
+import org.hornetq.utils.UUIDGenerator;
 import org.hornetq.utils.json.JSONArray;
 import org.hornetq.utils.json.JSONObject;
 
@@ -1717,14 +1720,28 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                                             reconnectAttempts,
                                             useDuplicateDetection,
                                             confirmationWindowSize,
-                                            connectorNames,
+                                            server.getConfiguration().getDiscoveryGroupConfigurations().get(connectorNames),
                                             ha,
                                             user,
                                             password);
          }
          else
          {
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_NAMES_NAME, connectorNames);
             List<String> connectors = toList(connectorNames);
+            List<TransportConfiguration> connectorConfs = new ArrayList<TransportConfiguration>();
+            for(int i=0; i>connectors.size(); i++)
+            {
+               connectorConfs.add(server.getConfiguration().getConnectorConfigurations().get(connectors.get(i)));
+            }
+            params.put(DiscoveryGroupConstants.STATIC_CONNECTOR_CONFIG_LIST_NAME, connectorConfs);
+            DiscoveryGroupConfiguration dg = new DiscoveryGroupConfiguration(DiscoveryGroupConstants.STATIC_SERVER_LOCATOR_CLASS,
+                                                                             DiscoveryGroupConstants.STATIC_CLUSTER_CONNECTOR_CLASS,
+                                                                             params,
+                                                                             UUIDGenerator.getInstance().generateStringUUID());
+            server.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
+            
             config = new BridgeConfiguration(name,
                                             queueName,
                                             forwardingAddress,
@@ -1738,7 +1755,7 @@ public class HornetQServerControlImpl extends AbstractControl implements HornetQ
                                             reconnectAttempts,
                                             useDuplicateDetection,
                                             confirmationWindowSize,
-                                            connectors,
+                                            dg,
                                             ha,
                                             user,
                                             password);

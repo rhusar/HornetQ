@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.Assert;
 
+import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.HornetQBuffer;
 import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
@@ -134,8 +135,8 @@ public class BridgeTest extends ServiceTestBase
 
          final int numMessages = 10;
 
-         ArrayList<String> connectorConfig = new ArrayList<String>();
-         connectorConfig.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -151,7 +152,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent
                                                                            numMessages * messageSize / 2,
-                                                                           connectorConfig,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -342,8 +343,8 @@ public class BridgeTest extends ServiceTestBase
 
          final String filterString = "animal='goat'";
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -357,7 +358,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            -1,
                                                                            false,
                                                                            0,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -531,8 +532,8 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -546,7 +547,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            -1,
                                                                            false,
                                                                            1024,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -691,8 +692,8 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
                                                                            forwardAddress,
@@ -706,7 +707,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            -1,
                                                                            true,
                                                                            0,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -883,8 +884,8 @@ public class BridgeTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                         queueName0,
@@ -899,7 +900,7 @@ public class BridgeTest extends ServiceTestBase
                                                                         -1,
                                                                         false,
                                                                         1024,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -1036,8 +1037,8 @@ public class BridgeTest extends ServiceTestBase
 
       server0.getConfiguration().setConnectorConfigurations(connectors);
 
-      ArrayList<String> staticConnectors = new ArrayList<String>();
-      staticConnectors.add(server1tc.getName());
+      DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+      server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
       BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                         queueName0,
@@ -1052,7 +1053,7 @@ public class BridgeTest extends ServiceTestBase
                                                                         -1,
                                                                         false,
                                                                         0,
-                                                                        staticConnectors,
+                                                                        dg,
                                                                         false,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                         ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -1283,8 +1284,8 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
@@ -1299,7 +1300,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            -1,
                                                                            false,
                                                                            0,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -1434,8 +1435,8 @@ public class BridgeTest extends ServiceTestBase
 
          server0.getConfiguration().setConnectorConfigurations(connectors);
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
 
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1",
                                                                            queueName0,
@@ -1450,7 +1451,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            -1,
                                                                            false,
                                                                            1024,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
@@ -1592,8 +1593,8 @@ public class BridgeTest extends ServiceTestBase
 
          final int numMessages = 10;
 
-         ArrayList<String> staticConnectors = new ArrayList<String>();
-         staticConnectors.add(server1tc.getName());
+         DiscoveryGroupConfiguration dg = createStaticDiscoveryGroupConfiguration(server1tc);
+         server0.getConfiguration().getDiscoveryGroupConfigurations().put(dg.getName(), dg);
          BridgeConfiguration bridgeConfiguration = new BridgeConfiguration("bridge1", queueName0, null, // pass a null
                                                                            // forwarding
                                                                            // address to
@@ -1612,7 +1613,7 @@ public class BridgeTest extends ServiceTestBase
                                                                            // Choose confirmation size to make sure acks
                                                                            // are sent
                                                                            numMessages * messageSize / 2,
-                                                                           staticConnectors,
+                                                                           dg,
                                                                            false,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_USER,
                                                                            ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD);
