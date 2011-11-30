@@ -23,6 +23,7 @@ package org.hornetq.core.config;
 public class BroadcastGroupConstants
 {
    // for simple UDP broadcast
+   public static final String UDP_BROADCAST_GROUP_CLASS = "org.hornetq.core.server.cluster.impl.BroadcastGroupImpl";
    public static final String LOCAL_BIND_ADDRESS_NAME = "local-bind-address";
    public static final String LOCAL_BIND_PORT_NAME = "local-bind-port";
    public static final String GROUP_ADDRESS_NAME = "group-address";

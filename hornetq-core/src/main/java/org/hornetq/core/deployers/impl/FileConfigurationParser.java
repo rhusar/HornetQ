@@ -32,6 +32,7 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.config.BroadcastGroupConfiguration;
+import org.hornetq.core.config.BroadcastGroupConstants;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.ConnectorServiceConfiguration;
@@ -925,7 +926,7 @@ public class FileConfigurationParser
          switch (BroadcastType.valueOf(type))
          {
             case UDP:
-               clazz = "org.hornetq.core.server.cluster.impl.BroadcastGroupImpl";
+               clazz = BroadcastGroupConstants.UDP_BROADCAST_GROUP_CLASS;
                break;
             case JGROUPS:
                clazz = "org.hornetq.integration.discovery.jgroups.JGroupsBroadcastGroupImpl";
