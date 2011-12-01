@@ -921,6 +921,17 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
     */
    private void reconnectSessions(final CoreRemotingConnection oldConnection, final int reconnectAttempts)
    {
+      HashSet<ClientSessionInternal> sessionsToFailover;
+      synchronized (sessions)
+      {
+         sessionsToFailover = new HashSet<ClientSessionInternal>(sessions);
+      }
+
+      for (ClientSessionInternal session : sessionsToFailover)
+      {
+         session.preHandleFailover(connection);
+      }
+
       getConnectionWithRetry(reconnectAttempts);
 
       if (connection == null)
@@ -945,12 +956,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
 
       connection.setFailureListeners(newListeners);
-
-      HashSet<ClientSessionInternal> sessionsToFailover;
-      synchronized (sessions)
-      {
-         sessionsToFailover = new HashSet<ClientSessionInternal>(sessions);
-      }
 
       for (ClientSessionInternal session : sessionsToFailover)
       {

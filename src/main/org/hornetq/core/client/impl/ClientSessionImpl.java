@@ -757,7 +757,7 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       }
 
       checkClosed();
-
+      System.out.println("client ack messageID = " + messageID);
       SessionAcknowledgeMessage message = new SessionAcknowledgeMessage(consumerID, messageID, blockOnAcknowledge);
 
       if (blockOnAcknowledge)
@@ -935,6 +935,14 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
       sendAckHandler = handler;
    }
 
+   public void preHandleFailover(CoreRemotingConnection connection)
+   {
+      // We lock the channel to prevent any packets to be added to the resend
+      // cache during the failover process
+      //we also do this before the connection fails over to give the session a chance to block for failover
+      channel.lock();
+   }
+
    // Needs to be synchronized to prevent issues with occurring concurrently with close()
 
    public void handleFailover(final CoreRemotingConnection backupConnection)
@@ -948,9 +956,6 @@ public class ClientSessionImpl implements ClientSessionInternal, FailureListener
 
          boolean resetCreditManager = false;
 
-         // We lock the channel to prevent any packets to be added to the resend
-         // cache during the failover process
-         channel.lock();
          try
          {
             channel.transferConnection(backupConnection);
