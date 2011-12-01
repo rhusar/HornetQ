@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.Interceptor;
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.TransportConfiguration;
@@ -32,6 +33,7 @@ import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.Packet;
 import org.hornetq.core.protocol.core.ServerSessionPacketHandler;
 import org.hornetq.core.protocol.core.impl.ChannelImpl.CHANNEL_ID;
+import org.hornetq.core.protocol.core.impl.wireformat.BackupRegistrationFailedMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.BackupRegistrationMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage;
 import org.hornetq.core.protocol.core.impl.wireformat.ClusterTopologyChangeMessage_V2;
@@ -41,6 +43,7 @@ import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUp
 import org.hornetq.core.protocol.core.impl.wireformat.SubscribeClusterTopologyUpdatesMessageV2;
 import org.hornetq.core.remoting.CloseListener;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.server.cluster.ClusterConnection;
 import org.hornetq.spi.core.protocol.ConnectionEntry;
 import org.hornetq.spi.core.protocol.ProtocolManager;
 import org.hornetq.spi.core.protocol.RemotingConnection;
@@ -208,9 +211,22 @@ class CoreProtocolManager implements ProtocolManager
             } else if (packet.getType() == PacketImpl.BACKUP_REGISTRATION)
             {
                BackupRegistrationMessage msg = (BackupRegistrationMessage)packet;
-               if (server.startReplication(rc, acceptorUsed.getClusterConnection(), getPair(msg.getConnector(), true)))
+               ClusterConnection clusterConnection = acceptorUsed.getClusterConnection();
+
+               if (clusterConnection.verify(msg.getClusterUser(), msg.getClusterPassword()))
                {
-                  // XXX if it fails, the backup should get to know it
+                  try
+                  {
+                     server.startReplication(rc, clusterConnection, getPair(msg.getConnector(), true));
+                  }
+                  catch (HornetQException e)
+                  {
+                     channel0.send(new BackupRegistrationFailedMessage(e));
+                  }
+               }
+               else
+               {
+                  channel0.send(new BackupRegistrationFailedMessage(null));
                }
             }
          }

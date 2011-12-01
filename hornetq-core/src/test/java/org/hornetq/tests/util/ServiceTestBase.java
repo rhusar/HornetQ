@@ -88,14 +88,7 @@ public abstract class ServiceTestBase extends UnitTestCase
    {
       for (ServerLocator locator : locators)
       {
-         try
-         {
-            locator.close();
-         }
-         catch (Exception e)
-         {
-            e.printStackTrace();
-         }
+         closeServerLocator(locator);
       }
       locators.clear();
       super.tearDown();
@@ -115,6 +108,20 @@ public abstract class ServiceTestBase extends UnitTestCase
       try
       {
          locator.close();
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   public static final void closeSessionFactory(final ClientSessionFactory sf)
+   {
+      if (sf == null)
+         return;
+      try
+      {
+         sf.close();
       }
       catch (Exception e)
       {
@@ -708,9 +715,9 @@ public abstract class ServiceTestBase extends UnitTestCase
       }
    }
 
-
-   protected final void receiveMessagesAndAck(ClientConsumer consumer, final int start, int msgCount)
-            throws HornetQException
+   protected final void
+            receiveMessages(ClientConsumer consumer, final int start, final int msgCount, final boolean ack)
+                                                                                                            throws HornetQException
    {
       for (int i = start; i < msgCount; i++)
       {
@@ -718,7 +725,8 @@ public abstract class ServiceTestBase extends UnitTestCase
          Assert.assertNotNull("Expecting a message " + i, message);
          assertMessageBody(i, message);
          Assert.assertEquals(i, message.getIntProperty("counter").intValue());
-         message.acknowledge();
+         if (ack)
+            message.acknowledge();
       }
    }
 

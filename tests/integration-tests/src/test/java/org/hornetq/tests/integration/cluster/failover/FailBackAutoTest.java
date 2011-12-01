@@ -254,7 +254,7 @@ public class FailBackAutoTest extends FailoverTestBase
       ClusterConnectionConfiguration cccLive = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
             dgb, false);
       backupConfig.getClusterConfigurations().add(cccLive);
-      backupServer = createBackupServer();
+      backupServer = createServer(backupConfig);
 
       liveConfig = super.createDefaultConfig();
       liveConfig.getAcceptorConfigurations().clear();
@@ -272,7 +272,7 @@ public class FailBackAutoTest extends FailoverTestBase
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       liveConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
-      liveServer = createLiveServer();
+      liveServer = createServer(liveConfig);
    }
 
    @Override

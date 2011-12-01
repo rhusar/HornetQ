@@ -41,7 +41,6 @@ import org.hornetq.api.core.client.MessageHandler;
 import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.api.core.client.SessionFailureListener;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
-import org.hornetq.core.logging.Logger;
 import org.hornetq.core.transaction.impl.XidImpl;
 import org.hornetq.jms.client.HornetQTextMessage;
 import org.hornetq.tests.integration.cluster.util.TestableServer;
@@ -58,7 +57,6 @@ import org.hornetq.tests.util.TransportConfigurationUtils;
  */
 public class FailoverTest extends FailoverTestBase
 {
-   private static final Logger log = Logger.getLogger(FailoverTest.class);
    private static final int NUM_MESSAGES = 100;
 
    private ServerLocator locator;
@@ -206,7 +204,6 @@ public class FailoverTest extends FailoverTestBase
       session.close();
 
       Assert.assertTrue(retry <= 5);
-      closeSessionFactory();
    }
 
    public void testNonTransacted() throws Exception
@@ -231,8 +228,6 @@ public class FailoverTest extends FailoverTestBase
       receiveDurableMessages(consumer);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    private void createSessionFactory() throws Exception
@@ -379,7 +374,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      closeSessionFactory();
+
    }
 
    /**
@@ -430,12 +425,10 @@ public class FailoverTest extends FailoverTestBase
 
       message = consumer.receiveImmediate();
 
-      Assert.assertNotNull(message);
+      Assert.assertNotNull("expecting a message", message);
       Assert.assertEquals(counter, message.getIntProperty("counter").intValue());
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void testTransactedMessagesNotSentSoNoRollback() throws Exception
@@ -472,7 +465,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      closeSessionFactory();
+
    }
 
    public void testTransactedMessagesWithConsumerStartedBeforeFailover() throws Exception
@@ -516,8 +509,6 @@ public class FailoverTest extends FailoverTestBase
       session.commit();
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void testTransactedMessagesConsumedSoRollback() throws Exception
@@ -560,8 +551,6 @@ public class FailoverTest extends FailoverTestBase
       session1.close();
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    public void testTransactedMessagesNotConsumedSoNoRollback() throws Exception
@@ -638,8 +627,6 @@ public class FailoverTest extends FailoverTestBase
       session1.close();
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    public void testXAMessagesSentSoRollbackOnEnd() throws Exception
@@ -682,8 +669,6 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertNull(message);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void testXAMessagesSentSoRollbackOnPrepare() throws Exception
@@ -731,8 +716,6 @@ public class FailoverTest extends FailoverTestBase
       producer.close();
       consumer.close();
       session.close();
-
-      closeSessionFactory();
    }
 
    // This might happen if 1PC optimisation kicks in
@@ -823,8 +806,6 @@ public class FailoverTest extends FailoverTestBase
       session.commit(xid2, false);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void testXAMessagesConsumedSoRollbackOnEnd() throws Exception
@@ -869,8 +850,6 @@ public class FailoverTest extends FailoverTestBase
       session1.close();
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    public void testXAMessagesConsumedSoRollbackOnPrepare() throws Exception
@@ -917,8 +896,6 @@ public class FailoverTest extends FailoverTestBase
       session1.close();
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    // 1PC optimisation
@@ -968,8 +945,6 @@ public class FailoverTest extends FailoverTestBase
       session1.close();
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    public void testCreateNewFactoryAfterFailover() throws Exception
@@ -992,8 +967,6 @@ public class FailoverTest extends FailoverTestBase
       session = sendAndConsume(sf, true);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void testFailoverMultipleSessionsWithConsumers() throws Exception
@@ -1057,8 +1030,6 @@ public class FailoverTest extends FailoverTestBase
       }
 
       sendSession.close();
-
-      closeSessionFactory();
    }
 
    /*
@@ -1079,24 +1050,13 @@ public class FailoverTest extends FailoverTestBase
 
       session.start();
 
-      for (int i = 0; i < NUM_MESSAGES; i++)
-      {
-         ClientMessage message = consumer.receive(1000);
-
-         Assert.assertNotNull(message);
-
-         assertMessageBody(i, message);
-
-         Assert.assertEquals(i, message.getIntProperty("counter").intValue());
-      }
+      receiveMessages(consumer, 0, NUM_MESSAGES, false);
 
       crash(session);
 
       receiveDurableMessages(consumer);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    private void sendMessagesSomeDurable(ClientSession session, ClientProducer producer) throws Exception, HornetQException
@@ -1147,8 +1107,6 @@ public class FailoverTest extends FailoverTestBase
       receiveDurableMessages(consumer);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    private void receiveDurableMessages(ClientConsumer consumer) throws HornetQException
@@ -1211,16 +1169,14 @@ public class FailoverTest extends FailoverTestBase
       }
 
       // Should get the same ones after failover since we didn't ack
-      receiveMessagesAndAck(consumer, NUM_MESSAGES, NUM_MESSAGES * 2);
+      receiveMessages(consumer, NUM_MESSAGES, NUM_MESSAGES * 2, true);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    private void receiveMessages(ClientConsumer consumer) throws HornetQException
    {
-      receiveMessagesAndAck(consumer, 0, NUM_MESSAGES);
+      receiveMessages(consumer, 0, NUM_MESSAGES, true);
    }
 
    public void testSimpleSendAfterFailoverDurableTemporary() throws Exception
@@ -1275,8 +1231,6 @@ public class FailoverTest extends FailoverTestBase
       receiveMessages(consumer);
 
       session.close();
-
-      closeSessionFactory();
    }
 
    public void _testForceBlockingReturn() throws Exception
@@ -1334,7 +1288,6 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertEquals(sender.e.getCode(), HornetQException.UNBLOCKED);
 
       session.close();
-
    }
 
    public void testCommitOccurredUnblockedAndResendNoDuplicates() throws Exception
@@ -1344,6 +1297,7 @@ public class FailoverTest extends FailoverTestBase
       locator.setReconnectAttempts(-1);
 
       locator.setBlockOnAcknowledge(true);
+
       sf = createSessionFactoryAndWaitForTopology(locator, 2);
 
       final ClientSession session = createSession(sf, false, false);
@@ -1402,7 +1356,7 @@ public class FailoverTest extends FailoverTestBase
                   }
                   catch (HornetQException e2)
                   {
-
+                     throw new RuntimeException(e2);
                   }
 
                }
@@ -1428,7 +1382,7 @@ public class FailoverTest extends FailoverTestBase
 
       committer.join();
 
-      Assert.assertFalse(committer.failed);
+      Assert.assertFalse("second attempt succeed?", committer.failed);
 
       session.close();
 
@@ -1459,16 +1413,17 @@ public class FailoverTest extends FailoverTestBase
       try
       {
          session2.commit();
+         fail("expecting DUPLICATE_ID_REJECTED exception");
       }
       catch (HornetQException e)
       {
-         assertEquals(HornetQException.DUPLICATE_ID_REJECTED, e.getCode());
+         assertEquals(e.getMessage(), HornetQException.DUPLICATE_ID_REJECTED, e.getCode());
       }
 
-      ClientConsumer consumer = session2.createConsumer(FailoverTestBase.ADDRESS);
 
       session2.start();
 
+      ClientConsumer consumer = session2.createConsumer(FailoverTestBase.ADDRESS);
       receiveMessages(consumer);
 
       ClientMessage message = consumer.receiveImmediate();
@@ -1476,15 +1431,13 @@ public class FailoverTest extends FailoverTestBase
       Assert.assertNull(message);
 
       session2.close();
-
-      closeSessionFactory();
    }
 
    private void closeSessionFactory()
    {
       if (sf == null)
          return;
-      sf.close();
+      closeSessionFactory(sf);
       Assert.assertEquals(0, sf.numSessions());
       Assert.assertEquals(0, sf.numConnections());
    }
@@ -1724,7 +1677,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      closeSessionFactory();
+
    }
 
    public void testLiveAndBackupBackupComesBackNewFactory() throws Exception
@@ -1746,6 +1699,12 @@ public class FailoverTest extends FailoverTestBase
 
       // To reload security or other settings that are read during startup
       beforeRestart(backupServer);
+
+      if (!backupServer.getServer().getConfiguration().isSharedStore())
+      {
+         // this test would not make sense in the remote replication use case, without the following
+         backupServer.getServer().getConfiguration().setBackup(false);
+      }
 
       backupServer.start();
 
@@ -1779,7 +1738,7 @@ public class FailoverTest extends FailoverTestBase
 
       session.close();
 
-      closeSessionFactory();
+
    }
 
    // Package protected ---------------------------------------------

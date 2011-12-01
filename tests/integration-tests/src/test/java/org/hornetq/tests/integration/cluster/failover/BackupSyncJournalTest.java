@@ -43,6 +43,7 @@ public class BackupSyncJournalTest extends FailoverTestBase
       syncDelay = new BackupSyncDelay(backupServer, liveServer);
    }
 
+
    public void testNodeID() throws Exception
    {
       startBackupFinishSyncing();
@@ -85,8 +86,7 @@ public class BackupSyncJournalTest extends FailoverTestBase
       finishSyncAndFailover();
 
       JournalImpl backupMsgJournal = getMessageJournalFromServer(backupServer);
-      System.out.println("backup journal " + backupMsgJournal);
-      System.out.println("live journal " + messageJournal);
+
       assertEquals("file sizes must be the same", size, backupMsgJournal.getFileSize());
       Set<Long> backupIds = getFileIds(backupMsgJournal);
       assertEquals("File IDs must match!", liveIds, backupIds);
@@ -182,7 +182,7 @@ public class BackupSyncJournalTest extends FailoverTestBase
    {
       session.start();
       ClientConsumer consumer = session.createConsumer(FailoverTestBase.ADDRESS);
-      receiveMessagesAndAck(consumer, start, end);
+      receiveMessages(consumer, start, end, true);
       consumer.close();
       session.commit();
    }

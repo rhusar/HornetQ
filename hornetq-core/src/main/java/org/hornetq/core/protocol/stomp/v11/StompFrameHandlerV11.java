@@ -17,11 +17,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.api.core.HornetQBuffer;
-import org.hornetq.api.core.HornetQBuffers;
-import org.hornetq.api.core.Message;
-import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.logging.Logger;
-import org.hornetq.core.message.impl.MessageImpl;
 import org.hornetq.core.protocol.stomp.FrameEventListener;
 import org.hornetq.core.protocol.stomp.HornetQStompException;
 import org.hornetq.core.protocol.stomp.SimpleBytes;
@@ -29,12 +25,7 @@ import org.hornetq.core.protocol.stomp.Stomp;
 import org.hornetq.core.protocol.stomp.StompConnection;
 import org.hornetq.core.protocol.stomp.StompDecoder;
 import org.hornetq.core.protocol.stomp.StompFrame;
-import org.hornetq.core.protocol.stomp.StompSubscription;
-import org.hornetq.core.protocol.stomp.StompUtils;
 import org.hornetq.core.protocol.stomp.VersionedStompFrameHandler;
-import org.hornetq.core.server.ServerMessage;
-import org.hornetq.core.server.impl.ServerMessageImpl;
-import org.hornetq.utils.DataConstants;
 
 /**
  * 
@@ -168,170 +159,6 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
       }
       return null;
    }
-   
-   @Override
-   public StompFrame postprocess(StompFrame request)
-   {
-      StompFrame response = null;
-      if (request.hasHeader(Stomp.Headers.RECEIPT_REQUESTED))
-      {
-         response = handleReceipt(request.getHeader(Stomp.Headers.RECEIPT_REQUESTED));
-         if (request.getCommand().equals(Stomp.Commands.DISCONNECT))
-         {
-            response.setNeedsDisconnect(true);
-         }
-      }
-      else
-      {
-         //request null, disconnect if so.
-         if (request.getCommand().equals(Stomp.Commands.DISCONNECT))
-         {
-            this.connection.disconnect();
-         }         
-      }
-      return response;
-   }
-
-   @Override
-   public StompFrame onSend(StompFrame frame)
-   {      
-      StompFrame response = null;
-      try
-      {
-         connection.validate();
-         String destination = frame.getHeader(Stomp.Headers.Send.DESTINATION);
-         String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
-
-         long timestamp = System.currentTimeMillis();
-
-         ServerMessageImpl message = connection.createServerMessage();
-         message.setTimestamp(timestamp);
-         message.setAddress(SimpleString.toSimpleString(destination));
-         StompUtils.copyStandardHeadersFromFrameToMessage(frame, message);
-         if (frame.hasHeader(Stomp.Headers.CONTENT_LENGTH))
-         {
-            message.setType(Message.BYTES_TYPE);
-            message.getBodyBuffer().writeBytes(frame.getBodyAsBytes());
-         }
-         else
-         {
-            message.setType(Message.TEXT_TYPE);
-            String text = frame.getBody();
-            message.getBodyBuffer().writeNullableSimpleString(SimpleString.toSimpleString(text));
-         }
-
-         connection.sendServerMessage(message, txID);
-      }
-      catch (HornetQStompException e)
-      {
-         response = e.getFrame();
-      }
-      catch (Exception e)
-      {
-         response = new HornetQStompException("Error handling send", e).getFrame();
-      }
-
-      return response;
-   }
-
-   @Override
-   public StompFrame onBegin(StompFrame frame)
-   {
-      StompFrame response = null;
-      String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
-      if (txID == null)
-      {
-         response = new HornetQStompException("Need a transaction id to begin").getFrame();
-      }
-      else
-      {
-         try
-         {
-            connection.beginTransaction(txID);
-         }
-         catch (HornetQStompException e)
-         {
-            response = e.getFrame();
-         }
-      }
-      return response;
-   }
-
-   @Override
-   public StompFrame onCommit(StompFrame request)
-   {
-      StompFrame response = null;
-      
-      String txID = request.getHeader(Stomp.Headers.TRANSACTION);
-      if (txID == null)
-      {
-         response = new HornetQStompException("transaction header is mandatory to COMMIT a transaction").getFrame();
-         return response;
-      }
-
-      try
-      {
-         connection.commitTransaction(txID);
-      }
-      catch (HornetQStompException e)
-      {
-         response = e.getFrame();
-      }
-      return response;
-   }
-
-   @Override
-   public StompFrame onAbort(StompFrame request)
-   {
-      StompFrame response = null;
-      String txID = request.getHeader(Stomp.Headers.TRANSACTION);
-
-      if (txID == null)
-      {
-         response = new HornetQStompException("transaction header is mandatory to ABORT a transaction").getFrame();
-         return response;
-      }
-      
-      try
-      {
-         connection.abortTransaction(txID);
-      }
-      catch (HornetQStompException e)
-      {
-         response = e.getFrame();
-      }
-      
-      return response;
-   }
-
-   @Override
-   public StompFrame onSubscribe(StompFrame request)
-   {
-      StompFrame response = null;
-      String destination = request.getHeader(Stomp.Headers.Subscribe.DESTINATION);
-      
-      String selector = request.getHeader(Stomp.Headers.Subscribe.SELECTOR);
-      String ack = request.getHeader(Stomp.Headers.Subscribe.ACK_MODE);
-      String id = request.getHeader(Stomp.Headers.Subscribe.ID);
-      String durableSubscriptionName = request.getHeader(Stomp.Headers.Subscribe.DURABLE_SUBSCRIBER_NAME);
-      boolean noLocal = false;
-      
-      if (request.hasHeader(Stomp.Headers.Subscribe.NO_LOCAL))
-      {
-         noLocal = Boolean.parseBoolean(request.getHeader(Stomp.Headers.Subscribe.NO_LOCAL));
-      }
-      
-      try
-      {
-         connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal);
-      }
-      catch (HornetQStompException e)
-      {
-         response = e.getFrame();
-      }
-      
-      return response;
-   }
 
    @Override
    public StompFrame onUnsubscribe(StompFrame request)
@@ -410,53 +237,6 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
       //this eventually means discard the message (it never be redelivered again).
       //we can consider supporting redeliver to a different sub.
       return onAck(request);
-   }
-
-   @Override
-   public StompFrame createMessageFrame(ServerMessage serverMessage,
-         StompSubscription subscription, int deliveryCount)
-         throws Exception
-   {
-      StompFrame frame = new StompFrameV11(Stomp.Responses.MESSAGE);
-      
-      if (subscription.getID() != null)
-      {
-         frame.addHeader(Stomp.Headers.Message.SUBSCRIPTION, subscription.getID());
-      }
-      
-      HornetQBuffer buffer = serverMessage.getBodyBuffer();
-
-      int bodyPos = serverMessage.getEndOfBodyPosition() == -1 ? buffer.writerIndex()
-                                                              : serverMessage.getEndOfBodyPosition();
-      int size = bodyPos - buffer.readerIndex();
-      buffer.readerIndex(MessageImpl.BUFFER_HEADER_SPACE + DataConstants.SIZE_INT);
-      byte[] data = new byte[size];
-      if (serverMessage.containsProperty(Stomp.Headers.CONTENT_LENGTH) || serverMessage.getType() == Message.BYTES_TYPE)
-      {
-         frame.addHeader(Stomp.Headers.CONTENT_LENGTH, String.valueOf(data.length));
-         buffer.readBytes(data);
-      }
-      else
-      {
-         SimpleString text = buffer.readNullableSimpleString();
-         if (text != null)
-         {
-            data = text.toString().getBytes("UTF-8");
-         }
-         else
-         {
-            data = new byte[0];
-         }
-      }
-      
-      frame.setByteBody(data);
-      
-      serverMessage.getBodyBuffer().resetReaderIndex();
-
-      StompUtils.copyStandardHeadersFromMessageToFrame(serverMessage, frame, deliveryCount);
-      
-      return frame;
-
    }
 
    @Override
@@ -544,6 +324,7 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
          lastPingTime.set(System.currentTimeMillis());
       }
 
+      @Override
       public void run()
       {
          lastAccepted.set(System.currentTimeMillis());
@@ -647,6 +428,7 @@ public class StompFrameHandlerV11 extends VersionedStompFrameHandler implements 
    }
    
    //all frame except CONNECT are decoded here.
+   @Override
    public StompFrame decode(StompDecoder decoder, final HornetQBuffer buffer) throws HornetQStompException
    {
       int readable = buffer.readableBytes();

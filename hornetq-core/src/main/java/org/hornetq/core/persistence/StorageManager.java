@@ -87,8 +87,6 @@ public interface StorageManager extends HornetQComponent
 
    void pageWrite(PagedMessage message, int pageNumber);
 
-   boolean isReplicated();
-
    void afterCompleteOperations(IOAsyncTask run);
 
    /** Block until the operations are done.
@@ -269,4 +267,11 @@ public interface StorageManager extends HornetQComponent
       ServerMessage message,
       RoutingContext ctx,
       RouteContextList listCtx) throws Exception;
+
+   /**
+    * Stops the replication of data from the live to the backup.
+    * <p>
+    * Typical scenario is a broken connection.
+    */
+   void stopReplication();
 }

@@ -23,7 +23,6 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
-import org.hornetq.core.config.Configuration;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.impl.InVMNodeManager;
 import org.hornetq.spi.core.security.HornetQSecurityManager;
@@ -68,6 +67,7 @@ public class SecurityFailoverTest extends FailoverTest
                               ackBatchSize);
    }
 
+   @Override
    protected ClientSession createSession(ClientSessionFactory sf,
                                          boolean autoCommitSends,
                                          boolean autoCommitAcks,
@@ -77,16 +77,19 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                   .isPreAcknowledge(), ackBatchSize);
    }
 
+   @Override
    protected ClientSession createSession(ClientSessionFactory sf, boolean autoCommitSends, boolean autoCommitAcks) throws Exception
    {
       return createSession(sf, autoCommitSends, autoCommitAcks, sf.getServerLocator().getAckBatchSize());
    }
 
+   @Override
    protected ClientSession createSession(ClientSessionFactory sf) throws Exception
    {
       return createSession(sf, true, true, sf.getServerLocator().getAckBatchSize());
    }
 
+   @Override
    protected ClientSession createSession(ClientSessionFactory sf,
                                          boolean xa,
                                          boolean autoCommitSends,
@@ -98,6 +101,7 @@ public class SecurityFailoverTest extends FailoverTest
    /**
     * @throws Exception
     */
+   @Override
    protected void createConfigs() throws Exception
    {
       nodeManager = new InVMNodeManager();
@@ -128,7 +132,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                   dgb,
                                                                                   false);
       backupConfig.getClusterConfigurations().add(cccLive);
-      backupServer = createBackupServer();
+      backupServer = createServer(backupConfig);
 
       HornetQSecurityManager securityManager = installSecurity(backupServer);
 
@@ -154,11 +158,12 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                false);
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-      liveServer = createLiveServer();
+      liveServer = createServer(liveConfig);
 
       installSecurity(liveServer);
    }
 
+   @Override
    protected void beforeRestart(TestableServer server)
    {
       installSecurity(server);

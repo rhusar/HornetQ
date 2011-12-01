@@ -98,7 +98,7 @@ public class ReplicationManagerImpl implements ReplicationManager
    public ReplicationManagerImpl(CoreRemotingConnection remotingConnection, final ExecutorFactory executorFactory)
    {
       this.executorFactory = executorFactory;
-      replicatingChannel = remotingConnection.getChannel(CHANNEL_ID.REPLICATION.id, -1);
+      this.replicatingChannel = remotingConnection.getChannel(CHANNEL_ID.REPLICATION.id, -1);
       this.remotingConnection = remotingConnection;
    }
 
@@ -110,9 +110,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendUpdateRecord(byte, long, byte, org.hornetq.core.journal.EncodingSupport, boolean)
-    */
+   @Override
    public void appendUpdateRecord(final byte journalID,
                                   final long id,
                                   final byte recordType,
@@ -124,9 +122,7 @@ public class ReplicationManagerImpl implements ReplicationManager
       }
    }
 
-   /* (non-Javadoc)
-    * @see org.hornetq.core.replication.ReplicationManager#appendDeleteRecord(byte, long, boolean)
-    */
+   @Override
    public void appendDeleteRecord(final byte journalID, final long id) throws Exception
    {
       if (enabled)
@@ -585,10 +581,13 @@ public class ReplicationManagerImpl implements ReplicationManager
    }
 
    @Override
-   public void sendStartSyncMessage(JournalFile[] datafiles, JournalContent contentType) throws HornetQException
+   public
+            void
+            sendStartSyncMessage(JournalFile[] datafiles, JournalContent contentType, String nodeID)
+                                                                                                    throws HornetQException
    {
       if (enabled)
-         sendReplicatePacket(new ReplicationStartSyncMessage(datafiles, contentType));
+         sendReplicatePacket(new ReplicationStartSyncMessage(datafiles, contentType, nodeID));
    }
 
    @Override

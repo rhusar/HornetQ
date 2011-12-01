@@ -81,8 +81,6 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
    // Constants
    // ------------------------------------------------------------------------------------
 
-   private static final long serialVersionUID = 2512460695662741413L;
-
    private static final Logger log = Logger.getLogger(ClientSessionFactoryImpl.class);
 
    private static final boolean isTrace = ClientSessionFactoryImpl.log.isTraceEnabled();
@@ -1410,7 +1408,7 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
       }
    }
 
-   private class Channel0Handler implements ChannelHandler
+   private final class Channel0Handler implements ChannelHandler
    {
       private final CoreRemotingConnection conn;
 
@@ -1500,8 +1498,11 @@ public class ClientSessionFactoryImpl implements ClientSessionFactoryInternal, C
                serverLocator.notifyNodeUp(topMessage.getUniqueEventID(), topMessage.getNodeID(), topMessage.getPair(), topMessage.isLast());
             }
          }
+         else if (type == PacketImpl.BACKUP_REGISTRATION_FAILED)
+         {
+            // no-op
+         }
       }
-
 
    }
 

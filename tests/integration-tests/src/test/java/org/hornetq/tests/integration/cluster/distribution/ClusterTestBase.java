@@ -181,7 +181,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
          }
       for (int i = 0; i < MAX_SERVERS; i++)
-         {
+      {
          stopComponent(nodeManagers[i]);
       }
       UnitTestCase.checkFreePort(ClusterTestBase.PORTS);
@@ -242,6 +242,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
                // ignore
             }
       }
+      }
+
+      @Override
+      public String toString()
+      {
+         return "id=" + id + ", consumer=" + consumer + ", session=" + session;
       }
    }
 
@@ -569,8 +575,6 @@ public abstract class ClusterTestBase extends ServiceTestBase
          if (holder != null)
          {
             holder.close();
-            // holder.session.close();
-
             consumers[i] = null;
          }
       }
@@ -580,14 +584,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       for (int i = 0; i < sfs.length; i++)
       {
-         ClientSessionFactory sf = sfs[i];
-
-         if (sf != null)
-         {
-            sf.close();
-
-            sfs[i] = null;
-         }
+         closeSessionFactory(sfs[i]);
+         sfs[i] = null;
       }
    }
 
@@ -595,14 +593,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
    {
       for (int i = 0; i < locators.length; i++)
       {
-         ServerLocator sf = locators[i];
-
-         if (sf != null)
-         {
-            sf.close();
-
-            locators[i] = null;
-         }
+         closeServerLocator(locators[i]);
+         locators[i] = null;
       }
    }
 
@@ -1237,7 +1229,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
          Assert.assertTrue(counts.contains(messageCount));
       }
 
-      LinkedList[] lists = new LinkedList[consumerIDs.length];
+      List<LinkedList<Integer>> lists = new ArrayList<LinkedList<Integer>>(consumerIDs.length);
 
       for (int i = 0; i < messageCounts.length; i++)
       {
@@ -1247,7 +1239,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (elem == messageCounts[i])
             {
-               lists[i] = list;
+               lists.set(i, list);
 
                break;
             }
@@ -1257,17 +1249,17 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       for (int messageCount : messageCounts)
       {
-         LinkedList list = lists[index];
+         LinkedList<Integer> list = lists.get(index);
 
          Assert.assertNotNull(list);
 
-         int elem = (Integer)list.poll();
+         int elem = list.poll();
 
          Assert.assertEquals(messageCount, elem);
 
          index++;
 
-         if (index == lists.length)
+         if (index == consumerIDs.length)
          {
             index = 0;
          }

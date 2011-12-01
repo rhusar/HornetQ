@@ -21,8 +21,8 @@ import java.util.Map;
 import org.hornetq.api.core.DiscoveryGroupConfiguration;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientSession;
-import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryInternal;
+import org.hornetq.core.client.impl.ServerLocatorInternal;
 import org.hornetq.core.config.ClusterConnectionConfiguration;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.server.JournalType;
@@ -38,6 +38,7 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
    // Attributes ----------------------------------------------------
 
    private static Map<Integer, String> backups = new HashMap<Integer, String>();
+   private ClientSessionFactoryInternal sf;
 
    // Static --------------------------------------------------------
 
@@ -59,13 +60,13 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       servers.get(2).start();
       servers.get(3).start();
 
-      ServerLocator locator = getServerLocator(0);
+      locator = (ServerLocatorInternal)getServerLocator(0);
 
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnDurableSend(true);
       locator.setBlockOnAcknowledge(true);
       locator.setReconnectAttempts(-1);
-      ClientSessionFactoryInternal sf = createSessionFactoryAndWaitForTopology(locator, 2);
+      sf = createSessionFactoryAndWaitForTopology(locator, 2);
       int backupNode;
       ClientSession session = sendAndConsume(sf, true);
       System.out.println("failing live node ");
@@ -95,10 +96,6 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       backupNode = waitForNewLive(5, true, servers, 0);
       assertEquals(0, backupNode);
       session = sendAndConsume(sf, false);
-
-      locator.close();
-
-      servers.get(0).stop();
    }
 
    // Package protected ---------------------------------------------
@@ -121,12 +118,11 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
    @Override
    protected void tearDown() throws Exception
    {
-      super.tearDown();
-      // make sure
       for (TestableServer testableServer : servers.values())
       {
          try
          {
+            stopComponent(testableServer);
             testableServer.destroy();
          }
          catch (Exception e)
@@ -134,7 +130,20 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
             e.printStackTrace(); // To change body of catch statement use File | Settings | File Templates.
          }
       }
+      servers.clear();
 
+      try
+      {
+         if (sf != null)
+         {
+            sf.close();
+         }
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+      super.tearDown();
    }
 
    @Override
@@ -303,7 +312,6 @@ public class RemoteSingleLiveMultipleBackupsFailoverTest extends SingleLiveMulti
       config1.getClusterConfigurations().add(ccc1);
       config1.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
 
-      System.out.println(config1.getBindingsDirectory());
       config1.setBindingsDirectory(config1.getBindingsDirectory() + "_" + liveNode);
       config1.setJournalDirectory(config1.getJournalDirectory() + "_" + liveNode);
       config1.setPagingDirectory(config1.getPagingDirectory() + "_" + liveNode);

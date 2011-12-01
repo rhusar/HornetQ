@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.security.AccessController;
+import java.security.InvalidParameterException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,13 +108,17 @@ import org.hornetq.utils.HornetQThreadFactory;
 import org.hornetq.utils.XidCodecSupport;
 
 /**
- *
- * A JournalStorageManager
- *
+ * Controls access to the journals and other storage files such as the ones used to store pages and
+ * large messages. This class must control writing of any non-transient data, as it is the key point
+ * for synchronizing a replicating backup server.
+ * <p>
+ * Notice that, turning on and off replication (on the live server side) is _mostly_ a matter of
+ * using {@link ReplicatedJournal}s instead of regular {@link JournalImpl}, and sync the existing
+ * data.
+ * <p>
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
- *
  */
 public class JournalStorageManager implements StorageManager
 {
@@ -137,7 +142,7 @@ public class JournalStorageManager implements StorageManager
     // Message journal record types
 
     // This is used when a large message is created but not yet stored on the system.
-    // We use this to avoid temporary files missing
+   // Used to avoid temporary files missing
     public static final byte ADD_LARGE_MESSAGE_PENDING = 29;
 
     private static final byte ADD_LARGE_MESSAGE = 30;
@@ -185,13 +190,15 @@ public class JournalStorageManager implements StorageManager
                 return MESSAGES;
             if (BINDINGS.typeByte == type)
                 return BINDINGS;
-            throw new RuntimeException("invalid byte");
+         throw new InvalidParameterException("invalid byte: " + type);
         }
     }
 
-    private Journal messageJournal;
-    private Journal bindingsJournal;
-    private final SequentialFileFactory largeMessagesFactory;
+   private Journal messageJournal;
+   private Journal bindingsJournal;
+   private final Journal originalMessageJournal;
+   private final Journal originalBindingsJournal;
+   private final SequentialFileFactory largeMessagesFactory;
 
     private volatile boolean started;
 
@@ -230,17 +237,9 @@ public class JournalStorageManager implements StorageManager
    public JournalStorageManager(final Configuration config, final ExecutorFactory executorFactory,
                                 final IOCriticalErrorListener criticalErrorListener)
    {
-      this(config, executorFactory, null, criticalErrorListener);
-   }
-
-   public JournalStorageManager(final Configuration config, final ExecutorFactory executorFactory,
-                                final ReplicationManager replicator, final IOCriticalErrorListener criticalErrorListener)
-   {
       this.executorFactory = executorFactory;
 
       executor = executorFactory.getExecutor();
-
-      this.replicator = replicator;
 
       if (config.getJournalType() != JournalType.NIO && config.getJournalType() != JournalType.ASYNCIO)
       {
@@ -269,19 +268,13 @@ public class JournalStorageManager implements StorageManager
                                                 "bindings",
                                                 1);
 
-        if (replicator != null)
-            {
-                bindingsJournal = new ReplicatedJournal((byte)0, localBindings, replicator);
-            }
-        else
-            {
-                bindingsJournal = localBindings;
-            }
+      bindingsJournal = localBindings;
+      originalBindingsJournal = localBindings;
 
-        if (journalDir == null)
-            {
-                throw new NullPointerException("journal-dir is null");
-            }
+      if (journalDir == null)
+      {
+         throw new NullPointerException("journal-dir is null");
+      }
 
         createJournalDir = config.isCreateJournalDir();
 
@@ -327,14 +320,8 @@ public class JournalStorageManager implements StorageManager
                                                config.getJournalType() == JournalType.ASYNCIO ? config.getJournalMaxIO_AIO()
                                                : config.getJournalMaxIO_NIO());
 
-      if (replicator != null)
-      {
-         messageJournal = new ReplicatedJournal((byte)1, localMessage, replicator);
-      }
-      else
-      {
-         messageJournal = localMessage;
-      }
+      messageJournal = localMessage;
+      originalMessageJournal = localMessage;
 
       largeMessagesDirectory = config.getLargeMessagesDirectory();
       largeMessagesFactory = new NIOSequentialFileFactory(largeMessagesDirectory, false, criticalErrorListener);
@@ -375,8 +362,8 @@ public class JournalStorageManager implements StorageManager
       JournalFile[] messageFiles = null;
       JournalFile[] bindingsFiles = null;
 
-      final Journal localMessageJournal = messageJournal;
-      final Journal localBindingsJournal = bindingsJournal;
+      try
+      {
 
       Map<String, Long> largeMessageFilesToSync;
       Map<SimpleString, Collection<Integer>> pageFilesToSync;
@@ -384,15 +371,15 @@ public class JournalStorageManager implements StorageManager
       try
       {
          replicator = replicationManager;
-         localMessageJournal.synchronizationLock();
-         localBindingsJournal.synchronizationLock();
+         originalMessageJournal.synchronizationLock();
+         originalBindingsJournal.synchronizationLock();
          try
          {
             pagingManager.lock();
             try
             {
-               messageFiles = prepareJournalForCopy(localMessageJournal, JournalContent.MESSAGES);
-               bindingsFiles = prepareJournalForCopy(localBindingsJournal, JournalContent.BINDINGS);
+               messageFiles = prepareJournalForCopy(originalMessageJournal, JournalContent.MESSAGES, nodeID);
+               bindingsFiles = prepareJournalForCopy(originalBindingsJournal, JournalContent.BINDINGS, nodeID);
                pageFilesToSync = getPageInformationForSync(pagingManager);
                largeMessageFilesToSync = getLargeMessageInformation();
             }
@@ -403,11 +390,11 @@ public class JournalStorageManager implements StorageManager
          }
          finally
          {
-            localMessageJournal.synchronizationUnlock();
-            localBindingsJournal.synchronizationUnlock();
+            originalMessageJournal.synchronizationUnlock();
+            originalBindingsJournal.synchronizationUnlock();
          }
-         bindingsJournal = new ReplicatedJournal(((byte)0), localBindingsJournal, replicator);
-         messageJournal = new ReplicatedJournal((byte)1, localMessageJournal, replicator);
+         bindingsJournal = new ReplicatedJournal(((byte)0), originalBindingsJournal, replicator);
+         messageJournal = new ReplicatedJournal((byte)1, originalMessageJournal, replicator);
       }
       finally
       {
@@ -428,10 +415,35 @@ public class JournalStorageManager implements StorageManager
       }
       finally
       {
-         storageManagerLock.writeLock().unlock();
+            storageManagerLock.writeLock().unlock();
+         }
+      }
+      catch (Exception e)
+      {
+         stopReplication();
+         throw e;
       }
    }
 
+   /**
+    * Stops replication by resetting replication-related fields to their 'unreplicated' state.
+    */
+   @Override
+   public void stopReplication()
+   {
+
+      storageManagerLock.writeLock().lock();
+      try
+      {
+         bindingsJournal = originalBindingsJournal;
+         messageJournal = originalMessageJournal;
+         replicator = null;
+      }
+      finally
+      {
+         storageManagerLock.writeLock().unlock();
+      }
+   }
 
    /**
     * @param pageFilesToSync
@@ -522,15 +534,17 @@ public class JournalStorageManager implements StorageManager
             }
     }
 
-    private JournalFile[] prepareJournalForCopy(Journal journal, JournalContent contentType) throws Exception
+   private JournalFile[]
+            prepareJournalForCopy(Journal journal, JournalContent contentType, String nodeID) throws Exception
     {
-        journal.forceMoveNextFile();
-        JournalFile[] datafiles = journal.getDataFiles();
-        replicator.sendStartSyncMessage(datafiles, contentType);
-        return datafiles;
+      journal.forceMoveNextFile();
+      JournalFile[] datafiles = journal.getDataFiles();
+      replicator.sendStartSyncMessage(datafiles, contentType, nodeID);
+      return datafiles;
     }
 
-    public void waitOnOperations() throws Exception
+   @Override
+   public void waitOnOperations() throws Exception
     {
         if (!started)
             {
@@ -540,9 +554,7 @@ public class JournalStorageManager implements StorageManager
         waitOnOperations(0);
     }
 
-    /* (non-Javadoc)
-     * @see org.hornetq.core.persistence.StorageManager#blockOnReplication()
-     */
+   @Override
     public boolean waitOnOperations(final long timeout) throws Exception
     {
         if (!started)
@@ -553,46 +565,59 @@ public class JournalStorageManager implements StorageManager
         return getContext().waitCompletion(timeout);
     }
 
-    /*
-     *
-     * (non-Javadoc)
-     * @see org.hornetq.core.persistence.StorageManager#pageClosed(org.hornetq.utils.SimpleString, int)
-     */
-    public void pageClosed(final SimpleString storeName, final int pageNumber)
+   @Override
+   public void pageClosed(final SimpleString storeName, final int pageNumber)
     {
         if (isReplicated())
-            {
-                replicator.pageClosed(storeName, pageNumber);
-            }
+      {
+         readLock();
+         try
+         {
+            replicator.pageClosed(storeName, pageNumber);
+         }
+         finally
+         {
+            readUnLock();
+         }
+      }
     }
 
-    /* (non-Javadoc)
-     * @see org.hornetq.core.persistence.StorageManager#pageDeleted(org.hornetq.utils.SimpleString, int)
-     */
-    public void pageDeleted(final SimpleString storeName, final int pageNumber)
-    {
-        if (isReplicated())
-            {
-                replicator.pageDeleted(storeName, pageNumber);
-            }
-    }
+   @Override
+   public void pageDeleted(final SimpleString storeName, final int pageNumber)
+   {
+      if (isReplicated())
+      {
+         readLock();
+         try
+         {
+            replicator.pageDeleted(storeName, pageNumber);
+         }
+         finally
+         {
+            readUnLock();
+         }
+      }
+   }
 
-   /*
-    * (non-Javadoc)
-    * @see org.hornetq.core.persistence.StorageManager#pageWrite(org.hornetq.utils.SimpleString,
-    * int, org.hornetq.api.core.buffers.ChannelBuffer)
-    */
+   @Override
    public void pageWrite(final PagedMessage message, final int pageNumber)
    {
       if (isReplicated())
       {
-         replicator.pageWrite(message, pageNumber);
+         if (!message.getMessage().isDurable())
+            return;
+         readLock();
+         try
+         {
+            replicator.pageWrite(message, pageNumber);
+         }
+         finally
+         {
+            readUnLock();
+         }
       }
    }
 
-    /* (non-Javadoc)
-     * @see org.hornetq.core.persistence.StorageManager#getContext()
-     */
     public OperationContext getContext()
     {
         return OperationContextImpl.getContext(executorFactory);
@@ -613,9 +638,6 @@ public class JournalStorageManager implements StorageManager
         return newContext(singleThreadExecutor);
     }
 
-    /* (non-Javadoc)
-     * @see org.hornetq.core.persistence.StorageManager#newContext()
-     */
     public OperationContext newContext(final Executor executor)
     {
         return new OperationContextImpl(executor);
@@ -4061,16 +4083,10 @@ public class JournalStorageManager implements StorageManager
        {
        }
 
-       /* (non-Javadoc)
-        * @see org.hornetq.core.transaction.TransactionOperation#beforeRollback(org.hornetq.core.transaction.Transaction)
-        */
        public void beforeRollback(Transaction tx) throws Exception
        {
        }
 
-       /* (non-Javadoc)
-        * @see org.hornetq.core.transaction.TransactionOperation#afterRollback(org.hornetq.core.transaction.Transaction)
-        */
        public void afterRollback(Transaction tx)
        {
            for (Long msg : confirmedMessages)
@@ -4098,5 +4114,6 @@ public class JournalStorageManager implements StorageManager
        }
 
    }
+
 
 }

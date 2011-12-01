@@ -1439,4 +1439,10 @@ public class ClusterConnectionImpl implements ClusterConnection, AfterConnectInt
 
       return str.toString();
    }
+
+   @Override
+   public boolean verify(String clusterUser0, String clusterPassword0)
+   {
+      return clusterUser.equals(clusterUser0) && clusterPassword.equals(clusterPassword0);
+   }
 }

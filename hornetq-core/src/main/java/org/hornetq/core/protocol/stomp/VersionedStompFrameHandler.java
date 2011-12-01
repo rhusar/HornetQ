@@ -12,13 +12,17 @@
  */
 package org.hornetq.core.protocol.stomp;
 
-import java.io.UnsupportedEncodingException;
-
 import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.Message;
+import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.logging.Logger;
+import org.hornetq.core.message.impl.MessageImpl;
+import org.hornetq.core.protocol.stomp.Stomp.Headers;
 import org.hornetq.core.protocol.stomp.v10.StompFrameHandlerV10;
 import org.hornetq.core.protocol.stomp.v11.StompFrameHandlerV11;
 import org.hornetq.core.server.ServerMessage;
+import org.hornetq.core.server.impl.ServerMessageImpl;
+import org.hornetq.utils.DataConstants;
 
 /**
  *
@@ -113,12 +117,7 @@ public abstract class VersionedStompFrameHandler
 
    public abstract StompFrame onConnect(StompFrame frame);
    public abstract StompFrame onDisconnect(StompFrame frame);
-   public abstract StompFrame onSend(StompFrame frame);
    public abstract StompFrame onAck(StompFrame request);
-   public abstract StompFrame onBegin(StompFrame frame);
-   public abstract StompFrame onCommit(StompFrame request);
-   public abstract StompFrame onAbort(StompFrame request);
-   public abstract StompFrame onSubscribe(StompFrame request);
    public abstract StompFrame onUnsubscribe(StompFrame request);
    public abstract StompFrame onStomp(StompFrame request);
    public abstract StompFrame onNack(StompFrame request);
@@ -136,14 +135,219 @@ public abstract class VersionedStompFrameHandler
       
       return receipt;
    }
-   
-   public abstract StompFrame postprocess(StompFrame request);
-
-   public abstract StompFrame createMessageFrame(ServerMessage serverMessage,
-         StompSubscription subscription, int deliveryCount) throws Exception;
 
    public abstract StompFrame createStompFrame(String command);
 
    public abstract StompFrame decode(StompDecoder decoder, final HornetQBuffer buffer) throws HornetQStompException;
+   
+   public StompFrame onCommit(StompFrame request)
+   {
+      StompFrame response = null;
+      
+      String txID = request.getHeader(Stomp.Headers.TRANSACTION);
+      if (txID == null)
+      {
+         response = new HornetQStompException("transaction header is mandatory to COMMIT a transaction").getFrame();
+         return response;
+      }
+
+      try
+      {
+         connection.commitTransaction(txID);
+      }
+      catch (HornetQStompException e)
+      {
+         response = e.getFrame();
+      }
+      return response;
+   }
+
+   public StompFrame onSend(StompFrame frame)
+   {      
+      StompFrame response = null;
+      try
+      {
+         connection.validate();
+         String destination = frame.getHeader(Stomp.Headers.Send.DESTINATION);
+         String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
+
+         long timestamp = System.currentTimeMillis();
+
+         ServerMessageImpl message = connection.createServerMessage();
+         message.setTimestamp(timestamp);
+         message.setAddress(SimpleString.toSimpleString(destination));
+         StompUtils.copyStandardHeadersFromFrameToMessage(frame, message);
+         if (frame.hasHeader(Stomp.Headers.CONTENT_LENGTH))
+         {
+            message.setType(Message.BYTES_TYPE);
+            message.getBodyBuffer().writeBytes(frame.getBodyAsBytes());
+         }
+         else
+         {
+            message.setType(Message.TEXT_TYPE);
+            String text = frame.getBody();
+            message.getBodyBuffer().writeNullableSimpleString(SimpleString.toSimpleString(text));
+         }
+
+         connection.sendServerMessage(message, txID);
+      }
+      catch (HornetQStompException e)
+      {
+         response = e.getFrame();
+      }
+      catch (Exception e)
+      {
+         response = new HornetQStompException("Error handling send", e).getFrame();
+      }
+
+      return response;
+   }
+
+   public StompFrame onBegin(StompFrame frame)
+   {
+      StompFrame response = null;
+      String txID = frame.getHeader(Stomp.Headers.TRANSACTION);
+      if (txID == null)
+      {
+         response = new HornetQStompException("Need a transaction id to begin").getFrame();
+      }
+      else
+      {
+         try
+         {
+            connection.beginTransaction(txID);
+         }
+         catch (HornetQStompException e)
+         {
+            response = e.getFrame();
+         }
+      }
+      return response;
+   }
+
+   public StompFrame onAbort(StompFrame request)
+   {
+      StompFrame response = null;
+      String txID = request.getHeader(Stomp.Headers.TRANSACTION);
+
+      if (txID == null)
+      {
+         response = new HornetQStompException("transaction header is mandatory to ABORT a transaction").getFrame();
+         return response;
+      }
+      
+      try
+      {
+         connection.abortTransaction(txID);
+      }
+      catch (HornetQStompException e)
+      {
+         response = e.getFrame();
+      }
+      
+      return response;
+   }
+
+   public StompFrame onSubscribe(StompFrame request)
+   {
+      StompFrame response = null;
+      String destination = request.getHeader(Stomp.Headers.Subscribe.DESTINATION);
+      
+      String selector = request.getHeader(Stomp.Headers.Subscribe.SELECTOR);
+      String ack = request.getHeader(Stomp.Headers.Subscribe.ACK_MODE);
+      String id = request.getHeader(Stomp.Headers.Subscribe.ID);
+      String durableSubscriptionName = request.getHeader(Stomp.Headers.Subscribe.DURABLE_SUBSCRIBER_NAME);
+      boolean noLocal = false;
+      
+      if (request.hasHeader(Stomp.Headers.Subscribe.NO_LOCAL))
+      {
+         noLocal = Boolean.parseBoolean(request.getHeader(Stomp.Headers.Subscribe.NO_LOCAL));
+      }
+      
+      try
+      {
+         connection.subscribe(destination, selector, ack, id, durableSubscriptionName, noLocal);
+      }
+      catch (HornetQStompException e)
+      {
+         response = e.getFrame();
+      }
+      
+      return response;
+   }
+
+   public StompFrame postprocess(StompFrame request)
+   {
+      StompFrame response = null;
+      if (request.hasHeader(Stomp.Headers.RECEIPT_REQUESTED))
+      {
+         response = handleReceipt(request.getHeader(Stomp.Headers.RECEIPT_REQUESTED));
+         if (request.getCommand().equals(Stomp.Commands.DISCONNECT))
+         {
+            response.setNeedsDisconnect(true);
+         }
+      }
+      else
+      {
+         //request null, disconnect if so.
+         if (request.getCommand().equals(Stomp.Commands.DISCONNECT))
+         {
+            this.connection.disconnect();
+         }         
+      }
+      return response;
+   }
+
+   public StompFrame createMessageFrame(ServerMessage serverMessage,
+         StompSubscription subscription, int deliveryCount) throws Exception
+   {
+      StompFrame frame = createStompFrame(Stomp.Responses.MESSAGE);
+
+      if (subscription.getID() != null)
+      {
+         frame.addHeader(Stomp.Headers.Message.SUBSCRIPTION,
+               subscription.getID());
+      }
+
+      synchronized (serverMessage)
+      {
+
+         HornetQBuffer buffer = serverMessage.getBodyBuffer();
+
+         int bodyPos = serverMessage.getEndOfBodyPosition() == -1 ? buffer
+               .writerIndex() : serverMessage.getEndOfBodyPosition();
+         int size = bodyPos - buffer.readerIndex();
+         buffer.readerIndex(MessageImpl.BUFFER_HEADER_SPACE
+               + DataConstants.SIZE_INT);
+         byte[] data = new byte[size];
+
+         if (serverMessage.containsProperty(Stomp.Headers.CONTENT_LENGTH)
+               || serverMessage.getType() == Message.BYTES_TYPE)
+         {
+            frame.addHeader(Headers.CONTENT_LENGTH, String.valueOf(data.length));
+            buffer.readBytes(data);
+         }
+         else
+         {
+            SimpleString text = buffer.readNullableSimpleString();
+            if (text != null)
+            {
+               data = text.toString().getBytes("UTF-8");
+            }
+            else
+            {
+               data = new byte[0];
+            }
+         }
+         frame.setByteBody(data);
+
+         serverMessage.getBodyBuffer().resetReaderIndex();
+
+         StompUtils.copyStandardHeadersFromMessageToFrame(serverMessage, frame,
+               deliveryCount);
+      }
+
+      return frame;
+   }
 
 }

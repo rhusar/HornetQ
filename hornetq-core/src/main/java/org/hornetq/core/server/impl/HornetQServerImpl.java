@@ -88,11 +88,11 @@ import org.hornetq.core.postoffice.impl.PostOfficeImpl;
 import org.hornetq.core.protocol.core.Channel;
 import org.hornetq.core.protocol.core.CoreRemotingConnection;
 import org.hornetq.core.protocol.core.impl.ChannelImpl.CHANNEL_ID;
+import org.hornetq.core.remoting.FailureListener;
 import org.hornetq.core.remoting.server.RemotingService;
 import org.hornetq.core.remoting.server.impl.RemotingServiceImpl;
 import org.hornetq.core.replication.ReplicationEndpoint;
 import org.hornetq.core.replication.ReplicationManager;
-import org.hornetq.core.replication.impl.ReplicationEndpointImpl;
 import org.hornetq.core.replication.impl.ReplicationManagerImpl;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.Role;
@@ -227,6 +227,7 @@ public class HornetQServerImpl implements HornetQServer
    private final Object initialiseLock = new Object();
    private boolean initialised;
    private final Object startUpLock = new Object();
+   private final Object replicationLock = new Object();
 
    /**
     * Only applicable to 'remote backup servers'. If this flag is false the backup may not become
@@ -333,6 +334,13 @@ public class HornetQServerImpl implements HornetQServer
 
    public synchronized void start() throws Exception
    {
+      if (started)
+      {
+         log.debug("Server already started!");
+         return;
+      }
+
+      log.debug("Starting server " + this);
       OperationContextImpl.clearContext();
 
       try
@@ -393,7 +401,7 @@ public class HornetQServerImpl implements HornetQServer
             {
                assert replicationEndpoint == null;
                backupUpToDate = false;
-               replicationEndpoint = new ReplicationEndpointImpl(this, shutdownOnCriticalIO);
+               replicationEndpoint = new ReplicationEndpoint(this, shutdownOnCriticalIO);
                activation = new SharedNothingBackupActivation();
             }
 
@@ -545,6 +553,12 @@ public class HornetQServerImpl implements HornetQServer
             pagingManager.stop();
          }
 
+            if (replicationEndpoint != null)
+            {
+               replicationEndpoint.stop();
+               replicationEndpoint = null;
+            }
+
          if (!criticalIOError && storageManager != null)
          {
             storageManager.stop();
@@ -554,12 +568,6 @@ public class HornetQServerImpl implements HornetQServer
          {
             replicationManager.stop();
             replicationManager = null;
-         }
-
-         if (replicationEndpoint != null)
-         {
-            replicationEndpoint.stop();
-            replicationEndpoint = null;
          }
 
          if (securityManager != null)
@@ -577,36 +585,39 @@ public class HornetQServerImpl implements HornetQServer
             postOffice.stop();
          }
 
-         List<Runnable> tasks = scheduledPool.shutdownNow();
-
-         for (Runnable task : tasks)
-         {
-               HornetQServerImpl.log.info(this + "::Waiting for " + task);
-         }
+            if (scheduledPool != null)
+            {
+               List<Runnable> tasks = scheduledPool.shutdownNow();
+               for (Runnable task : tasks)
+            {
+                  HornetQServerImpl.log.info(this + "::Waiting for " + task);
+            }
+            }
 
          if (memoryManager != null)
          {
             memoryManager.stop();
          }
 
-            threadPool.shutdown();
 
-            scheduledPool.shutdown();
-
-         try
-         {
-            if (!threadPool.awaitTermination(10, TimeUnit.SECONDS))
+            if (threadPool != null)
             {
-               HornetQServerImpl.log.warn("Timed out waiting for pool to terminate");
+               threadPool.shutdown();
+               try
+               {
+                  if (!threadPool.awaitTermination(10, TimeUnit.SECONDS))
+                  {
+                     HornetQServerImpl.log.warn("Timed out waiting for pool to terminate");
+                  }
+               }
+               catch (InterruptedException e)
+               {
+                  // Ignore
+               }
+               threadPool = null;
             }
-         }
-         catch (InterruptedException e)
-         {
-            // Ignore
-         }
-         threadPool = null;
 
-         try
+            try
          {
             if (!scheduledPool.awaitTermination(10, TimeUnit.SECONDS))
             {
@@ -621,7 +632,6 @@ public class HornetQServerImpl implements HornetQServer
          securityStore.stop();
 
          threadPool = null;
-
          scheduledPool = null;
 
          pagingManager = null;
@@ -1199,7 +1209,7 @@ public class HornetQServerImpl implements HornetQServer
    {
       if (configuration.isPersistenceEnabled())
       {
-         return new JournalStorageManager(configuration, executorFactory, replicationManager, shutdownOnCriticalIO);
+         return new JournalStorageManager(configuration, executorFactory, shutdownOnCriticalIO);
       }
       else
       {
@@ -1285,7 +1295,7 @@ public class HornetQServerImpl implements HornetQServer
 
       if (ConfigurationImpl.DEFAULT_CLUSTER_USER.equals(configuration.getClusterUser()) && ConfigurationImpl.DEFAULT_CLUSTER_PASSWORD.equals(configuration.getClusterPassword()))
       {
-         log.warn("Security risk! It has been detected that the cluster admin user and password " + "have not been changed from the installation default. "
+         log.warn("Security risk! HornetQ is running with the default cluster admin user and default password. "
                   + "Please see the HornetQ user guide, cluster chapter, for instructions on how to do this.");
       }
 
@@ -2020,7 +2030,7 @@ public class HornetQServerImpl implements HornetQServer
 
    private final class SharedNothingBackupActivation implements Activation
    {
-      private ServerLocatorInternal serverLocator;
+      private ServerLocatorInternal serverLocator0;
       private volatile boolean failedConnection;
 
       public void run()
@@ -2040,12 +2050,12 @@ public class HornetQServerImpl implements HornetQServer
             clusterManager.start();
 
             final TransportConfiguration config = configuration.getConnectorConfigurations().get(liveConnectorName);
-            serverLocator = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(config);
-            final QuorumManager quorumManager = new QuorumManager(serverLocator);
+            serverLocator0 = (ServerLocatorInternal)HornetQClient.createServerLocatorWithHA(config);
+            final QuorumManager quorumManager = new QuorumManager(serverLocator0);
             replicationEndpoint.setQuorumManager(quorumManager);
 
-            serverLocator.setReconnectAttempts(-1);
-
+            serverLocator0.setReconnectAttempts(-1);
+            serverLocator0.addInterceptor(new ReplicationError(HornetQServerImpl.this));
             threadPool.execute(new Runnable()
             {
                @Override
@@ -2053,7 +2063,7 @@ public class HornetQServerImpl implements HornetQServer
                {
                   try
                   {
-                     final ClientSessionFactory liveServerSessionFactory = serverLocator.connect();
+                     final ClientSessionFactory liveServerSessionFactory = serverLocator0.connect();
                      if (liveServerSessionFactory == null)
                      {
                         // XXX HORNETQ-768
@@ -2062,7 +2072,6 @@ public class HornetQServerImpl implements HornetQServer
                      CoreRemotingConnection liveConnection = liveServerSessionFactory.getConnection();
                      Channel pingChannel = liveConnection.getChannel(CHANNEL_ID.PING.id, -1);
                      Channel replicationChannel = liveConnection.getChannel(CHANNEL_ID.REPLICATION.id, -1);
-
                      connectToReplicationEndpoint(replicationChannel);
                      replicationEndpoint.start();
                      clusterManager.announceReplicatingBackup(pingChannel);
@@ -2109,7 +2118,7 @@ public class HornetQServerImpl implements HornetQServer
                }
             }
 
-            serverLocator.close();
+            serverLocator0.close();
             replicationEndpoint.stop();
 
             if (failedConnection)
@@ -2146,10 +2155,10 @@ public class HornetQServerImpl implements HornetQServer
 
       public void close(final boolean permanently) throws Exception
       {
-         if (serverLocator != null)
+         if (serverLocator0 != null)
          {
-            serverLocator.close();
-            serverLocator = null;
+            serverLocator0.close();
+            serverLocator0 = null;
          }
 
          if (configuration.isBackup())
@@ -2256,33 +2265,68 @@ public class HornetQServerImpl implements HornetQServer
 
 
    @Override
-   public boolean startReplication(CoreRemotingConnection rc, ClusterConnection clusterConnection,
-      Pair<TransportConfiguration, TransportConfiguration> pair)
+   public void startReplication(CoreRemotingConnection rc, ClusterConnection clusterConnection,
+                             Pair<TransportConfiguration, TransportConfiguration> pair) throws HornetQException
    {
       if (replicationManager != null)
       {
-         return false;
+         throw new HornetQException(HornetQException.ALREADY_REPLICATING);
       }
 
-      replicationManager = new ReplicationManagerImpl(rc, executorFactory);
-      try
+      if (!isStarted())
       {
-         replicationManager.start();
-         storageManager.startReplication(replicationManager, pagingManager, getNodeID().toString(), clusterConnection,
-                                         pair);
-         return true;
+         throw new IllegalStateException();
       }
-      catch (Exception e)
+
+      synchronized (replicationLock)
       {
-         /*
-          * The reasoning here is that the exception was either caused by (1) the (interaction with)
-          * the backup, or (2) by an IO Error at the storage. If (1), we can swallow the exception
-          * and ignore the replication request. If (2) the live will crash shortly.
-          */
-         // HORNETQ-720 Need to verify whether swallowing the exception here is acceptable
-         log.warn("Exception when trying to start replication", e);
-         replicationManager = null;
-         return false;
+
+         if (replicationManager != null)
+         {
+            throw new HornetQException(HornetQException.ALREADY_REPLICATING);
+         }
+
+         rc.addFailureListener(new ReplicationFailureListener());
+         replicationManager = new ReplicationManagerImpl(rc, executorFactory);
+
+         try
+         {
+            replicationManager.start();
+            storageManager.startReplication(replicationManager, pagingManager, getNodeID().toString(),
+                                            clusterConnection, pair);
+         }
+         catch (Exception e)
+         {
+            /*
+             * The reasoning here is that the exception was either caused by (1) the (interaction
+             * with) the backup, or (2) by an IO Error at the storage. If (1), we can swallow the
+             * exception and ignore the replication request. If (2) the live will crash shortly.
+             */
+            log.warn("Exception when trying to start replication", e);
+
+            try
+            {
+               if (replicationManager != null)
+                  replicationManager.stop();
+            }
+            catch (Exception hqe)
+            {
+               log.warn("Exception while trying to close replicationManager", hqe);
+            }
+            finally
+            {
+               replicationManager = null;
+            }
+
+            if (e instanceof HornetQException)
+            {
+               throw (HornetQException)e;
+            }
+            else
+            {
+               throw new HornetQException(HornetQException.INTERNAL_ERROR, "Error trying to start replication", e);
+            }
+         }
       }
    }
 
@@ -2303,4 +2347,28 @@ public class HornetQServerImpl implements HornetQServer
       nodeManager.setNodeID(nodeID);
       backupUpToDate = true;
    }
+
+   private final class ReplicationFailureListener implements FailureListener
+   {
+
+      @Override
+      public void connectionFailed(HornetQException exception, boolean failedOver)
+      {
+         Executors.newSingleThreadExecutor().execute(new Runnable()
+         {
+            public void run()
+            {
+               synchronized (replicationLock)
+
+               {
+                  if (replicationManager != null)
+                  {
+                     storageManager.stopReplication();
+                  }
+               }
+            }
+         });
+      }
+   }
+
 }
