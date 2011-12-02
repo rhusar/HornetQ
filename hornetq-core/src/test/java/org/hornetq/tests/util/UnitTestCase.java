@@ -89,6 +89,7 @@ import org.hornetq.core.remoting.impl.invm.InVMConnectorFactory;
 import org.hornetq.core.remoting.impl.invm.InVMRegistry;
 import org.hornetq.core.remoting.impl.netty.NettyAcceptorFactory;
 import org.hornetq.core.remoting.impl.netty.NettyConnectorFactory;
+import org.hornetq.core.server.HornetQComponent;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.MessageReference;
@@ -1488,6 +1489,49 @@ public abstract class UnitTestCase extends TestCase
 
       return messageRefCounts;
 
+   }
+
+   protected static final void stopComponent(HornetQComponent component)
+   {
+      if (component == null)
+         return;
+      if (component.isStarted())
+         try
+         {
+            component.stop();
+         }
+         catch (Exception e)
+         {
+            // no-op
+         }
+   }
+
+   public static final void closeServerLocator(ServerLocator locator)
+   {
+      if (locator == null)
+         return;
+      try
+      {
+         locator.close();
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
+   }
+
+   public static final void closeSessionFactory(final ClientSessionFactory sf)
+   {
+      if (sf == null)
+         return;
+      try
+      {
+         sf.close();
+      }
+      catch (Exception e)
+      {
+         e.printStackTrace();
+      }
    }
 
    // Private -------------------------------------------------------
