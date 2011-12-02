@@ -65,34 +65,7 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
          setStaticTransportConfigurations(initialConnectors.toArray(new TransportConfiguration[0]));
       }
 
-      setDiscoveryGroup(new DiscoveryGroup()
-      {
-         @Override public void setNotificationService(NotificationService notificationService) {}
-         @Override public void start() throws Exception {}
-         @Override public void stop() throws Exception {}
-         @Override public void registerListener(DiscoveryListener listener) {}
-         @Override public void unregisterListener(DiscoveryListener listener) {}
-         @Override
-         public String getName()
-         {
-            return "StaticDiscoveryGroup";
-         }
-         @Override
-         public List<DiscoveryEntry> getDiscoveryEntries()
-         {
-            return null;
-         }
-         @Override
-         public boolean isStarted()
-         {
-            return true;
-         }
-         @Override
-         public boolean waitForBroadcast(long timeout)
-         {
-            return true;
-         }
-      });
+      setDiscoveryGroup(new StaticDiscovceryGroup());
 
       e.fillInStackTrace();
    }
@@ -146,6 +119,45 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
    protected void doCloseInternal()
    {
       staticConnector.disconnect();
+   }
+
+   private final class StaticDiscovceryGroup implements DiscoveryGroup, Serializable
+   {
+      private static final long serialVersionUID = -2886661316861662880L;
+
+      @Override public void setNotificationService(NotificationService notificationService) {}
+
+      @Override public void start() throws Exception {}
+
+      @Override public void stop() throws Exception {}
+
+      @Override public void registerListener(DiscoveryListener listener) {}
+
+      @Override public void unregisterListener(DiscoveryListener listener) {}
+
+      @Override
+      public String getName()
+      {
+         return "StaticDiscoveryGroup";
+      }
+
+      @Override
+      public List<DiscoveryEntry> getDiscoveryEntries()
+      {
+         return null;
+      }
+
+      @Override
+      public boolean isStarted()
+      {
+         return true;
+      }
+
+      @Override
+      public boolean waitForBroadcast(long timeout)
+      {
+         return true;
+      }
    }
 
    private final class StaticConnector implements Serializable
@@ -317,8 +329,10 @@ public class StaticServerLocatorImpl extends AbstractServerLocator
          super.finalize();
       }
 
-      private class Connector
+      private class Connector implements Serializable
       {
+         private static final long serialVersionUID = -8050491153483326679L;
+
          private final TransportConfiguration initialConnector;
 
          private volatile ClientSessionFactoryInternal factory;
