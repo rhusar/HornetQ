@@ -1004,7 +1004,7 @@ public class DiscoveryTest extends UnitTestCase
                                                                 boolean active) throws Exception
    {
       return new BroadcastGroupImpl(nodeID, name, active, createBroadcastGroupConfiguration(name,
-                                                                                            localAddress.getHostAddress(),
+                                                                                            localAddress != null ? localAddress.getHostAddress() : null,
                                                                                             localPort,
                                                                                             groupAddress.getHostAddress(),
                                                                                             groupPort,

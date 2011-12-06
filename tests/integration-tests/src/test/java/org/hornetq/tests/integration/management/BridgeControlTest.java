@@ -85,7 +85,7 @@ public class BridgeControlTest extends ManagementTestBase
       Assert.assertEquals(bridgeConfig.isUseDuplicateDetection(), bridgeControl.isUseDuplicateDetection());
 
       String[] connectorPairData = bridgeControl.getStaticConnectors();
-      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0), connectorPairData[0]);
+      Assert.assertEquals(bridgeConfig.getStaticConnectors().get(0).getName(), connectorPairData[0]);
 
       Assert.assertTrue(bridgeControl.isStarted());
    }

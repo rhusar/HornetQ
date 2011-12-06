@@ -173,7 +173,7 @@ public class SingleLiveMultipleBackupsFailoverTest extends MultipleBackupsFailov
       config0.setClustered(true);
       ClusterConnectionConfiguration ccc0 =
                new ClusterConnectionConfiguration("cluster1", "jms", liveConnector.getName(), -1, false, false, 1, 1,
-                                                  null, false);
+                                                  createStaticDiscoveryGroupConfiguration((TransportConfiguration[])null), false);
       config0.getClusterConfigurations().add(ccc0);
       config0.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
 
