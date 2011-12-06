@@ -168,18 +168,23 @@ public abstract class ClusterTestBase extends ServiceTestBase
       {
          if (servers[i] == null)
             continue;
-
-         final ClusterManager clusterManager = servers[i].getClusterManager();
-         if (clusterManager != null)
+         try
          {
-            for (ClusterConnection cc : clusterManager.getClusterConnections())
+            final ClusterManager clusterManager = servers[i].getClusterManager();
+            if (clusterManager != null)
             {
-               cc.stop();
+               for (ClusterConnection cc : clusterManager.getClusterConnections())
+               {
+                  cc.stop();
+               }
             }
          }
-         stopComponent(servers[i]);
-
+         catch (Exception e)
+         {
+            // no-op
          }
+         stopComponent(servers[i]);
+      }
       for (int i = 0; i < MAX_SERVERS; i++)
       {
          stopComponent(nodeManagers[i]);
@@ -551,7 +556,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
    }
 
-   protected void removeConsumer(final int consumerID) throws Exception
+   protected void removeConsumer(final int consumerID)
    {
       ConsumerHolder holder = consumers[consumerID];
 
@@ -560,13 +565,12 @@ public abstract class ClusterTestBase extends ServiceTestBase
          throw new IllegalArgumentException("No consumer at " + consumerID);
       }
 
-      holder.consumer.close();
-      holder.session.close();
+      holder.close();
 
       consumers[consumerID] = null;
    }
 
-   protected void closeAllConsumers() throws Exception
+   protected void closeAllConsumers()
    {
       for (int i = 0; i < consumers.length; i++)
       {
@@ -580,7 +584,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
    }
 
-   protected void closeAllSessionFactories() throws Exception
+   protected void closeAllSessionFactories()
    {
       for (int i = 0; i < sfs.length; i++)
       {
@@ -589,7 +593,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
       }
    }
 
-   protected void closeAllServerLocatorsFactories() throws Exception
+   protected void closeAllServerLocatorsFactories()
    {
       for (int i = 0; i < locators.length; i++)
       {
@@ -1229,7 +1233,8 @@ public abstract class ClusterTestBase extends ServiceTestBase
          Assert.assertTrue(counts.contains(messageCount));
       }
 
-      List<LinkedList<Integer>> lists = new ArrayList<LinkedList<Integer>>(consumerIDs.length);
+      @SuppressWarnings("unchecked")
+      LinkedList<Integer>[] lists = new LinkedList[consumerIDs.length];
 
       for (int i = 0; i < messageCounts.length; i++)
       {
@@ -1239,7 +1244,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
             if (elem == messageCounts[i])
             {
-               lists.set(i, list);
+               lists[i] = list;
 
                break;
             }
@@ -1249,7 +1254,7 @@ public abstract class ClusterTestBase extends ServiceTestBase
 
       for (int messageCount : messageCounts)
       {
-         LinkedList<Integer> list = lists.get(index);
+         LinkedList<Integer> list = lists[index];
 
          Assert.assertNotNull(list);
 

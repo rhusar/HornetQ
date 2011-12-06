@@ -16,8 +16,8 @@ package org.hornetq.tests.util;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,7 +34,6 @@ import org.hornetq.api.core.client.ClientSession;
 import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
 import org.hornetq.api.core.client.ServerLocator;
-import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
 import org.hornetq.core.client.impl.Topology;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
@@ -81,16 +80,60 @@ public abstract class ServiceTestBase extends UnitTestCase
 
    protected static final String NETTY_CONNECTOR_FACTORY = NettyConnectorFactory.class.getCanonicalName();
 
-   private final List<ServerLocator> locators = new ArrayList<ServerLocator>();
+   private final Collection<ServerLocator> locators = new ArrayList<ServerLocator>();
+   private final Collection<HornetQServer> servers = new ArrayList<HornetQServer>();
+   private final Collection<ClientSessionFactory> sessionFactories = new ArrayList<ClientSessionFactory>();
+   private final Collection<ClientSession> clientSessions = new ArrayList<ClientSession>();
 
    @Override
    protected void tearDown() throws Exception
    {
-      for (ServerLocator locator : locators)
+      synchronized (clientSessions)
       {
-         closeServerLocator(locator);
+         for (ClientSession cs : clientSessions)
+         {
+            try
+            {
+               if (cs != null)
+               {
+                  cs.close();
+               }
+            }
+            catch (Exception e)
+            {
+               // no-op
+            }
+         }
+         clientSessions.clear();
       }
-      locators.clear();
+
+      synchronized (sessionFactories)
+      {
+         for (ClientSessionFactory sf : sessionFactories)
+         {
+            closeSessionFactory(sf);
+         }
+         sessionFactories.clear();
+      }
+
+      synchronized (locators)
+      {
+         for (ServerLocator locator : locators)
+         {
+            closeServerLocator(locator);
+         }
+         locators.clear();
+      }
+
+      synchronized (servers)
+      {
+         for (HornetQServer server : servers)
+         {
+            stopComponent(server);
+         }
+         servers.clear();
+      }
+
       super.tearDown();
 //      checkFreePort(5445);
 //      checkFreePort(5446);
@@ -317,7 +360,8 @@ public abstract class ServiceTestBase extends UnitTestCase
       {
          server = HornetQServers.newHornetQServer(configuration, mbeanServer, false);
       }
-
+      try
+      {
       for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
       {
          server.getAddressSettingsRepository().addMatch(setting.getKey(), setting.getValue());
@@ -329,9 +373,39 @@ public abstract class ServiceTestBase extends UnitTestCase
 
       server.getAddressSettingsRepository().addMatch("#", defaultSetting);
 
+         return server;
+      }
+      finally
+      {
+         addServer(server);
+      }
+   }
+
+   protected HornetQServer addServer(HornetQServer server)
+   {
+      synchronized (servers)
+      {
+         servers.add(server);
+      }
       return server;
    }
 
+   protected ClientSession addClientSession(ClientSession session)
+   {
+      synchronized (clientSessions)
+      {
+         clientSessions.add(session);
+      }
+      return session;
+   }
+
+   protected void addSessionFactory(ClientSessionFactory sf)
+   {
+      synchronized (sessionFactories)
+      {
+         sessionFactories.add(sf);
+      }
+   }
    protected HornetQServer createServer(final boolean realFiles,
                                         final Configuration configuration,
                                         final int pageSize,
@@ -358,7 +432,8 @@ public abstract class ServiceTestBase extends UnitTestCase
       {
          server = HornetQServers.newHornetQServer(configuration, false);
       }
-
+      try
+      {
       if (settings != null)
       {
          for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
@@ -375,6 +450,20 @@ public abstract class ServiceTestBase extends UnitTestCase
       server.getAddressSettingsRepository().addMatch("#", defaultSetting);
 
       return server;
+      }
+      finally
+      {
+         addServer(server);
+      }
+   }
+
+
+
+   protected HornetQServer createServer(final boolean realFiles,
+                                        Configuration conf,
+                                        MBeanServer mbeanServer)
+   {
+      return createServer(realFiles, conf, mbeanServer, new HashMap<String, AddressSettings>());
    }
 
    protected HornetQServer createServer(final boolean realFiles,
@@ -392,7 +481,8 @@ public abstract class ServiceTestBase extends UnitTestCase
       {
          server = HornetQServers.newHornetQServer(configuration, mbeanServer, false);
       }
-
+      try
+      {
       for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
       {
          server.getAddressSettingsRepository().addMatch(setting.getKey(), setting.getValue());
@@ -401,7 +491,14 @@ public abstract class ServiceTestBase extends UnitTestCase
       AddressSettings defaultSetting = new AddressSettings();
       server.getAddressSettingsRepository().addMatch("#", defaultSetting);
 
+
+
       return server;
+      }
+      finally
+      {
+         addServer(server);
+      }
    }
 
    protected HornetQServer createServer(final boolean realFiles)
@@ -417,6 +514,12 @@ public abstract class ServiceTestBase extends UnitTestCase
    protected HornetQServer createServer(final boolean realFiles, final Configuration configuration)
    {
       return createServer(realFiles, configuration, -1, -1, new HashMap<String, AddressSettings>());
+   }
+
+   protected HornetQServer createServer(final Configuration configuration)
+   {
+      return createServer(configuration.isPersistenceEnabled(), configuration, -1, -1,
+                          new HashMap<String, AddressSettings>());
    }
 
    protected HornetQServer createInVMFailoverServer(final boolean realFiles,
@@ -449,7 +552,9 @@ public abstract class ServiceTestBase extends UnitTestCase
                                          securityManager,
                                          nodeManager);
 
-      server.setIdentity("Server " + id);
+      try
+      {
+         server.setIdentity("Server " + id);
 
       for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
       {
@@ -463,6 +568,11 @@ public abstract class ServiceTestBase extends UnitTestCase
       server.getAddressSettingsRepository().addMatch("#", defaultSetting);
 
       return server;
+      }
+      finally
+      {
+         addServer(server);
+      }
    }
 
    protected HornetQServer createServer(final boolean realFiles,
@@ -484,7 +594,8 @@ public abstract class ServiceTestBase extends UnitTestCase
                                                   securityManager,
                                                   false);
       }
-
+      try
+      {
       Map<String, AddressSettings> settings = new HashMap<String, AddressSettings>();
 
       for (Map.Entry<String, AddressSettings> setting : settings.entrySet())
@@ -496,7 +607,12 @@ public abstract class ServiceTestBase extends UnitTestCase
 
       server.getAddressSettingsRepository().addMatch("#", defaultSetting);
 
-      return server;
+         return server;
+      }
+      finally
+      {
+         addServer(server);
+      }
    }
 
    protected HornetQServer createClusteredServerWithParams(final boolean isNetty,
@@ -559,6 +675,12 @@ public abstract class ServiceTestBase extends UnitTestCase
       }
    }
 
+   protected final ClientSessionFactory createSessionFactory(ServerLocator locator) throws Exception
+   {
+      ClientSessionFactory sf = locator.createSessionFactory();
+      addSessionFactory(sf);
+      return sf;
+   }
    protected void createQueue(final String address, final String queue) throws Exception
    {
       ServerLocator locator = createInVMNonHALocator();
@@ -584,15 +706,25 @@ public abstract class ServiceTestBase extends UnitTestCase
    {
       ServerLocator locatorWithoutHA = isNetty ? HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NETTY_CONNECTOR_FACTORY))
                                               : HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(INVM_CONNECTOR_FACTORY));
-      locators.add(locatorWithoutHA);
-      return locatorWithoutHA;
+      return addServerLocator(locatorWithoutHA);
+
+   }
+
+   protected ServerLocator addServerLocator(ServerLocator locator)
+   {
+      synchronized (locators)
+      {
+         locators.add(locator);
+      }
+      return locator;
    }
 
    protected ServerLocator createInVMLocator(final int serverID)
    {
       TransportConfiguration tnspConfig = createInVMTransportConnectorConfig(serverID, UUIDGenerator.getInstance().generateStringUUID());
 
-      return HornetQClient.createServerLocatorWithHA(tnspConfig);
+      ServerLocator locator = HornetQClient.createServerLocatorWithHA(tnspConfig);
+    return  addServerLocator(locator);
    }
 
    /**
@@ -612,13 +744,6 @@ public abstract class ServiceTestBase extends UnitTestCase
       return tnspConfig;
    }
 
-   // XXX unused
-   protected ClientSessionFactoryImpl createFactory(final String connectorClass) throws Exception
-   {
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(connectorClass));
-      return (ClientSessionFactoryImpl)locator.createSessionFactory();
-
-   }
    public String getTextMessage(final ClientMessage m)
    {
       m.getBodyBuffer().resetReaderIndex();

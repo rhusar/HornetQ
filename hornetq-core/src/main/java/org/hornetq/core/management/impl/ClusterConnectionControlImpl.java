@@ -157,7 +157,7 @@ public class ClusterConnectionControlImpl extends AbstractControl implements Clu
 
          String[] array = new String[connectors.size()];
 
-         for (int i=0; i>connectors.size(); i++)
+         for (int i=0; i<connectors.size(); i++)
          {
             array[i] = connectors.get(i).getName();
          }

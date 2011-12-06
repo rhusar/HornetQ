@@ -59,7 +59,9 @@ import org.hornetq.api.core.SimpleString;
 import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.client.ClientMessage;
 import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ClientSessionFactory;
 import org.hornetq.api.core.client.HornetQClient;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.asyncio.impl.AsynchronousFileImpl;
 import org.hornetq.core.client.impl.AbstractServerLocator;
 import org.hornetq.core.client.impl.ClientSessionFactoryImpl;
@@ -1090,7 +1092,7 @@ public abstract class UnitTestCase extends TestCase
          checkThread = true;
       }
 
-
+      clearData();
       super.tearDown();
    }
 

@@ -148,10 +148,10 @@ public class DeadLetterAddressTest extends ServiceTestBase
 
    class  TestHandler implements MessageHandler
    {
-      private CountDownLatch latch;
+      private final CountDownLatch latch;
       int count = 0;
 
-      private ClientSession clientSession;
+      private final ClientSession clientSession;
 
       public TestHandler(CountDownLatch latch, ClientSession clientSession)
       {
@@ -470,54 +470,14 @@ public class DeadLetterAddressTest extends ServiceTestBase
       configuration.setSecurityEnabled(false);
       TransportConfiguration transportConfig = new TransportConfiguration(UnitTestCase.INVM_ACCEPTOR_FACTORY);
       configuration.getAcceptorConfigurations().add(transportConfig);
-      server = HornetQServers.newHornetQServer(configuration, false);
+      server = addServer(HornetQServers.newHornetQServer(configuration, false));
       // start the server
       server.start();
       // then we create a client as normal
-      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      ClientSessionFactory sessionFactory = locator.createSessionFactory();
-      clientSession = sessionFactory.createSession(false, true, false);
+      locator =
+               addServerLocator(HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(
+                                                                                                      UnitTestCase.INVM_CONNECTOR_FACTORY)));
+      ClientSessionFactory sessionFactory = createSessionFactory(locator);
+      clientSession = addClientSession(sessionFactory.createSession(false, true, false));
    }
-
-   @Override
-   protected void tearDown() throws Exception
-   {
-      if (clientSession != null)
-      {
-         try
-         {
-            clientSession.close();
-         }
-         catch (HornetQException e1)
-         {
-            //
-         }
-      }
-      if(locator != null)
-      {
-         try
-         {
-            locator.close();
-         }
-         catch (Exception e)
-         {
-            //
-         }
-      }
-      if (server != null && server.isStarted())
-      {
-         try
-         {
-            server.stop();
-         }
-         catch (Exception e1)
-         {
-            //
-         }
-      }
-      server = null;
-      clientSession = null;
-      super.tearDown();
-   }
-
 }

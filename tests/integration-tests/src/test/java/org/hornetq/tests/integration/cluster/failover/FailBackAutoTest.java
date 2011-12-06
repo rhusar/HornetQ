@@ -56,13 +56,6 @@ public class FailBackAutoTest extends FailoverTestBase
       locator = getServerLocator();
    }
 
-   @Override
-   protected void tearDown() throws Exception
-   {
-      closeServerLocator(locator);
-      super.tearDown();
-   }
-
    public void testAutoFailback() throws Exception
    {
       locator.setBlockOnNonDurableSend(true);
@@ -254,7 +247,7 @@ public class FailBackAutoTest extends FailoverTestBase
       ClusterConnectionConfiguration cccLive = new ClusterConnectionConfiguration("cluster1", "jms", backupConnector.getName(), -1, false, false, 1, 1,
             dgb, false);
       backupConfig.getClusterConfigurations().add(cccLive);
-      backupServer = createServer(backupConfig);
+      backupServer = createTestableServer(backupConfig);
 
       liveConfig = super.createDefaultConfig();
       liveConfig.getAcceptorConfigurations().clear();
@@ -272,7 +265,7 @@ public class FailBackAutoTest extends FailoverTestBase
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
       liveConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
-      liveServer = createServer(liveConfig);
+      liveServer = createTestableServer(liveConfig);
    }
 
    @Override

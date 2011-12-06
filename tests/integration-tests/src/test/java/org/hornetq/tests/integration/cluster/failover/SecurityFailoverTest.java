@@ -58,13 +58,16 @@ public class SecurityFailoverTest extends FailoverTest
                                          boolean autoCommitAcks,
                                          int ackBatchSize) throws Exception
    {
-      return sf.createSession("a",
+      ClientSession session =
+               sf.createSession("a",
                               "b",
                               isXA,
                               autoCommitSends,
                               autoCommitAcks,
                               sf.getServerLocator().isPreAcknowledge(),
                               ackBatchSize);
+      addClientSession(session);
+      return session;
    }
 
    @Override
@@ -73,8 +76,11 @@ public class SecurityFailoverTest extends FailoverTest
                                          boolean autoCommitAcks,
                                          int ackBatchSize) throws Exception
    {
-      return sf.createSession("a", "b", false, autoCommitSends, autoCommitAcks, sf.getServerLocator()
+      ClientSession session =
+               sf.createSession("a", "b", false, autoCommitSends, autoCommitAcks, sf.getServerLocator()
                                                                                   .isPreAcknowledge(), ackBatchSize);
+      addClientSession(session);
+      return session;
    }
 
    @Override
@@ -132,7 +138,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                   dgb,
                                                                                   false);
       backupConfig.getClusterConfigurations().add(cccLive);
-      backupServer = createServer(backupConfig);
+      backupServer = createTestableServer(backupConfig);
 
       HornetQSecurityManager securityManager = installSecurity(backupServer);
 
@@ -158,7 +164,7 @@ public class SecurityFailoverTest extends FailoverTest
                                                                                false);
       liveConfig.getClusterConfigurations().add(ccc0);
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-      liveServer = createServer(liveConfig);
+      liveServer = createTestableServer(liveConfig);
 
       installSecurity(liveServer);
    }

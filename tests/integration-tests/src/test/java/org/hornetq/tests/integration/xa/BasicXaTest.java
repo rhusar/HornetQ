@@ -25,7 +25,13 @@ import junit.framework.Assert;
 
 import org.hornetq.api.core.HornetQException;
 import org.hornetq.api.core.SimpleString;
-import org.hornetq.api.core.client.*;
+import org.hornetq.api.core.client.ClientConsumer;
+import org.hornetq.api.core.client.ClientMessage;
+import org.hornetq.api.core.client.ClientProducer;
+import org.hornetq.api.core.client.ClientSession;
+import org.hornetq.api.core.client.ClientSessionFactory;
+import org.hornetq.api.core.client.MessageHandler;
+import org.hornetq.api.core.client.ServerLocator;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.server.HornetQServer;
@@ -74,166 +80,110 @@ public class BasicXaTest extends ServiceTestBase
       messagingService.start();
 
       locator = createInVMNonHALocator();
-      sessionFactory = locator.createSessionFactory();
+      sessionFactory = createSessionFactory(locator);
 
-      clientSession = sessionFactory.createSession(true, false, false);
+      clientSession = addClientSession(sessionFactory.createSession(true, false, false));
 
       clientSession.createQueue(atestq, atestq, null, true);
    }
 
-   @Override
-   protected void tearDown() throws Exception
-   {
-      if (clientSession != null)
-      {
-         try
-         {
-            clientSession.close();
-         }
-         catch (HornetQException e1)
-         {
-            //
-         }
-      }
-      if(sessionFactory != null)
-      {
-         try
-         {
-            sessionFactory.close();
-         }
-         catch (Exception e)
-         {
-            //
-         }
-      }
-      if(locator != null)
-      {
-         try
-         {
-            locator.close();
-         }
-         catch (Exception e)
-         {
-            //
-         }
-      }
-      if (messagingService != null && messagingService.isStarted())
-      {
-         try
-         {
-            messagingService.stop();
-         }
-         catch (Exception e1)
-         {
-            //
-         }
-      }
-      messagingService = null;
-      clientSession = null;
-
-      super.tearDown();
-   }
-   
-   
    public void testSendWithoutXID() throws Exception
    {
       // Since both resources have same RM, TM will probably use 1PC optimization
 
       ServerLocator locator = createInVMNonHALocator();
-      ClientSessionFactory factory = locator.createSessionFactory();
-      
+      ClientSessionFactory factory = createSessionFactory(locator);
+
       ClientSession session = null;
-      
+
       try
       {
-         
+
          session = factory.createSession(true, false, false);
 
          session.createQueue("Test", "Test");
-         
+
          ClientProducer prod = session.createProducer("Test");
 
          prod.send(session.createMessage(true));
-         
+
          session.start();
-         
+
          ClientConsumer cons = session.createConsumer("Test");
-         
+
          assertNotNull("Send went through an invalid XA Session", cons.receiveImmediate());
       }
       finally
       {
          factory.close();
-         
+
          session.close();
       }
    }
 
-   
+
    public void testACKWithoutXID() throws Exception
    {
       // Since both resources have same RM, TM will probably use 1PC optimization
 
 
-      ClientSessionFactory factory = locator.createSessionFactory();
-      
+      ClientSessionFactory factory = createSessionFactory(locator);
+
       ClientSession session = null;
-      
+
       try
       {
-         
+
          session = factory.createSession(false, true, true);
 
          session.createQueue("Test", "Test");
-         
+
          ClientProducer prod = session.createProducer("Test");
 
          prod.send(session.createMessage(true));
-         
-         session.close();
-         
-         session = factory.createSession(true, false, false);
-         
-         session.start();
-         
-         ClientConsumer cons = session.createConsumer("Test");
-         
-         ClientMessage msg = cons.receive(5000);
-         
-         assertNotNull(msg);
-         
-         msg.acknowledge();
-         
+
          session.close();
 
-      
-         session = factory.createSession(false, false, false);
-         
+         session = factory.createSession(true, false, false);
+
          session.start();
-         
+
+         ClientConsumer cons = session.createConsumer("Test");
+
+         ClientMessage msg = cons.receive(5000);
+
+         assertNotNull(msg);
+
+         msg.acknowledge();
+
+         session.close();
+
+
+         session = factory.createSession(false, false, false);
+
+         session.start();
+
          cons = session.createConsumer("Test");
-         
+
          msg = cons.receiveImmediate();
-         
+
          assertNull("Acknowledge went through invalid XA Session", msg);
 
-         
-         
+
+
       }
       finally
       {
-         factory.close();
-         
          session.close();
       }
    }
 
-   
+
 
    public void testIsSameRM() throws Exception
    {
       ServerLocator locator = createNettyNonHALocator();
-      ClientSessionFactory nettyFactory = locator.createSessionFactory();
+      ClientSessionFactory nettyFactory = createSessionFactory(locator);
       validateRM(nettyFactory, nettyFactory);
       validateRM(sessionFactory, sessionFactory);
       validateRM(nettyFactory, sessionFactory);
@@ -258,7 +208,7 @@ public class BasicXaTest extends ServiceTestBase
       session2.close();
    }
 
-   
+
 
    public void testXAInterleaveResourceSuspendWorkCommit() throws Exception
    {
@@ -315,7 +265,7 @@ public class BasicXaTest extends ServiceTestBase
       clientSession.prepare(xid3);
       clientSession.commit(xid3, false);
    }
-   
+
    public void testSendPrepareDoesntRollbackOnClose() throws Exception
    {
       Xid xid = newXID();
@@ -338,7 +288,7 @@ public class BasicXaTest extends ServiceTestBase
       clientSession = sessionFactory.createSession(true, false, false);
 
       log.info("committing");
-      
+
       clientSession.commit(xid, false);
       clientSession.start();
       ClientConsumer clientConsumer = clientSession.createConsumer(atestq);
@@ -406,7 +356,7 @@ public class BasicXaTest extends ServiceTestBase
       clientSession2.close();
 
    }
-   
+
    public void testReceiveRollback() throws Exception
    {
       int numSessions = 100;
@@ -526,7 +476,7 @@ public class BasicXaTest extends ServiceTestBase
 
       messagingService.start();
 
-      sessionFactory = locator.createSessionFactory();
+      sessionFactory = createSessionFactory(locator);
 
       xid = newXID();
       session = sessionFactory.createSession(true, false, false);
@@ -553,7 +503,7 @@ public class BasicXaTest extends ServiceTestBase
 
       messagingService.start();
 
-      sessionFactory = locator.createSessionFactory();
+      sessionFactory = createSessionFactory(locator);
 
       xid = newXID();
       session = sessionFactory.createSession(true, false, false);
@@ -567,7 +517,7 @@ public class BasicXaTest extends ServiceTestBase
       messagingService.start();
 
       // This is not really necessary... But since the server has stopped, I would prefer to keep recreating the factory
-      sessionFactory = locator.createSessionFactory();
+      sessionFactory = createSessionFactory(locator);
 
       session = sessionFactory.createSession(true, false, false);
 
@@ -986,7 +936,6 @@ public class BasicXaTest extends ServiceTestBase
       }
    }
 
-   private static volatile int received = 0;
 
    class TxMessageHandler implements MessageHandler
    {

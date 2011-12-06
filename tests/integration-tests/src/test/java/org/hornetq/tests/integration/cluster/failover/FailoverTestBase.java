@@ -16,7 +16,6 @@ package org.hornetq.tests.integration.cluster.failover;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +81,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
    protected NodeManager nodeManager;
 
    protected boolean startBackupServer = true;
-   private final Collection<ServerLocator> serverLocators = new ArrayList<ServerLocator>();
 
    // Static --------------------------------------------------------
 
@@ -128,9 +126,10 @@ public abstract class FailoverTestBase extends ServiceTestBase
          waitForServer(backupServer.getServer());
         }
       }
+
    }
 
-   protected TestableServer createServer(Configuration config)
+   protected TestableServer createTestableServer(Configuration config)
    {
       return new SameProcessHornetQServer(
                                           createInVMFailoverServer(true, config, nodeManager, config.isBackup() ? 2 : 1));
@@ -187,7 +186,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupConfig.getConnectorConfigurations().put(backupConnector.getName(), backupConnector);
       ReplicatedBackupUtils.createClusterConnectionConf(backupConfig, backupConnector.getName(),
                                                         liveConnector.getName());
-      backupServer = createServer(backupConfig);
+      backupServer = createTestableServer(backupConfig);
 
       liveConfig = super.createDefaultConfig();
       liveConfig.getAcceptorConfigurations().clear();
@@ -197,7 +196,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       liveConfig.setClustered(true);
       ReplicatedBackupUtils.createClusterConnectionConf(liveConfig, liveConnector.getName());
       liveConfig.getConnectorConfigurations().put(liveConnector.getName(), liveConnector);
-      liveServer = createServer(liveConfig);
+      liveServer = createTestableServer(liveConfig);
    }
 
    protected void createReplicatedConfigs()
@@ -222,29 +221,21 @@ public abstract class FailoverTestBase extends ServiceTestBase
       backupConfig.setLargeMessagesDirectory(backupConfig.getLargeMessagesDirectory() + sufix);
       backupConfig.setSecurityEnabled(false);
 
-      backupServer = createServer(backupConfig);
+      backupServer = createTestableServer(backupConfig);
       liveConfig.getAcceptorConfigurations().clear();
       liveConfig.getAcceptorConfigurations().add(getAcceptorTransportConfiguration(true));
 
-      liveServer = createServer(liveConfig);
+      liveServer = createTestableServer(liveConfig);
    }
 
    @Override
    protected void tearDown() throws Exception
    {
       logAndSystemOut("#test tearDown");
-      stopComponent(backupServer);
-      stopComponent(liveServer);
 
-      synchronized (serverLocators)
-      {
-         for (ServerLocator locator : serverLocators)
-         {
-            closeServerLocator(locator);
-         }
-         serverLocators.clear();
-      }
+      InVMConnector.failOnCreateConnection = false;
 
+      super.tearDown();
       Assert.assertEquals(0, InVMRegistry.instance.size());
 
       backupServer = null;
@@ -253,9 +244,6 @@ public abstract class FailoverTestBase extends ServiceTestBase
 
       nodeManager = null;
 
-      InVMConnector.failOnCreateConnection = false;
-
-      super.tearDown();
       try
       {
          ServerSocket serverSocket = new ServerSocket(5445);
@@ -285,7 +273,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
       locator.addClusterTopologyListener(new LatchClusterTopologyListener(countDownLatch));
 
       sf = (ClientSessionFactoryInternal) locator.createSessionFactory();
-
+      addSessionFactory(sf);
       assertTrue("topology members expected " + topologyMembers, countDownLatch.await(5, TimeUnit.SECONDS));
       return sf;
    }
@@ -382,10 +370,7 @@ public abstract class FailoverTestBase extends ServiceTestBase
    protected ServerLocatorInternal getServerLocator() throws Exception
    {
       ServerLocator locator = HornetQClient.createServerLocatorWithHA(getConnectorTransportConfiguration(true), getConnectorTransportConfiguration(false));
-      synchronized (serverLocators)
-      {
-         serverLocators.add(locator);
-      }
+      addServerLocator(locator);
       return (ServerLocatorInternal) locator;
    }
 

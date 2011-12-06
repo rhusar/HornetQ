@@ -13,8 +13,11 @@
 
 package org.hornetq.core.management.impl;
 
+import java.util.List;
+
 import javax.management.MBeanOperationInfo;
 
+import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.core.management.BridgeControl;
 import org.hornetq.core.config.BridgeConfiguration;
 import org.hornetq.core.persistence.StorageManager;
@@ -58,7 +61,13 @@ public class BridgeControlImpl extends AbstractControl implements BridgeControl
       clearIO();
       try
       {
-         return configuration.getStaticConnectors().toArray(new String[0]);
+         List<TransportConfiguration> connectors = configuration.getStaticConnectors();
+         String[] names = new String[connectors.size()];
+         for (int i = 0; i < connectors.size(); i++)
+         {
+            names[i] = connectors.get(i).getName();
+         }
+         return names;
       }
       finally
       {

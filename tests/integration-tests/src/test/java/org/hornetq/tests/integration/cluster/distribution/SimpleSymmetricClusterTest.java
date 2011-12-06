@@ -42,6 +42,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
 
    // Public --------------------------------------------------------
 
+   @Override
    public void setUp() throws Exception
    {
       super.setUp();
@@ -56,6 +57,7 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
     * @param pairs
     * @return
     */
+   @Override
    protected ClusterConnectionConfiguration createClusterConfig(final String name,
                                                                 final String address,
                                                                 final boolean forwardWhenNoConsumers,
@@ -74,13 +76,6 @@ public class SimpleSymmetricClusterTest extends ClusterTestBase
                                                                                       dg,
                                                                                       false);
       return clusterConf;
-   }
-
-   public void tearDown() throws Exception
-   {
-      log.info("#test tearDown " + loopNumber);
-      stopServers(0, 1, 2, 3, 4);
-      super.tearDown();
    }
 
    public boolean isNetty()

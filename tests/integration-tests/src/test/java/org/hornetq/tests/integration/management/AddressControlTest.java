@@ -36,7 +36,6 @@ import org.hornetq.core.remoting.impl.invm.InVMAcceptorFactory;
 import org.hornetq.core.security.CheckType;
 import org.hornetq.core.security.Role;
 import org.hornetq.core.server.HornetQServer;
-import org.hornetq.core.server.HornetQServers;
 import org.hornetq.core.settings.impl.AddressSettings;
 import org.hornetq.tests.util.RandomUtil;
 import org.hornetq.tests.util.UnitTestCase;
@@ -225,10 +224,12 @@ public class AddressControlTest extends ManagementTestBase
 
       server.getAddressSettingsRepository().addMatch(address.toString(), addressSettings);
       server.start();
-      ServerLocator locator2 = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      ClientSessionFactory sf2 = locator2.createSessionFactory();
-      try
-      {
+      ServerLocator locator2 =
+               HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(
+                                                                                     UnitTestCase.INVM_CONNECTOR_FACTORY));
+      addServerLocator(locator2);
+      ClientSessionFactory sf2 = createSessionFactory(locator2);
+
       session = sf2.createSession(false, true, false);
       session.start();
       session.createQueue(address, address, true);
@@ -266,12 +267,6 @@ public class AddressControlTest extends ManagementTestBase
 
       session.commit();
          Assert.assertEquals("# of pages is 2", 2, addressControl.getNumberOfPages());
-      }
-      finally
-      {
-         closeSessionFactory(sf2);
-         closeServerLocator(locator2);
-      }
    }
 
    public void testGetNumberOfBytesPerPage() throws Exception
@@ -290,19 +285,15 @@ public class AddressControlTest extends ManagementTestBase
 
       server.getAddressSettingsRepository().addMatch(address.toString(), addressSettings);
       server.start();
-      ServerLocator locator2 = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
-      ClientSessionFactory sf2 = locator2.createSessionFactory();
-      try
-      {
+      ServerLocator locator2 =
+               HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(
+                                                                                     UnitTestCase.INVM_CONNECTOR_FACTORY));
+      addServerLocator(locator2);
+      ClientSessionFactory sf2 = createSessionFactory(locator2);
+
          session = sf2.createSession(false, true, false);
          session.createQueue(address, address, true);
          Assert.assertEquals(1024, addressControl.getNumberOfBytesPerPage());
-      }
-      finally
-      {
-         closeServerLocator(locator2);
-         closeSessionFactory(sf2);
-      }
    }
 
    // Package protected ---------------------------------------------
@@ -318,30 +309,16 @@ public class AddressControlTest extends ManagementTestBase
       conf.setSecurityEnabled(false);
       conf.setJMXManagementEnabled(true);
       conf.getAcceptorConfigurations().add(new TransportConfiguration(InVMAcceptorFactory.class.getName()));
-      server = HornetQServers.newHornetQServer(conf, mbeanServer, false);
+      server = createServer(false, conf, mbeanServer);
       server.start();
 
-      locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(UnitTestCase.INVM_CONNECTOR_FACTORY));
+      locator = createInVMNonHALocator();
       locator.setBlockOnNonDurableSend(true);
       locator.setBlockOnNonDurableSend(true);
-      sf = locator.createSessionFactory();
+      sf = createSessionFactory(locator);
       session = sf.createSession(false, true, false);
       session.start();
-   }
-
-   @Override
-   protected void tearDown() throws Exception
-   {
-      if (session != null)
-         session.close();
-      closeSessionFactory(sf);
-      closeServerLocator(locator);
-      stopComponent(server);
-
-      server = null;
-      session = null;
-
-      super.tearDown();
+      addClientSession(session);
    }
 
    protected AddressControl createManagementControl(final SimpleString address) throws Exception

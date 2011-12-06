@@ -20,12 +20,11 @@ import org.hornetq.api.core.TransportConfiguration;
 import org.hornetq.api.jms.HornetQJMSClient;
 import org.hornetq.api.jms.JMSFactoryType;
 import org.hornetq.core.client.impl.AbstractServerLocator;
-import org.hornetq.core.logging.Logger;
 import org.hornetq.jms.client.HornetQConnectionFactory;
 import org.hornetq.tests.util.JMSTestBase;
 
 /**
- * 
+ *
  * A CloseConnectionOnGCTest
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
@@ -34,19 +33,6 @@ import org.hornetq.tests.util.JMSTestBase;
  */
 public class CloseConnectionFactoryOnGCest extends JMSTestBase
 {
-   private static final Logger log = Logger.getLogger(CloseConnectionFactoryOnGCest.class);
-
-   @Override
-   protected void setUp() throws Exception
-   {
-      super.setUp();
-   }
-
-   @Override
-   protected void tearDown() throws Exception
-   {
-      super.tearDown();
-   }
 
    public void testCloseCFOnGC() throws Exception
    {

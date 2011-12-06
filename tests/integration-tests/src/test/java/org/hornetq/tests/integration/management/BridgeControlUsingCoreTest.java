@@ -46,7 +46,7 @@ import org.hornetq.tests.util.RandomUtil;
  * A BridgeControlTest
  *
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
- * 
+ *
  * Created 11 dec. 2008 17:38:58
  *
  */
@@ -176,32 +176,19 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
       conf_0.getDiscoveryGroupConfigurations().put(dg.getName(), dg);
       conf_0.getBridgeConfigurations().add(bridgeConfig);
 
-      server_1 = HornetQServers.newHornetQServer(conf_1, MBeanServerFactory.createMBeanServer(), false);
+      server_1 = addServer(HornetQServers.newHornetQServer(conf_1, MBeanServerFactory.createMBeanServer(), false));
       server_1.start();
 
-      server_0 = HornetQServers.newHornetQServer(conf_0, mbeanServer, false);
+      server_0 = addServer(HornetQServers.newHornetQServer(conf_0, mbeanServer, false));
       server_0.start();
-      ServerLocator locator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(InVMConnectorFactory.class.getName()));
-      ClientSessionFactory sf = locator.createSessionFactory();
-      session = sf.createSession(false, true, true);
+      ServerLocator locator =
+               addServerLocator(HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(
+                                                                                                      InVMConnectorFactory.class.getName())));
+      ClientSessionFactory sf = createSessionFactory(locator);
+      session = addClientSession(sf.createSession(false, true, true));
       session.start();
    }
 
-   @Override
-   protected void tearDown() throws Exception
-   {
-      session.close();
-      server_0.stop();
-      server_1.stop();
-
-      session = null;
-
-      server_0 = null;
-
-      server_1 = null;
-
-      super.tearDown();
-   }
 
    protected CoreMessagingProxy createProxy(final String name) throws Exception
    {
@@ -209,9 +196,4 @@ public class BridgeControlUsingCoreTest extends ManagementTestBase
 
       return proxy;
    }
-
-   // Private -------------------------------------------------------
-
-   // Inner classes -------------------------------------------------
-
 }

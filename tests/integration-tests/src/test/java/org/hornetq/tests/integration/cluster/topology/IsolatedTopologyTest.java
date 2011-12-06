@@ -29,7 +29,6 @@ import org.hornetq.core.config.Configuration;
 import org.hornetq.core.remoting.impl.netty.TransportConstants;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.tests.util.ServiceTestBase;
-import org.hornetq.tests.util.UnitTestCase;
 
 /**
  * A IsolatedTopologyTest
@@ -41,18 +40,6 @@ import org.hornetq.tests.util.UnitTestCase;
 public class IsolatedTopologyTest extends ServiceTestBase
 {
 
-   @Override
-   public void setUp() throws Exception
-   {
-      super.setUp();
-   }
-
-   @Override
-   public void tearDown() throws Exception
-   {
-      super.tearDown();
-   }
-
    public void testIsolatedClusters() throws Exception
    {
 
@@ -60,9 +47,7 @@ public class IsolatedTopologyTest extends ServiceTestBase
 
       HornetQServer server2 = createServer2();
 
-      try
-      {
-         server1.start();
+      server1.start();
          server2.start();
 
          waitForTopology(server1, "cc1", 2, 5000);
@@ -103,26 +88,7 @@ public class IsolatedTopologyTest extends ServiceTestBase
                        node2,
                        createInVMTransportConnectorConfig(2, "srv1"),
                        createInVMTransportConnectorConfig(4, "srv1"));
-      }
-      finally
-      {
          Thread.sleep(500);
-         try
-         {
-            server1.stop();
-         }
-         catch (Throwable ignored)
-         {
-         }
-
-         try
-         {
-            server2.stop();
-         }
-         catch (Throwable ignored)
-         {
-         }
-      }
    }
 
    private void checkTopology(final HornetQServer serverParameter,

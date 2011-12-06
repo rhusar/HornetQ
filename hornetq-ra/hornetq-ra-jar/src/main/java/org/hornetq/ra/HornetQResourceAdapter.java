@@ -1480,9 +1480,9 @@ public class HornetQResourceAdapter implements ResourceAdapter, Serializable
          }
 
          params.put(DiscoveryGroupConstants.GROUP_ADDRESS_NAME, discoveryAddress);
-         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, discoveryPort);
-         params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout);
-         params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialTimeout);
+         params.put(DiscoveryGroupConstants.GROUP_PORT_NAME, discoveryPort.toString());
+         params.put(DiscoveryGroupConstants.REFRESH_TIMEOUT_NAME, refreshTimeout.toString());
+         params.put(DiscoveryGroupConstants.INITIAL_WAIT_TIMEOUT_NAME, initialTimeout.toString());
 
          DiscoveryGroupConfiguration groupConfiguration =
                   new DiscoveryGroupConfiguration(

@@ -74,12 +74,9 @@ public class PagingFailoverTest extends FailoverTestBase
       {
          if (session != null)
             session.close();
-         if (sf != null)
-            sf.close();
       }
       finally
       {
-      closeServerLocator(locator);
          super.tearDown();
       }
    }
@@ -214,13 +211,12 @@ public class PagingFailoverTest extends FailoverTestBase
    @Override
    protected HornetQServer createServer(final boolean realFiles, final Configuration configuration)
    {
-      return createInVMFailoverServer(true, configuration, PAGE_SIZE, PAGE_MAX, new HashMap<String, AddressSettings>(),
-                                      nodeManager,
-                                      2);
+      return addServer(createInVMFailoverServer(true, configuration, PAGE_SIZE, PAGE_MAX,
+                                                new HashMap<String, AddressSettings>(), nodeManager, 2));
    }
 
    @Override
-   protected TestableServer createServer(Configuration config)
+   protected TestableServer createTestableServer(Configuration config)
    {
       return new SameProcessHornetQServer(createServer(true, config));
    }
