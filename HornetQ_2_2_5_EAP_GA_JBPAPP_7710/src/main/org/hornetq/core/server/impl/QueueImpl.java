@@ -24,11 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.hornetq.api.core.Message;
 import org.hornetq.api.core.SimpleString;
@@ -428,7 +431,7 @@ public class QueueImpl implements Queue
          {
             // We must block on the executor to ensure any async deliveries have completed or we might get out of order
             // deliveries
-            if (blockOnExecutorFuture())
+            if (flushExecutor())
             {
                // Go into direct delivery mode
                directDeliver = true;
@@ -449,7 +452,7 @@ public class QueueImpl implements Queue
 
       directDeliver = false;
 
-      executor.execute(concurrentPoller);
+      getExecutor().execute(concurrentPoller);
    }
 
    public void forceDelivery()
@@ -458,14 +461,14 @@ public class QueueImpl implements Queue
       {
          if (isTrace)
          {
-         	log.trace("Force delivery scheduling depage");
+            log.trace("Force delivery scheduling depage");
          }
          scheduleDepage();
       }
       
       if (isTrace)
       {
-      	log.trace("Force delivery deliverying async");
+         log.trace("Force delivery deliverying async");
       }
       
       deliverAsync();
@@ -473,7 +476,13 @@ public class QueueImpl implements Queue
    
    public void deliverAsync()
    {
-      getExecutor().execute(deliverRunner);
+      try
+      {
+         getExecutor().execute(deliverRunner);
+      }
+      catch (RejectedExecutionException ignored)
+      {
+      }
    }
 
    public void close() throws Exception
@@ -483,7 +492,20 @@ public class QueueImpl implements Queue
          checkQueueSizeFuture.cancel(false);
       }
 
-      cancelRedistributor();
+      getExecutor().execute(new Runnable(){
+         public void run()
+         {
+            try
+            {
+               cancelRedistributor();
+            }
+            catch (Exception e)
+            {
+               // nothing that could be done anyway.. just logging
+               log.warn(e.getMessage(), e);
+            }
+         }
+      });
    }
 
    public Executor getExecutor()
@@ -504,14 +526,14 @@ public class QueueImpl implements Queue
    {
       deliverAsync();
 
-      blockOnExecutorFuture();
+      flushExecutor();
    }
 
-   public boolean blockOnExecutorFuture()
+   public boolean flushExecutor()
    {
       Future future = new Future();
 
-      executor.execute(future);
+      getExecutor().execute(future);
 
       boolean ok = future.await(10000);
 
@@ -780,9 +802,31 @@ public class QueueImpl implements Queue
 
    public long getMessageCount()
    {
-      blockOnExecutorFuture();
+      final CountDownLatch latch = new CountDownLatch(1);
+      final AtomicLong count = new AtomicLong(0);
       
-      return getInstantMessageCount();
+      getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            count.set(getInstantMessageCount());
+            latch.countDown();
+         }
+      });
+      
+      try
+      {
+         if (!latch.await(10, TimeUnit.SECONDS))
+         {
+            throw new IllegalStateException("Timed out on waiting for MessageCount");
+         }
+      }
+      catch (Exception e)
+      {
+         log.warn(e.getMessage(), e);
+      }
+      
+      return count.get();
    }
    
    public long getInstantMessageCount()
@@ -907,6 +951,7 @@ public class QueueImpl implements Queue
 
    public synchronized void cancel(final MessageReference reference, final long timeBase) throws Exception
    {
+      deliveringCount.decrementAndGet();
       if (checkRedelivery(reference, timeBase))
       {
          if (!scheduledDeliveryHandler.checkAndSchedule(reference, false))
@@ -924,7 +969,7 @@ public class QueueImpl implements Queue
       {
          if (isTrace)
          {
-            log.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName(), new Exception ("trace"));
+            log.trace("moving expired reference " + ref + " to address = " + expiryAddress + " from queue=" + this.getName());
          }
          move(expiryAddress, ref, true, false);
       }
@@ -950,9 +995,31 @@ public class QueueImpl implements Queue
 
    public long getMessagesAdded()
    {
-      blockOnExecutorFuture();
+      final CountDownLatch latch = new CountDownLatch(1);
+      final AtomicLong count = new AtomicLong(0);
       
-      return getInstantMessagesAdded();
+      getExecutor().execute(new Runnable()
+      {
+         public void run()
+         {
+            count.set(getInstantMessagesAdded());
+            latch.countDown();
+         }
+      });
+      
+      try
+      {
+         if (!latch.await(10, TimeUnit.SECONDS))
+         {
+            throw new IllegalStateException("Timed out on waiting for MessagesAdded");
+         }
+      }
+      catch (Exception e)
+      {
+         log.warn(e.getMessage(), e);
+      }
+      
+      return count.get();
   }
    
    public long getInstantMessagesAdded()
@@ -1137,28 +1204,43 @@ public class QueueImpl implements Queue
       }
    }
 
-   public synchronized void expireReferences() throws Exception
+   public void expireReferences() throws Exception
    {
-      LinkedListIterator<MessageReference> iter = iterator();
-
-      try
-      {
-         while (iter.hasNext())
+      getExecutor().execute(new Runnable(){
+         public void run()
          {
-            MessageReference ref = iter.next();
-            if (ref.getMessage().isExpired())
+            synchronized (QueueImpl.this)
             {
-               deliveringCount.incrementAndGet();
-               expire(ref);
-               iter.remove();
-               refRemoved(ref);
+               LinkedListIterator<MessageReference> iter = iterator();
+   
+               try
+               {
+                  while (iter.hasNext())
+                  {
+                     MessageReference ref = iter.next();
+                     try
+                     {
+                        if (ref.getMessage().isExpired())
+                        {
+                           deliveringCount.incrementAndGet();
+                           expire(ref);
+                           iter.remove();
+                           refRemoved(ref);
+                        }
+                     }
+                     catch (Exception e)
+                     {
+                        log.warn("Error expiring reference " + ref, e);
+                     }
+                  }
+               }
+               finally
+               {
+                  iter.close();
+               }
             }
          }
-      }
-      finally
-      {
-         iter.close();
-      }
+      });
    }
 
    public synchronized boolean sendMessageToDeadLetterAddress(final long messageID) throws Exception
@@ -1486,7 +1568,7 @@ public class QueueImpl implements Queue
    @Override
    public String toString()
    {
-      return "QueueImpl[name=" + name.toString() + "]@" + Integer.toHexString(System.identityHashCode(this));
+      return "QueueImpl[name=" + name.toString() + ", postOffice=" + this.postOffice + "]@" + Integer.toHexString(System.identityHashCode(this));
    }
 
    // Private
@@ -1530,166 +1612,168 @@ public class QueueImpl implements Queue
 
    // This method will deliver as many messages as possible until all consumers are busy or there are no more matching
    // or available messages
-   private synchronized void deliver()
+   private void deliver()
    {
-      if (paused || consumerList.isEmpty())
+      synchronized (this)
       {
-         return;
-      }
-      
-      if (log.isDebugEnabled())
-      {
-         log.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
-      }
-
-      int busyCount = 0;
-
-      int nullRefCount = 0;
-
-      int size = consumerList.size();
-
-      int endPos = pos == size - 1 ? 0 : size - 1;
-
-      int numRefs = messageReferences.size();
-
-      int handled = 0;
-      
-      long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
-
-      while (handled < numRefs)
-      {
-         if (handled == MAX_DELIVERIES_IN_LOOP)
+         if (paused || consumerList.isEmpty())
          {
-            // Schedule another one - we do this to prevent a single thread getting caught up in this loop for too long
-
-            deliverAsync();
-
             return;
          }
-         
-         if (System.currentTimeMillis() > timeout)
+
+         if (log.isDebugEnabled())
          {
-            if (isTrace)
+            log.debug(this + " doing deliver. messageReferences=" + messageReferences.size());
+         }
+
+         int busyCount = 0;
+
+         int nullRefCount = 0;
+
+         int size = consumerList.size();
+
+         int endPos = pos == size - 1 ? 0 : size - 1;
+
+         int numRefs = messageReferences.size();
+
+         int handled = 0;
+
+         long timeout = System.currentTimeMillis() + DELIVERY_TIMEOUT;
+
+         while (handled < numRefs)
+         {
+            if (handled == MAX_DELIVERIES_IN_LOOP)
             {
-               log.trace("delivery has been running for too long. Scheduling another delivery task now");
+               // Schedule another one - we do this to prevent a single thread getting caught up in this loop for too
+               // long
+
+               deliverAsync();
+
+               return;
             }
-            
-            deliverAsync();
-            
-            return;
-         }
-         
 
-         ConsumerHolder holder = consumerList.get(pos);
-
-         Consumer consumer = holder.consumer;
-
-         if (holder.iter == null)
-         {
-            holder.iter = messageReferences.iterator();
-         }
-
-         MessageReference ref;
-
-         if (holder.iter.hasNext())
-         {
-            ref = holder.iter.next();
-         }
-         else
-         {
-            ref = null;
-         }
-         
-
-         if (ref == null)
-         {
-            nullRefCount++;
-         }
-         else
-         {
-            if (checkExpired(ref))
+            if (System.currentTimeMillis() > timeout)
             {
                if (isTrace)
                {
-                  log.trace("Reference " + ref + " being expired");
+                  log.trace("delivery has been running for too long. Scheduling another delivery task now");
                }
-               holder.iter.remove();
 
-               refRemoved(ref);
-               
-               handled++;
+               deliverAsync();
 
-               continue;
+               return;
             }
 
-            Consumer groupConsumer = null;
-            
-            if (isTrace)
+            ConsumerHolder holder = consumerList.get(pos);
+
+            Consumer consumer = holder.consumer;
+
+            if (holder.iter == null)
             {
-               log.trace("Queue " + this.getName() + " is delivering reference " + ref);
+               holder.iter = messageReferences.iterator();
             }
 
-            // If a group id is set, then this overrides the consumer chosen round-robin
+            MessageReference ref;
 
-            SimpleString groupID = ref.getMessage().getSimpleStringProperty(Message.HDR_GROUP_ID);
-
-            if (groupID != null)
+            if (holder.iter.hasNext())
             {
-               groupConsumer = groups.get(groupID);
+               ref = holder.iter.next();
+            }
+            else
+            {
+               ref = null;
+            }
 
-               if (groupConsumer != null)
+            if (ref == null)
+            {
+               nullRefCount++;
+            }
+            else
+            {
+               if (checkExpired(ref))
                {
-                  consumer = groupConsumer;
+                  if (isTrace)
+                  {
+                     log.trace("Reference " + ref + " being expired");
+                  }
+                  holder.iter.remove();
+
+                  refRemoved(ref);
+
+                  handled++;
+
+                  continue;
                }
-            }
 
-            HandleStatus status = handle(ref, consumer);
+               Consumer groupConsumer = null;
 
-            if (status == HandleStatus.HANDLED)
-            {
-               holder.iter.remove();
-
-               refRemoved(ref);
-
-               if (groupID != null && groupConsumer == null)
+               if (isTrace)
                {
-                  groups.put(groupID, consumer);
+                  log.trace("Queue " + this.getName() + " is delivering reference " + ref);
                }
 
-               handled++;
-            }
-            else if (status == HandleStatus.BUSY)
-            {
-               holder.iter.repeat();
+               // If a group id is set, then this overrides the consumer chosen round-robin
 
-               busyCount++;
-            }
-            else if (status == HandleStatus.NO_MATCH)
-            {
-            }
-         }
+               SimpleString groupID = ref.getMessage().getSimpleStringProperty(Message.HDR_GROUP_ID);
 
-         if (pos == endPos)
-         {
-            // Round robin'd all
-
-            if (nullRefCount + busyCount == size)
-            {
-               if (log.isDebugEnabled())
+               if (groupID != null)
                {
-                   log.debug(this + "::All the consumers were busy, giving up now");
+                  groupConsumer = groups.get(groupID);
+
+                  if (groupConsumer != null)
+                  {
+                     consumer = groupConsumer;
+                  }
                }
-               break;
+
+               HandleStatus status = handle(ref, consumer);
+
+               if (status == HandleStatus.HANDLED)
+               {
+                  holder.iter.remove();
+
+                  refRemoved(ref);
+
+                  if (groupID != null && groupConsumer == null)
+                  {
+                     groups.put(groupID, consumer);
+                  }
+
+                  handled++;
+               }
+               else if (status == HandleStatus.BUSY)
+               {
+                  holder.iter.repeat();
+
+                  busyCount++;
+               }
+               else if (status == HandleStatus.NO_MATCH)
+               {
+               }
             }
 
-            nullRefCount = busyCount = 0;
-         }
+            if (pos == endPos)
+            {
+               // Round robin'd all
 
-         pos++;
+               if (nullRefCount + busyCount == size)
+               {
+                  if (log.isDebugEnabled())
+                  {
+                     log.debug(this + "::All the consumers were busy, giving up now");
+                  }
+                  break;
+               }
 
-         if (pos == size)
-         {
-            pos = 0;
+               nullRefCount = busyCount = 0;
+            }
+
+            pos++;
+
+            if (pos == size)
+            {
+               pos = 0;
+            }
          }
       }
 
@@ -1735,7 +1819,7 @@ public class QueueImpl implements Queue
       }
    }
 
-   private synchronized void depage()
+   private void depage()
    {
       depagePending = false;
 
@@ -1860,7 +1944,7 @@ public class QueueImpl implements Queue
             }
             reference.setScheduledDeliveryTime(timeBase + redeliveryDelay);
             
-            if (message.isDurable() && durable)
+            if (!reference.isPaged() && message.isDurable() && durable)
             {
                storageManager.updateScheduledDeliveryTime(reference);
             }
@@ -2173,7 +2257,7 @@ public class QueueImpl implements Queue
       }
       catch (Exception e)
       {
-	      QueueImpl.log.warn("Unable to decrement reference counting", e);
+         QueueImpl.log.warn("Unable to decrement reference counting", e);
       }
    }
 
@@ -2244,6 +2328,10 @@ public class QueueImpl implements Queue
 
          for (MessageReference ref : refsToAck)
          {
+            if (log.isTraceEnabled())
+            {
+               log.trace("rolling back " + ref);
+            }
             try
             {
                if (ref.getQueue().checkRedelivery(ref, timeBase))

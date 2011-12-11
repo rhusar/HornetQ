@@ -730,6 +730,12 @@ public class PostOfficeImpl implements PostOffice, NotificationListener, Binding
    {
       return notificationLock;
    }
+   
+   // For tests
+   public AddressManager getAddressManager()
+   {
+      return addressManager;
+   }
 
    public void sendQueueInfoToQueue(final SimpleString queueName, final SimpleString address) throws Exception
    {
