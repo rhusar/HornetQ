@@ -1556,7 +1556,7 @@ public class JournalStorageManager implements StorageManager
     */
    public ByteBuffer allocateDirectBuffer(int size)
    {
-      return journalFF.newBuffer(size);
+      return journalFF.allocateDirectBuffer(size);
    }
 
    /* (non-Javadoc)
