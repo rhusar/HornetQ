@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 import javax.transaction.xa.Xid;
 
@@ -156,6 +157,8 @@ public class JournalStorageManager implements StorageManager
    public static final byte PAGE_CURSOR_COUNTER_INC = 41;
 
    private UUID persistentID;
+   
+   private final Semaphore pageMaxConcurrentIO;
 
    private final BatchingIDGenerator idGenerator;
 
@@ -318,6 +321,15 @@ public class JournalStorageManager implements StorageManager
       largeMessagesFactory = new NIOSequentialFileFactory(largeMessagesDirectory, false);
 
       perfBlastPages = config.getJournalPerfBlastPages();
+      
+      if (config.getPageMaxConcurrentIO() != 1)
+      {
+         pageMaxConcurrentIO = new Semaphore(config.getPageMaxConcurrentIO());
+      }
+      else
+      {
+         pageMaxConcurrentIO = null;
+      }
    }
 
    public void clearContext()
@@ -1538,8 +1550,10 @@ public class JournalStorageManager implements StorageManager
     */
    public void beforePageRead() throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      if (pageMaxConcurrentIO != null)
+      {
+         pageMaxConcurrentIO.acquire();
+      }
    }
 
    /* (non-Javadoc)
@@ -1547,8 +1561,10 @@ public class JournalStorageManager implements StorageManager
     */
    public void afterPageRead() throws Exception
    {
-      // TODO Auto-generated method stub
-      
+      if (pageMaxConcurrentIO != null)
+      {
+         pageMaxConcurrentIO.release();
+      }
    }
 
    /* (non-Javadoc)
