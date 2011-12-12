@@ -166,6 +166,8 @@ public class JournalStorageManager implements StorageManager
    private final Journal bindingsJournal;
 
    private final SequentialFileFactory largeMessagesFactory;
+   
+   private SequentialFileFactory journalFF = null;
 
    private volatile boolean started;
 
@@ -260,8 +262,6 @@ public class JournalStorageManager implements StorageManager
       syncNonTransactional = config.isJournalSyncNonTransactional();
 
       syncTransactional = config.isJournalSyncTransactional();
-
-      SequentialFileFactory journalFF = null;
 
       if (config.getJournalType() == JournalType.ASYNCIO)
       {
@@ -1530,6 +1530,41 @@ public class JournalStorageManager implements StorageManager
       info[1] = messageJournal.loadInternalOnly();
 
       return info;
+   }
+
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#startPageRead()
+    */
+   public void beforePageRead() throws Exception
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#finishPageRead()
+    */
+   public void afterPageRead() throws Exception
+   {
+      // TODO Auto-generated method stub
+      
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#allocateDirectBuffer(long)
+    */
+   public ByteBuffer allocateDirectBuffer(int size)
+   {
+      return journalFF.newBuffer(size);
+   }
+
+   /* (non-Javadoc)
+    * @see org.hornetq.core.persistence.StorageManager#freeDirectuffer(java.nio.ByteBuffer)
+    */
+   public void freeDirectuffer(ByteBuffer buffer)
+   {
+      journalFF.releaseBuffer(buffer);
    }
 
    // Public -----------------------------------------------------------------------------------
