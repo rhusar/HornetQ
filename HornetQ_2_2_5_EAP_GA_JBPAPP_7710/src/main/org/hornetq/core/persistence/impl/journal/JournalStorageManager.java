@@ -1680,23 +1680,25 @@ public class JournalStorageManager implements StorageManager
 
       if (largeMessage.containsProperty(Message.HDR_ORIG_MESSAGE_ID))
       {
+         // for compatibility: couple with old behaviour, copying the old file to avoid message loss
          long originalMessageID = largeMessage.getLongProperty(Message.HDR_ORIG_MESSAGE_ID);
-
-         LargeServerMessage originalMessage = (LargeServerMessage)messages.get(originalMessageID);
-
-         if (originalMessage == null)
+         
+         SequentialFile currentFile = createFileForLargeMessage(largeMessage.getMessageID(), true);
+         
+         if (!currentFile.exists())
          {
-            // this could happen if the message was deleted but the file still exists as the file still being used
-            originalMessage = createLargeMessage();
-            originalMessage.setDurable(true);
-            originalMessage.setMessageID(originalMessageID);
-            messages.put(originalMessageID, originalMessage);
+            SequentialFile linkedFile = createFileForLargeMessage(originalMessageID, true);
+            if (linkedFile.exists())
+            {
+               linkedFile.copyTo(currentFile);
+               linkedFile.close();
+            }
          }
-
-         originalMessage.incrementDelayDeletionCount();
-
-         largeMessage.setLinkedMessage(originalMessage);
+         
+         currentFile.close();
       }
+
+
       return largeMessage;
    }
 

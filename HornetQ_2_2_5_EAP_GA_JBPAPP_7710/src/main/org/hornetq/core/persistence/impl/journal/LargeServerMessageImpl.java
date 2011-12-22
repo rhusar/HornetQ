@@ -48,8 +48,6 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    // Attributes ----------------------------------------------------
 
    private final JournalStorageManager storageManager;
-
-   private LargeServerMessage linkMessage;
    
    private boolean paged;
 
@@ -78,7 +76,6 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    private LargeServerMessageImpl(final LargeServerMessageImpl copy, TypedProperties properties, final SequentialFile fileCopy, final long newID)
    {
       super(copy, properties);
-      linkMessage = copy;
       storageManager = copy.storageManager;
       file = fileCopy;
       bodySize = copy.bodySize;
@@ -155,18 +152,28 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    public synchronized void incrementDelayDeletionCount()
    {
       delayDeletionCount.incrementAndGet();
+      try
+      {
+         incrementRefCount();
+      }
+      catch (Exception e)
+      {
+         log.warn(e.getMessage(), e);
+      }
    }
 
    public synchronized void decrementDelayDeletionCount() throws Exception
    {
       int count = delayDeletionCount.decrementAndGet();
+      
+      decrementRefCount();
 
       if (count == 0)
       {
          checkDelete();
       }
    }
-
+   
    @Override
    public BodyEncoder getBodyEncoder() throws HornetQException
    {
@@ -178,26 +185,18 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    {
       if (getRefCount() <= 0)
       {
-         if (linkMessage != null)
+         if (LargeServerMessageImpl.isTrace)
          {
-            // This file is linked to another message, deleting the reference where it belongs on this case
-            linkMessage.decrementDelayDeletionCount();
+            LargeServerMessageImpl.log.trace("Deleting file " + file + " as the usage was complete");
          }
-         else
-         {
-            if (LargeServerMessageImpl.isTrace)
-            {
-               LargeServerMessageImpl.log.trace("Deleting file " + file + " as the usage was complete");
-            }
 
-            try
-            {
-               deleteFile();
-            }
-            catch (Exception e)
-            {
-               LargeServerMessageImpl.log.error(e.getMessage(), e);
-            }
+         try
+         {
+            deleteFile();
+         }
+         catch (Exception e)
+         {
+            LargeServerMessageImpl.log.error(e.getMessage(), e);
          }
       }
    }
@@ -289,15 +288,9 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    {
       long idToUse = messageID;
 
-      if (linkMessage != null)
-      {
-         idToUse = linkMessage.getMessageID();
-      }
-
       SequentialFile newfile = storageManager.createFileForLargeMessage(idToUse, durable);
 
-      ServerMessage newMessage = new LargeServerMessageImpl(linkMessage == null ? this
-                                                                               : (LargeServerMessageImpl)linkMessage,
+      ServerMessage newMessage = new LargeServerMessageImpl(this,
                                                             properties,
                                                             newfile,
                                                             messageID);
@@ -308,65 +301,43 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
    @Override
    public synchronized ServerMessage copy(final long newID)
    {
-      if (!paged)
+      try
       {
-         incrementDelayDeletionCount();
-   
-         long idToUse = messageID;
-   
-         if (linkMessage != null)
-         {
-            idToUse = linkMessage.getMessageID();
-         }
-   
-         SequentialFile newfile = storageManager.createFileForLargeMessage(idToUse, durable);
-   
-         ServerMessage newMessage = new LargeServerMessageImpl(linkMessage == null ? this
-                                                                                  : (LargeServerMessageImpl)linkMessage,
-                                                               properties,
-                                                               newfile,
-                                                               newID);
+         validateFile();
+         
+         SequentialFile file = this.file;
+         
+         SequentialFile newFile = storageManager.createFileForLargeMessage(newID, durable);
+         
+         file.copyTo(newFile);
+         
+         LargeServerMessageImpl newMessage = new LargeServerMessageImpl(this, properties, newFile, newID);
+         
          return newMessage;
       }
-      else
+      catch (Exception e)
       {
-         try
-         {
-            validateFile();
-            
-            SequentialFile file = this.file;
-            
-            SequentialFile newFile = storageManager.createFileForLargeMessage(newID, durable);
-            
-            file.copyTo(newFile);
-            
-            LargeServerMessageImpl newMessage = new LargeServerMessageImpl(this, properties, newFile, newID);
-            
-            newMessage.linkMessage = null;
-            
-            newMessage.setPaged();
-            
-            return newMessage;
-         }
-         catch (Exception e)
-         {
-            log.warn("Error on copying large message this for DLA or Expiry", e);
-            return null;
-         }
+         log.warn("Error on copying large message " + this + " for DLA or Expiry", e);
+         return null;
+      }
+      finally
+      {
+         releaseResources();
       }
    }
 
-   public SequentialFile getFile()
+   public SequentialFile getFile() throws Exception
    {
+      validateFile();
       return file;
    }
 
    @Override
    public String toString()
    {
-      return "ServerMessage[messageID=" + messageID + ",priority=" + this.getPriority() + 
+      return "LargeServerMessage[messageID=" + messageID + ",priority=" + this.getPriority() + 
       ",expiration=[" + (this.getExpiration() != 0 ? new java.util.Date(this.getExpiration()) : "null") + "]" +
-      ", durable=" + durable + ", address=" + getAddress()  + ",properties=" + properties.toString() + "]";
+      ", durable=" + durable + ", address=" + getAddress()  + ",properties=" + properties.toString() + "]@" + System.identityHashCode(this);
    }
 
 
@@ -396,7 +367,7 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
 
             file = storageManager.createFileForLargeMessage(getMessageID(), durable);
 
-            file.open();
+            openFile();
             
             bodySize = file.size();
          }
@@ -407,31 +378,26 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
          throw new HornetQException(HornetQException.INTERNAL_ERROR, e.getMessage(), e);
       }
    }
-
-   /* (non-Javadoc)
-    * @see org.hornetq.core.server.LargeServerMessage#setLinkedMessage(org.hornetq.core.server.LargeServerMessage)
-    */
-   public void setLinkedMessage(final LargeServerMessage message)
+   
+   protected void openFile() throws Exception
    {
-      if (file != null)
-      {
-         // Sanity check.. it shouldn't happen
-         throw new IllegalStateException("LargeMessage file was already set");
-      }
-
-      linkMessage = message;
-
-      file = storageManager.createFileForLargeMessage(message.getMessageID(), durable);
-      try
+     if (file == null)
+     {
+        validateFile();
+     }
+     else
+      if (!file.isOpen())
       {
          file.open();
-         bodySize = file.size();
-         file.close();
       }
-      catch (Exception e)
-      {
-         throw new RuntimeException("could not setup linked file", e);
-      }
+   }
+   
+   protected void closeFile() throws Exception
+   {
+     if (file != null && file.isOpen())
+     {
+        file.close();
+     }
    }
 
    // Inner classes -------------------------------------------------
@@ -444,6 +410,10 @@ public class LargeServerMessageImpl extends ServerMessageImpl implements LargeSe
       {
          try
          {
+            if (cFile != null && cFile.isOpen())
+            {
+               cFile.close();
+            }
             cFile = file.copy();
             cFile.open();
          }
