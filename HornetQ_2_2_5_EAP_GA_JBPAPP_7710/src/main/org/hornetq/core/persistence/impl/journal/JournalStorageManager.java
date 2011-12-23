@@ -1084,7 +1084,8 @@ public class JournalStorageManager implements StorageManager
                }
                else
                {
-                  log.warn("Can't find queue " + encoding.queueID + " while reloading ACKNOWLEDGE_CURSOR");
+                  log.debug("Can't find queue " + encoding.queueID + " while reloading ACKNOWLEDGE_CURSOR");
+                  messageJournal.appendDeleteRecord(record.id, false);
                }
 
                break;
@@ -1103,7 +1104,8 @@ public class JournalStorageManager implements StorageManager
                }
                else
                {
-                  log.warn("Can't find queue " + encoding.queueID + " while reloading ACKNOWLEDGE_CURSOR");
+                  log.debug("Can't find queue " + encoding.queueID + " while reloading PAGE_CURSOR_COUNTER_VALUE");
+                  messageJournal.appendDeleteRecord(record.id, false);
                }
 
                break;
@@ -1123,7 +1125,8 @@ public class JournalStorageManager implements StorageManager
                }
                else
                {
-                  log.warn("Can't find queue " + encoding.queueID + " while reloading ACKNOWLEDGE_CURSOR");
+                  log.debug("Can't find queue " + encoding.queueID + " while reloading PAGE_CURSOR_COUNTER_INC");
+                  messageJournal.appendDeleteRecord(record.id, false);
                }
 
                break;
