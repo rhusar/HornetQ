@@ -13,12 +13,52 @@
 
 package org.hornetq.core.persistence.impl.journal;
 
-import org.hornetq.api.core.*;
+import java.io.File;
+import java.io.PrintStream;
+import java.nio.ByteBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+
+import javax.transaction.xa.Xid;
+
+import org.hornetq.api.core.HornetQBuffer;
+import org.hornetq.api.core.HornetQBuffers;
+import org.hornetq.api.core.HornetQException;
+import org.hornetq.api.core.Message;
+import org.hornetq.api.core.Pair;
+import org.hornetq.api.core.SimpleString;
 import org.hornetq.core.config.Configuration;
 import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.filter.Filter;
-import org.hornetq.core.journal.*;
-import org.hornetq.core.journal.impl.*;
+import org.hornetq.core.journal.EncodingSupport;
+import org.hornetq.core.journal.IOAsyncTask;
+import org.hornetq.core.journal.IOCriticalErrorListener;
+import org.hornetq.core.journal.Journal;
+import org.hornetq.core.journal.JournalLoadInformation;
+import org.hornetq.core.journal.PreparedTransactionInfo;
+import org.hornetq.core.journal.RecordInfo;
+import org.hornetq.core.journal.SequentialFile;
+import org.hornetq.core.journal.SequentialFileFactory;
+import org.hornetq.core.journal.TransactionFailureCallback;
+import org.hornetq.core.journal.impl.AIOSequentialFileFactory;
+import org.hornetq.core.journal.impl.JournalFile;
+import org.hornetq.core.journal.impl.JournalImpl;
+import org.hornetq.core.journal.impl.JournalReaderCallback;
+import org.hornetq.core.journal.impl.NIOSequentialFileFactory;
 import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.impl.MessageInternal;
 import org.hornetq.core.paging.PageTransactionInfo;
@@ -42,8 +82,11 @@ import org.hornetq.core.postoffice.DuplicateIDCache;
 import org.hornetq.core.postoffice.PostOffice;
 import org.hornetq.core.replication.ReplicationManager;
 import org.hornetq.core.replication.impl.ReplicatedJournal;
-import org.hornetq.core.server.*;
+import org.hornetq.core.server.JournalType;
+import org.hornetq.core.server.LargeServerMessage;
+import org.hornetq.core.server.MessageReference;
 import org.hornetq.core.server.Queue;
+import org.hornetq.core.server.ServerMessage;
 import org.hornetq.core.server.group.impl.GroupBinding;
 import org.hornetq.core.server.impl.ServerMessageImpl;
 import org.hornetq.core.transaction.ResourceManager;
@@ -52,27 +95,20 @@ import org.hornetq.core.transaction.Transaction.State;
 import org.hornetq.core.transaction.TransactionOperation;
 import org.hornetq.core.transaction.TransactionPropertyIndexes;
 import org.hornetq.core.transaction.impl.TransactionImpl;
-import org.hornetq.utils.*;
-
-import javax.transaction.xa.Xid;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
-import java.io.File;
-import java.io.PrintStream;
-import java.lang.reflect.Proxy;
-import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.*;
-import java.util.LinkedList;
-import java.util.concurrent.*;
+import org.hornetq.utils.Base64;
+import org.hornetq.utils.DataConstants;
+import org.hornetq.utils.ExecutorFactory;
+import org.hornetq.utils.HornetQThreadFactory;
+import org.hornetq.utils.XidCodecSupport;
 
 /**
+ *
  * A JournalStorageManager
  *
  * @author <a href="mailto:tim.fox@jboss.com">Tim Fox</a>
  * @author <a href="mailto:clebert.suconic@jboss.com">Clebert Suconic</a>
  * @author <a href="jmesnil@redhat.com">Jeff Mesnil</a>
+ *
  */
 public class JournalStorageManager implements StorageManager
 {
@@ -139,9 +175,7 @@ public class JournalStorageManager implements StorageManager
 
    private volatile boolean started;
 
-   /**
-    * Used to create Operation Contexts
-    */
+   /** Used to create Operation Contexts */
    private final ExecutorFactory executorFactory;
 
    private final Executor executor;
@@ -223,7 +257,7 @@ public class JournalStorageManager implements StorageManager
 
       if (replicator != null)
       {
-         bindingsJournal = new ReplicatedJournal((byte) 0, localBindings, replicator);
+         bindingsJournal = new ReplicatedJournal((byte)0, localBindings, replicator);
       }
       else
       {
@@ -286,7 +320,7 @@ public class JournalStorageManager implements StorageManager
 
       if (replicator != null)
       {
-         messageJournal = new ReplicatedJournal((byte) 1, localMessage, replicator);
+         messageJournal = new ReplicatedJournal((byte)1, localMessage, replicator);
       }
       else
       {
@@ -449,7 +483,7 @@ public class JournalStorageManager implements StorageManager
          replicator.largeMessageBegin(id);
       }
 
-      LargeServerMessageImpl largeMessage = (LargeServerMessageImpl) createLargeMessage();
+      LargeServerMessageImpl largeMessage = (LargeServerMessageImpl)createLargeMessage();
 
       largeMessage.copyHeadersAndProperties(message);
 
@@ -489,9 +523,7 @@ public class JournalStorageManager implements StorageManager
             new DeleteEncoding(ADD_LARGE_MESSAGE_PENDING, messageID));
    }
 
-   /**
-    * We don't need messageID now but we are likely to need it we ever decide to support a database
-    */
+   /** We don't need messageID now but we are likely to need it we ever decide to support a database */
    public void confirmPendingLargeMessage(long recordID) throws Exception
    {
       messageJournal.appendDeleteRecord(recordID, true, getContext());
@@ -511,7 +543,7 @@ public class JournalStorageManager implements StorageManager
       {
          messageJournal.appendAddRecord(message.getMessageID(),
                JournalStorageManager.ADD_LARGE_MESSAGE,
-               new LargeMessageEncoding((LargeServerMessage) message),
+               new LargeMessageEncoding((LargeServerMessage)message),
                false,
                getContext(false));
       }
@@ -606,7 +638,7 @@ public class JournalStorageManager implements StorageManager
          messageJournal.appendAddRecordTransactional(txID,
                message.getMessageID(),
                JournalStorageManager.ADD_LARGE_MESSAGE,
-               new LargeMessageEncoding(((LargeServerMessage) message)));
+               new LargeMessageEncoding(((LargeServerMessage)message)));
       }
       else
       {
@@ -889,7 +921,7 @@ public class JournalStorageManager implements StorageManager
          // It will show log.info only with large journals (more than 1 million records)
          if (reccount > 0 && reccount % 1000000 == 0)
          {
-            long percent = (long) ((((double) reccount) / ((double) totalSize)) * 100f);
+            long percent = (long)((((double)reccount) / ((double)totalSize)) * 100f);
 
             log.info(percent + "% loaded");
          }
@@ -1352,7 +1384,7 @@ public class JournalStorageManager implements StorageManager
 
    public void addQueueBinding(final long tx, final Binding binding) throws Exception
    {
-      Queue queue = (Queue) binding.getBindable();
+      Queue queue = (Queue)binding.getBindable();
 
       Filter filter = queue.getFilter();
 
@@ -1546,7 +1578,7 @@ public class JournalStorageManager implements StorageManager
       started = true;
    }
 
-   public void stop() throws Exception
+   public  void stop() throws Exception
    {
       stop(false);
    }
@@ -2138,9 +2170,7 @@ public class JournalStorageManager implements StorageManager
 
    }
 
-   /**
-    * It's public as other classes may want to unparse data on tools
-    */
+   /** It's public as other classes may want to unparse data on tools*/
    public static class XidEncoding implements EncodingSupport
    {
       public final Xid xid;
@@ -2756,7 +2786,7 @@ public class JournalStorageManager implements StorageManager
          // transaction until all the messages were added to the queue
          // or else we could deliver the messages out of order
 
-         PageTransactionInfo pageTransaction = (PageTransactionInfo) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 
          if (pageTransaction != null)
          {
@@ -2770,7 +2800,7 @@ public class JournalStorageManager implements StorageManager
 
       public void afterRollback(final Transaction tx)
       {
-         PageTransactionInfo pageTransaction = (PageTransactionInfo) tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
+         PageTransactionInfo pageTransaction = (PageTransactionInfo)tx.getProperty(TransactionPropertyIndexes.PAGE_TRANSACTION);
 
          if (tx.getState() == State.PREPARED && pageTransaction != null)
          {
@@ -3034,6 +3064,11 @@ public class JournalStorageManager implements StorageManager
 
    public static Object newObjectEncoding(RecordInfo info)
    {
+      return newObjectEncoding(info, null);
+   }
+
+   public static Object newObjectEncoding(RecordInfo info, JournalStorageManager storageManager)
+   {
       HornetQBuffer buffer = HornetQBuffers.wrappedBuffer(info.data);
       long id = info.id;
       int rec = info.getUserRecordType();
@@ -3050,7 +3085,7 @@ public class JournalStorageManager implements StorageManager
          case ADD_LARGE_MESSAGE:
          {
 
-            LargeServerMessage largeMessage = new LargeServerMessageImpl(null);
+            LargeServerMessage largeMessage = new LargeServerMessageImpl(storageManager);
 
             LargeMessageEncoding messageEncoding = new LargeMessageEncoding(largeMessage);
 
@@ -3238,7 +3273,7 @@ public class JournalStorageManager implements StorageManager
             Object value = msg.getObjectProperty(prop);
             if (value instanceof byte[])
             {
-               buffer.append(prop + "=" + Arrays.toString((byte[]) value) + ",");
+               buffer.append(prop + "=" + Arrays.toString((byte[])value) + ",");
 
             }
             else
@@ -3433,7 +3468,7 @@ public class JournalStorageManager implements StorageManager
          }
          else if (info.getUserRecordType() == JournalStorageManager.ADD_REF)
          {
-            ReferenceDescribe ref = (ReferenceDescribe) o;
+            ReferenceDescribe ref = (ReferenceDescribe)o;
             Integer count = messageRefCounts.get(ref.refEncoding.queueID);
             if (count == null)
             {
@@ -3447,7 +3482,7 @@ public class JournalStorageManager implements StorageManager
          }
          else if (info.getUserRecordType() == JournalStorageManager.ACKNOWLEDGE_REF)
          {
-            AckDescribe ref = (AckDescribe) o;
+            AckDescribe ref = (AckDescribe)o;
             Integer count = messageRefCounts.get(ref.refEncoding.queueID);
             if (count == null)
             {
@@ -3477,7 +3512,7 @@ public class JournalStorageManager implements StorageManager
             }
             else if (info.getUserRecordType() == 32)
             {
-               ReferenceDescribe ref = (ReferenceDescribe) o;
+               ReferenceDescribe ref = (ReferenceDescribe)o;
                Integer count = preparedMessageRefCount.get(ref.refEncoding.queueID);
                if (count == null)
                {
@@ -3525,272 +3560,9 @@ public class JournalStorageManager implements StorageManager
       journal.stop();
    }
 
-   /**
-    * @param bindingsDir
-    * @param messagesDir
-    * @throws Exception
-    */
-   public static void describeJournalAsXML(String bindingsDir, String messagesDir) throws Exception
-   {
-      // map of message refs hashed by the queue ID to which they belong and then hashed by their ID
-      Map<Long, HashMap<Long, ReferenceDescribe>> messageRefs = new HashMap<Long, HashMap<Long, ReferenceDescribe>>();
-
-      // map of all message records hashed by their ID (which will match the ID of the message refs)
-      HashMap<Long, Message> messages = new HashMap<Long, Message>();
-
-      processMessageRecords(messagesDir, messageRefs, messages);
-      HashMap<Long, PersistentQueueBindingEncoding> bindings = getBindings(bindingsDir);
-
-      printXML(bindings, messageRefs, messages);
-   }
-
-   private static void processMessageRecords(String messagesDir, Map<Long, HashMap<Long, ReferenceDescribe>> messageRefs, HashMap<Long, Message> messages) throws Exception
-   {
-      ArrayList<RecordInfo> acks = new ArrayList<RecordInfo>();
-
-      JournalImpl journal = openMessageJournal(messagesDir);
-
-      List<RecordInfo> records = new LinkedList<RecordInfo>();
-
-      journal.start();
-
-      journal.load(records, null, null, false);
-
-      for (RecordInfo info : records)
-      {
-         Object o = newObjectEncoding(info);
-         if (info.getUserRecordType() == JournalStorageManager.ADD_MESSAGE)
-         {
-            messages.put(info.id, ((MessageDescribe) o).msg);
-         }
-         else if (info.getUserRecordType() == JournalStorageManager.ADD_REF)
-         {
-            ReferenceDescribe ref = (ReferenceDescribe) o;
-            HashMap<Long, ReferenceDescribe> map = messageRefs.get(info.id);
-            if (map == null)
-            {
-               HashMap<Long, ReferenceDescribe> newMap = new HashMap<Long, ReferenceDescribe>();
-               newMap.put(ref.refEncoding.queueID, ref);
-               messageRefs.put(info.id, newMap);
-            }
-            else
-            {
-               map.put(ref.refEncoding.queueID, ref);
-            }
-         }
-         else if (info.getUserRecordType() == JournalStorageManager.ACKNOWLEDGE_REF)
-         {
-            acks.add(info);
-         }
-      }
-
-      journal.stop();
-
-      removeAcked(messageRefs, messages, acks);
-   }
-
-   private static void removeAcked(Map<Long, HashMap<Long, ReferenceDescribe>> messageRefs, HashMap<Long, Message> messages, ArrayList<RecordInfo> acks)
-   {
-      for (RecordInfo info : acks)
-      {
-         AckDescribe ack = (AckDescribe) newObjectEncoding(info);
-         HashMap<Long, ReferenceDescribe> referenceDescribeHashMap = messageRefs.get(info.id);
-         referenceDescribeHashMap.remove(ack.refEncoding.queueID);
-         if (referenceDescribeHashMap.size() == 0)
-         {
-            messages.remove(info.id);
-            messageRefs.remove(info.id);
-         }
-      }
-   }
-
-   private static void printXML(HashMap<Long, PersistentQueueBindingEncoding> queueBindings, Map<Long, HashMap<Long, ReferenceDescribe>> messageRefs, HashMap<Long, Message> messages)
-   {
-      try
-      {
-         XMLOutputFactory factory = XMLOutputFactory.newInstance();
-         XMLStreamWriter writer = factory.createXMLStreamWriter(System.out);
-         PrettyPrintHandler handler = new PrettyPrintHandler(writer);
-         XMLStreamWriter prettyWriter = (XMLStreamWriter) Proxy.newProxyInstance(
-               XMLStreamWriter.class.getClassLoader(),
-               new Class[]{XMLStreamWriter.class},
-               handler);
-
-         prettyWriter.writeStartDocument("1.0");
-         prettyWriter.writeStartElement("hornetq-journal");
-         prettyWriter.writeStartElement("bindings");
-         for (Map.Entry<Long, PersistentQueueBindingEncoding> queueBindingEncodingEntry : queueBindings.entrySet())
-         {
-            PersistentQueueBindingEncoding bindingEncoding = queueBindings.get(queueBindingEncodingEntry.getKey());
-            prettyWriter.writeEmptyElement("binding");
-            prettyWriter.writeAttribute("address", bindingEncoding.getAddress().toString());
-            String filter = "";
-            if (bindingEncoding.getFilterString() != null)
-            {
-               filter = bindingEncoding.getFilterString().toString();
-            }
-            prettyWriter.writeAttribute("filter-string", filter);
-            prettyWriter.writeAttribute("queue-name", bindingEncoding.getQueueName().toString());
-            prettyWriter.writeAttribute("id", new Long(bindingEncoding.getId()).toString());
-         }
-
-         prettyWriter.writeEndElement(); // end "bindings"
-         prettyWriter.flush();
-         prettyWriter.writeStartElement("messages");
-
-         for (Map.Entry<Long, Message> messageMapEntry : messages.entrySet())
-         {
-            Message message = messageMapEntry.getValue();
-            prettyWriter.writeStartElement("message");
-            prettyWriter.writeAttribute("id", Long.toString(message.getMessageID()));
-            prettyWriter.writeAttribute("priority", Byte.toString(message.getPriority()));
-            prettyWriter.writeAttribute("expiration", Long.toString(message.getExpiration()));
-            prettyWriter.writeAttribute("timestamp", Long.toString(message.getTimestamp()));
-            String type = "default";
-            if (message.getType() == Message.BYTES_TYPE)
-            {
-               type = "bytes";
-            }
-            else if (message.getType() == Message.MAP_TYPE)
-            {
-               type = "map";
-            }
-            else if (message.getType() == Message.OBJECT_TYPE)
-            {
-               type = "object";
-            }
-            else if (message.getType() == Message.STREAM_TYPE)
-            {
-               type = "stream";
-            }
-            else if (message.getType() == Message.TEXT_TYPE)
-            {
-               type = "text";
-            }
-            prettyWriter.writeAttribute("type", type);
-            prettyWriter.writeAttribute("user-id", message.getUserID().toString());
-            prettyWriter.writeStartElement("body");
-            prettyWriter.writeCharacters(encode(message.getBodyBuffer().toByteBuffer().array()));
-            prettyWriter.writeEndElement();
-            prettyWriter.writeStartElement("properties");
-            for (SimpleString key : message.getPropertyNames())
-            {
-               Object value = message.getObjectProperty(key);
-               prettyWriter.writeEmptyElement("property");
-               prettyWriter.writeAttribute("name", key.toString());
-               prettyWriter.writeAttribute("value", value.toString());
-               if (value instanceof Boolean)
-               {
-                  prettyWriter.writeAttribute("type", "boolean");
-               }
-               else if (value instanceof Byte)
-               {
-                  prettyWriter.writeAttribute("type", "byte");
-               }
-               else if (value instanceof Short)
-               {
-                  prettyWriter.writeAttribute("type", "short");
-               }
-               else if (value instanceof Integer)
-               {
-                  prettyWriter.writeAttribute("type", "integer");
-               }
-               else if (value instanceof Long)
-               {
-                  prettyWriter.writeAttribute("type", "long");
-               }
-               else if (value instanceof Float)
-               {
-                  prettyWriter.writeAttribute("type", "float");
-               }
-               else if (value instanceof Double)
-               {
-                  prettyWriter.writeAttribute("type", "double");
-               }
-               else if (value instanceof String)
-               {
-                  prettyWriter.writeAttribute("type", "string");
-               }
-               else if (value instanceof SimpleString)
-               {
-                  prettyWriter.writeAttribute("type", "simple-string");
-               }
-            }
-            prettyWriter.writeEndElement(); // end "properties"
-            prettyWriter.writeStartElement("queues");
-            HashMap<Long, ReferenceDescribe> refMap = messageRefs.get(messageMapEntry.getKey());
-            for (Map.Entry<Long, ReferenceDescribe> refMapEntry : refMap.entrySet())
-            {
-               prettyWriter.writeEmptyElement("queue");
-               prettyWriter.writeAttribute("name", queueBindings.get(refMapEntry.getValue().refEncoding.queueID).getQueueName().toString());
-            }
-
-            prettyWriter.writeEndElement(); // end "queues"
-            prettyWriter.writeEndElement(); // end "message"
-         }
-         prettyWriter.writeEndElement(); // end "messages"
-         prettyWriter.writeEndElement(); // end "hornetq-journal"
-         prettyWriter.flush();
-         prettyWriter.close();
-      }
-      catch (Exception e)
-      {
-         e.printStackTrace();
-      }
-   }
-
-   private static JournalImpl openMessageJournal(String messagesDir)
-   {
-      SequentialFileFactory messagesFF = new NIOSequentialFileFactory(messagesDir, null);
-
-      // Will use only default values. The load function should adapt to anything different
-      ConfigurationImpl defaultValues = new ConfigurationImpl();
-
-      return new JournalImpl(defaultValues.getJournalFileSize(),
-            defaultValues.getJournalMinFiles(),
-            0,
-            0,
-            messagesFF,
-            "hornetq-data",
-            "hq",
-            1);
-   }
-
-   private static HashMap<Long, PersistentQueueBindingEncoding> getBindings(String bindingsDir) throws Exception
-   {
-      JournalImpl journal = openBindingsJournal(bindingsDir);
-
-      List<RecordInfo> records = new LinkedList<RecordInfo>();
-
-      journal.start();
-
-      journal.load(records, null, null, false);
-
-      HashMap<Long, PersistentQueueBindingEncoding> queueBindings = new HashMap<Long, PersistentQueueBindingEncoding>();
-
-      for (RecordInfo info : records)
-      {
-         if (info.getUserRecordType() == JournalStorageManager.QUEUE_BINDING_RECORD)
-         {
-            PersistentQueueBindingEncoding bindingEncoding = (PersistentQueueBindingEncoding) newObjectEncoding(info);
-            queueBindings.put(bindingEncoding.getId(), bindingEncoding);
-         }
-      }
-
-      journal.stop();
-      return queueBindings;
-   }
-
-   private static JournalImpl openBindingsJournal(String bindingsDir)
-   {
-      SequentialFileFactory fileFactory = new NIOSequentialFileFactory(bindingsDir, null);
-
-      return new JournalImpl(1024 * 1024, 2, -1, 0, fileFactory, "hornetq-bindings", "bindings", 1);
-   }
-
    private void installLargeMessageConfirmationOnTX(Transaction tx, long recordID)
    {
-      TXLargeMessageConfirmationOperation txoper = (TXLargeMessageConfirmationOperation) tx.getProperty(TransactionPropertyIndexes.LARGE_MESSAGE_CONFIRMATIONS);
+      TXLargeMessageConfirmationOperation txoper = (TXLargeMessageConfirmationOperation)tx.getProperty(TransactionPropertyIndexes.LARGE_MESSAGE_CONFIRMATIONS);
       if (txoper == null)
       {
          txoper = new TXLargeMessageConfirmationOperation();
@@ -3805,43 +3577,43 @@ public class JournalStorageManager implements StorageManager
       public List<Long> confirmedMessages = new LinkedList<Long>();
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#beforePrepare(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#beforePrepare(org.hornetq.core.transaction.Transaction)
+       */
       public void beforePrepare(Transaction tx) throws Exception
       {
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#afterPrepare(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#afterPrepare(org.hornetq.core.transaction.Transaction)
+       */
       public void afterPrepare(Transaction tx)
       {
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#beforeCommit(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#beforeCommit(org.hornetq.core.transaction.Transaction)
+       */
       public void beforeCommit(Transaction tx) throws Exception
       {
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#afterCommit(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#afterCommit(org.hornetq.core.transaction.Transaction)
+       */
       public void afterCommit(Transaction tx)
       {
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#beforeRollback(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#beforeRollback(org.hornetq.core.transaction.Transaction)
+       */
       public void beforeRollback(Transaction tx) throws Exception
       {
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#afterRollback(org.hornetq.core.transaction.Transaction)
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#afterRollback(org.hornetq.core.transaction.Transaction)
+       */
       public void afterRollback(Transaction tx)
       {
          for (Long msg : confirmedMessages)
@@ -3861,8 +3633,8 @@ public class JournalStorageManager implements StorageManager
       }
 
       /* (non-Javadoc)
-      * @see org.hornetq.core.transaction.TransactionOperation#getRelatedMessageReferences()
-      */
+       * @see org.hornetq.core.transaction.TransactionOperation#getRelatedMessageReferences()
+       */
       public List<MessageReference> getRelatedMessageReferences()
       {
          return null;
