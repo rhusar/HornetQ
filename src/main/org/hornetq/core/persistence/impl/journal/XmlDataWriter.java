@@ -48,6 +48,7 @@ import org.hornetq.utils.ExecutorFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -73,49 +74,8 @@ import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.Ac
 /**
  * @author <a href="mailto:jbertram@redhat.com">Justin Bertram</a>
  */
-public class XMLDataWriter
+public class XmlDataWriter
 {
-   public static final String XML_VERSION = "1.0";
-   public static final String DOCUMENT_PARENT = "hornetq-journal";
-   public static final String BINDINGS_PARENT = "bindings";
-   public static final String BINDINGS_CHILD = "binding";
-   public static final String BINDING_ADDRESS = "address";
-   public static final String BINDING_FILTER_STRING = "filter-string";
-   public static final String BINDING_QUEUE_NAME = "queue-name";
-   public static final String BINDING_ID = "id";
-   public static final String MESSAGES_PARENT = "messages";
-   public static final String MESSAGES_CHILD = "message";
-   public static final String MESSAGE_ID = "id";
-   public static final String MESSAGE_PRIORITY = "priority";
-   public static final String MESSAGE_EXPIRATION = "expiration";
-   public static final String MESSAGE_TIMESTAMP = "timestamp";
-   public static final String DEFAULT_TYPE_PRETTY = "default";
-   public static final String BYTES_TYPE_PRETTY = "bytes";
-   public static final String MAP_TYPE_PRETTY = "map";
-   public static final String OBJECT_TYPE_PRETTY = "object";
-   public static final String STREAM_TYPE_PRETTY = "stream";
-   public static final String TEXT_TYPE_PRETTY = "text";
-   public static final String MESSAGE_TYPE = "type";
-   public static final String MESSAGE_USER_ID = "user-id";
-   public static final String MESSAGE_BODY = "body";
-   public static final String PROPERTIES_PARENT = "properties";
-   public static final String PROPERTIES_CHILD = "property";
-   public static final String PROPERTY_NAME = "name";
-   public static final String PROPERTY_VALUE = "value";
-   public static final String PROPERTY_TYPE = "type";
-   public static final String QUEUES_PARENT = "queues";
-   public static final String QUEUES_CHILD = "queue";
-   public static final String QUEUE_NAME = "name";
-   public static final String PROPERTY_TYPE_BOOLEAN = "boolean";
-   public static final String PROPERTY_TYPE_BYTE = "byte";
-   public static final String PROPERTY_TYPE_SHORT = "short";
-   public static final String PROPERTY_TYPE_INTEGER = "integer";
-   public static final String PROPERTY_TYPE_LONG = "long";
-   public static final String PROPERTY_TYPE_FLOAT = "float";
-   public static final String PROPERTY_TYPE_DOUBLE = "double";
-   public static final String PROPERTY_TYPE_STRING = "string";
-   public static final String PROPERTY_TYPE_SIMPLE_STRING = "simple-string";
-
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
@@ -142,7 +102,7 @@ public class XMLDataWriter
 
    // Constructors --------------------------------------------------
 
-   public XMLDataWriter(String bindingsDir, String journalDir, String pagingDir, String largeMessagesDir)
+   public XmlDataWriter(OutputStream out, String bindingsDir, String journalDir, String pagingDir, String largeMessagesDir)
    {
       config = new ConfigurationImpl();
       config.setBindingsDirectory(bindingsDir);
@@ -174,7 +134,7 @@ public class XMLDataWriter
       try
       {
          XMLOutputFactory factory = XMLOutputFactory.newInstance();
-         XMLStreamWriter rawXmlWriter = factory.createXMLStreamWriter(System.out);
+         XMLStreamWriter rawXmlWriter = factory.createXMLStreamWriter(out);
          PrettyPrintHandler handler = new PrettyPrintHandler(rawXmlWriter);
          xmlWriter = (XMLStreamWriter) Proxy.newProxyInstance(
                XMLStreamWriter.class.getClassLoader(),
@@ -197,16 +157,25 @@ public class XMLDataWriter
       }
 
       try
-      {         
-         XMLDataWriter xmlDataWriter = new XMLDataWriter(arg[0], arg[1], arg[2], arg[3]);
-         xmlDataWriter.getBindings();
-         xmlDataWriter.processMessageJournal();
-         xmlDataWriter.printDataAsXML();
+      {     
+//         long start = System.currentTimeMillis();
+         XmlDataWriter xmlDataWriter = new XmlDataWriter(System.out, arg[0], arg[1], arg[2], arg[3]);
+         xmlDataWriter.writeXMLData();
+//         System.out.println();
+//         System.out.println();
+//         System.out.println("Processing took: " + (System.currentTimeMillis() - start) + "ms");
       }
       catch (Exception e)
       {
          e.printStackTrace();
       }
+   }
+
+   public void writeXMLData() throws Exception
+   {
+      getBindings();
+      processMessageJournal();
+      printDataAsXML();
    }
 
    // Package protected ---------------------------------------------
@@ -343,8 +312,8 @@ public class XMLDataWriter
    {
       try
       {
-         xmlWriter.writeStartDocument(XML_VERSION);
-         xmlWriter.writeStartElement(DOCUMENT_PARENT);
+         xmlWriter.writeStartDocument(XmlDataConstants.XML_VERSION);
+         xmlWriter.writeStartElement(XmlDataConstants.DOCUMENT_PARENT);
          printBindingsAsXML();
          printAllMessagesAsXML();
          xmlWriter.writeEndElement(); // end DOCUMENT_PARENT
@@ -360,27 +329,27 @@ public class XMLDataWriter
 
    private void printBindingsAsXML() throws XMLStreamException
    {
-      xmlWriter.writeStartElement(BINDINGS_PARENT);
+      xmlWriter.writeStartElement(XmlDataConstants.BINDINGS_PARENT);
       for (Map.Entry<Long, PersistentQueueBindingEncoding> queueBindingEncodingEntry : queueBindings.entrySet())
       {
          PersistentQueueBindingEncoding bindingEncoding = queueBindings.get(queueBindingEncodingEntry.getKey());
-         xmlWriter.writeEmptyElement(BINDINGS_CHILD);
-         xmlWriter.writeAttribute(BINDING_ADDRESS, bindingEncoding.getAddress().toString());
+         xmlWriter.writeEmptyElement(XmlDataConstants.BINDINGS_CHILD);
+         xmlWriter.writeAttribute(XmlDataConstants.BINDING_ADDRESS, bindingEncoding.getAddress().toString());
          String filter = "";
          if (bindingEncoding.getFilterString() != null)
          {
             filter = bindingEncoding.getFilterString().toString();
          }
-         xmlWriter.writeAttribute(BINDING_FILTER_STRING, filter);
-         xmlWriter.writeAttribute(BINDING_QUEUE_NAME, bindingEncoding.getQueueName().toString());
-         xmlWriter.writeAttribute(BINDING_ID, Long.toString(bindingEncoding.getId()));
+         xmlWriter.writeAttribute(XmlDataConstants.BINDING_FILTER_STRING, filter);
+         xmlWriter.writeAttribute(XmlDataConstants.BINDING_QUEUE_NAME, bindingEncoding.getQueueName().toString());
+         xmlWriter.writeAttribute(XmlDataConstants.BINDING_ID, Long.toString(bindingEncoding.getId()));
       }
       xmlWriter.writeEndElement(); // end BINDINGS_PARENT
    }
 
    private void printAllMessagesAsXML() throws XMLStreamException
    {
-      xmlWriter.writeStartElement(MESSAGES_PARENT);
+      xmlWriter.writeStartElement(XmlDataConstants.MESSAGES_PARENT);
 
       for (Map.Entry<Long, Message> messageMapEntry : messages.entrySet())
       {
@@ -472,49 +441,30 @@ public class XMLDataWriter
 
    private void printSingleMessageAsXML(ServerMessage message, List<String> queues) throws XMLStreamException
    {
-      xmlWriter.writeStartElement(MESSAGES_CHILD);
-      xmlWriter.writeAttribute(MESSAGE_ID, Long.toString(message.getMessageID()));
-      xmlWriter.writeAttribute(MESSAGE_PRIORITY, Byte.toString(message.getPriority()));
-      xmlWriter.writeAttribute(MESSAGE_EXPIRATION, Long.toString(message.getExpiration()));
-      xmlWriter.writeAttribute(MESSAGE_TIMESTAMP, Long.toString(message.getTimestamp()));
-      byte rawType = message.getType();
-      String prettyType = DEFAULT_TYPE_PRETTY;
-      if (rawType == Message.BYTES_TYPE)
-      {
-         prettyType = BYTES_TYPE_PRETTY;
-      }
-      else if (rawType == Message.MAP_TYPE)
-      {
-         prettyType = MAP_TYPE_PRETTY;
-      }
-      else if (rawType == Message.OBJECT_TYPE)
-      {
-         prettyType = OBJECT_TYPE_PRETTY;
-      }
-      else if (rawType == Message.STREAM_TYPE)
-      {
-         prettyType = STREAM_TYPE_PRETTY;
-      }
-      else if (rawType == Message.TEXT_TYPE)
-      {
-         prettyType = TEXT_TYPE_PRETTY;
-      }
-      xmlWriter.writeAttribute(MESSAGE_TYPE, prettyType);
-      xmlWriter.writeAttribute(MESSAGE_USER_ID, message.getUserID().toString());
-      xmlWriter.writeStartElement(MESSAGE_BODY);
+      xmlWriter.writeStartElement(XmlDataConstants.MESSAGES_CHILD);
+      printMessageAttributes(message);
+      printMessageProperties(message);
+      printMessageQueues(queues);
+      printMessageBody(message);
+      xmlWriter.writeEndElement(); // end MESSAGES_CHILD
+   }
+
+   private void printMessageBody(ServerMessage message) throws XMLStreamException
+   {
+      xmlWriter.writeStartElement(XmlDataConstants.MESSAGE_BODY);
       if (message.isLargeMessage())
       {
+         xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
          LargeServerMessage largeMessage = (LargeServerMessage) message;
-         final int CHUNK = 1000;
 
          try
          {
             BodyEncoder encoder = largeMessage.getBodyEncoder();
             encoder.open();
-            for (long i = 0; i < encoder.getLargeBodySize(); i += CHUNK)
+            for (long i = 0; i < encoder.getLargeBodySize(); i += XmlDataConstants.CHUNK)
             {
-               HornetQBuffer buffer = HornetQBuffers.fixedBuffer(CHUNK);
-               encoder.encode(buffer, CHUNK);
+               HornetQBuffer buffer = HornetQBuffers.fixedBuffer(XmlDataConstants.CHUNK);
+               encoder.encode(buffer, XmlDataConstants.CHUNK);
                xmlWriter.writeCharacters(encode(buffer.toByteBuffer().array()));
             }
          }
@@ -527,60 +477,102 @@ public class XMLDataWriter
       {
          xmlWriter.writeCharacters(encode(message.getBodyBuffer().toByteBuffer().array()));
       }
-      xmlWriter.writeEndElement();
-      xmlWriter.writeStartElement(PROPERTIES_PARENT);
+      xmlWriter.writeEndElement(); // end MESSAGE_BODY
+   }
+
+   private void printMessageQueues(List<String> queues) throws XMLStreamException
+   {
+      xmlWriter.writeStartElement(XmlDataConstants.QUEUES_PARENT);
+      for (String queueName : queues)
+      {
+         xmlWriter.writeEmptyElement(XmlDataConstants.QUEUES_CHILD);
+         xmlWriter.writeAttribute(XmlDataConstants.QUEUE_NAME, queueName);
+      }
+      xmlWriter.writeEndElement(); // end QUEUES_PARENT
+   }
+
+   private void printMessageProperties(ServerMessage message) throws XMLStreamException
+   {
+      xmlWriter.writeStartElement(XmlDataConstants.PROPERTIES_PARENT);
       for (SimpleString key : message.getPropertyNames())
       {
          Object value = message.getObjectProperty(key);
-         xmlWriter.writeEmptyElement(PROPERTIES_CHILD);
-         xmlWriter.writeAttribute(PROPERTY_NAME, key.toString());
-         xmlWriter.writeAttribute(PROPERTY_VALUE, value.toString());
+         xmlWriter.writeEmptyElement(XmlDataConstants.PROPERTIES_CHILD);
+         xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_NAME, key.toString());
+         xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, value.toString());
          if (value instanceof Boolean)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_BOOLEAN);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BOOLEAN);
          }
          else if (value instanceof Byte)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_BYTE);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BYTE);
          }
          else if (value instanceof Short)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_SHORT);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_SHORT);
          }
          else if (value instanceof Integer)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_INTEGER);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_INTEGER);
          }
          else if (value instanceof Long)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_LONG);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_LONG);
          }
          else if (value instanceof Float)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_FLOAT);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_FLOAT);
          }
          else if (value instanceof Double)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_DOUBLE);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_DOUBLE);
          }
          else if (value instanceof String)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_STRING);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_STRING);
          }
          else if (value instanceof SimpleString)
          {
-            xmlWriter.writeAttribute(PROPERTY_TYPE, PROPERTY_TYPE_SIMPLE_STRING);
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_SIMPLE_STRING);
          }
       }
-      xmlWriter.writeEndElement(); // end "properties"
-      xmlWriter.writeStartElement(QUEUES_PARENT);
-      for (String queueName : queues)
+      xmlWriter.writeEndElement(); // end PROPERTIES_PARENT
+   }
+
+   private void printMessageAttributes(ServerMessage message) throws XMLStreamException
+   {
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_ID, Long.toString(message.getMessageID()));
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_PRIORITY, Byte.toString(message.getPriority()));
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_EXPIRATION, Long.toString(message.getExpiration()));
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_TIMESTAMP, Long.toString(message.getTimestamp()));
+      byte rawType = message.getType();
+      String prettyType = XmlDataConstants.DEFAULT_TYPE_PRETTY;
+      if (rawType == Message.BYTES_TYPE)
       {
-         xmlWriter.writeEmptyElement(QUEUES_CHILD);
-         xmlWriter.writeAttribute(QUEUE_NAME, queueName);
+         prettyType = XmlDataConstants.BYTES_TYPE_PRETTY;
       }
-      xmlWriter.writeEndElement(); // end "queues"
-      xmlWriter.writeEndElement(); // end "message"
+      else if (rawType == Message.MAP_TYPE)
+      {
+         prettyType = XmlDataConstants.MAP_TYPE_PRETTY;
+      }
+      else if (rawType == Message.OBJECT_TYPE)
+      {
+         prettyType = XmlDataConstants.OBJECT_TYPE_PRETTY;
+      }
+      else if (rawType == Message.STREAM_TYPE)
+      {
+         prettyType = XmlDataConstants.STREAM_TYPE_PRETTY;
+      }
+      else if (rawType == Message.TEXT_TYPE)
+      {
+         prettyType = XmlDataConstants.TEXT_TYPE_PRETTY;
+      }
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_TYPE, prettyType);
+      if (message.getUserID() != null)
+      {
+         xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_USER_ID, message.getUserID().toString());
+      }
    }
 
    private static String encode(final byte[] data)
@@ -606,9 +598,9 @@ public class XMLDataWriter
 
       private int depth = 0;
 
-      private static final char INDENT_CHAR = ' ';
+      private final char INDENT_CHAR = ' ';
 
-      private static final String LINEFEED_CHAR = "\n";
+      private final String LINE_SEPARATOR = System.getProperty("line.separator");
 
 
       public PrettyPrintHandler(XMLStreamWriter target)
@@ -622,8 +614,8 @@ public class XMLDataWriter
 
          if ("writeStartElement".equals(m))
          {
-            target.writeCharacters(LINEFEED_CHAR);
-            target.writeCharacters(indent(depth, INDENT_CHAR));
+            target.writeCharacters(LINE_SEPARATOR);
+            target.writeCharacters(indent(depth));
 
             depth++;
          }
@@ -631,13 +623,13 @@ public class XMLDataWriter
          {
             depth--;
 
-            target.writeCharacters(LINEFEED_CHAR);
-            target.writeCharacters(indent(depth, INDENT_CHAR));
+            target.writeCharacters(LINE_SEPARATOR);
+            target.writeCharacters(indent(depth));
          }
          else if ("writeEmptyElement".equals(m) || "writeCharacters".equals(m))
          {
-            target.writeCharacters(LINEFEED_CHAR);
-            target.writeCharacters(indent(depth, INDENT_CHAR));
+            target.writeCharacters(LINE_SEPARATOR);
+            target.writeCharacters(indent(depth));
          }
 
          method.invoke(target, args);
@@ -645,13 +637,13 @@ public class XMLDataWriter
          return null;
       }
 
-      private String indent(int d, char s)
+      private String indent(int depth)
       {
-         d *= 3; // level of indentation
-         char[] output = new char[d];
-         while (d-- > 0)
+         depth *= 3; // level of indentation
+         char[] output = new char[depth];
+         while (depth-- > 0)
          {
-            output[d] = INDENT_CHAR;
+            output[depth] = INDENT_CHAR;
          }
          return new String(output);
       }
