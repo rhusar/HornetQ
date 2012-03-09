@@ -52,6 +52,7 @@ public class XmlDataConstants
    public static final String QUEUE_NAME = "name";
    public static final String PROPERTY_TYPE_BOOLEAN = "boolean";
    public static final String PROPERTY_TYPE_BYTE = "byte";
+   public static final String PROPERTY_TYPE_BYTES = "bytes";
    public static final String PROPERTY_TYPE_SHORT = "short";
    public static final String PROPERTY_TYPE_INTEGER = "integer";
    public static final String PROPERTY_TYPE_LONG = "long";
@@ -59,5 +60,5 @@ public class XmlDataConstants
    public static final String PROPERTY_TYPE_DOUBLE = "double";
    public static final String PROPERTY_TYPE_STRING = "string";
    public static final String PROPERTY_TYPE_SIMPLE_STRING = "simple-string";
-   public static final int CHUNK = 1000;
+   public static final Long CHUNK = 1000L;
 }

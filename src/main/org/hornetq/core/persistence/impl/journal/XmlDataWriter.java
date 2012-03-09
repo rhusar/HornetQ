@@ -64,12 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.PersistentQueueBindingEncoding;
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.ReferenceDescribe;
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.MessageDescribe;
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.CursorAckRecordEncoding;
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.PageUpdateTXEncoding;
-import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.AckDescribe;
+import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.*;
 
 /**
  * @author <a href="mailto:jbertram@redhat.com">Justin Bertram</a>
@@ -118,7 +113,7 @@ public class XmlDataWriter
             return executor;
          }
       };
-      
+
       storageManager = new JournalStorageManager(config, executorFactory);
 
       messageRefs = new HashMap<Long, HashMap<Long, ReferenceDescribe>>();
@@ -140,7 +135,8 @@ public class XmlDataWriter
                XMLStreamWriter.class.getClassLoader(),
                new Class[]{XMLStreamWriter.class},
                handler);
-      } catch (Exception e)
+      }
+      catch (Exception e)
       {
          e.printStackTrace();
       }
@@ -157,7 +153,7 @@ public class XmlDataWriter
       }
 
       try
-      {     
+      {
 //         long start = System.currentTimeMillis();
          XmlDataWriter xmlDataWriter = new XmlDataWriter(System.out, arg[0], arg[1], arg[2], arg[3]);
          xmlDataWriter.writeXMLData();
@@ -194,7 +190,7 @@ public class XmlDataWriter
 
       messageJournal.start();
 
-      ((JournalImpl)messageJournal).load(records, null, null, false);
+      ((JournalImpl) messageJournal).load(records, null, null, false);
 
       for (RecordInfo info : records)
       {
@@ -294,7 +290,7 @@ public class XmlDataWriter
 
       bindingsJournal.start();
 
-      ((JournalImpl)bindingsJournal).load(records, null, null, false);
+      ((JournalImpl) bindingsJournal).load(records, null, null, false);
 
       for (RecordInfo info : records)
       {
@@ -456,26 +452,55 @@ public class XmlDataWriter
       {
          xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
          LargeServerMessage largeMessage = (LargeServerMessage) message;
+         BodyEncoder encoder = null;
 
          try
          {
-            BodyEncoder encoder = largeMessage.getBodyEncoder();
+            encoder = largeMessage.getBodyEncoder();
             encoder.open();
-            for (long i = 0; i < encoder.getLargeBodySize(); i += XmlDataConstants.CHUNK)
+            long totalBytesWritten = 0;
+            Long bufferSize;
+            long bodySize = encoder.getLargeBodySize();
+            for (long i = 0; i < bodySize; i += XmlDataConstants.CHUNK)
             {
-               HornetQBuffer buffer = HornetQBuffers.fixedBuffer(XmlDataConstants.CHUNK);
-               encoder.encode(buffer, XmlDataConstants.CHUNK);
-               xmlWriter.writeCharacters(encode(buffer.toByteBuffer().array()));
+               Long remainder = bodySize - totalBytesWritten;
+               if (remainder >= XmlDataConstants.CHUNK)
+               {
+                  bufferSize = XmlDataConstants.CHUNK;
+               }
+               else
+               {
+                  bufferSize = remainder;
+               }
+               HornetQBuffer buffer = HornetQBuffers.fixedBuffer(bufferSize.intValue());
+               encoder.encode(buffer, bufferSize.intValue());
+               xmlWriter.writeCData(encode(buffer.toByteBuffer().array()));
+               totalBytesWritten += bufferSize;
             }
+            encoder.close();
          }
          catch (HornetQException e)
          {
             e.printStackTrace();
          }
+         finally
+         {
+            if (encoder != null)
+            {
+               try
+               {
+                  encoder.close();
+               }
+               catch (HornetQException e)
+               {
+                  e.printStackTrace();
+               }
+            }
+         }
       }
       else
       {
-         xmlWriter.writeCharacters(encode(message.getBodyBuffer().toByteBuffer().array()));
+         xmlWriter.writeCData(encode(message.getBodyBuffer().toByteBuffer().array()));
       }
       xmlWriter.writeEndElement(); // end MESSAGE_BODY
    }
@@ -499,7 +524,15 @@ public class XmlDataWriter
          Object value = message.getObjectProperty(key);
          xmlWriter.writeEmptyElement(XmlDataConstants.PROPERTIES_CHILD);
          xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_NAME, key.toString());
-         xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, value.toString());
+         if (value instanceof byte[])
+         {
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, encode((byte[]) value));
+         }
+         else
+         {
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_VALUE, value.toString());
+         }
+
          if (value instanceof Boolean)
          {
             xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BOOLEAN);
@@ -535,6 +568,10 @@ public class XmlDataWriter
          else if (value instanceof SimpleString)
          {
             xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_SIMPLE_STRING);
+         }
+         else if (value instanceof byte[])
+         {
+            xmlWriter.writeAttribute(XmlDataConstants.PROPERTY_TYPE, XmlDataConstants.PROPERTY_TYPE_BYTES);
          }
       }
       xmlWriter.writeEndElement(); // end PROPERTIES_PARENT
@@ -626,7 +663,7 @@ public class XmlDataWriter
             target.writeCharacters(LINE_SEPARATOR);
             target.writeCharacters(indent(depth));
          }
-         else if ("writeEmptyElement".equals(m) || "writeCharacters".equals(m))
+         else if ("writeEmptyElement".equals(m) || "writeCData".equals(m))
          {
             target.writeCharacters(LINE_SEPARATOR);
             target.writeCharacters(indent(depth));
