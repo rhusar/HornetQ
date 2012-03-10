@@ -50,7 +50,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * @author <a href="mailto:jbertram@redhat.com">Justin Bertram</a>
+ * Read XML output from <code>org.hornetq.core.persistence.impl.journal.XmlDataWriter</code>, create a core session, and
+ * send the messages to a running instance of HornetQ.  It uses the StAX <code>javax.xml.stream.XMLStreamReader</code> 
+ * for speed and simplicity.
+ *
+ * @author Justin Bertram
  */
 public class XmlDataReader
 {
@@ -67,7 +71,7 @@ public class XmlDataReader
    boolean localSession = false;
 
    Map<String, String> addressMap = new HashMap<String, String>();
-   
+
    String tempFileName = "";
 
    // Static --------------------------------------------------------
@@ -117,7 +121,7 @@ public class XmlDataReader
    {
       if (arg.length < 3)
       {
-         System.out.println("Use: java -cp hornetq-core.jar <inputFile> <host> <port>");
+         System.out.println("Use: java -cp hornetq-core.jar " + XmlDataReader.class + " <inputFile> <host> <port>");
          System.exit(-1);
       }
 
@@ -152,8 +156,10 @@ public class XmlDataReader
             }
             reader.next();
          }
-      } finally
+      }
+      finally
       {
+         // if the session was created in our constructor then close it
          if (localSession)
          {
             session.close();
@@ -170,6 +176,7 @@ public class XmlDataReader
       org.hornetq.utils.UUID userId = null;
       ArrayList<String> queues = new ArrayList<String>();
 
+      // get message's attributes
       for (int i = 0; i < reader.getAttributeCount(); i++)
       {
          String attributeName = reader.getAttributeLocalName(i);
@@ -200,6 +207,7 @@ public class XmlDataReader
 
       boolean endLoop = false;
 
+      // loop through the XML and gather up all the message's data (i.e. body, properties, queues, etc.)
       while (reader.hasNext())
       {
          switch (reader.getEventType())
@@ -267,30 +275,42 @@ public class XmlDataReader
 
    private void sendMessage(ArrayList<String> queues, Message message) throws Exception
    {
-//      System.out.print("To " + addressMap.get(queues.get(0)) + ": " + message + " (routed to: ");
+      StringBuilder logMessage = new StringBuilder();
+      String destination = addressMap.get(queues.get(0));
+
+      logMessage.append("Sending ").append(message).append(" to address: ").append(destination).append("; routed to: ");
       ByteBuffer buffer = ByteBuffer.allocate(queues.size() * 8);
+
       for (String queue : queues)
       {
+         // Get the ID of the queues involved so the message can be routed properly.  This is done because we cannot
+         // send directly to a queue, we have to send to an address instead but not all the queues related to the
+         // address may need the message
          ClientRequestor requestor = new ClientRequestor(session, "jms.queue.hornetq.management");
          ClientMessage managementMessage = session.createMessage(false);
          ManagementHelper.putAttribute(managementMessage, "core.queue." + queue, "ID");
          session.start();
          ClientMessage reply = requestor.request(managementMessage);
          long queueID = (Integer) ManagementHelper.getResult(reply);
-//         System.out.print(queue + ", ");
-         session.queueQuery(new SimpleString(queue));
+         logMessage.append(queue).append(", ");
          buffer.putLong(queueID);
       }
-//      System.out.println(")");
+
+      logMessage.delete(logMessage.length() - 2, logMessage.length()); // take off the trailing comma
+      log.debug(logMessage);
+
       message.putBytesProperty(MessageImpl.HDR_ROUTE_TO_IDS, buffer.array());
-      ClientProducer producer = session.createProducer(addressMap.get(queues.get(0)));
+      ClientProducer producer = session.createProducer(destination);
       producer.send(message);
       producer.close();
 
-      File tempFile = new File(tempFileName);
-      if (!tempFile.delete())
+      if (tempFileName.length() > 0)
       {
-         System.err.println("Couldn't delete " + tempFileName);
+         File tempFile = new File(tempFileName);
+         if (!tempFile.delete())
+         {
+            log.warn("Could not delete: " + tempFileName);
+         }
       }
    }
 
@@ -382,6 +402,7 @@ public class XmlDataReader
       if (isLarge)
       {
          tempFileName = UUID.randomUUID().toString() + ".tmp";
+         log.debug("Creating temp file " + tempFileName + " for large message.");
          OutputStream out = new FileOutputStream(tempFileName);
          while (reader.hasNext())
          {
@@ -391,14 +412,11 @@ public class XmlDataReader
             }
             else
             {
-//               System.out.println("Reading " + reader.getTextLength() + " characters.");
                String characters = new String(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
                String trimmedCharacters = characters.trim();
-               if (trimmedCharacters.length() > 0)
+               if (trimmedCharacters.length() > 0)  // this will skip "indentation" characters
                {
                   byte[] data = decode(trimmedCharacters);
-//                  System.out.println(new String(data));
-//                  System.out.println("Writing " + data.length + " bytes.");
                   out.write(data);
                }
             }
@@ -411,7 +429,7 @@ public class XmlDataReader
       }
       else
       {
-         reader.next(); // step past the "indentation" characters to get to the CDATA
+         reader.next(); // step past the "indentation" characters to get to the CDATA with the message body
          String characters = new String(reader.getTextCharacters(), reader.getTextStart(), reader.getTextLength());
          message.getBodyBuffer().writeBytes(decode(characters.trim()));
       }
@@ -445,11 +463,14 @@ public class XmlDataReader
       if (!queueQuery.isExists())
       {
          session.createQueue(address, queueName, filter, true);
+         log.debug("Binding queue(name=" + queueName + ", address=" + address + ", filter=" + filter + ")");
+      }
+      else
+      {
+         log.debug("Binding " + queueName + " already exists so won't re-bind.");
       }
 
       addressMap.put(queueName, address);
-
-//      System.out.println("Binding queue(name=" + queueName + ", address=" + address + ", filter=" + filter + ")");
    }
 
    // Package protected ---------------------------------------------

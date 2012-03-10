@@ -28,6 +28,8 @@ import org.hornetq.core.persistence.impl.journal.LargeServerMessageImpl;
 import org.hornetq.core.persistence.impl.journal.XmlDataReader;
 import org.hornetq.core.persistence.impl.journal.XmlDataWriter;
 import org.hornetq.core.server.HornetQServer;
+import org.hornetq.core.settings.impl.AddressSettings;
+import org.hornetq.tests.integration.paging.PagingSendTest;
 import org.hornetq.tests.util.ServiceTestBase;
 import org.hornetq.tests.util.UnitTestCase;
 import org.hornetq.utils.UUIDGenerator;
@@ -36,13 +38,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 /**
- * A ExportFormatTest
+ * A test of the XML export/import functionality
  *
- * @author <a href="mailto:clebert.suconic@jboss.org">Clebert Suconic</a>
+ * @author Justin Bertram
  */
 public class XmlImportExportTest extends ServiceTestBase
 {
    public static final int CONSUMER_TIMEOUT = 5000;
+
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
@@ -416,7 +419,7 @@ public class XmlImportExportTest extends ServiceTestBase
 
       ClientMessage msg = session.createMessage(true);
       producer.send(msg);
-      
+
       ClientConsumer consumer = session.createConsumer("myQueue1");
       session.start();
       msg = consumer.receive(CONSUMER_TIMEOUT);
@@ -451,6 +454,76 @@ public class XmlImportExportTest extends ServiceTestBase
       consumer = session.createConsumer("myQueue2");
       msg = consumer.receive(CONSUMER_TIMEOUT);
       Assert.assertNotNull(msg);
+
+      session.close();
+      locator.close();
+      server.stop();
+   }
+
+   public void testPaging() throws Exception
+   {
+      HornetQServer server = createServer(true);
+
+      AddressSettings defaultSetting = new AddressSettings();
+      defaultSetting.setPageSizeBytes(10 * 1024);
+      defaultSetting.setMaxSizeBytes(20 * 1024);
+      server.getAddressSettingsRepository().addMatch("#", defaultSetting);
+      server.start();
+
+      ServerLocator locator = createInVMNonHALocator();
+      // Making it synchronous, just because we want to stop sending messages as soon as the page-store becomes in
+      // page mode
+      // and we could only guarantee that by setting it to synchronous
+      locator.setBlockOnNonDurableSend(true);
+      locator.setBlockOnDurableSend(true);
+      locator.setBlockOnAcknowledge(true);
+
+      ClientSessionFactory factory = locator.createSessionFactory();
+      ClientSession session = factory.createSession(false, true, true);
+
+      session.createQueue("myAddress", "myQueue1", true);
+
+      ClientProducer producer = session.createProducer("myAddress");
+
+      ClientMessage message = null;
+
+      message = session.createMessage(true);
+      message.getBodyBuffer().writeBytes(new byte[1024]);
+
+      for (int i = 0; i < 200; i++)
+      {
+         producer.send(message);
+      }
+
+      session.close();
+      locator.close();
+      server.stop();
+
+      ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+      XmlDataWriter xmlDataWriter = new XmlDataWriter(xmlOutputStream, getBindingsDir(), getJournalDir(), getPageDir(), getLargeMessagesDir());
+      xmlDataWriter.writeXMLData();
+      System.out.print(new String(xmlOutputStream.toByteArray()));
+
+      clearData();
+      server.start();
+      locator = createInVMNonHALocator();
+      factory = locator.createSessionFactory();
+      session = factory.createSession(false, true, true);
+
+      ByteArrayInputStream xmlInputStream = new ByteArrayInputStream(xmlOutputStream.toByteArray());
+      XmlDataReader xmlDataReader = new XmlDataReader(xmlInputStream, session);
+      xmlDataReader.processXml();
+
+      ClientConsumer consumer = session.createConsumer("myQueue1");
+
+      session.start();
+
+      for (int i = 0; i < 200; i++)
+      {
+         message = consumer.receive(CONSUMER_TIMEOUT);
+
+         Assert.assertNotNull(message);
+      }
 
       session.close();
       locator.close();

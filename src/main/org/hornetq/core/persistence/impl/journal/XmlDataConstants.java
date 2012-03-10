@@ -14,7 +14,9 @@
 package org.hornetq.core.persistence.impl.journal;
 
 /**
- * @author <a href="mailto:jbertram@redhat.com">Justin Bertram</a>
+ * The constants shared
+ *
+ * @author Justin Bertram
  */
 public class XmlDataConstants
 {
@@ -60,5 +62,4 @@ public class XmlDataConstants
    public static final String PROPERTY_TYPE_DOUBLE = "double";
    public static final String PROPERTY_TYPE_STRING = "string";
    public static final String PROPERTY_TYPE_SIMPLE_STRING = "simple-string";
-   public static final Long CHUNK = 1000L;
 }

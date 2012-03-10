@@ -23,6 +23,7 @@ import org.hornetq.core.config.impl.ConfigurationImpl;
 import org.hornetq.core.journal.Journal;
 import org.hornetq.core.journal.RecordInfo;
 import org.hornetq.core.journal.impl.JournalImpl;
+import org.hornetq.core.logging.Logger;
 import org.hornetq.core.message.BodyEncoder;
 import org.hornetq.core.paging.Page;
 import org.hornetq.core.paging.PagedMessage;
@@ -67,13 +68,21 @@ import java.util.concurrent.ScheduledExecutorService;
 import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.*;
 
 /**
- * @author <a href="mailto:jbertram@redhat.com">Justin Bertram</a>
+ * Read the journal, page, and large-message data from a stopped instance of HornetQ and save it in an XML format to
+ * a file.  It uses the StAX <code>javax.xml.stream.XMLStreamWriter</code> for speed and simplicity.  Output can be
+ * read by <code>org.hornetq.core.persistence.impl.journal.XmlDataReader</code>.
+ *
+ * @author Justin Bertram
  */
 public class XmlDataWriter
 {
    // Constants -----------------------------------------------------
 
+   public static final Long LARGE_MESSAGE_CHUNK_SIZE = 1000L;
+
    // Attributes ----------------------------------------------------
+
+   private static final Logger log = Logger.getLogger(XmlDataWriter.class);
 
    private JournalStorageManager storageManager;
 
@@ -92,6 +101,10 @@ public class XmlDataWriter
    private Set<Long> pgTXs;
 
    HashMap<Long, PersistentQueueBindingEncoding> queueBindings;
+
+   long messagesPrinted = 0L;
+
+   long bindingsPrinted = 0L;
 
    // Static --------------------------------------------------------
 
@@ -154,12 +167,8 @@ public class XmlDataWriter
 
       try
       {
-//         long start = System.currentTimeMillis();
          XmlDataWriter xmlDataWriter = new XmlDataWriter(System.out, arg[0], arg[1], arg[2], arg[3]);
          xmlDataWriter.writeXMLData();
-//         System.out.println();
-//         System.out.println();
-//         System.out.println("Processing took: " + (System.currentTimeMillis() - start) + "ms");
       }
       catch (Exception e)
       {
@@ -169,9 +178,12 @@ public class XmlDataWriter
 
    public void writeXMLData() throws Exception
    {
+      long start = System.currentTimeMillis();
       getBindings();
       processMessageJournal();
       printDataAsXML();
+      log.debug("\n\nProcessing took: " + (System.currentTimeMillis() - start) + "ms");
+      log.debug("Output " + messagesPrinted + " messages and " + bindingsPrinted + " bindings.");
    }
 
    // Package protected ---------------------------------------------
@@ -180,6 +192,12 @@ public class XmlDataWriter
 
    // Private -------------------------------------------------------
 
+   /**
+    * Read through the message journal and stuff all the events/data we care about into local data structures.  We'll
+    * use this data later to print all the right information.
+    *
+    * @throws Exception will be thrown if anything goes wrong reading the journal
+    */
    private void processMessageJournal() throws Exception
    {
       ArrayList<RecordInfo> acks = new ArrayList<RecordInfo>();
@@ -187,6 +205,8 @@ public class XmlDataWriter
       List<RecordInfo> records = new LinkedList<RecordInfo>();
 
       Journal messageJournal = storageManager.getMessageJournal();
+
+      log.debug("Reading journal from " + config.getJournalDirectory());
 
       messageJournal.start();
 
@@ -267,6 +287,11 @@ public class XmlDataWriter
       removeAcked(acks);
    }
 
+   /**
+    * Go back through the messages and message refs we found in the journal and remove the ones that have been acked.
+    *
+    * @param acks the list of ack records we got from the journal
+    */
    private void removeAcked(ArrayList<RecordInfo> acks)
    {
       for (RecordInfo info : acks)
@@ -282,6 +307,11 @@ public class XmlDataWriter
       }
    }
 
+   /**
+    * Open the bindings journal and extract all bindings data.
+    *
+    * @throws Exception will be thrown if anything goes wrong reading the bindings journal
+    */
    private void getBindings() throws Exception
    {
       List<RecordInfo> records = new LinkedList<RecordInfo>();
@@ -289,6 +319,8 @@ public class XmlDataWriter
       Journal bindingsJournal = storageManager.getBindingsJournal();
 
       bindingsJournal.start();
+
+      log.debug("Reading bindings journal from " + config.getBindingsDirectory());
 
       ((JournalImpl) bindingsJournal).load(records, null, null, false);
 
@@ -339,6 +371,7 @@ public class XmlDataWriter
          xmlWriter.writeAttribute(XmlDataConstants.BINDING_FILTER_STRING, filter);
          xmlWriter.writeAttribute(XmlDataConstants.BINDING_QUEUE_NAME, bindingEncoding.getQueueName().toString());
          xmlWriter.writeAttribute(XmlDataConstants.BINDING_ID, Long.toString(bindingEncoding.getId()));
+         bindingsPrinted++;
       }
       xmlWriter.writeEndElement(); // end BINDINGS_PARENT
    }
@@ -347,6 +380,8 @@ public class XmlDataWriter
    {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGES_PARENT);
 
+      // Order here is important.  We must process the messages from the journal before we process those from the page
+      // files in order to get the messages in the right order.
       for (Map.Entry<Long, Message> messageMapEntry : messages.entrySet())
       {
          printSingleMessageAsXML((ServerMessage) messageMapEntry.getValue(), extractQueueNames(messageRefs.get(messageMapEntry.getKey())));
@@ -357,20 +392,24 @@ public class XmlDataWriter
       xmlWriter.writeEndElement(); // end "messages"
    }
 
+   /**
+    * Reads from the page files and prints messages as it finds them (making sure to check acks and transactions
+    * from the journal).
+    */
    private void printPagedMessagesAsXML()
    {
       try
       {
          ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
          final ExecutorService executor = Executors.newFixedThreadPool(10);
-         ExecutorFactory execfactory = new ExecutorFactory()
+         ExecutorFactory executorFactory = new ExecutorFactory()
          {
             public Executor getExecutor()
             {
                return executor;
             }
          };
-         PagingStoreFactory pageStoreFactory = new PagingStoreFactoryNIO(config.getPagingDirectory(), 1000l, scheduled, execfactory, false, null);
+         PagingStoreFactory pageStoreFactory = new PagingStoreFactoryNIO(config.getPagingDirectory(), 1000l, scheduled, executorFactory, false, null);
          HierarchicalRepository<AddressSettings> addressSettingsRepository = new HierarchicalObjectRepository<AddressSettings>();
          addressSettingsRepository.setDefault(new AddressSettings());
          StorageManager sm = new NullStorageManager();
@@ -383,10 +422,18 @@ public class XmlDataWriter
          for (SimpleString store : stores)
          {
             PagingStore pageStore = manager.getPageStore(store);
+            String folder = null;
+
+            if (pageStore != null)
+            {
+               folder = pageStore.getFolder();
+            }
+            log.debug("Reading page store " + store + " folder = " + folder);
 
             int pageId = (int) pageStore.getFirstPage();
             for (int i = 0; i < pageStore.getNumberOfPages(); i++)
             {
+               log.debug("Reading page " + pageId);
                Page page = pageStore.createPage(pageId);
                page.open();
                List<PagedMessage> messages = page.read(sm);
@@ -443,66 +490,72 @@ public class XmlDataWriter
       printMessageQueues(queues);
       printMessageBody(message);
       xmlWriter.writeEndElement(); // end MESSAGES_CHILD
+      messagesPrinted++;
    }
 
    private void printMessageBody(ServerMessage message) throws XMLStreamException
    {
       xmlWriter.writeStartElement(XmlDataConstants.MESSAGE_BODY);
+
       if (message.isLargeMessage())
       {
-         xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
-         LargeServerMessage largeMessage = (LargeServerMessage) message;
-         BodyEncoder encoder = null;
-
-         try
-         {
-            encoder = largeMessage.getBodyEncoder();
-            encoder.open();
-            long totalBytesWritten = 0;
-            Long bufferSize;
-            long bodySize = encoder.getLargeBodySize();
-            for (long i = 0; i < bodySize; i += XmlDataConstants.CHUNK)
-            {
-               Long remainder = bodySize - totalBytesWritten;
-               if (remainder >= XmlDataConstants.CHUNK)
-               {
-                  bufferSize = XmlDataConstants.CHUNK;
-               }
-               else
-               {
-                  bufferSize = remainder;
-               }
-               HornetQBuffer buffer = HornetQBuffers.fixedBuffer(bufferSize.intValue());
-               encoder.encode(buffer, bufferSize.intValue());
-               xmlWriter.writeCData(encode(buffer.toByteBuffer().array()));
-               totalBytesWritten += bufferSize;
-            }
-            encoder.close();
-         }
-         catch (HornetQException e)
-         {
-            e.printStackTrace();
-         }
-         finally
-         {
-            if (encoder != null)
-            {
-               try
-               {
-                  encoder.close();
-               }
-               catch (HornetQException e)
-               {
-                  e.printStackTrace();
-               }
-            }
-         }
+         printLargeMessageBody((LargeServerMessage) message);
       }
       else
       {
          xmlWriter.writeCData(encode(message.getBodyBuffer().toByteBuffer().array()));
       }
       xmlWriter.writeEndElement(); // end MESSAGE_BODY
+   }
+
+   private void printLargeMessageBody(LargeServerMessage message) throws XMLStreamException
+   {
+      xmlWriter.writeAttribute(XmlDataConstants.MESSAGE_IS_LARGE, Boolean.TRUE.toString());
+      BodyEncoder encoder = null;
+
+      try
+      {
+         encoder = message.getBodyEncoder();
+         encoder.open();
+         long totalBytesWritten = 0;
+         Long bufferSize;
+         long bodySize = encoder.getLargeBodySize();
+         for (long i = 0; i < bodySize; i += LARGE_MESSAGE_CHUNK_SIZE)
+         {
+            Long remainder = bodySize - totalBytesWritten;
+            if (remainder >= LARGE_MESSAGE_CHUNK_SIZE)
+            {
+               bufferSize = LARGE_MESSAGE_CHUNK_SIZE;
+            }
+            else
+            {
+               bufferSize = remainder;
+            }
+            HornetQBuffer buffer = HornetQBuffers.fixedBuffer(bufferSize.intValue());
+            encoder.encode(buffer, bufferSize.intValue());
+            xmlWriter.writeCData(encode(buffer.toByteBuffer().array()));
+            totalBytesWritten += bufferSize;
+         }
+         encoder.close();
+      }
+      catch (HornetQException e)
+      {
+         e.printStackTrace();
+      }
+      finally
+      {
+         if (encoder != null)
+         {
+            try
+            {
+               encoder.close();
+            }
+            catch (HornetQException e)
+            {
+               e.printStackTrace();
+            }
+         }
+      }
    }
 
    private void printMessageQueues(List<String> queues) throws XMLStreamException
@@ -612,11 +665,6 @@ public class XmlDataWriter
       }
    }
 
-   private static String encode(final byte[] data)
-   {
-      return Base64.encodeBytes(data, 0, data.length, Base64.DONT_BREAK_LINES | Base64.URL_SAFE);
-   }
-
    private List<String> extractQueueNames(HashMap<Long, ReferenceDescribe> refMap)
    {
       List<String> queues = new ArrayList<String>();
@@ -627,8 +675,16 @@ public class XmlDataWriter
       return queues;
    }
 
+   private static String encode(final byte[] data)
+   {
+      return Base64.encodeBytes(data, 0, data.length, Base64.DONT_BREAK_LINES | Base64.URL_SAFE);
+   }
+
    // Inner classes -------------------------------------------------
 
+   /**
+    * Proxy to handle indenting the XML since <code>javax.xml.stream.XMLStreamWriter</code> doesn't support that.
+    */
    class PrettyPrintHandler implements InvocationHandler
    {
       private XMLStreamWriter target;
