@@ -14,7 +14,8 @@
 package org.hornetq.core.persistence.impl.journal;
 
 /**
- * The constants shared
+ * The constants shared by <code>org.hornetq.core.persistence.impl.journal.XmlDataImporter</code> and
+ * <code>org.hornetq.core.persistence.impl.journal.XmlDataExporter</code>.
  *
  * @author Justin Bertram
  */

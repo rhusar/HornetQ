@@ -70,11 +70,11 @@ import static org.hornetq.core.persistence.impl.journal.JournalStorageManager.*;
 /**
  * Read the journal, page, and large-message data from a stopped instance of HornetQ and save it in an XML format to
  * a file.  It uses the StAX <code>javax.xml.stream.XMLStreamWriter</code> for speed and simplicity.  Output can be
- * read by <code>org.hornetq.core.persistence.impl.journal.XmlDataReader</code>.
+ * read by <code>org.hornetq.core.persistence.impl.journal.XmlDataImporter</code>.
  *
  * @author Justin Bertram
  */
-public class XmlDataWriter
+public class XmlDataExporter
 {
    // Constants -----------------------------------------------------
 
@@ -82,7 +82,7 @@ public class XmlDataWriter
 
    // Attributes ----------------------------------------------------
 
-   private static final Logger log = Logger.getLogger(XmlDataWriter.class);
+   private static final Logger log = Logger.getLogger(XmlDataExporter.class);
 
    private JournalStorageManager storageManager;
 
@@ -110,7 +110,7 @@ public class XmlDataWriter
 
    // Constructors --------------------------------------------------
 
-   public XmlDataWriter(OutputStream out, String bindingsDir, String journalDir, String pagingDir, String largeMessagesDir)
+   public XmlDataExporter(OutputStream out, String bindingsDir, String journalDir, String pagingDir, String largeMessagesDir)
    {
       config = new ConfigurationImpl();
       config.setBindingsDirectory(bindingsDir);
@@ -167,8 +167,8 @@ public class XmlDataWriter
 
       try
       {
-         XmlDataWriter xmlDataWriter = new XmlDataWriter(System.out, arg[0], arg[1], arg[2], arg[3]);
-         xmlDataWriter.writeXMLData();
+         XmlDataExporter xmlDataExporter = new XmlDataExporter(System.out, arg[0], arg[1], arg[2], arg[3]);
+         xmlDataExporter.writeXMLData();
       }
       catch (Exception e)
       {

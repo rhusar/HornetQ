@@ -50,23 +50,26 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Read XML output from <code>org.hornetq.core.persistence.impl.journal.XmlDataWriter</code>, create a core session, and
- * send the messages to a running instance of HornetQ.  It uses the StAX <code>javax.xml.stream.XMLStreamReader</code> 
+ * Read XML output from <code>org.hornetq.core.persistence.impl.journal.XmlDataExporter</code>, create a core session, and
+ * send the messages to a running instance of HornetQ.  It uses the StAX <code>javax.xml.stream.XMLStreamReader</code>
  * for speed and simplicity.
  *
  * @author Justin Bertram
  */
-public class XmlDataReader
+public class XmlDataImporter
 {
    // Constants -----------------------------------------------------
 
    // Attributes ----------------------------------------------------
 
-   private static final Logger log = Logger.getLogger(XmlDataReader.class);
+   private static final Logger log = Logger.getLogger(XmlDataImporter.class);
 
    XMLStreamReader reader;
 
    ClientSession session;
+
+   // this session is really only needed if the "session" variable does not auto-commit sends
+   ClientSession managementSession;
 
    boolean localSession = false;
 
@@ -78,12 +81,41 @@ public class XmlDataReader
 
    // Constructors --------------------------------------------------
 
-   public XmlDataReader(InputStream inputStream, ClientSession session)
+   /**
+    * This is the normal constructor for programmatic access to the <code>org.hornetq.core.persistence.impl.journal.XmlDataImporter</code>
+    * if the session passed in uses auto-commit for sends.  If the session needs to be transactional then use the
+    * constructor which takes 2 sessions.
+    *
+    * @param inputStream the stream from which to read the XML for import
+    * @param session used for sending messages, must use auto-commit for sends
+    */
+   public XmlDataImporter(InputStream inputStream, ClientSession session)
+   {
+      this(inputStream, session, null);
+   }
+
+   /**
+    * This is the constructor to use if you wish to import all messages transactionally.  Pass in a session which doesn't
+    * use auto-commit for sends, and one that does (for management operations necessary during import).
+    *
+    * @param inputStream the stream from which to read the XML for import
+    * @param session used for sending messages, doesn't need to auto-commit sends
+    * @param managementSession used for management queries, must use auto-commit for sends
+    */
+   public XmlDataImporter(InputStream inputStream, ClientSession session, ClientSession managementSession)
    {
       try
       {
          reader = XMLInputFactory.newInstance().createXMLStreamReader(inputStream);
          this.session = session;
+         if (managementSession != null)
+         {
+            this.managementSession = managementSession;
+         }
+         else
+         {
+            this.managementSession = session;
+         }
       }
       catch (Exception e)
       {
@@ -91,7 +123,7 @@ public class XmlDataReader
       }
    }
 
-   public XmlDataReader(InputStream inputStream, String host, String port)
+   public XmlDataImporter(InputStream inputStream, String host, String port, boolean transactional)
    {
       try
       {
@@ -101,7 +133,10 @@ public class XmlDataReader
          connectionParams.put(TransportConstants.PORT_PROP_NAME, port);
          ServerLocator serverLocator = HornetQClient.createServerLocatorWithoutHA(new TransportConfiguration(NettyConnectorFactory.class.getName(), connectionParams));
          ClientSessionFactory sf = serverLocator.createSessionFactory();
-         session = sf.createSession(false, true, true);
+         session = sf.createSession(false, !transactional, true);
+         if (transactional) {
+            managementSession = sf.createSession(false, true, true);
+         }
          localSession = true;
       }
       catch (Exception e)
@@ -110,9 +145,9 @@ public class XmlDataReader
       }
    }
 
-   public XmlDataReader(String inputFile, String host, String port) throws FileNotFoundException
+   public XmlDataImporter(String inputFile, String host, String port, boolean transactional) throws FileNotFoundException
    {
-      this(new FileInputStream(inputFile), host, port);
+      this(new FileInputStream(inputFile), host, port, transactional);
    }
 
    // Public --------------------------------------------------------
@@ -121,14 +156,14 @@ public class XmlDataReader
    {
       if (arg.length < 3)
       {
-         System.out.println("Use: java -cp hornetq-core.jar " + XmlDataReader.class + " <inputFile> <host> <port>");
+         System.out.println("Use: java -cp hornetq-core.jar " + XmlDataImporter.class + " <inputFile> <host> <port> [<transactional>]");
          System.exit(-1);
       }
 
       try
       {
-         XmlDataReader xmlDataReader = new XmlDataReader(arg[0], arg[1], arg[2]);
-         xmlDataReader.processXml();
+         XmlDataImporter xmlDataImporter = new XmlDataImporter(arg[0], arg[1], arg[2], (arg.length > 3 && Boolean.parseBoolean(arg[3])));
+         xmlDataImporter.processXml();
       }
       catch (Exception e)
       {
@@ -156,10 +191,15 @@ public class XmlDataReader
             }
             reader.next();
          }
+
+         if (!session.isAutoCommitSends())
+         {
+            session.commit();
+         }
       }
       finally
       {
-         // if the session was created in our constructor then close it
+         // if the session was created in our constructor then close it (otherwise the caller will close it)
          if (localSession)
          {
             session.close();
@@ -278,7 +318,7 @@ public class XmlDataReader
       StringBuilder logMessage = new StringBuilder();
       String destination = addressMap.get(queues.get(0));
 
-      logMessage.append("Sending ").append(message).append(" to address: ").append(destination).append("; routed to: ");
+      logMessage.append("Sending ").append(message).append(" to address: ").append(destination).append("; routed to queues: ");
       ByteBuffer buffer = ByteBuffer.allocate(queues.size() * 8);
 
       for (String queue : queues)
@@ -286,10 +326,10 @@ public class XmlDataReader
          // Get the ID of the queues involved so the message can be routed properly.  This is done because we cannot
          // send directly to a queue, we have to send to an address instead but not all the queues related to the
          // address may need the message
-         ClientRequestor requestor = new ClientRequestor(session, "jms.queue.hornetq.management");
-         ClientMessage managementMessage = session.createMessage(false);
+         ClientRequestor requestor = new ClientRequestor(managementSession, "jms.queue.hornetq.management");
+         ClientMessage managementMessage = managementSession.createMessage(false);
          ManagementHelper.putAttribute(managementMessage, "core.queue." + queue, "ID");
-         session.start();
+         managementSession.start();
          ClientMessage reply = requestor.request(managementMessage);
          long queueID = (Integer) ManagementHelper.getResult(reply);
          logMessage.append(queue).append(", ");
