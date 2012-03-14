@@ -19,14 +19,12 @@
 * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 */
-package org.hornetq.core.server.impl;
+package org.hornetq.core.server;
 
 import org.hornetq.api.core.HornetQException;
-import org.jboss.logging.Field;
 import org.jboss.logging.Message;
 import org.jboss.logging.MessageBundle;
 import org.jboss.logging.Messages;
-import org.jboss.logging.Param;
 import org.jboss.logging.Property;
 
 /**

@@ -102,6 +102,8 @@ import org.hornetq.core.security.impl.SecurityStoreImpl;
 import org.hornetq.core.server.ActivateCallback;
 import org.hornetq.core.server.Bindable;
 import org.hornetq.core.server.Divert;
+import org.hornetq.core.server.HornetQLogger;
+import org.hornetq.core.server.HornetQMessageBundle;
 import org.hornetq.core.server.HornetQServer;
 import org.hornetq.core.server.JournalType;
 import org.hornetq.core.server.LargeServerMessage;
