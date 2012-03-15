@@ -24,6 +24,19 @@ package org.hornetq.core.server;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  *         3/8/12
+ *
+ * Logger Code 11
+ *
+ * each message id must be 6 digits long starting with 10, the 3rd digit donates the level so
+ *
+ * INF0  1
+ * WARN  2
+ * DEBUG 3
+ * ERROR 4
+ * TRACE 5
+ * FATAL 6
+ *
+ * so an INFO message would be 101000 to 101999
  */
 import org.hornetq.api.core.Pair;
 import org.hornetq.api.core.SimpleString;
@@ -47,156 +60,156 @@ public interface HornetQLogger extends BasicLogger
     HornetQLogger LOGGER = Logger.getMessageLogger(HornetQLogger.class, HornetQLogger.class.getPackage().getName());
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1001, value = "{0} server is starting with configuration {1}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111001, value = "{0} server is starting with configuration {1}", format = Message.Format.MESSAGE_FORMAT)
     void serverStarting(String type, Configuration configuration);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1002, value = "{0} is already started, ignoring the call to start..", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111002, value = "{0} is already started, ignoring the call to start..", format = Message.Format.MESSAGE_FORMAT)
     void serverAlreadyStarted(String type);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1003, value = "HornetQ Server version {0} [{1}] {2}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111003, value = "HornetQ Server version {0} [{1}] {2}", format = Message.Format.MESSAGE_FORMAT)
     void serverStarted(String fullVersion, SimpleString nodeId, String identity);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1004, value = "HornetQ Server version {0} [{1}] stopped", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111004, value = "HornetQ Server version {0} [{1}] stopped", format = Message.Format.MESSAGE_FORMAT)
     void serverStopped(String version, SimpleString nodeId);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1005, value = "trying to deploy queue {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111005, value = "trying to deploy queue {0}", format = Message.Format.MESSAGE_FORMAT)
     void deployQueue(SimpleString queueName);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1006, value = "{0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111006, value = "{0}", format = Message.Format.MESSAGE_FORMAT)
     void dumpServerInfo(String serverInfo);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1007, value = "Deleting pending large message as it wasn't completed: {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111007, value = "Deleting pending large message as it wasn't completed: {0}", format = Message.Format.MESSAGE_FORMAT)
     void deletingPendingMessage(Pair<Long, Long> msgToDelete);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1008, value = "Waiting to obtain live lock", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111008, value = "Waiting to obtain live lock", format = Message.Format.MESSAGE_FORMAT)
     void awaitingLiveLock();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1009, value = "Server is now live", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111009, value = "Server is now live", format = Message.Format.MESSAGE_FORMAT)
     void serverIsLive();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1010, value = "live server wants to restart, restarting server in backup" , format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111010, value = "live server wants to restart, restarting server in backup" , format = Message.Format.MESSAGE_FORMAT)
     void awaitFailBack();
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1011, value = "HornetQ Backup Server version {0} [{1}] started, waiting live to fail before it gets active",
+    @Message(id = 1111, value = "HornetQ Backup Server version {0} [{1}] started, waiting live to fail before it gets active",
           format = Message.Format.MESSAGE_FORMAT)
     void backupServerStarted(String version, SimpleString nodeID);
 
     @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1012, value = "Backup Server is now live", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111012, value = "Backup Server is now live", format = Message.Format.MESSAGE_FORMAT)
     void backupServerIsLive();
 
    @LogMessage(level = Logger.Level.INFO)
-    @Message(id = 1013, value = "Server {0} is now live", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 111013, value = "Server {0} is now live", format = Message.Format.MESSAGE_FORMAT)
     void serverIsLive(String identity);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2001, value = "HornetQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope" ,
+    @Message(id = 112001, value = "HornetQServer is being finalized and has not been stopped. Please remember to stop the server before letting it go out of scope" ,
           format = Message.Format.MESSAGE_FORMAT)
     void serverFinalisedWIthoutBeingSTopped();
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2002, value = "Error closing sessions while stopping server" , format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112002, value = "Error closing sessions while stopping server" , format = Message.Format.MESSAGE_FORMAT)
     void errorClosingSessionsWhileStoppingServer(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2003, value = "Timed out waiting for pool to terminate {0}. Interrupting all its threads!", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112003, value = "Timed out waiting for pool to terminate {0}. Interrupting all its threads!", format = Message.Format.MESSAGE_FORMAT)
     void timedOutStoppingThreadpool(ExecutorService service);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2004, value = "Must specify a name for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112004, value = "Must specify a name for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
     void divertWithNoName();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2005, value = "Must specify an address for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112005, value = "Must specify an address for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
     void divertWithNoAddress();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2006, value = "Must specify a forwarding address for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112006, value = "Must specify a forwarding address for each divert. This one will not be deployed." , format = Message.Format.MESSAGE_FORMAT)
     void divertWithNoForwardingAddress();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2007, value = "Binding already exists with name {0}, divert will not be deployed", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112007, value = "Binding already exists with name {0}, divert will not be deployed", format = Message.Format.MESSAGE_FORMAT)
     void divertBindingNotExists(SimpleString bindingName);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2008, value = "Security risk! HornetQ is running with the default cluster admin user and default password. "
+    @Message(id = 112008, value = "Security risk! HornetQ is running with the default cluster admin user and default password. "
                   + "Please see the HornetQ user guide, cluster chapter, for instructions on how to change this." , format = Message.Format.MESSAGE_FORMAT)
     void clusterSecurityRisk();
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2009, value = "unable to restart server, please kill and restart manually", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112009, value = "unable to restart server, please kill and restart manually", format = Message.Format.MESSAGE_FORMAT)
     void serverRestartWarning();
 
     @LogMessage(level = Logger.Level.WARN)
     void serverRestartWarning(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2010, value = "Unable to announce backup for replication. Trying to stop the server.", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112010, value = "Unable to announce backup for replication. Trying to stop the server.", format = Message.Format.MESSAGE_FORMAT)
     void replicationStartProblem(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2011, value = "Critical IO Error, shutting down the server. code={0}, message={1}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112011, value = "Critical IO Error, shutting down the server. code={0}, message={1}", format = Message.Format.MESSAGE_FORMAT)
     void ioErrorShutdownServer(int code, String message);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2012, value = "Error stopping server", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112012, value = "Error stopping server", format = Message.Format.MESSAGE_FORMAT)
     void errorStoppingServer(@Cause Exception e);
 
     @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2013, value = "Timed out waiting for backup activation to exit", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112013, value = "Timed out waiting for backup activation to exit", format = Message.Format.MESSAGE_FORMAT)
     void backupActivationProblem();
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2014, value = "Error when trying to start replication", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112014, value = "Error when trying to start replication", format = Message.Format.MESSAGE_FORMAT)
     void errorStartingReplication(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2015, value = "Error when trying to stop replication", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112015, value = "Error when trying to stop replication", format = Message.Format.MESSAGE_FORMAT)
     void errorStoppingReplication(@Cause Exception e);
 
    @LogMessage(level = Logger.Level.WARN)
-    @Message(id = 2016, value = "{0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 112016, value = "{0}", format = Message.Format.MESSAGE_FORMAT)
     void warn(String message);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3001, value = "Server already started!", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113001, value = "Server already started!", format = Message.Format.MESSAGE_FORMAT)
     void serverAlreadyStarted();
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3002, value = "Starting server {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113002, value = "Starting server {0}", format = Message.Format.MESSAGE_FORMAT)
     void startingServer(HornetQServer server);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3003, value = "Cancelled the execution of {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113003, value = "Cancelled the execution of {0}", format = Message.Format.MESSAGE_FORMAT)
     void cancelExecution(Runnable runnable);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3004, value = "First part initialization on  {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113004, value = "First part initialization on  {0}", format = Message.Format.MESSAGE_FORMAT)
     void initializeFirstPart(Runnable runnable);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3005, value = "announcing backup to the former live {0}", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113005, value = "announcing backup to the former live {0}", format = Message.Format.MESSAGE_FORMAT)
     void announceBackupToFormerLive(Runnable runnable);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3006, value = "{0} ::Stopping live node in favor of failback", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113006, value = "{0} ::Stopping live node in favor of failback", format = Message.Format.MESSAGE_FORMAT)
     void stoppingLiveNodeInFavourOfFailback(HornetQServerImpl server);
 
     @LogMessage(level = Logger.Level.DEBUG)
-    @Message(id = 3007, value = "{0} ::Starting backup node now after failback", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 113007, value = "{0} ::Starting backup node now after failback", format = Message.Format.MESSAGE_FORMAT)
     void startingBackupAfterFailure(HornetQServerImpl server);
 
     @LogMessage(level = Logger.Level.ERROR)
-    @Message(id = 4001, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
+    @Message(id = 114001, value = "Failure in initialisation", format = Message.Format.MESSAGE_FORMAT)
     void initializationError(@Cause Throwable e);
 }

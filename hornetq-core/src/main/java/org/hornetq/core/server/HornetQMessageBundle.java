@@ -30,24 +30,30 @@ import org.jboss.logging.Property;
 /**
  * @author <a href="mailto:andy.taylor@jboss.org">Andy Taylor</a>
  *         3/12/12
+ *
+ * Logger Code 11
+ *
+ * each message id must be 6 digits long starting with 10, the 3rd digit should be 9
+ *
+ * so 119000 to 119999
  */
 @MessageBundle(projectCode = "HQ")
 public interface HornetQMessageBundle
 {
    HornetQMessageBundle MESSAGES = Messages.getBundle(HornetQMessageBundle.class);
 
-   @Message(id = 9001, value = "Generating thread dump because - {0}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 119001, value = "Generating thread dump because - {0}", format = Message.Format.MESSAGE_FORMAT)
    String generatingThreadDump(String reason);
 
-   @Message(id = 9002, value = "End Thread dump", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 119002, value = "End Thread dump", format = Message.Format.MESSAGE_FORMAT)
    String endThreadDump();
 
-   @Message(id = 9003, value = "Thread {0} name {1} id {2} group {3}", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 119003, value = "Thread {0} name {1} id {2} group {3}", format = Message.Format.MESSAGE_FORMAT)
    String threadInfo(Thread key, String name, Long id, ThreadGroup group);
 
-   @Message(id = 9004, value = "Connected server is not a backup server", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 119004, value = "Connected server is not a backup server", format = Message.Format.MESSAGE_FORMAT)
    HornetQException notABackupServer(@Property Integer code);
 
-   @Message(id = 9005, value = "Backup replication server is already connected to another server", format = Message.Format.MESSAGE_FORMAT)
+   @Message(id = 119005, value = "Backup replication server is already connected to another server", format = Message.Format.MESSAGE_FORMAT)
    String backupServerAlreadyConnectingToLive();
 }
